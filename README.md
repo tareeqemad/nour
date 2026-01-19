@@ -1,6 +1,8 @@
-# Rased - Energy Market Management System
+# نور - نظام إدارة سوق الطاقة
 
-A comprehensive digital platform for managing electrical generators and operators in Palestine. The system provides complete management of operator data, generators, operational logs, maintenance, environmental compliance, and complaints/suggestions.
+منصة رقمية شاملة لإدارة المولدات الكهربائية والمشغلين في فلسطين. يوفر النظام إدارة كاملة لبيانات المشغلين، المولدات، سجلات التشغيل، الصيانة، الامتثال البيئي، والشكاوى والاقتراحات.
+
+**Repository**: [https://github.com/tareeqemad/nour](https://github.com/tareeqemad/nour)
 
 ---
 
@@ -55,11 +57,20 @@ A comprehensive digital platform for managing electrical generators and operator
 - Support for governorates, engine types, generator statuses, etc.
 - Easy addition and modification of constants
 
-### 7. Recent Improvements
+### 7. Internal Messaging System
+- Advanced messaging features with forwarding, CC/BCC support
+- Message starring and importance marking
+- Message archiving functionality
+- Advanced search filters (date range, sender, receiver, important, starred, archived)
+- Real-time unread message count with caching
+
+### 8. Recent Improvements
 - **Dynamic Role System**: Support for both system roles (4 roles) and custom roles created by users
 - **Role Filter Enhancement**: Users filter now supports filtering by custom roles dynamically
 - **Role Show Page Redesign**: Redesigned role details page using general-card component
 - **Collapsible Permission Cards**: Added toggle functionality to permission group cards
+- **Security Enhancement**: Removed plain text password storage, all passwords are now hashed
+- **Site Name Management**: Dynamic site name management through settings
 
 ---
 
@@ -79,8 +90,8 @@ A comprehensive digital platform for managing electrical generators and operator
 ### 1. Clone the Project
 
 ```bash
-git clone <repository-url>
-cd rased
+git clone https://github.com/tareeqemad/nour.git
+cd nour
 ```
 
 ### 2. Install Dependencies
@@ -111,7 +122,7 @@ Update `.env` file with database credentials:
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=rased
+DB_DATABASE=nour
 DB_USERNAME=root
 DB_PASSWORD=
 ```
@@ -168,7 +179,7 @@ php artisan serve
 ## 📁 Project Structure
 
 ```
-rased/
+nour/
 ├── app/
 │   ├── Governorate.php              # Enum for governorates
 │   ├── Role.php                     # Enum for roles
@@ -465,7 +476,13 @@ This project is licensed under the MIT License.
 
 ## 👨‍💻 Support
 
-For any questions or issues, please open an issue in the project.
+For any questions or issues, please open an issue in the project repository: [https://github.com/tareeqemad/nour/issues](https://github.com/tareeqemad/nour/issues)
+
+---
+
+## 🔗 Links
+
+- **GitHub Repository**: [https://github.com/tareeqemad/nour](https://github.com/tareeqemad/nour)
 
 ---
 
