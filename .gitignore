@@ -1,8 +1,0 @@
-# تجاهل كل شيء
-*
-
-# استثناء README.md
-!README.md
-
-# استثناء .gitignore نفسه (مهم لعمل Git)
-!.gitignore
