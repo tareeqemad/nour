@@ -1,0 +1,198 @@
+/* ===== Complaints Suggestions Index Page ===== */
+.complaints-page {
+    --cs-border: #e5e7eb;
+    --cs-border2: #eef2f7;
+    --cs-surface: #ffffff;
+    --cs-subtle: #f8fafc;
+    --cs-text: #0f172a;
+    --cs-muted: #64748b;
+    margin-bottom: 2rem;
+}
+
+.complaints-page .complaints-card {
+    position: relative;
+    border: 1px solid var(--cs-border);
+    border-radius: 14px;
+    background: var(--cs-surface);
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
+}
+
+.complaints-page .complaints-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(var(--primary-rgb), .85);
+}
+
+.complaints-page .complaints-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--cs-border2);
+    background: var(--cs-surface);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.complaints-page .complaints-title {
+    font-weight: 900;
+    font-size: 1.05rem;
+    margin: 0;
+    color: var(--cs-text);
+}
+
+.complaints-page .complaints-subtitle {
+    margin-top: .25rem;
+    color: var(--cs-muted);
+    font-size: .85rem;
+}
+
+.complaints-page .complaints-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1rem;
+}
+
+.complaints-page .complaints-stat {
+    background: var(--cs-subtle);
+    border: 1px solid var(--cs-border2);
+    border-radius: 12px;
+    padding: .65rem .8rem;
+    min-width: 140px;
+}
+
+.complaints-page .complaints-stat .label {
+    font-size: .75rem;
+    color: var(--cs-muted);
+}
+
+.complaints-page .complaints-stat .value {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--cs-text);
+    margin-top: .15rem;
+}
+
+.complaints-page .complaints-search {
+    position: relative;
+}
+
+.complaints-page .complaints-search .bi-search {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 12px;
+    color: #94a3b8;
+    pointer-events: none;
+    font-size: 1.05rem;
+}
+
+.complaints-page .complaints-search .form-control {
+    padding-right: 42px !important;
+    padding-left: 42px !important;
+}
+
+.complaints-page .complaints-search .complaints-clear {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10px;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    padding: 0;
+    cursor: pointer;
+}
+
+.complaints-page .complaints-search .complaints-clear:hover {
+    color: #64748b;
+}
+
+.complaints-page .complaints-table thead th {
+    background: var(--cs-subtle);
+    border-bottom: 1px solid var(--cs-border2);
+    color: #475569;
+    font-size: .75rem;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.complaints-page .complaints-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.complaints-page .complaints-table tbody tr:hover {
+    background-color: var(--cs-subtle);
+}
+
+.complaints-page .badge-type-complaint {
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .25);
+    color: #dc2626;
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.complaints-page .badge-type-suggestion {
+    background: rgba(59, 130, 246, .12);
+    border: 1px solid rgba(59, 130, 246, .25);
+    color: #2563eb;
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.complaints-page .badge-status-pending {
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .25);
+    color: #d97706;
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.complaints-page .badge-status-in_progress {
+    background: rgba(59, 130, 246, .12);
+    border: 1px solid rgba(59, 130, 246, .25);
+    color: #2563eb;
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.complaints-page .badge-status-resolved {
+    background: rgba(34, 197, 94, .12);
+    border: 1px solid rgba(34, 197, 94, .25);
+    color: #16a34a;
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.complaints-page .badge-status-rejected {
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .25);
+    color: #dc2626;
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.complaints-page .card-body {
+    padding: 1.5rem;
+    padding-bottom: 1.5rem !important;
+}
+

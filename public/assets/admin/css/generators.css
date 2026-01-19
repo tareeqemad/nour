@@ -1,0 +1,284 @@
+/* =========================================================
+   Generators Page (Same style as Permissions Page)
+   ========================================================= */
+
+.generators-page,
+.general-page{
+    --gen-border: #e5e7eb;
+    --gen-border-2: #eef2f7;
+    --gen-surface: #ffffff;
+    --gen-subtle: #f8fafc;
+    --gen-text: #0f172a;
+    --gen-muted: #6b7280;
+}
+
+/* Card styles removed - using general-card from general-cards.css */
+
+/* Toolbar */
+.generators-page .gen-toolbar,
+.general-page .gen-toolbar{
+    border-top: 1px solid var(--gen-border-2);
+    padding-top: 1rem;
+    background: var(--gen-surface);
+}
+
+.generators-page .gen-toolbar-header,
+.general-page .gen-toolbar-header{
+    padding-bottom: 1rem;
+}
+
+/* Search Bar */
+.generators-page .gen-searchbar,
+.general-page .gen-searchbar{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    flex-wrap: nowrap;
+}
+
+.generators-page .gen-searchfield,
+.general-page .gen-searchfield{
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 240px;
+}
+
+.generators-page .gen-search-icon,
+.general-page .gen-search-icon{
+    position:absolute;
+    top:50%;
+    transform: translateY(-50%);
+    inset-inline-start: 12px;
+    color:#94a3b8;
+    pointer-events:none;
+    font-size: 1rem;
+}
+
+.generators-page .gen-search-input,
+.general-page .gen-search-input{
+    height: 44px;
+    border-radius: 12px;
+    padding-inline-start: 38px;
+    border: 1px solid var(--gen-border);
+}
+
+.generators-page .gen-search-input:focus,
+.general-page .gen-search-input:focus{
+    border-color: rgba(var(--primary-rgb), .65);
+    box-shadow: 0 0 0 .2rem rgba(var(--primary-rgb), .12);
+}
+
+.generators-page .gen-search-action,
+.general-page .gen-search-action{
+    height: 44px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+.generators-page .gen-clear-btn,
+.general-page .gen-clear-btn{
+    background:#f8fafc;
+    border:1px solid var(--gen-border);
+    color:#334155;
+}
+
+.generators-page .gen-clear-btn:hover,
+.general-page .gen-clear-btn:hover{
+    background:#f1f5f9;
+    border-color: rgba(var(--primary-rgb), .35);
+}
+
+/* Filters */
+.generators-page .gen-filters,
+.general-page .gen-filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.35rem;
+    justify-content:flex-end;
+    align-items: center;
+}
+
+.generators-page .gen-filter,
+.general-page .gen-filter{
+    border: 1px solid var(--gen-border);
+    background: var(--gen-surface);
+    border-radius: 999px;
+    padding: .35rem .65rem;
+    font-size: .8rem;
+    cursor:pointer;
+    transition: .15s ease;
+    color: var(--gen-text);
+}
+
+.generators-page .gen-filter:hover,
+.general-page .gen-filter:hover{
+    border-color: rgba(var(--primary-rgb), .65);
+}
+
+.generators-page .gen-filter.active,
+.general-page .gen-filter.active{
+    background: rgba(var(--primary-rgb), .10);
+    border-color: rgba(var(--primary-rgb), .85);
+    font-weight: 800;
+}
+
+.generators-page .gen-filter-select,
+.general-page .gen-filter-select{
+    border-radius: 999px !important;
+    border: 1px solid var(--gen-border) !important;
+    font-size: .8rem !important;
+    padding: .35rem .65rem !important;
+    height: auto !important;
+    min-width: 150px;
+}
+
+/* List */
+.generators-page .gen-list-body,
+.general-page .gen-list-body{
+    min-height: 200px;
+}
+
+.generators-page .gen-list,
+.general-page .gen-list{
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.generators-page .gen-row,
+.general-page .gen-row{
+    border: 1px solid var(--gen-border-2);
+    border-radius: 12px;
+    padding: 1rem;
+    background: var(--gen-surface);
+    transition: .15s ease;
+}
+
+.generators-page .gen-row:hover,
+.general-page .gen-row:hover{
+    border-color: #dbeafe;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+.generators-page .gen-row-main,
+.general-page .gen-row-main{
+    display:flex;
+    align-items:flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.generators-page .gen-row-content,
+.general-page .gen-row-content{
+    flex: 1;
+}
+
+.generators-page .gen-row-header,
+.general-page .gen-row-header{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    margin-bottom: .75rem;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.generators-page .gen-row-title,
+.general-page .gen-row-title{
+    display:flex;
+    align-items:center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    font-size: 1rem;
+}
+
+.generators-page .gen-row-details,
+.general-page .gen-row-details{
+    margin-top: .5rem;
+}
+
+.generators-page .gen-detail-item,
+.general-page .gen-detail-item{
+    display:flex;
+    align-items:center;
+    font-size: .875rem;
+    gap: .25rem;
+}
+
+.generators-page .gen-row-actions,
+.general-page .gen-row-actions{
+    display:flex;
+    gap: .5rem;
+    flex-shrink: 0;
+}
+
+.generators-page .gen-row-actions .btn,
+.general-page .gen-row-actions .btn{
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Empty State */
+.generators-page .gen-empty-state,
+.general-page .gen-empty-state{
+    padding: 3rem 1rem;
+}
+
+/* Loading overlay */
+.generators-page .gen-loading,
+.general-page .gen-loading{
+    position:absolute;
+    inset:0;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(3px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index: 50;
+    border-radius: 14px;
+}
+
+/* Pagination */
+.generators-page .gen-pagination,
+.general-page .gen-pagination{
+    display: flex;
+    justify-content: center;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px){
+    .generators-page .gen-row-main,
+    .general-page .gen-row-main{
+        flex-direction: column;
+    }
+    
+    .generators-page .gen-row-actions,
+    .general-page .gen-row-actions{
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .generators-page .gen-searchbar,
+    .general-page .gen-searchbar{
+        flex-wrap: wrap;
+    }
+    
+    .generators-page .gen-searchfield,
+    .general-page .gen-searchfield{
+        min-width: 100%;
+    }
+    
+    .generators-page .gen-filters,
+    .general-page .gen-filters{
+        justify-content: flex-start;
+    }
+}
+
+
+
+
+

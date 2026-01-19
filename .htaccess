@@ -1,0 +1,26 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # منع الوصول المباشر للمجلدات الحساسة (لكن فقط إذا كان الطلب لمجلد وليس ملف)
+    RewriteCond %{REQUEST_URI} ^/(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$) [NC]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(.*)$ - [F,L]
+
+    # السماح بالوصول المباشر للملفات الموجودة في الجذر (مثل robots.txt)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # إذا كان الطلب لملف موجود في public/ (مثل /assets/... في public/assets/...)
+    # هذا يحل مشكلة asset() helper الذي يولد مسارات مثل /assets/admin/css/styles.min.css
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # توجيه جميع الطلبات الأخرى إلى public/index.php
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/index.php [L]
+</IfModule>

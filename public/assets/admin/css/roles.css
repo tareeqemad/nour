@@ -1,0 +1,105 @@
+/* ===== Roles Page (Same style as Constants/Users Page) ===== */
+.roles-page {
+    --r-border: #e5e7eb;
+    --r-border2: #eef2f7;
+    --r-surface: #ffffff;
+    --r-subtle: #f8fafc;
+    --r-text: #0f172a;
+    --r-muted: #64748b;
+    margin-bottom: 2rem;
+}
+
+/* Card styles removed - using general-card from general-cards.css */
+
+.roles-page .roles-search {
+    position: relative;
+}
+
+.roles-page .roles-search .bi-search {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 12px;
+    color: #94a3b8;
+    pointer-events: none;
+    font-size: 1.05rem;
+}
+
+.roles-page .roles-search .form-control {
+    padding-right: 42px !important;
+    padding-left: 42px !important;
+}
+
+.roles-page .roles-search .roles-clear {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10px;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    padding: 0;
+    cursor: pointer;
+}
+
+.roles-page .roles-search .roles-clear:hover {
+    color: #64748b;
+}
+
+.roles-page .roles-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1rem;
+}
+
+.roles-page .roles-stat {
+    background: var(--r-subtle);
+    border: 1px solid var(--r-border2);
+    border-radius: 12px;
+    padding: .65rem .8rem;
+    min-width: 140px;
+}
+
+.roles-page .roles-stat .label {
+    font-size: .75rem;
+    color: var(--r-muted);
+}
+
+.roles-page .roles-stat .value {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--r-text);
+    margin-top: .15rem;
+}
+
+.roles-page .roles-table thead th {
+    background: var(--r-subtle);
+    border-bottom: 1px solid var(--r-border2);
+    color: #475569;
+    font-size: .75rem;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.roles-page .roles-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.roles-page .roles-table tbody tr:hover {
+    background-color: var(--r-subtle);
+}
+
+.roles-page .card-body {
+    padding: 1.5rem;
+    padding-bottom: 1.5rem !important;
+}
+
+.badge-system {
+    background-color: #6366f1 !important;
+}
+
+.badge-custom {
+    background-color: #10b981 !important;
+}

@@ -1,0 +1,89 @@
+/* ===== Messages Page (Same style as Roles/Permissions Page) ===== */
+.messages-page {
+    --msg-border: #e5e7eb;
+    --msg-border-2: #eef2f7;
+    --msg-surface: #ffffff;
+    --msg-subtle: #f8fafc;
+    --msg-text: #0f172a;
+    --msg-muted: #64748b;
+    margin-bottom: 2rem;
+}
+
+.messages-page .messages-card {
+    position: relative;
+    border: 1px solid var(--msg-border);
+    border-radius: 14px;
+    background: var(--msg-surface);
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
+}
+
+.messages-page .messages-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(25, 34, 143, .85); /* Fallback: #19228f */
+    background: rgba(var(--primary-rgb), .85);
+    z-index: 1;
+}
+
+/* Override default card-header styling */
+.messages-page .card-header {
+    background: var(--msg-surface) !important;
+    color: var(--msg-text) !important;
+    border-bottom: 1px solid var(--msg-border-2) !important;
+    padding: 1rem 1.25rem;
+    position: relative;
+    z-index: 2;
+}
+
+.messages-page .card-header * {
+    color: inherit;
+}
+
+.messages-page .messages-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--msg-border-2);
+    background: var(--msg-surface);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.messages-page .messages-title {
+    font-weight: 900;
+    font-size: 1.05rem;
+    margin: 0;
+    color: var(--msg-text);
+}
+
+.messages-page .messages-subtitle {
+    margin-top: .25rem;
+    color: var(--msg-muted);
+    font-size: .85rem;
+}
+
+.messages-page .card-body {
+    padding: 1.5rem;
+}
+
+/* Dark Mode Support */
+[data-theme-mode=dark] .messages-page {
+    --msg-border: rgba(255, 255, 255, .1);
+    --msg-border-2: rgba(255, 255, 255, .08);
+    --msg-surface: rgb(var(--body-bg-rgb));
+    --msg-subtle: rgba(255, 255, 255, .03);
+    --msg-text: #eaecf3;
+    --msg-muted: rgba(234, 236, 243, .6);
+}
+
+[data-theme-mode=dark] .messages-page .messages-card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
+}
+

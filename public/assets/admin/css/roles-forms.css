@@ -1,0 +1,185 @@
+/* ===== Roles Forms (Create & Edit) ===== */
+.roles-page {
+    --r-border: #e5e7eb;
+    --r-border2: #eef2f7;
+    --r-surface: #ffffff;
+    --r-subtle: #f8fafc;
+    --r-text: #0f172a;
+    --r-muted: #64748b;
+    margin-bottom: 2rem;
+}
+
+.roles-page .roles-card {
+    position: relative;
+    border: 1px solid var(--r-border);
+    border-radius: 14px;
+    background: var(--r-surface);
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
+}
+
+.roles-page .roles-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(var(--primary-rgb), .85);
+}
+
+.roles-page .roles-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--r-border2);
+    background: var(--r-surface);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.roles-page .roles-title {
+    font-weight: 900;
+    font-size: 1.05rem;
+    margin: 0;
+    color: var(--r-text);
+}
+
+.roles-page .roles-subtitle {
+    margin-top: .25rem;
+    color: var(--r-muted);
+    font-size: .85rem;
+}
+
+.roles-page .roles-section {
+    padding: 1.5rem;
+}
+
+.roles-page .card-body {
+    padding: 1.5rem;
+}
+
+.roles-page .roles-section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--r-border2);
+}
+
+.roles-page .roles-section-title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0;
+    color: var(--r-text);
+}
+
+/* Permissions Container - Works in both roles-page and general-page */
+.roles-page .permissions-container,
+.general-page .permissions-container {
+    border: 1px solid var(--r-border2, #eef2f7);
+    border-radius: 12px;
+    background: var(--r-subtle, #f8fafc);
+    padding: 1.25rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.roles-page .permission-group,
+.general-page .permission-group {
+    background: var(--r-surface, #ffffff);
+    border: 1px solid var(--r-border, #e5e7eb);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.roles-page .permission-group:hover,
+.general-page .permission-group:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.roles-page .permission-group-header,
+.general-page .permission-group-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--r-subtle, #f8fafc);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.roles-page .permission-group-header:hover,
+.general-page .permission-group-header:hover {
+    background: #e2e8f0;
+}
+
+.roles-page .permission-group-header .form-check-input,
+.general-page .permission-group-header .form-check-input {
+    margin-right: 0.75rem;
+    cursor: pointer;
+}
+
+.roles-page .permission-group-header .form-check-label,
+.general-page .permission-group-header .form-check-label {
+    cursor: pointer;
+    flex: 1;
+    margin: 0;
+}
+
+.roles-page .permission-items,
+.general-page .permission-items {
+    padding-right: 2rem;
+}
+
+.roles-page .permission-item,
+.general-page .permission-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--r-surface, #ffffff);
+    border: 1px solid var(--r-border2, #eef2f7);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.roles-page .permission-item:hover,
+.general-page .permission-item:hover {
+    background: var(--r-subtle, #f8fafc);
+    border-color: var(--r-border, #e5e7eb);
+}
+
+.roles-page .permission-item .form-check-label,
+.general-page .permission-item .form-check-label {
+    cursor: pointer;
+    width: 100%;
+}
+
+.roles-page .permission-item .permission-name,
+.general-page .permission-item .permission-name {
+    font-weight: 600;
+    color: var(--r-text, #0f172a);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.roles-page .permission-item .permission-description,
+.general-page .permission-item .permission-description {
+    font-size: 0.85rem;
+    color: var(--r-muted, #64748b);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.roles-page .permission-item .permission-key,
+.general-page .permission-item .permission-key {
+    font-size: 0.75rem;
+    color: var(--r-muted, #64748b);
+    font-family: 'Courier New', monospace;
+    background: var(--r-subtle, #f8fafc);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+}

@@ -1,0 +1,61 @@
+/* =========================================================
+   Data Table Loading Overlay - Public/Global
+   ========================================================= */
+
+/* Loading Overlay Container - positioned relative to tbody/content area */
+.data-table-loading-overlay{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.data-table-loading-overlay.show{
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Spinner */
+.data-table-loading-overlay .spinner-border{
+    width: 3rem;
+    height: 3rem;
+    border-width: 4px;
+    border-color: var(--primary, #0056b3);
+    border-right-color: transparent;
+}
+
+.data-table-loading-overlay .text-muted{
+    font-size: 1rem;
+    margin-top: 1rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* Container for table structure */
+.table-responsive.data-table-container,
+.data-table-container{
+    position: relative;
+}
+
+/* Ensure content containers are position relative for div-based lists */
+.data-table-container [id$="ListContainer"],
+.data-table-container [id$="ContentContainer"],
+.data-table-container .log-list,
+.data-table-container .list-content{
+    position: relative;
+    min-height: 100px;
+}
+
+/* Note: tbody and content areas will be made position:relative via JavaScript when needed */
+
