@@ -11,6 +11,44 @@ class Message extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Customize route model binding to ensure security
+     * Prevents access to messages deleted by sender or receiver
+     * Note: Full authorization check is done in MessagePolicy and MessageController
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $message = parent::resolveRouteBinding($value, $field);
+        
+        // If message is soft deleted, return null (404)
+        if (!$message) {
+            return null;
+        }
+        
+        // Check if message was deleted by sender or receiver
+        // This prevents access to deleted messages even if they exist in database
+        if (auth()->check()) {
+            $user = auth()->user();
+            
+            $isSender = $message->sender_id === $user->id;
+            $isReceiver = $message->receiver_id === $user->id;
+            
+            // If user is the sender and message was deleted by sender, return null (404)
+            if ($isSender && $message->deleted_by_sender) {
+                return null;
+            }
+            
+            // If user is the receiver and message was deleted by receiver, return null (404)
+            if ($isReceiver && $message->deleted_by_receiver) {
+                return null;
+            }
+        }
+        
+        // Note: Full authorization (canBeViewedBy) is checked in MessageController::show()
+        // This method only prevents access to messages deleted by the current user
+        return $message;
+    }
+
     protected $fillable = [
         'sender_id',
         'receiver_id',

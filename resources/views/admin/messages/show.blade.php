@@ -9,10 +9,11 @@
 @endphp
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/admin/css/messages-show.css') }}">
 @endpush
 
 @section('content')
-<div class="general-page">
+<div class="general-page messages-show-page">
     <div class="row g-3">
         <div class="col-12">
             <div class="general-card">
@@ -26,18 +27,18 @@
                             تفاصيل الرسالة المرسلة
                         </div>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="header-actions">
                         <a href="{{ route('admin.messages.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
+                            <i class="bi bi-arrow-right"></i>
                             العودة
                         </a>
                         @can('delete', $message)
-                            <form action="{{ route('admin.messages.destroy', $message) }}" method="POST" class="d-inline" id="deleteForm">
+                            <form action="{{ route('admin.messages.destroy', $message) }}" method="POST" class="d-inline" id="archiveForm">
                                 @csrf
                                 @method('DELETE')
-                                <button type="button" class="btn btn-outline-danger" onclick="if(confirm('هل أنت متأكد من حذف هذه الرسالة؟')) { document.getElementById('deleteForm').submit(); }">
-                                    <i class="bi bi-trash me-1"></i>
-                                    حذف
+                                <button type="button" class="btn btn-outline-warning" onclick="if(confirm('هل أنت متأكد من أرشفة هذه الرسالة؟')) { document.getElementById('archiveForm').submit(); }">
+                                    <i class="bi bi-archive"></i>
+                                    أرشفة
                                 </button>
                             </form>
                         @endcan
@@ -46,47 +47,32 @@
 
                 <div class="card-body">
                     {{-- معلومات الرسالة --}}
-                    <div class="mb-4">
-                        <h6 class="fw-bold mb-3">
-                            <i class="bi bi-info-circle text-primary me-2"></i>
+                    <div class="message-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-info-circle"></i>
                             معلومات الرسالة
                         </h6>
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">المرسل:</label>
-                                <div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="bi bi-person"></i>
+                                    المرسل
+                                </div>
+                                <div class="info-value">
                                     <span class="badge bg-primary">{{ $message->sender_display_name }}</span>
                                     @if(!$message->isSystemMessage() && $message->sender)
-                                        <small class="text-muted ms-2">{{ $message->sender->role_name }}</small>
+                                        <small class="text-muted">({{ $message->sender->role_name }})</small>
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">المستقبل:</label>
-                                <div>
-                                    @if($message->receiver)
-                                        <span class="badge bg-info">{{ $message->receiver->name }}</span>
-                                        <small class="text-muted ms-2">{{ $message->receiver->role_name }}</small>
-                                    @elseif($message->operator)
-                                        <span class="badge bg-info">{{ $message->operator->name }}</span>
-                                        <small class="text-muted ms-2">مشغل</small>
-                                    @else
-                                        <span class="badge bg-secondary">
-                                            @if($message->type === 'admin_to_all')
-                                                جميع المشغلين
-                                            @elseif($message->type === 'operator_to_staff')
-                                                جميع موظفي المشغل
-                                            @else
-                                                -
-                                            @endif
-                                        </span>
-                                    @endif
+
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="bi bi-tag"></i>
+                                    النوع
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">النوع:</label>
-                                <div>
+                                <div class="info-value">
                                     @php
                                         $typeLabels = [
                                             'operator_to_operator' => ['label' => 'مشغل لمشغل', 'badge' => 'bg-primary'],
@@ -101,69 +87,117 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">التاريخ:</label>
-                                <div>
-                                    <span class="text-muted">{{ $message->created_at->format('Y-m-d H:i:s') }}</span>
+
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="bi bi-calendar3"></i>
+                                    تاريخ الإرسال
+                                </div>
+                                <div class="info-value">
+                                    <span>{{ $message->created_at->format('Y-m-d') }}</span>
+                                    <small class="text-muted">({{ $message->created_at->format('H:i:s') }})</small>
                                 </div>
                             </div>
-                            @if($message->is_read && $message->read_at)
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">تاريخ القراءة:</label>
-                                    <div>
-                                        <span class="text-muted">{{ $message->read_at->format('Y-m-d H:i:s') }}</span>
+
+                            @php
+                                $user = auth()->user();
+                                $isReceiver = $message->receiver_id === $user->id;
+                                $isBroadcastReceiver = false;
+                                if ($message->type === 'operator_to_staff' && $message->operator_id) {
+                                    if ($user->isCompanyOwner()) {
+                                        $isBroadcastReceiver = $user->ownedOperators()->where('id', $message->operator_id)->exists();
+                                    } elseif ($user->hasOperatorLinkedCustomRole()) {
+                                        $isBroadcastReceiver = $user->roleModel->operator_id === $message->operator_id;
+                                    }
+                                }
+                            @endphp
+                            @if($isReceiver || $isBroadcastReceiver)
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="bi bi-eye"></i>
+                                        الحالة
+                                    </div>
+                                    <div class="info-value">
+                                        @if($message->is_read)
+                                            <span class="read-status read">
+                                                <i class="bi bi-check-circle"></i>
+                                                مقروء
+                                            </span>
+                                            @if($message->read_at)
+                                                <small class="text-muted">({{ $message->read_at->format('Y-m-d H:i') }})</small>
+                                            @endif
+                                        @else
+                                            <span class="read-status unread">
+                                                <i class="bi bi-clock"></i>
+                                                غير مقروء
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($message->is_read && $message->read_at && ($isReceiver || $isBroadcastReceiver))
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="bi bi-clock-history"></i>
+                                        تاريخ القراءة
+                                    </div>
+                                    <div class="info-value">
+                                        <span>{{ $message->read_at->format('Y-m-d') }}</span>
+                                        <small class="text-muted">({{ $message->read_at->format('H:i:s') }})</small>
                                     </div>
                                 </div>
                             @endif
                         </div>
                     </div>
 
-                    <hr class="my-4">
+                    <hr class="section-divider">
 
                     {{-- الموضوع --}}
-                    <div class="mb-4">
-                        <h6 class="fw-bold mb-3">
-                            <i class="bi bi-tag text-primary me-2"></i>
+                    <div class="message-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-tag"></i>
                             الموضوع
                         </h6>
-                        <div class="p-3 bg-light rounded border">
-                            <h5 class="mb-0">{{ $message->subject }}</h5>
+                        <div class="subject-box">
+                            <h5 class="subject-text">{{ $message->subject }}</h5>
                         </div>
                     </div>
 
-                    <hr class="my-4">
+                    <hr class="section-divider">
 
                     {{-- المحتوى --}}
-                    <div class="mb-4">
-                        <h6 class="fw-bold mb-3">
-                            <i class="bi bi-file-text text-primary me-2"></i>
+                    <div class="message-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-file-text"></i>
                             محتوى الرسالة
                         </h6>
-                        <div class="p-4 bg-light rounded border" style="min-height: 200px; white-space: pre-wrap; line-height: 1.8;">
-                            {{ $message->body }}
+                        <div class="content-box">
+                            <p class="content-text">{{ $message->body }}</p>
                         </div>
                     </div>
 
                     {{-- الصورة المرفقة --}}
                     @if($message->hasAttachment())
-                        <hr class="my-4">
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3">
-                                <i class="bi bi-image text-primary me-2"></i>
+                        <hr class="section-divider">
+                        <div class="message-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-image"></i>
                                 الصورة المرفقة
                             </h6>
-                            <div class="p-3 bg-light rounded border">
-                                <a href="{{ $message->attachment_url }}" target="_blank" class="d-inline-block">
-                                    <img src="{{ $message->attachment_url }}" alt="الصورة المرفقة" 
-                                         class="img-fluid rounded shadow-sm" style="max-width: 600px; max-height: 600px; cursor: pointer;">
-                                </a>
-                                <div class="mt-3">
-                                    <a href="{{ $message->attachment_url }}" target="_blank" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-box-arrow-up-right me-1"></i>
-                                        فتح الصورة في نافذة جديدة
+                            <div class="attachment-section">
+                                <div class="attachment-image-wrapper">
+                                    <a href="{{ $message->attachment_url }}" target="_blank">
+                                        <img src="{{ $message->attachment_url }}" alt="الصورة المرفقة" class="attachment-image">
                                     </a>
-                                    <a href="{{ $message->attachment_url }}" download class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-download me-1"></i>
+                                </div>
+                                <div class="attachment-actions">
+                                    <a href="{{ $message->attachment_url }}" target="_blank" class="btn btn-primary">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                        فتح في نافذة جديدة
+                                    </a>
+                                    <a href="{{ $message->attachment_url }}" download class="btn btn-outline-primary">
+                                        <i class="bi bi-download"></i>
                                         تحميل الصورة
                                     </a>
                                 </div>

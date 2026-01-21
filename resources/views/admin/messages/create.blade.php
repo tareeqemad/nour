@@ -14,11 +14,11 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/messages.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/messages-create.css') }}">
 @endpush
 
 @section('content')
-<div class="general-page">
+<div class="general-page messages-create-page">
     <div class="row g-3">
         <div class="col-12">
             <div class="general-card">
@@ -44,11 +44,16 @@
                     <form action="{{ route('admin.messages.store') }}" method="POST" id="messageForm" enctype="multipart/form-data">
                         @csrf
 
-                        <div class="row g-3">
-                            {{-- نوع المرسل إليه --}}
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-person-check me-1"></i>
+                        {{-- قسم المرسل إليه --}}
+                        <div class="form-section">
+                            <h6 class="form-section-title">
+                                <i class="bi bi-person-check"></i>
+                                المرسل إليه
+                            </h6>
+                            
+                            <div class="field-group">
+                                <label class="form-label">
+                                    <i class="bi bi-send"></i>
                                     إرسال إلى <span class="text-danger">*</span>
                                 </label>
                                 <select name="send_to" id="sendTo" class="form-select @error('send_to') is-invalid @enderror" required>
@@ -66,13 +71,16 @@
                                 @error('send_to')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">اختر نوع المرسل إليه للرسالة</small>
+                                <small class="form-text">
+                                    <i class="bi bi-info-circle"></i>
+                                    اختر نوع المرسل إليه للرسالة
+                                </small>
                             </div>
 
                             {{-- المشغل (يظهر عند اختيار "مشغل محدد") --}}
-                            <div class="col-md-12" id="operatorField" style="display: none;">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-building me-1"></i>
+                            <div class="field-group conditional-field hidden" id="operatorField">
+                                <label class="form-label">
+                                    <i class="bi bi-building"></i>
                                     المشغل <span class="text-danger">*</span>
                                 </label>
                                 <select name="operator_id" id="operatorId" class="form-select select2 @error('operator_id') is-invalid @enderror">
@@ -86,13 +94,16 @@
                                 @error('operator_id')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">اختر المشغل المراد إرسال الرسالة إليه</small>
+                                <small class="form-text">
+                                    <i class="bi bi-info-circle"></i>
+                                    اختر المشغل المراد إرسال الرسالة إليه
+                                </small>
                             </div>
 
                             {{-- المستخدم (يظهر عند اختيار "مستخدم محدد") --}}
-                            <div class="col-md-12" id="userField" style="display: none;">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-person me-1"></i>
+                            <div class="field-group conditional-field hidden" id="userField">
+                                <label class="form-label">
+                                    <i class="bi bi-person"></i>
                                     المستخدم <span class="text-danger">*</span>
                                 </label>
                                 <select name="receiver_id" id="receiverId" class="form-select select2 @error('receiver_id') is-invalid @enderror">
@@ -106,13 +117,23 @@
                                 @error('receiver_id')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">اختر المستخدم المراد إرسال الرسالة إليه</small>
+                                <small class="form-text">
+                                    <i class="bi bi-info-circle"></i>
+                                    اختر المستخدم المراد إرسال الرسالة إليه
+                                </small>
                             </div>
+                        </div>
 
-                            {{-- الموضوع --}}
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-chat-text me-1"></i>
+                        {{-- قسم محتوى الرسالة --}}
+                        <div class="form-section">
+                            <h6 class="form-section-title">
+                                <i class="bi bi-envelope"></i>
+                                محتوى الرسالة
+                            </h6>
+
+                            <div class="field-group">
+                                <label class="form-label">
+                                    <i class="bi bi-chat-text"></i>
                                     الموضوع <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" name="subject" id="subject" class="form-control @error('subject') is-invalid @enderror" 
@@ -121,47 +142,61 @@
                                 @error('subject')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">الحد الأقصى: 255 حرف</small>
+                                <small class="form-text">
+                                    <i class="bi bi-info-circle"></i>
+                                    الحد الأقصى: 255 حرف
+                                </small>
                             </div>
 
-                            {{-- المحتوى --}}
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-file-text me-1"></i>
+                            <div class="field-group">
+                                <label class="form-label">
+                                    <i class="bi bi-file-text"></i>
                                     محتوى الرسالة <span class="text-danger">*</span>
                                 </label>
-                                <textarea name="body" id="body" class="form-control @error('body') is-invalid @enderror" rows="10" 
+                                <textarea name="body" id="body" class="form-control @error('body') is-invalid @enderror" rows="12" 
                                           required maxlength="5000" 
-                                          placeholder="أدخل محتوى الرسالة">{{ old('body') }}</textarea>
+                                          placeholder="أدخل محتوى الرسالة...">{{ old('body') }}</textarea>
                                 @error('body')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="form-text text-muted">الحد الأقصى: 5000 حرف</small>
-                                    <small class="form-text text-muted" id="charCount">0 / 5000</small>
+                                <div class="char-counter">
+                                    <small class="form-text">
+                                        <i class="bi bi-info-circle"></i>
+                                        الحد الأقصى: 5000 حرف
+                                    </small>
+                                    <small class="char-count" id="charCount">0 / 5000</small>
                                 </div>
                             </div>
+                        </div>
 
-                            {{-- الصورة المرفقة --}}
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-image me-1"></i>
-                                    صورة مرفقة (اختياري)
+                        {{-- قسم المرفقات --}}
+                        <div class="form-section">
+                            <h6 class="form-section-title">
+                                <i class="bi bi-paperclip"></i>
+                                المرفقات (اختياري)
+                            </h6>
+
+                            <div class="field-group">
+                                <label class="form-label">
+                                    <i class="bi bi-image"></i>
+                                    صورة مرفقة
                                 </label>
-                                <input type="file" name="attachment" id="attachment" 
-                                       class="form-control @error('attachment') is-invalid @enderror" 
-                                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                <div class="file-upload-wrapper" id="fileUploadWrapper">
+                                    <i class="bi bi-cloud-upload file-upload-icon"></i>
+                                    <div class="file-upload-text">انقر لاختيار صورة أو اسحبها هنا</div>
+                                    <div class="file-upload-hint">الصيغ المدعومة: JPEG, JPG, PNG, GIF, WEBP | الحد الأقصى: 10 ميجابايت</div>
+                                    <input type="file" name="attachment" id="attachment" 
+                                           class="file-input-hidden @error('attachment') is-invalid @enderror" 
+                                           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                </div>
                                 @error('attachment')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback d-block mt-2">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">
-                                    الصيغ المدعومة: JPEG, JPG, PNG, GIF, WEBP. الحد الأقصى: 10 ميجابايت
-                                </small>
-                                <div id="attachmentPreview" class="mt-3" style="display: none;">
-                                    <img id="attachmentPreviewImg" src="" alt="معاينة الصورة" 
-                                         class="img-thumbnail" style="max-width: 300px; max-height: 300px;">
-                                    <div class="mt-2">
-                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeAttachment">
+                                
+                                <div id="attachmentPreview" class="attachment-preview" style="display: none;">
+                                    <img id="attachmentPreviewImg" src="" alt="معاينة الصورة" class="attachment-preview-img">
+                                    <div class="attachment-preview-actions">
+                                        <button type="button" class="btn btn-outline-danger" id="removeAttachment">
                                             <i class="bi bi-x-circle me-1"></i>
                                             إزالة الصورة
                                         </button>
@@ -170,13 +205,14 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        {{-- أزرار الإجراءات --}}
+                        <div class="form-actions">
                             <a href="{{ route('admin.messages.index') }}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i>
+                                <i class="bi bi-x-circle"></i>
                                 إلغاء
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-send me-1"></i>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-send"></i>
                                 إرسال الرسالة
                             </button>
                         </div>
@@ -227,11 +263,19 @@
         $body.on('input', updateCharCount);
         updateCharCount(); // Initial count
 
-        // Attachment preview
+        // File upload enhancement
+        const $fileWrapper = $('#fileUploadWrapper');
         const $attachment = $('#attachment');
         const $preview = $('#attachmentPreview');
         const $previewImg = $('#attachmentPreviewImg');
         const $removeBtn = $('#removeAttachment');
+
+        // Click on wrapper to trigger file input
+        $fileWrapper.on('click', function(e) {
+            if (!$(e.target).is('input')) {
+                $attachment.click();
+            }
+        });
 
         $attachment.on('change', function(e) {
             const file = e.target.files[0];
@@ -240,24 +284,28 @@
                     AdminCRUD.notify('error', 'حجم الصورة يجب ألا يتجاوز 10 ميجابايت');
                     $(this).val('');
                     $preview.hide();
+                    $fileWrapper.removeClass('has-file');
                     return;
                 }
                 
+                $fileWrapper.addClass('has-file');
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     $previewImg.attr('src', e.target.result);
-                    $preview.show();
+                    $preview.slideDown(300);
                 };
                 reader.readAsDataURL(file);
             } else {
-                $preview.hide();
+                $preview.slideUp(300);
+                $fileWrapper.removeClass('has-file');
             }
         });
 
         $removeBtn.on('click', function() {
             $attachment.val('');
-            $preview.hide();
+            $preview.slideUp(300);
             $previewImg.attr('src', '');
+            $fileWrapper.removeClass('has-file');
         });
 
         // Show/hide fields based on send_to selection
@@ -265,16 +313,16 @@
             const sendTo = $(this).val();
             
             // Hide all fields first
-            $('#operatorField').slideUp(200);
-            $('#userField').slideUp(200);
+            $('#operatorField').addClass('hidden');
+            $('#userField').addClass('hidden');
             $('#operatorId').prop('required', false).val('').trigger('change');
             $('#receiverId').prop('required', false).val('').trigger('change');
             
             if (sendTo === 'operator') {
-                $('#operatorField').slideDown(200);
+                $('#operatorField').removeClass('hidden');
                 $('#operatorId').prop('required', true);
             } else if (sendTo === 'user') {
-                $('#userField').slideDown(200);
+                $('#userField').removeClass('hidden');
                 $('#receiverId').prop('required', true);
             }
         });
@@ -310,8 +358,8 @@
             }
 
             // Show loading
-            const $submitBtn = $(this).find('button[type="submit"]');
-            $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الإرسال...');
+            const $submitBtn = $('#submitBtn');
+            $submitBtn.addClass('btn-loading').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الإرسال...');
         });
 
         // تحديث لوحة الرسائل بعد الإرسال الناجح

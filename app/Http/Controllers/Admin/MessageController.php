@@ -545,13 +545,36 @@ class MessageController extends Controller
 
     /**
      * Display the specified message.
+     * 
+     * Security: Only the sender or receiver can view the message.
+     * Additional checks are performed in MessagePolicy and Message::canBeViewedBy()
      */
     public function show(Message $message): View
     {
+        $user = auth()->user();
+        
+        // Additional security check: Verify user has permission to view this message
+        // This prevents users from accessing messages by changing the ID in the URL
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بعرض هذه الرسالة');
+        }
+        
+        // Check if message was deleted by the current user
+        $isSender = $message->sender_id === $user->id;
+        $isReceiver = $message->receiver_id === $user->id;
+        
+        if ($isSender && $message->deleted_by_sender) {
+            abort(404, 'الرسالة غير موجودة');
+        }
+        
+        if ($isReceiver && $message->deleted_by_receiver) {
+            abort(404, 'الرسالة غير موجودة');
+        }
+        
+        // Use policy authorization (this will also call canBeViewedBy, but it's good to have both)
         $this->authorize('view', $message);
 
         // تحديد الرسالة كمقروءة
-        $user = auth()->user();
         if (!$message->is_read && $message->receiver_id === $user->id) {
             $message->update([
                 'is_read' => true,
@@ -572,9 +595,15 @@ class MessageController extends Controller
      */
     public function markAsRead(Message $message): JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can mark message as read
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('view', $message);
 
-        $user = auth()->user();
         if (!$message->is_read) {
             $message->update([
                 'is_read' => true,
@@ -589,62 +618,38 @@ class MessageController extends Controller
     }
 
     /**
-     * Delete the specified message.
+     * Archive the specified message.
      * 
      * السلوك:
-     * - إذا كان المستخدم هو المرسل: نضع deleted_by_sender = true
-     * - إذا كان المستخدم هو المستقبل: نضع deleted_by_receiver = true
-     * - إذا كان كلا الطرفين قد حذفا الرسالة: نحذفها نهائياً (soft delete)
+     * - أرشفة الرسالة بدلاً من حذفها
+     * - يمكن إلغاء الأرشفة لاحقاً
      */
     public function destroy(Message $message): RedirectResponse|JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can archive the message
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('delete', $message);
 
-        $user = auth()->user();
-        $isSender = $message->sender_id === $user->id;
-        $isReceiver = $message->receiver_id === $user->id;
-
-        // تحديد من يحذف الرسالة
-        if ($isSender) {
-            // المرسل يحذف الرسالة
-            $message->update(['deleted_by_sender' => true]);
-        } elseif ($isReceiver) {
-            // المستقبل يحذف الرسالة
-            $message->update(['deleted_by_receiver' => true]);
-        } else {
-            // إذا لم يكن المستخدم هو المرسل أو المستقبل (مثل admin يرى جميع الرسائل)
-            // نستخدم soft delete العادي
-            $message->delete();
-            
-            if (request()->ajax() || request()->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'تم حذف الرسالة بنجاح',
-                ]);
-            }
-
-            return redirect()->route('admin.messages.index')
-                ->with('success', 'تم حذف الرسالة بنجاح');
-        }
-
-        // التحقق: إذا كان كلا الطرفين قد حذفا الرسالة، نحذفها نهائياً
-        if ($message->deleted_by_sender && $message->deleted_by_receiver) {
-            // Delete attachment file if exists
-            if ($message->attachment && Storage::disk('public')->exists($message->attachment)) {
-                Storage::disk('public')->delete($message->attachment);
-            }
-            $message->delete();
-        }
+        // أرشفة الرسالة بدلاً من حذفها
+        $message->update([
+            'is_archived' => true,
+            'archived_at' => now(),
+        ]);
 
         if (request()->ajax() || request()->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'تم حذف الرسالة بنجاح',
+                'message' => 'تم أرشفة الرسالة بنجاح',
             ]);
         }
 
         return redirect()->route('admin.messages.index')
-            ->with('success', 'تم حذف الرسالة بنجاح');
+            ->with('success', 'تم أرشفة الرسالة بنجاح');
     }
 
     /**
@@ -772,6 +777,13 @@ class MessageController extends Controller
      */
     public function forward(Request $request, Message $message): RedirectResponse|JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can forward the message
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('view', $message);
 
         $validated = $request->validate([
@@ -819,6 +831,13 @@ class MessageController extends Controller
      */
     public function toggleStar(Message $message): JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can star/unstar the message
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('view', $message);
 
         $message->update([
@@ -836,6 +855,13 @@ class MessageController extends Controller
      */
     public function toggleImportant(Message $message): JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can mark message as important
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('view', $message);
 
         $message->update([
@@ -853,6 +879,13 @@ class MessageController extends Controller
      */
     public function archive(Message $message): RedirectResponse|JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can archive the message
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('view', $message);
 
         $message->update([
@@ -876,6 +909,13 @@ class MessageController extends Controller
      */
     public function unarchive(Message $message): RedirectResponse|JsonResponse
     {
+        $user = auth()->user();
+        
+        // Security check: Only sender or receiver can unarchive the message
+        if (!$message->canBeViewedBy($user)) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الرسالة');
+        }
+        
         $this->authorize('view', $message);
 
         $message->update([

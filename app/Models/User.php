@@ -574,7 +574,8 @@ class User extends Authenticatable
             return asset('storage/'.$this->attributes['avatar']);
         }
 
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=0066cc&color=fff&size=128';
+        // Use default profile image from local assets
+        return asset('assets/admin/images/profile/profile.png');
     }
 
     public function getRoleNameAttribute(): string

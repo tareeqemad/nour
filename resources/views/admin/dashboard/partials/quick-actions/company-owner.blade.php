@@ -13,6 +13,15 @@
             </div>
             <div class="dashboard-card-body">
                 <div class="dashboard-quick-actions">
+                    <a href="{{ route('admin.generation-units.create') }}" class="dashboard-quick-action">
+                        <div class="dashboard-quick-action-icon bg-primary">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div class="dashboard-quick-action-text">
+                            <div class="dashboard-quick-action-title">إضافة وحدة توليد</div>
+                            <div class="dashboard-quick-action-desc">تسجيل وحدة توليد جديدة</div>
+                        </div>
+                    </a>
                     <a href="{{ route('admin.generators.create') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-success">
                             <i class="bi bi-lightning-charge-fill"></i>

@@ -31,7 +31,7 @@
 
                         <div class="msg-row-details">
                             <div class="row g-2">
-                                <div class="col-md-3 col-sm-6">
+                                <div class="col-md-4 col-sm-6">
                                     <div class="msg-detail-item">
                                         <i class="bi bi-person me-2 text-muted"></i>
                                         <span class="text-muted">المرسل:</span>
@@ -42,31 +42,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="msg-detail-item">
-                                        <i class="bi bi-person-check me-2 text-muted"></i>
-                                        <span class="text-muted">المستقبل:</span>
-                                        @if($message->receiver)
-                                            <strong>{{ $message->receiver->name }}</strong>
-                                            <small class="text-muted">({{ $message->receiver->role_name }})</small>
-                                        @elseif($message->operator)
-                                            <strong>{{ $message->operator->name }}</strong>
-                                            <small class="text-muted">(مشغل)</small>
-                                        @else
-                                            <strong>
-                                                @if($message->type === 'admin_to_all')
-                                                    جميع المشغلين
-                                                @elseif($message->type === 'operator_to_staff')
-                                                    جميع الموظفين
-                                                @else
-                                                    -
-                                                @endif
-                                            </strong>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3 col-sm-6">
+                                <div class="col-md-4 col-sm-6">
                                     <div class="msg-detail-item">
                                         <i class="bi bi-calendar3 me-2 text-muted"></i>
                                         <span class="text-muted">التاريخ:</span>
@@ -75,7 +51,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-3 col-sm-6">
+                                <div class="col-md-4 col-sm-6">
                                     <div class="msg-detail-item">
                                         <i class="bi bi-eye me-2 text-muted"></i>
                                         <span class="text-muted">الحالة:</span>
@@ -104,10 +80,10 @@
                                 </div>
                             </div>
 
-                            <div class="msg-preview mt-2">
-                                <p class="text-muted mb-0 small">
-                                    <i class="bi bi-chat-left-text me-1"></i>
-                                    {{ Str::limit(strip_tags($message->body), 100) }}
+                            <div class="msg-preview">
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    <span>{{ Str::limit(strip_tags($message->body), 120) }}</span>
                                 </p>
                             </div>
                         </div>
@@ -118,11 +94,11 @@
                             <i class="bi bi-eye"></i>
                         </a>
                         @can('delete', $message)
-                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-message" 
+                            <button type="button" class="btn btn-sm btn-outline-warning btn-delete-message" 
                                     data-id="{{ $message->id }}"
                                     data-url="{{ route('admin.messages.destroy', $message) }}"
-                                    title="حذف">
-                                <i class="bi bi-trash"></i>
+                                    title="أرشفة">
+                                <i class="bi bi-archive"></i>
                             </button>
                         @endcan
                     </div>

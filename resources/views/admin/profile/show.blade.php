@@ -6,119 +6,7 @@
 @endphp
 
 @push('styles')
-<style>
-    .profile-page {
-        padding: 1.5rem 0;
-    }
-
-    .profile-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e5e7eb;
-        overflow: hidden;
-    }
-
-    .profile-header {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        padding: 2rem;
-        text-align: center;
-    }
-
-    .profile-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 4px solid white;
-        margin: 0 auto 1rem;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-        color: #3b82f6;
-        font-weight: 700;
-    }
-
-    .profile-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .profile-role {
-        opacity: 0.9;
-        font-size: 1rem;
-    }
-
-    .profile-body {
-        padding: 2rem;
-    }
-
-    .info-row {
-        display: flex;
-        padding: 1rem 0;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .info-row:last-child {
-        border-bottom: none;
-    }
-
-    .info-label {
-        font-weight: 600;
-        color: #64748b;
-        width: 200px;
-        flex-shrink: 0;
-    }
-
-    .info-value {
-        color: #1e293b;
-        flex: 1;
-    }
-
-    .password-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e5e7eb;
-        margin-top: 2rem;
-    }
-
-    .password-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-        background: #f8fafc;
-    }
-
-    .password-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .password-body {
-        padding: 2rem;
-    }
-
-    .password-loading {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('assets/admin/css/profile.css') }}">
 @endpush
 
 @section('content')
@@ -126,44 +14,67 @@
     <div class="row g-4">
         {{-- معلومات المستخدم --}}
         <div class="col-12">
-            <div class="profile-card">
-                <div class="profile-header">
-                    <div class="profile-avatar">
-                        {{ strtoupper(substr($user->name, 0, 1)) }}
+            <div class="profile-header-card">
+                <div class="profile-header-bg">
+                    <div class="profile-avatar-wrapper">
+                        <div class="profile-avatar">
+                            @if($user->avatar && file_exists(storage_path('app/public/'.$user->avatar)))
+                                <img src="{{ asset('storage/'.$user->avatar) }}" alt="{{ $user->name }}">
+                            @else
+                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'profile-avatar-initials\'>{{ strtoupper(mb_substr($user->name, 0, 1)) }}</span>'">
+                            @endif
+                        </div>
                     </div>
                     <div class="profile-name">{{ $user->name }}</div>
                     <div class="profile-role">{{ $user->role_name }}</div>
                 </div>
 
-                <div class="profile-body">
-                    <div class="info-row">
-                        <div class="info-label">اسم المستخدم:</div>
-                        <div class="info-value">{{ $user->username ?? 'غير محدد' }}</div>
-                    </div>
+                <div class="profile-info-section">
+                    <div class="profile-info-grid">
+                        <div class="profile-info-item">
+                            <div class="profile-info-label">
+                                <i class="bi bi-person-badge"></i>
+                                اسم المستخدم
+                            </div>
+                            <div class="profile-info-value">{{ $user->username ?? 'غير محدد' }}</div>
+                        </div>
 
-                    <div class="info-row">
-                        <div class="info-label">البريد الإلكتروني:</div>
-                        <div class="info-value">{{ $user->email ?? 'غير محدد' }}</div>
-                    </div>
+                        <div class="profile-info-item">
+                            <div class="profile-info-label">
+                                <i class="bi bi-envelope"></i>
+                                البريد الإلكتروني
+                            </div>
+                            <div class="profile-info-value">{{ $user->email ?? 'غير محدد' }}</div>
+                        </div>
 
-                    @if($user->phone)
-                    <div class="info-row">
-                        <div class="info-label">رقم الموبايل:</div>
-                        <div class="info-value">{{ $user->phone }}</div>
-                    </div>
-                    @endif
+                        @if($user->phone)
+                        <div class="profile-info-item">
+                            <div class="profile-info-label">
+                                <i class="bi bi-phone"></i>
+                                رقم الموبايل
+                            </div>
+                            <div class="profile-info-value">{{ $user->phone }}</div>
+                        </div>
+                        @endif
 
-                    <div class="info-row">
-                        <div class="info-label">الدور:</div>
-                        <div class="info-value">{{ $user->role_name }}</div>
-                    </div>
+                        <div class="profile-info-item">
+                            <div class="profile-info-label">
+                                <i class="bi bi-shield-check"></i>
+                                الدور
+                            </div>
+                            <div class="profile-info-value">{{ $user->role_name }}</div>
+                        </div>
 
-                    <div class="info-row">
-                        <div class="info-label">الحالة:</div>
-                        <div class="info-value">
-                            <span class="badge bg-{{ $user->status === 'active' ? 'success' : 'secondary' }}">
-                                {{ $user->status === 'active' ? 'نشط' : 'غير نشط' }}
-                            </span>
+                        <div class="profile-info-item">
+                            <div class="profile-info-label">
+                                <i class="bi bi-circle-fill"></i>
+                                الحالة
+                            </div>
+                            <div class="profile-info-value">
+                                <span class="badge bg-{{ $user->status === 'active' ? 'success' : 'secondary' }}">
+                                    {{ $user->status === 'active' ? 'نشط' : 'غير نشط' }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -172,60 +83,81 @@
 
         {{-- تغيير كلمة المرور --}}
         <div class="col-12">
-            <div class="password-card position-relative">
-                <div class="password-header">
-                    <h5 class="password-title">
+            <div class="password-change-card position-relative">
+                <div class="password-change-header">
+                    <h5 class="password-change-title">
                         <i class="bi bi-shield-lock"></i>
                         تغيير كلمة المرور
                     </h5>
                 </div>
 
-                <div class="password-body">
+                <div class="password-change-body">
                     <form id="changePasswordForm" action="{{ route('admin.profile.change-password') }}" method="POST">
                         @csrf
                         @method('PUT')
 
                         <div class="row g-3">
                             <div class="col-md-12">
-                                <label class="form-label fw-semibold">كلمة المرور الحالية <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="password" name="current_password" id="current_password" class="form-control"
-                                           placeholder="أدخل كلمة المرور الحالية" required>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('current_password', this)">
-                                        <i class="bi bi-eye" id="eye-icon-current"></i>
-                                    </button>
+                                <div class="password-form-group">
+                                    <label class="password-form-label">
+                                        <i class="bi bi-key"></i>
+                                        كلمة المرور الحالية
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="password-input-group">
+                                        <input type="password" name="current_password" id="current_password" class="form-control"
+                                               placeholder="أدخل كلمة المرور الحالية" required>
+                                        <button class="password-toggle-btn" type="button" onclick="togglePasswordVisibility('current_password', this)">
+                                            <i class="bi bi-eye" id="eye-icon-current"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" id="current_password_error"></div>
                                 </div>
-                                <div class="invalid-feedback" id="current_password_error"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">كلمة المرور الجديدة <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="password" name="new_password" id="new_password" class="form-control"
-                                           placeholder="أدخل كلمة المرور الجديدة" required minlength="6">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('new_password', this)">
-                                        <i class="bi bi-eye" id="eye-icon-new"></i>
-                                    </button>
+                                <div class="password-form-group">
+                                    <label class="password-form-label">
+                                        <i class="bi bi-key-fill"></i>
+                                        كلمة المرور الجديدة
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="password-input-group">
+                                        <input type="password" name="new_password" id="new_password" class="form-control"
+                                               placeholder="أدخل كلمة المرور الجديدة" required minlength="6">
+                                        <button class="password-toggle-btn" type="button" onclick="togglePasswordVisibility('new_password', this)">
+                                            <i class="bi bi-eye" id="eye-icon-new"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        يجب أن تكون كلمة المرور 6 أحرف على الأقل
+                                    </div>
+                                    <div class="invalid-feedback" id="new_password_error"></div>
                                 </div>
-                                <div class="form-text">يجب أن تكون كلمة المرور 6 أحرف على الأقل</div>
-                                <div class="invalid-feedback" id="new_password_error"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">تأكيد كلمة المرور الجديدة <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="password" name="new_password_confirmation" id="new_password_confirmation" class="form-control"
-                                           placeholder="أعد إدخال كلمة المرور الجديدة" required minlength="6">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('new_password_confirmation', this)">
-                                        <i class="bi bi-eye" id="eye-icon-confirm"></i>
-                                    </button>
+                                <div class="password-form-group">
+                                    <label class="password-form-label">
+                                        <i class="bi bi-key-fill"></i>
+                                        تأكيد كلمة المرور الجديدة
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="password-input-group">
+                                        <input type="password" name="new_password_confirmation" id="new_password_confirmation" class="form-control"
+                                               placeholder="أعد إدخال كلمة المرور الجديدة" required minlength="6">
+                                        <button class="password-toggle-btn" type="button" onclick="togglePasswordVisibility('new_password_confirmation', this)">
+                                            <i class="bi bi-eye" id="eye-icon-confirm"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" id="new_password_confirmation_error"></div>
                                 </div>
-                                <div class="invalid-feedback" id="new_password_confirmation_error"></div>
                             </div>
 
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary" id="changePasswordBtn">
-                                    <i class="bi bi-key me-1"></i>
+                                <button type="submit" class="btn btn-primary password-submit-btn" id="changePasswordBtn">
+                                    <i class="bi bi-key"></i>
                                     تغيير كلمة المرور
                                 </button>
                             </div>
@@ -233,11 +165,9 @@
                     </form>
                 </div>
 
-                <div class="password-loading d-none" id="passwordLoading">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <div class="mt-2 text-muted fw-semibold">جاري التحديث...</div>
-                    </div>
+                <div class="password-loading-overlay d-none" id="passwordLoading">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="text-muted mt-2">جاري التحديث...</div>
                 </div>
             </div>
         </div>

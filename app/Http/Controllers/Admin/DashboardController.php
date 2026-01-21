@@ -241,8 +241,20 @@ class DashboardController extends Controller
     private function getCompanyOwnerStats($user, ?array $operatorIds, ?array $generatorIds): array
     {
         $ownedOperators = $user->ownedOperators;
+        $operatorIdsArray = $ownedOperators->pluck('id')->toArray();
+        
+        // Count generation units
+        $generationUnitsTotal = GenerationUnit::whereIn('operator_id', $operatorIdsArray)->count();
+        $generationUnitsActive = GenerationUnit::whereIn('operator_id', $operatorIdsArray)
+            ->whereHas('statusDetail', function($q) {
+                $q->where('code', 'ACTIVE');
+            })->count();
         
         return [
+            'generation_units' => [
+                'total' => $generationUnitsTotal,
+                'active' => $generationUnitsActive,
+            ],
             'operators' => [
                 'total' => $ownedOperators->count(),
                 'active' => $ownedOperators->where('status', 'active')->count(),

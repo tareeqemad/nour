@@ -12,85 +12,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
-<style>
-    /* Message Cards Styles */
-    .messages-page .msg-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    .messages-page .msg-row {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1.25rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .messages-page .msg-row:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transform: translateY(-2px);
-    }
-    .messages-page .msg-row.msg-unread {
-        background: linear-gradient(135deg, #e7f3ff 0%, #d0e7ff 100%);
-        border-left: 4px solid #3b82f6;
-    }
-    .messages-page .msg-row-main {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    .messages-page .msg-row-content {
-        flex: 1;
-    }
-    .messages-page .msg-row-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    .messages-page .msg-row-title {
-        display: flex;
-        align-items: center;
-        font-size: 1.1rem;
-        font-weight: 600;
-    }
-    .messages-page .msg-row-meta {
-        display: flex;
-        gap: 0.5rem;
-    }
-    .messages-page .msg-row-details {
-        margin-top: 0.75rem;
-    }
-    .messages-page .msg-detail-item {
-        display: flex;
-        align-items: center;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-    .messages-page .msg-detail-item i {
-        width: 20px;
-    }
-    .messages-page .msg-preview {
-        padding-top: 0.5rem;
-        border-top: 1px solid #e9ecef;
-        margin-top: 0.5rem;
-    }
-    .messages-page .msg-row-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-shrink: 0;
-    }
-    .messages-page .msg-empty-state {
-        padding: 3rem 1rem;
-    }
-    .messages-page .msg-pagination {
-        display: flex;
-        justify-content: center;
-        margin-top: 2rem;
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('assets/admin/css/messages-list.css') }}">
 @endpush
 
 @section('content')
@@ -117,8 +39,28 @@
                 </div>
 
                 <div class="card-body">
-                    {{-- فلاتر البحث --}}
-                    <div class="filter-card">
+                    {{-- التابات --}}
+                    <ul class="nav nav-tabs mb-3" id="messagesTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="inbox-tab" data-bs-toggle="tab" data-bs-target="#inbox" type="button" role="tab" aria-controls="inbox" aria-selected="true">
+                                <i class="bi bi-inbox me-1"></i>
+                                الوارد
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab" aria-controls="archived" aria-selected="false">
+                                <i class="bi bi-archive me-1"></i>
+                                المؤرشفة
+                            </button>
+                        </li>
+                    </ul>
+
+                    {{-- محتوى التابات --}}
+                    <div class="tab-content" id="messagesTabContent">
+                        {{-- تاب الوارد --}}
+                        <div class="tab-pane fade show active" id="inbox" role="tabpanel" aria-labelledby="inbox-tab">
+                            {{-- فلاتر البحث --}}
+                            <div class="filter-card">
                         <div class="card-header">
                             <h6 class="card-title">
                                 <i class="bi bi-funnel me-2"></i>
@@ -196,16 +138,120 @@
                         </div>
                     </div>
 
-                    <hr class="my-3">
+                            <hr class="my-3">
 
-                    {{-- قائمة الرسائل --}}
-                    <div id="messagesLoadingOverlay" class="data-table-loading" style="display:none;">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2 text-muted">جاري التحميل...</p>
-                    </div>
+                            {{-- قائمة الرسائل --}}
+                            <div style="position: relative; min-height: 200px;">
+                                <div id="messagesLoadingOverlay" class="data-table-loading" style="display:none;">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                    <p class="mt-2 text-muted">جاري التحميل...</p>
+                                </div>
 
-                    <div id="messagesListContainer">
-                        @include('admin.messages.partials.tbody-rows', ['messages' => $messages])
+                                <div id="messagesListContainer">
+                                    @include('admin.messages.partials.tbody-rows', ['messages' => $messages])
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- تاب المؤرشفة --}}
+                        <div class="tab-pane fade" id="archived" role="tabpanel" aria-labelledby="archived-tab">
+                            {{-- فلاتر البحث للمؤرشفة --}}
+                            <div class="filter-card">
+                                <div class="card-header">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-funnel me-2"></i>
+                                        فلاتر البحث
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        {{-- البحث --}}
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-search me-1"></i>
+                                                البحث
+                                            </label>
+                                            <div class="general-search">
+                                                <i class="bi bi-search"></i>
+                                                <input
+                                                    type="text"
+                                                    id="archivedSearchInput"
+                                                    class="form-control"
+                                                    placeholder="ابحث في الموضوع أو المحتوى..."
+                                                    value="{{ request('search', '') }}"
+                                                >
+                                                @if(request('search'))
+                                                    <button type="button" class="general-clear" id="btnClearArchivedSearch" title="إلغاء البحث">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        {{-- نوع الرسالة --}}
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-tag me-1"></i>
+                                                نوع الرسالة
+                                            </label>
+                                            <select id="archivedTypeFilter" class="form-select">
+                                                <option value="">كل الأنواع</option>
+                                                <option value="operator_to_operator" {{ request('type') == 'operator_to_operator' ? 'selected' : '' }}>مشغل لمشغل</option>
+                                                <option value="operator_to_staff" {{ request('type') == 'operator_to_staff' ? 'selected' : '' }}>مشغل لموظفين</option>
+                                                @if($isSuperAdmin || $isAdmin)
+                                                    <option value="admin_to_operator" {{ request('type') == 'admin_to_operator' ? 'selected' : '' }}>أدمن لمشغل</option>
+                                                    <option value="admin_to_all" {{ request('type') == 'admin_to_all' ? 'selected' : '' }}>أدمن للجميع</option>
+                                                @endif
+                                            </select>
+                                        </div>
+
+                                        {{-- الحالة --}}
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">
+                                                <i class="bi bi-eye me-1"></i>
+                                                الحالة
+                                            </label>
+                                            <select id="archivedReadStatusFilter" class="form-select">
+                                                <option value="">الكل</option>
+                                                <option value="0" {{ request('is_read') === '0' ? 'selected' : '' }}>غير مقروء</option>
+                                                <option value="1" {{ request('is_read') === '1' ? 'selected' : '' }}>مقروء</option>
+                                            </select>
+                                        </div>
+
+                                        {{-- أزرار البحث والتفريغ --}}
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <div class="d-flex gap-2 w-100">
+                                                <button type="button" id="archivedSearchBtn" class="btn btn-primary flex-fill">
+                                                    <i class="bi bi-search me-1"></i>
+                                                    بحث
+                                                </button>
+                                                <button type="button" id="clearArchivedFiltersBtn" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- قائمة الرسائل المؤرشفة --}}
+                            <div style="position: relative; min-height: 200px;">
+                                <div id="archivedMessagesLoadingOverlay" class="data-table-loading" style="display:none;">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                    <p class="mt-2 text-muted">جاري التحميل...</p>
+                                </div>
+
+                                <div id="archivedMessagesListContainer">
+                                    <div class="msg-empty-state text-center py-5">
+                                        <i class="bi bi-archive fs-1 text-muted d-block mb-3"></i>
+                                        <h5 class="text-muted">لا توجد رسائل مؤرشفة</h5>
+                                        <p class="text-muted">سيتم عرض الرسائل المؤرشفة هنا</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -230,10 +276,14 @@
         search: '',
         type: '',
         is_read: '',
+        archived: false,
     };
 
     function loadMessages() {
-        $('#messagesLoadingOverlay').show();
+        const loadingOverlay = state.archived ? '#archivedMessagesLoadingOverlay' : '#messagesLoadingOverlay';
+        const container = state.archived ? '#archivedMessagesListContainer' : '#messagesListContainer';
+        
+        $(loadingOverlay).show();
         
         $.ajax({
             url: indexUrl,
@@ -242,21 +292,21 @@
                 search: state.search,
                 type: state.type,
                 is_read: state.is_read,
+                archived: state.archived ? 1 : 0,
                 ajax: 1,
                 page: state.page,
             },
             success: function(response) {
                 if (response.html) {
-                    $container.html(response.html);
+                    $(container).html(response.html);
                 }
                 if (response.pagination) {
-                    // Update pagination if needed
-                    const $pagination = $container.find('.msg-pagination');
+                    const $pagination = $(container).find('.msg-pagination');
                     if ($pagination.length) {
                         $pagination.html(response.pagination);
                     }
                 }
-                if (response.count !== undefined) {
+                if (response.count !== undefined && !state.archived) {
                     $count.text(response.count);
                 }
             },
@@ -265,13 +315,34 @@
                 console.error('Error loading messages:', xhr);
             },
             complete: function() {
-                $('#messagesLoadingOverlay').hide();
+                $(loadingOverlay).hide();
             }
         });
     }
 
-    // Search button
+    // Tab switching
+    $('#inbox-tab, #archived-tab').on('shown.bs.tab', function(e) {
+        const isArchived = $(e.target).attr('id') === 'archived-tab';
+        state.archived = isArchived;
+        state.page = 1;
+        
+        // Update search inputs based on active tab
+        if (isArchived) {
+            state.search = $('#archivedSearchInput').val();
+            state.type = $('#archivedTypeFilter').val();
+            state.is_read = $('#archivedReadStatusFilter').val();
+        } else {
+            state.search = $('#searchInput').val();
+            state.type = $('#typeFilter').val();
+            state.is_read = $('#readStatusFilter').val();
+        }
+        
+        loadMessages();
+    });
+
+    // Search button (Inbox)
     $('#searchBtn').on('click', function() {
+        state.archived = false;
         state.search = $('#searchInput').val();
         state.type = $('#typeFilter').val();
         state.is_read = $('#readStatusFilter').val();
@@ -279,8 +350,19 @@
         loadMessages();
     });
 
-    // Clear filters
+    // Search button (Archived)
+    $('#archivedSearchBtn').on('click', function() {
+        state.archived = true;
+        state.search = $('#archivedSearchInput').val();
+        state.type = $('#archivedTypeFilter').val();
+        state.is_read = $('#archivedReadStatusFilter').val();
+        state.page = 1;
+        loadMessages();
+    });
+
+    // Clear filters (Inbox)
     $('#clearFiltersBtn').on('click', function() {
+        state.archived = false;
         $('#searchInput').val('');
         $('#typeFilter').val('');
         $('#readStatusFilter').val('');
@@ -291,18 +373,48 @@
         loadMessages();
     });
 
-    // Clear search button
+    // Clear filters (Archived)
+    $('#clearArchivedFiltersBtn').on('click', function() {
+        state.archived = true;
+        $('#archivedSearchInput').val('');
+        $('#archivedTypeFilter').val('');
+        $('#archivedReadStatusFilter').val('');
+        state.search = '';
+        state.type = '';
+        state.is_read = '';
+        state.page = 1;
+        loadMessages();
+    });
+
+    // Clear search button (Inbox)
     $('#btnClearSearch').on('click', function() {
+        state.archived = false;
         $('#searchInput').val('');
         state.search = '';
         state.page = 1;
         loadMessages();
     });
 
-    // Enter key in search
+    // Clear search button (Archived)
+    $('#btnClearArchivedSearch').on('click', function() {
+        state.archived = true;
+        $('#archivedSearchInput').val('');
+        state.search = '';
+        state.page = 1;
+        loadMessages();
+    });
+
+    // Enter key in search (Inbox)
     $('#searchInput').on('keypress', function(e) {
         if (e.which === 13) {
             $('#searchBtn').click();
+        }
+    });
+
+    // Enter key in search (Archived)
+    $('#archivedSearchInput').on('keypress', function(e) {
+        if (e.which === 13) {
+            $('#archivedSearchBtn').click();
         }
     });
 
@@ -318,12 +430,12 @@
         }
     });
 
-    // Delete message
+    // Archive message
     $(document).on('click', '.btn-delete-message', function() {
         const id = $(this).data('id');
         const url = $(this).data('url');
         
-        if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
+        if (!confirm('هل أنت متأكد من أرشفة هذه الرسالة؟')) {
             return;
         }
 
@@ -334,7 +446,7 @@
             dataType: 'json',
             success: function(resp) {
                 if (resp.success) {
-                    AdminCRUD.notify('success', resp.message || 'تم حذف الرسالة بنجاح');
+                    AdminCRUD.notify('success', resp.message || 'تم أرشفة الرسالة بنجاح');
                     loadMessages();
                     // Refresh messages panel
                     if (window.MessagesPanel) {
@@ -346,7 +458,7 @@
             error: function(xhr) {
                 const msg = (xhr.responseJSON && xhr.responseJSON.message)
                     ? xhr.responseJSON.message
-                    : 'تعذر حذف الرسالة';
+                    : 'تعذر أرشفة الرسالة';
                 AdminCRUD.notify('error', msg);
             }
         });

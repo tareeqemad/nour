@@ -9,8 +9,18 @@
                         مرحباً بك {{ auth()->user()->name }} 👋
                     </h2>
                     <p class="dashboard-welcome-subtitle">
+                        <i class="bi bi-calendar3 me-2"></i>
                         {{ now('Asia/Gaza')->locale('ar')->translatedFormat('l، d F Y') }}
                     </p>
+                    @php
+                        $operator = auth()->user()->ownedOperators->first();
+                    @endphp
+                    @if($operator)
+                        <p class="dashboard-welcome-operator mt-2 mb-0">
+                            <i class="bi bi-building me-2"></i>
+                            <strong>{{ $operator->name }}</strong>
+                        </p>
+                    @endif
                 </div>
                 <div class="dashboard-welcome-time">
                     <div class="dashboard-time-value">{{ now('Asia/Gaza')->format('H:i') }}</div>
