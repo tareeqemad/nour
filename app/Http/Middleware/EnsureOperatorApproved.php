@@ -46,6 +46,8 @@ class EnsureOperatorApproved
             'admin.generation-units.update',
             'admin.generation-units.qr-code',
             'admin.generation-units.generators-list', // API route for getting generators list (needed for filters)
+            'admin.territories.all', // API route for getting all territories (needed for map display)
+            'admin.territories.check', // API route for checking territory availability (needed for location validation)
             'admin.generators.index',
             'admin.generators.create',
             'admin.generators.store',

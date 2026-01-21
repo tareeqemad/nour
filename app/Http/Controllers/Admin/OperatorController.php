@@ -204,7 +204,7 @@ class OperatorController extends Controller
                     $operator->owner_id,
                     'operator_activated',
                     'تم تفعيل حسابك',
-                    "تم تفعيل حسابك في منصة راصد. يمكنك الآن الوصول للنظام.",
+                    "تم تفعيل حسابك في منصة " . \App\Models\Setting::get('site_name', 'نور') . ". يمكنك الآن الوصول للنظام.",
                     route('admin.operators.profile')
                 );
             }
@@ -217,7 +217,10 @@ class OperatorController extends Controller
             }
             $operator->users()->update(['status' => 'inactive']);
             
-            // الحصول على system user (منصة راصد) لإرسال الرسائل منه
+            // Get site name from settings
+            $siteName = \App\Models\Setting::get('site_name', 'نور');
+            
+            // الحصول على system user (منصة نور) لإرسال الرسائل منه
             $systemUser = \App\Models\User::where('username', 'platform_rased')->first();
             
             if ($systemUser) {
@@ -228,7 +231,7 @@ class OperatorController extends Controller
                         'receiver_id' => $operator->owner_id,
                         'operator_id' => $operator->id,
                         'subject' => 'تم إيقاف حسابك',
-                        'body' => "عزيزي/عزيزتي {$operator->owner->name}،\n\nنود إعلامك بأنه تم إيقاف حسابك في منصة راصد.\n\nلن تتمكن من الوصول للنظام حتى يتم تفعيل حسابك مرة أخرى من قبل سلطة الطاقة.\n\nإذا كان لديك أي استفسار، يرجى التواصل معنا.",
+                        'body' => "عزيزي/عزيزتي {$operator->owner->name}،\n\nنود إعلامك بأنه تم إيقاف حسابك في منصة {$siteName}.\n\nلن تتمكن من الوصول للنظام حتى يتم تفعيل حسابك مرة أخرى من قبل سلطة الطاقة.\n\nإذا كان لديك أي استفسار، يرجى التواصل معنا.",
                         'type' => 'admin_to_operator',
                         'is_read' => false,
                     ]);
@@ -238,7 +241,7 @@ class OperatorController extends Controller
                         $operator->owner_id,
                         'operator_deactivated',
                         'تم إيقاف حسابك',
-                        "تم إيقاف حسابك في منصة راصد. لن تتمكن من الوصول للنظام حتى يتم تفعيل حسابك مرة أخرى.",
+                        "تم إيقاف حسابك في منصة {$siteName}. لن تتمكن من الوصول للنظام حتى يتم تفعيل حسابك مرة أخرى.",
                         route('admin.operators.profile')
                     );
                 }
@@ -317,9 +320,12 @@ class OperatorController extends Controller
 
         if ($operator->is_approved) {
             // عند الاعتماد: إرسال رسالة وإشعار للمشغل
+            // Get site name from settings
+            $siteName = \App\Models\Setting::get('site_name', 'نور');
+            
             // الرسالة دائماً تظهر "من سلطة الطاقة" بغض النظر عن من قام بالاعتماد
             if ($operator->owner) {
-                // الحصول على system user (منصة راصد) لإرسال الرسالة منه
+                // الحصول على system user (منصة نور) لإرسال الرسالة منه
                 $systemUser = \App\Models\User::where('username', 'platform_rased')->first();
                 
                 if ($systemUser) {
@@ -329,7 +335,7 @@ class OperatorController extends Controller
                         'receiver_id' => $operator->owner_id,
                         'operator_id' => $operator->id,
                         'subject' => 'تم اعتماد حسابك من قبل سلطة الطاقة',
-                        'body' => "عزيزي/عزيزتي {$operator->owner->name}،\n\nنود إعلامك بأنه تم اعتماد حسابك في منصة راصد من قبل سلطة الطاقة.\n\nيمكنك الآن الوصول لجميع خصائص النظام:\n- إضافة موظفين وفنيين\n- إدارة الصلاحيات\n- إدارة الشجرة\n- الوصول لجميع السجلات\n\nنتمنى لك تجربة ممتعة مع منصة راصد.",
+                        'body' => "عزيزي/عزيزتي {$operator->owner->name}،\n\nنود إعلامك بأنه تم اعتماد حسابك في منصة {$siteName} من قبل سلطة الطاقة.\n\nيمكنك الآن الوصول لجميع خصائص النظام:\n- إضافة موظفين وفنيين\n- إدارة الصلاحيات\n- إدارة الشجرة\n- الوصول لجميع السجلات\n\nنتمنى لك تجربة ممتعة مع منصة {$siteName}.",
                         'type' => 'admin_to_operator',
                         'is_read' => false,
                     ]);
@@ -340,7 +346,7 @@ class OperatorController extends Controller
                     $operator->owner_id,
                     'operator_approved',
                     'تم اعتماد حسابك من قبل سلطة الطاقة',
-                    "تم اعتماد حسابك في منصة راصد من قبل سلطة الطاقة. يمكنك الآن الوصول لجميع خصائص النظام.",
+                    "تم اعتماد حسابك في منصة {$siteName} من قبل سلطة الطاقة. يمكنك الآن الوصول لجميع خصائص النظام.",
                     route('admin.operators.profile')
                 );
             }

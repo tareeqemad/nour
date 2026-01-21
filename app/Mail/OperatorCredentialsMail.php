@@ -28,8 +28,9 @@ class OperatorCredentialsMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
         return new Envelope(
-            subject: 'بيانات تسجيل الدخول - نظام راصد',
+            subject: 'بيانات تسجيل الدخول - نظام ' . $siteName,
         );
     }
 

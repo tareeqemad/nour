@@ -11,7 +11,7 @@
                 <div class="horizontal-logo">
                     <a href="{{ route('admin.dashboard') }}" class="header-logo">
                         @php
-                            $logo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/rased_logo.png');
+                            $logo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/nour_logo.png');
                             $logoUrl = str_starts_with($logo, 'http') ? $logo : asset($logo);
                         @endphp
                         <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'نور') }}" class="desktop-logo">

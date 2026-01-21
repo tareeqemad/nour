@@ -89,7 +89,7 @@ class SettingsSeeder extends Seeder
 
         $logoAndFavicon = [
             'site_logo' => [
-                'value' => 'assets/admin/images/brand-logos/rased_logo.png',
+                'value' => 'assets/admin/images/brand-logos/nour_logo.png',
                 'label' => 'لوجو الموقع',
                 'description' => 'لوجو الموقع الرئيسي',
             ],

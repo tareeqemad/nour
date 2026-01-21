@@ -119,11 +119,11 @@ class UserSeeder extends Seeder
         // تعيين الصلاحيات تلقائياً
         $superAdmin3->assignDefaultPermissions();
 
-        // 4. System User - منصة راصد (for system messages)
+        // 4. System User - منصة نور (for system messages)
         $systemUser = User::updateOrCreate(
             ['username' => 'platform_rased'],
             [
-                'name' => 'منصة راصد',
+                'name' => 'منصة نور',
                 'name_en' => 'Rased Platform',
                 'email' => 'platform@gazarased.com',
                 'username' => 'platform_rased',

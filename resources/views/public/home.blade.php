@@ -6,7 +6,7 @@
 @section('title', 'خريطة المشغلين - ' . $siteName)
 
 @push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{{ asset('assets/leaflet/leaflet.css') }}" />
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
@@ -655,7 +655,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ asset('assets/leaflet/leaflet.js') }}"></script>
 <script>
         // إحداثيات قطاع غزة الافتراضية (لإظهار القطاع كاملاً)
         const defaultLat = 31.3547;
@@ -806,8 +806,8 @@
                     // دالة لإنشاء أيقونة Leaflet بألوان مختلفة
                     function createColoredIcon(color) {
                         return L.icon({
-                            iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                            iconUrl: `${markerIconsBase}/marker-icon-2x-${color}.png`,
+                            shadowUrl: markerShadowPath,
                             iconSize: [25, 41],
                             iconAnchor: [12, 41],
                             popupAnchor: [1, -34],

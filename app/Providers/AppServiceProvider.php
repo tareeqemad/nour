@@ -73,11 +73,11 @@ class AppServiceProvider extends ServiceProvider
         // Share settings to all views and clean UTF-8 data globally
         View::composer('*', function ($view) {
             try {
-                $siteName = \App\Models\Setting::get('site_name', 'راصد');
+                $siteName = \App\Models\Setting::get('site_name', 'نور');
                 // Clean siteName to ensure valid UTF-8
                 $siteName = self::cleanStringStatic($siteName);
             } catch (\Exception $e) {
-                $siteName = 'راصد';
+                $siteName = 'نور';
             }
             $view->with(['siteName' => $siteName]);
 
@@ -149,12 +149,12 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $logoPath = \App\Models\Setting::get('site_logo');
                 $logoUrl = $logoPath ? asset($logoPath) : null;
-                $siteName = \App\Models\Setting::get('site_name', 'راصد');
+                $siteName = \App\Models\Setting::get('site_name', 'نور');
                 // Clean siteName to ensure valid UTF-8
                 $siteName = self::cleanStringStatic($siteName);
             } catch (\Exception $e) {
                 $logoUrl = null;
-                $siteName = 'راصد';
+                $siteName = 'نور';
             }
             $view->with(['logoUrl' => $logoUrl, 'siteName' => $siteName]);
         });

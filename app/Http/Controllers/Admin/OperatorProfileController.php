@@ -76,6 +76,7 @@ class OperatorProfileController extends Controller
                 'owner_name' => $data['owner_name'] ?? '',
                 'owner_id_number' => $data['owner_id_number'] ?? '',
                 'operator_id_number' => $data['operator_id_number'] ?? '',
+                'territory_radius_km' => $data['territory_radius_km'] ?? 50.0,
                 'phone' => $user->phone,
                 'profile_completed' => $isComplete,
                 'is_approved' => false, // المشغل الجديد غير معتمد

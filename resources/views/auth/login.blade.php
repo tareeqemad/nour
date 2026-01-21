@@ -900,7 +900,7 @@
             <div class="form-content">
                 <div class="logo-mini">
                     @php
-                        $logo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/rased_logo.png');
+                        $logo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/nour_logo.png');
                         $logoUrl = str_starts_with($logo, 'http') ? $logo : asset($logo);
                     @endphp
                     <img src="{{ $logoUrl }}" alt="{{ \App\Models\Setting::get('site_name', 'نور') }}" style="max-height: 250px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">

@@ -681,7 +681,7 @@ class PermissionsController extends Controller
         $query = User::query()
             ->select(['id', 'name', 'username', 'email', 'role', 'role_id'])
             ->where('id', '!=', $authUser->id)
-            ->where('username', '!=', 'platform_rased'); // Exclude system user
+            ->where('username', '!=', 'platform_rased'); // Exclude system user (منصة نور)
 
         if ($authUser->isSuperAdmin()) {
             // SuperAdmin: البحث بالدور النظامي

@@ -177,6 +177,12 @@
                                 تعديل
                             </a>
                         @endcan
+                        @can('transfer', $generator)
+                            <a href="{{ route('admin.generators.transfer', $generator) }}" class="btn btn-warning">
+                                <i class="bi bi-arrow-left-right me-1"></i>
+                                نقل لمشغل آخر
+                            </a>
+                        @endcan
                         @can('delete', $generator)
                             @php
                                 $deletionCheck = $generator->canBeDeleted();

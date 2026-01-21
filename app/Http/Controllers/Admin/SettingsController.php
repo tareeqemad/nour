@@ -47,7 +47,7 @@ class SettingsController extends Controller
         // Handle logo upload
         if ($request->hasFile('logo')) {
             $logo = $request->file('logo');
-            $logoName = 'rased_logo.' . $logo->getClientOriginalExtension();
+            $logoName = 'nour_logo.' . $logo->getClientOriginalExtension();
             
             // Copy to public directory
             $publicPath = public_path('assets/admin/images/brand-logos');

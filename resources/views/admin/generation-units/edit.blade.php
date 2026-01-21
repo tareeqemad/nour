@@ -9,7 +9,24 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ asset('assets/leaflet/leaflet.css') }}" />
+    <style>
+        .territory-popup-own {
+            border-left: 4px solid #28a745;
+        }
+        .territory-popup-other {
+            border-left: 4px solid #dc3545;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+        }
+        .leaflet-popup-content {
+            margin: 15px;
+        }
+        #territoryLegend {
+            font-size: 13px;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -246,7 +263,8 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-md-6">
+                                    {{-- العنوان التفصيلي، الإحداثيات، ونصف القطر في صف واحد --}}
+                                    <div class="col-md-4">
                                         <label class="form-label fw-semibold">العنوان التفصيلي <span class="text-danger">*</span></label>
                                         <input type="text" name="detailed_address" class="form-control @error('detailed_address') is-invalid @enderror"
                                                value="{{ old('detailed_address', $generationUnit->detailed_address) }}" required>
@@ -255,28 +273,132 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">تحديد الموقع على الخريطة <span class="text-danger">*</span></label>
-                                        <div id="map" class="op-map"></div>
-                                        <div class="form-text">اضغط على الخريطة لتحديد الموقع.</div>
-                                    </div>
-
-                                    <div class="col-md-6">
+                                    <div class="col-md-2">
                                         <label class="form-label fw-semibold">Latitude <span class="text-danger">*</span></label>
                                         <input type="number" step="0.00000001" name="latitude" id="latitude" class="form-control @error('latitude') is-invalid @enderror"
-                                               value="{{ old('latitude', $generationUnit->latitude) }}" required>
+                                               value="{{ old('latitude', $generationUnit->latitude) }}" readonly required>
                                         @error('latitude')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
-                                    <div class="col-md-6">
+                                    <div class="col-md-2">
                                         <label class="form-label fw-semibold">Longitude <span class="text-danger">*</span></label>
                                         <input type="number" step="0.00000001" name="longitude" id="longitude" class="form-control @error('longitude') is-invalid @enderror"
-                                               value="{{ old('longitude', $generationUnit->longitude) }}" required>
+                                               value="{{ old('longitude', $generationUnit->longitude) }}" readonly required>
                                         @error('longitude')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-tag me-1"></i>
+                                            اسم المنطقة <span class="text-danger">*</span>
+                                        </label>
+                                        @php
+                                            // الحصول على اسم المنطقة من آخر territory لهذه الوحدة
+                                            $currentTerritoryName = '';
+                                            if ($generationUnit->operator) {
+                                                $lastTerritory = $generationUnit->operator->territories()
+                                                    ->where('center_latitude', $generationUnit->latitude)
+                                                    ->where('center_longitude', $generationUnit->longitude)
+                                                    ->latest()
+                                                    ->first();
+                                                if ($lastTerritory) {
+                                                    $currentTerritoryName = $lastTerritory->name;
+                                                }
+                                            }
+                                        @endphp
+                                        <input type="text" name="territory_name" id="territory_name" 
+                                               class="form-control @error('territory_name') is-invalid @enderror"
+                                               value="{{ old('territory_name', $currentTerritoryName) }}" 
+                                               placeholder="مثال: منطقة الشمال"
+                                               maxlength="255" required>
+                                        @error('territory_name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="form-text text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            أدخل اسماً مميزاً للمنطقة الجغرافية التي تريد حجزها.
+                                        </small>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-rulers me-1"></i>
+                                            مساحة المنطقة (كم²) <span class="text-danger">*</span>
+                                        </label>
+                                        @php
+                                            // الحصول على نصف القطر من آخر territory لهذه الوحدة، أو من المشغل
+                                            $currentRadius = 5;
+                                            if ($generationUnit->operator) {
+                                                $lastTerritory = $generationUnit->operator->territories()
+                                                    ->where('center_latitude', $generationUnit->latitude)
+                                                    ->where('center_longitude', $generationUnit->longitude)
+                                                    ->latest()
+                                                    ->first();
+                                                if ($lastTerritory) {
+                                                    $currentRadius = $lastTerritory->radius_km;
+                                                } else {
+                                                    $currentRadius = $generationUnit->operator->territory_radius_km ?? 5;
+                                                }
+                                            }
+                                            // حساب المساحة من نصف القطر: مساحة = π × r²
+                                            $currentArea = M_PI * $currentRadius * $currentRadius;
+                                            // إذا لم تكن هناك territory موجودة أو المساحة غير صحيحة، استخدم القيمة الافتراضية 5 كم²
+                                            if (!$lastTerritory || $currentArea <= 0) {
+                                                $currentArea = 5;
+                                            }
+                                        @endphp
+                                        <input type="number" step="0.1" name="territory_area_km2" id="territory_area_km2" 
+                                               class="form-control @error('territory_area_km2') is-invalid @enderror"
+                                               value="{{ old('territory_area_km2', $currentArea ?? 5) }}" 
+                                               min="0.1" max="360" required>
+                                        @error('territory_area_km2')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="form-text text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            حدد المساحة الجغرافية التي تريد حجزها (0.1 - 360 كم²). مساحة قطاع غزة الكلية: 360 كم².
+                                        </small>
+                                        <input type="hidden" name="territory_radius_km" id="territory_radius_km" value="{{ $currentRadius }}">
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">تحديد الموقع على الخريطة <span class="text-danger">*</span></label>
+                                        <div class="d-flex gap-2 mb-2 flex-wrap align-items-center">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="loadTerritoriesBtn">
+                                                <i class="bi bi-map me-1"></i>
+                                                عرض المناطق الجغرافية
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="clearTerritoriesBtn" style="display: none;">
+                                                <i class="bi bi-x-circle me-1"></i>
+                                                إخفاء المناطق
+                                            </button>
+                                            <div id="territoryLegend" class="ms-auto d-none" style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                                <div class="d-flex gap-3 align-items-center flex-wrap">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div style="width: 20px; height: 20px; background: #28a745; border: 2px solid #28a745; border-radius: 50%;"></div>
+                                                        <small class="fw-semibold">مناطقك</small>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div style="width: 20px; height: 20px; background: #dc3545; border: 2px solid #dc3545; border-radius: 50%;"></div>
+                                                        <small class="fw-semibold">محجوزة لمشغل آخر</small>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div style="width: 20px; height: 20px; background: #ffc107; border: 2px solid #ffc107; border-radius: 50%;"></div>
+                                                        <small class="fw-semibold">موقعك المحدد</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="territoryAlert" class="alert d-none mb-2"></div>
+                                        <div id="map" class="op-map" style="position: relative;"></div>
+                                        <div class="form-text mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            اضغط على الخريطة لتحديد الموقع. سيتم التحقق تلقائياً من توفر الموقع. المناطق الخضراء مملوكة لك، والحمراء محجوزة لمشغلين آخرين.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -440,12 +562,6 @@
                     </form>
                 </div>
 
-                <div class="data-table-loading d-none" id="loading">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status"></div>
-                        <div class="mt-2 text-muted fw-semibold">جاري الحفظ...</div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -453,7 +569,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ asset('assets/leaflet/leaflet.js') }}"></script>
 <script src="{{ asset('assets/admin/js/general-helpers.js') }}"></script>
 <script>
 (function () {
@@ -467,11 +583,20 @@
 
     const form = document.getElementById('generationUnitForm');
     const saveBtn = document.getElementById('saveBtn');
-    const loading = document.getElementById('loading');
 
+    /**
+     * Set loading state on save button
+     * @param {boolean} on - Whether loading is active
+     */
     function setLoading(on) {
-        loading.classList.toggle('d-none', !on);
         saveBtn.disabled = on;
+        if (on) {
+            // Add spinner to button
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>جاري الحفظ...';
+        } else {
+            // Restore original button content
+            saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>حفظ';
+        }
     }
 
     function clearErrors() {
@@ -683,7 +808,6 @@
         if (operatorIdNumberLabel) {
             if (!operatorIdNumberLabel.innerHTML.includes('<span class="text-danger">*</span>')) {
                 operatorIdNumberLabel.innerHTML = 'رقم هوية المشغل <span class="text-danger">*</span>';
-            }
         }
         }
         if (phoneInput) {
@@ -836,13 +960,177 @@
         }
     });
 
-    // ====== Map (lazy init when tab opens) ======
+    // ====== Protect Latitude and Longitude fields from readonly removal ======
+    (function() {
+        const latInput = document.getElementById('latitude');
+        const lngInput = document.getElementById('longitude');
+
+        /**
+         * Enforce readonly attribute on latitude and longitude fields
+         */
+        function enforceReadonly() {
+            if (latInput && !latInput.hasAttribute('readonly')) {
+                latInput.setAttribute('readonly', 'readonly');
+            }
+            if (lngInput && !lngInput.hasAttribute('readonly')) {
+                lngInput.setAttribute('readonly', 'readonly');
+            }
+        }
+
+        // Monitor field changes
+        if (latInput) {
+            // Use MutationObserver to monitor readonly attribute changes
+            const latObserver = new MutationObserver(enforceReadonly);
+            latObserver.observe(latInput, {
+                attributes: true,
+                attributeFilter: ['readonly']
+            });
+
+            // Protect from readonly removal via Object.defineProperty
+            Object.defineProperty(latInput, 'readOnly', {
+                get: function() { return true; },
+                set: function() { enforceReadonly(); }
+            });
+        }
+
+        if (lngInput) {
+            const lngObserver = new MutationObserver(enforceReadonly);
+            lngObserver.observe(lngInput, {
+                attributes: true,
+                attributeFilter: ['readonly']
+            });
+
+            Object.defineProperty(lngInput, 'readOnly', {
+                get: function() { return true; },
+                set: function() { enforceReadonly(); }
+            });
+        }
+
+        // Enable protection on page load
+        document.addEventListener('DOMContentLoaded', enforceReadonly);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', enforceReadonly);
+        } else {
+            enforceReadonly();
+        }
+
+        // Periodic monitoring to ensure readonly is always present
+        setInterval(enforceReadonly, 1000);
+    })();
+
+    // ====== Interactive Map Module (Lazy Initialization) ======
     let mapInited = false;
     let map, marker;
+    let territories = [];
+    let territoryCircles = [];
+    let currentOperatorId = {{ $generationUnit->operator_id }};
+    let previewCircle = null; // Preview circle for selected location
+    let operatorRadiusKm = 5; // Default radius in kilometers
+    const territoryAreaInput = document.getElementById('territory_area_km2');
+    const territoryRadiusInput = document.getElementById('territory_radius_km');
+    
+    /**
+     * Calculate radius from area using circle area formula: r = √(Area / π)
+     * @param {number} areaKm2 - Area in square kilometers
+     * @returns {number} Radius in kilometers
+     */
+    function calculateRadiusFromArea(areaKm2) {
+        if (!areaKm2 || areaKm2 <= 0) return 0;
+        return Math.sqrt(areaKm2 / Math.PI);
+    }
+    
+    /**
+     * Get radius from input field (calculated from area)
+     * @returns {number} Radius in kilometers
+     */
+    function getRadiusFromInput() {
+        if (territoryAreaInput && territoryAreaInput.value) {
+            const area = parseFloat(territoryAreaInput.value);
+            if (!isNaN(area) && area > 0) {
+                const radius = calculateRadiusFromArea(area);
+                // Update hidden input for form submission
+                if (territoryRadiusInput) {
+                    territoryRadiusInput.value = radius.toFixed(8);
+                }
+                return radius;
+            }
+        }
+        return operatorRadiusKm; // Return default value
+    }
+    
+    /**
+     * Update preview circle based on area input value
+     * Automatically recalculates radius and redraws circle
+     */
+    function updateCircleFromArea() {
+        const area = parseFloat(territoryAreaInput.value);
+        if (!isNaN(area) && area > 0 && area <= 360) {
+            const radius = calculateRadiusFromArea(area);
+            // Update hidden input
+            if (territoryRadiusInput) {
+                territoryRadiusInput.value = radius.toFixed(8);
+            }
+            // Redraw circle immediately if map is ready
+            if (map) {
+                let lat, lng;
+                // Try to get coordinates from input fields first
+                const latValue = parseFloat(latInput.value);
+                const lngValue = parseFloat(lngInput.value);
+                if (!isNaN(latValue) && !isNaN(lngValue) && latValue !== 0 && lngValue !== 0) {
+                    lat = latValue;
+                    lng = lngValue;
+                } else if (marker) {
+                    // If marker exists, use its coordinates
+                    const markerPos = marker.getLatLng();
+                    lat = markerPos.lat;
+                    lng = markerPos.lng;
+                    // Update input fields as well
+                    latInput.value = lat.toFixed(8);
+                    lngInput.value = lng.toFixed(8);
+                } else {
+                    // No coordinates available, don't draw circle
+                    return;
+                }
+                
+                // Draw circle
+                if (typeof window.drawPreviewCircle === 'function') {
+                    window.drawPreviewCircle(lat, lng, radius);
+                }
+            }
+        }
+    }
+    
+    // Monitor area input changes to automatically calculate radius and update circle
+    if (territoryAreaInput) {
+        // Listen to input field changes
+        territoryAreaInput.addEventListener('input', updateCircleFromArea);
+        territoryAreaInput.addEventListener('change', updateCircleFromArea);
+        territoryAreaInput.addEventListener('keyup', updateCircleFromArea);
+        
+        // Calculate initial value
+        if (territoryAreaInput.value) {
+            const initialRadius = getRadiusFromInput();
+            operatorRadiusKm = initialRadius;
+        } else {
+            // If no value, use default 5 km²
+            territoryAreaInput.value = 5;
+            const defaultRadius = calculateRadiusFromArea(5);
+            if (territoryRadiusInput) {
+                territoryRadiusInput.value = defaultRadius.toFixed(8);
+            }
+            operatorRadiusKm = defaultRadius;
+        }
+    }
 
     const latInput = document.getElementById('latitude');
     const lngInput = document.getElementById('longitude');
+    const territoryAlert = document.getElementById('territoryAlert');
+    const loadTerritoriesBtn = document.getElementById('loadTerritoriesBtn');
+    const clearTerritoriesBtn = document.getElementById('clearTerritoriesBtn');
 
+    /**
+     * Initialize map (lazy initialization when location tab opens)
+     */
     function initMap() {
         if (mapInited) return;
         mapInited = true;
@@ -850,22 +1138,192 @@
         const defaultLat = parseFloat(latInput.value || '31.3547');
         const defaultLng = parseFloat(lngInput.value || '34.3088');
 
-        map = L.map('map').setView([defaultLat, defaultLng], 11);
+        // Set default zoom level high to show neighborhoods and streets clearly
+        const defaultZoomLevel = 14; // High zoom level for detail visibility
+
+        map = L.map('map').setView([defaultLat, defaultLng], defaultZoomLevel);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
+        
+        // Define Gaza Strip bounding box
+        // Gaza Strip approximate boundaries:
+        // North: 31.6°N, South: 31.2°N
+        // East: 34.6°E, West: 34.2°E
+        const gazaBounds = L.latLngBounds(
+            [31.2, 34.2], // Southwest
+            [31.6, 34.6]  // Northeast
+        );
+        
+        // Set maximum bounds to prevent user from navigating outside Gaza Strip
+        map.setMaxBounds(gazaBounds);
+        
+        // Set allowed zoom levels
+        // Allow slight zoom out (12) and zoom in up to 16
+        map.setMinZoom(12); // Allow slight zoom out
+        map.setMaxZoom(16);
+        
+        // Ensure map stays within bounds when dragging
+        map.on('drag', function() {
+            map.panInsideBounds(gazaBounds, { animate: false });
+        });
+        
+        // Ensure map stays within bounds when zooming
+        map.on('zoomend', function() {
+            if (!gazaBounds.contains(map.getBounds())) {
+                map.fitBounds(gazaBounds);
+            }
+        });
 
+        /**
+         * Calculate distance between two points using Haversine formula
+         * @param {number} lat1 - Latitude of first point
+         * @param {number} lon1 - Longitude of first point
+         * @param {number} lat2 - Latitude of second point
+         * @param {number} lon2 - Longitude of second point
+         * @returns {number} Distance in kilometers
+         */
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in kilometers
+        }
+
+        /**
+         * Draw preview circle for selected location (global function accessible from anywhere)
+         * @param {number} lat - Latitude
+         * @param {number} lng - Longitude
+         * @param {number} radiusKm - Radius in kilometers
+         */
+        window.drawPreviewCircle = function(lat, lng, radiusKm) {
+            // Ensure radiusKm is valid - if not, calculate from area
+            let actualRadiusKm = radiusKm;
+            if (!radiusKm || radiusKm <= 0 || isNaN(radiusKm)) {
+                // Get area input value directly
+                const areaInput = territoryAreaInput ? parseFloat(territoryAreaInput.value) : null;
+                if (!isNaN(areaInput) && areaInput > 0) {
+                    actualRadiusKm = Math.sqrt(areaInput / Math.PI);
+                } else {
+                    actualRadiusKm = 1.26; // Default for 5 km²
+                }
+            }
+            
+            // Get area input value directly for display
+            const areaInput = territoryAreaInput ? parseFloat(territoryAreaInput.value) : null;
+            const actualAreaKm2 = (!isNaN(areaInput) && areaInput > 0) ? areaInput : (Math.PI * actualRadiusKm * actualRadiusKm);
+            
+            // Remove previous circle if exists
+            if (previewCircle) {
+                map.removeLayer(previewCircle);
+                if (previewCircle._distanceLine) {
+                    map.removeLayer(previewCircle._distanceLine);
+                }
+            }
+            
+            // Draw new circle - Leaflet calculates distance in meters correctly
+            // radius in meters = actualRadiusKm * 1000
+            const radiusMeters = actualRadiusKm * 1000;
+            
+            // Create circle using L.circle which calculates distance correctly
+            // Leaflet uses Haversine formula internally for actual distance calculation
+            // Note: Leaflet calculates distance in meters correctly on Earth's surface
+            previewCircle = L.circle([lat, lng], {
+                radius: radiusMeters, // In meters - Leaflet calculates actual distance on Earth
+                color: '#ffc107',
+                fillColor: '#ffc107',
+                fillOpacity: 0.2,
+                weight: 2,
+                dashArray: '5, 5'
+            }).addTo(map);
+            
+            // Verify actual distance: use Leaflet's distance calculation
+            // Get circle bounds from Leaflet itself
+            const bounds = previewCircle.getBounds();
+            const northEast = bounds.getNorthEast();
+            const center = previewCircle.getLatLng();
+            
+            // Calculate actual distance from center to northeast (farthest point)
+            const actualDistanceNE = calculateDistance(
+                center.lat, 
+                center.lng, 
+                northEast.lat, 
+                northEast.lng
+            );
+            
+            // Calculate distance from center to direct north point
+            // At latitude ~31 (Gaza), 1 degree latitude ≈ 111.32 km
+            const latOffset = actualRadiusKm / 111.32;
+            const northPoint = L.latLng(lat + latOffset, lng);
+            const actualDistanceNorth = calculateDistance(lat, lng, northPoint.lat, northPoint.lng);
+            
+            // Add line showing distance from center to circle edge (for verification)
+            const distanceLine = L.polyline([[lat, lng], [northPoint.lat, northPoint.lng]], {
+                color: '#ffc107',
+                weight: 2,
+                dashArray: '5, 5',
+                opacity: 0.7
+            }).addTo(map);
+            
+            // Store elements for verification
+            previewCircle._distanceLine = distanceLine;
+            
+            // Use input area directly (don't calculate from radius)
+            // Add popup showing area only (without mentioning radius)
+            previewCircle.bindPopup(`
+                <div class="text-center">
+                    <strong>منطقة الحجز المقترحة</strong><br>
+                    <div style="margin-top: 8px;">
+                        <div style="font-size: 14px; margin: 4px 0;">
+                            <strong>المساحة:</strong> ${actualAreaKm2.toFixed(2)} كم²
+                        </div>
+                        <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                            (نسبة من مساحة القطاع: ${((actualAreaKm2 / 360) * 100).toFixed(1)}%)
+                        </div>
+                        ${((actualAreaKm2 / 360) * 100) > 50 ? '<div style="color: #dc3545; margin-top: 6px; padding: 4px; background: #fff3cd; border-radius: 3px; font-size: 11px;">⚠️ تحذير: هذه المساحة تغطي أكثر من نصف القطاع!</div>' : ''}
+                    </div>
+                </div>
+            `);
+            
+            // Don't change zoom level - keep it at default (14)
+            // Only move map to circle location
+            if (map) {
+                map.setView([lat, lng], map.getZoom());
+            }
+        }
+
+        /**
+         * Set marker on map at specified location
+         * @param {number} lat - Latitude
+         * @param {number} lng - Longitude
+         * @param {string} popupText - Popup text
+         */
         function setMarker(lat, lng, popupText) {
             if (marker) map.removeLayer(marker);
             marker = L.marker([lat, lng], { draggable: true }).addTo(map);
             marker.bindPopup(popupText || 'موقع وحدة التوليد').openPopup();
 
-            marker.on('dragend', function () {
+            // Draw preview circle based on input value
+            const radius = getRadiusFromInput();
+            drawPreviewCircle(lat, lng, radius);
+
+            marker.on('dragend', async function () {
                 const p = marker.getLatLng();
                 latInput.value = p.lat.toFixed(8);
                 lngInput.value = p.lng.toFixed(8);
+                // Redraw preview circle at new location based on input value
+                // Always use the radius calculated from territory_area_km2 input
+                const radius = getRadiusFromInput();
+                drawPreviewCircle(p.lat, p.lng, radius);
+                // Check location availability after drag
+                await checkTerritoryAvailability(p.lat, p.lng);
             });
         }
 
@@ -878,19 +1336,269 @@
             lngInput.value = defaultLng.toFixed(8);
         }
 
-        map.on('click', function (e) {
+        map.on('click', async function (e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
             latInput.value = lat.toFixed(8);
             lngInput.value = lng.toFixed(8);
             setMarker(lat, lng, 'موقع وحدة التوليد المحدد');
+            
+            // التحقق الفوري من توفر الموقع
+            await checkTerritoryAvailability(lat, lng);
+        });
+
+        // تحديث الدائرة عند تغيير قيمة نصف القطر
+        if (territoryRadiusInput) {
+            territoryRadiusInput.addEventListener('input', function() {
+                if (marker) {
+                    const p = marker.getLatLng();
+                    const radius = getRadiusFromInput();
+                    if (typeof window.drawPreviewCircle === 'function') {
+                        window.drawPreviewCircle(p.lat, p.lng, radius);
+                    }
+                }
+            });
+        }
+    }
+
+    // جلب المناطق الجغرافية
+    async function loadTerritories() {
+        if (!map) return;
+        
+        try {
+            const response = await fetch('{{ route("admin.territories.all") }}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Expected JSON but got:', text.substring(0, 200));
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                territories = data.territories || [];
+                currentOperatorId = data.current_operator_id || currentOperatorId;
+                
+                // الحصول على نصف القطر من المشغل (من أول territory للمشغل الحالي)
+                if (currentOperatorId && territories.length > 0) {
+                    const currentOperatorTerritory = territories.find(t => t.operator_id == currentOperatorId);
+                    if (currentOperatorTerritory) {
+                        operatorRadiusKm = parseFloat(currentOperatorTerritory.radius_km);
+                    }
+                }
+                
+                displayTerritories();
+                loadTerritoriesBtn.style.display = 'none';
+                clearTerritoriesBtn.style.display = 'inline-block';
+                document.getElementById('territoryLegend').classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('فشل تحميل المناطق:', error);
+        }
+    }
+
+    // عرض المناطق الجغرافية على الخريطة
+    function displayTerritories() {
+        // إزالة المناطق السابقة
+        clearTerritories();
+        
+        territories.forEach(territory => {
+            const isCurrentOperator = territory.is_current_operator;
+            
+            // ألوان مختلفة وواضحة
+            const color = isCurrentOperator ? '#28a745' : '#dc3545';
+            const fillColor = isCurrentOperator ? '#28a745' : '#dc3545';
+            const fillOpacity = isCurrentOperator ? 0.25 : 0.2;
+            const weight = isCurrentOperator ? 3 : 2;
+            
+            // تحويل نصف القطر من كم إلى متر
+            const radiusMeters = territory.radius_km * 1000;
+            
+            const circle = L.circle([territory.center_latitude, territory.center_longitude], {
+                radius: radiusMeters,
+                color: color,
+                fillColor: fillColor,
+                fillOpacity: fillOpacity,
+                weight: weight,
+                opacity: 0.8,
+            }).addTo(map);
+            
+            // إضافة تأثيرات hover
+            circle.on('mouseover', function(e) {
+                const layer = e.target;
+                layer.setStyle({
+                    weight: weight + 2,
+                    fillOpacity: fillOpacity + 0.1,
+                });
+            });
+            
+            circle.on('mouseout', function(e) {
+                const layer = e.target;
+                layer.setStyle({
+                    weight: weight,
+                    fillOpacity: fillOpacity,
+                });
+            });
+            
+            // Calculate area from radius
+            const areaKm2 = Math.PI * territory.radius_km * territory.radius_km;
+            
+            // Add simplified popup (only essential information)
+            const popupContent = `
+                <div style="min-width: 200px; text-align: center;">
+                    <div style="margin-bottom: 10px;">
+                        <strong style="font-size: 16px; color: ${color};">
+                            <i class="bi bi-geo-alt-fill me-1"></i>
+                            ${territory.name || 'منطقة جغرافية'}
+                        </strong>
+                    </div>
+                    <div style="border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px;">
+                        <div style="margin-bottom: 5px;">
+                            <i class="bi bi-building" style="color: #666;"></i>
+                            <strong>المشغل:</strong> ${territory.operator_name || 'غير محدد'}
+                        </div>
+                        <div style="margin-bottom: 5px;">
+                            <i class="bi bi-person" style="color: #666;"></i>
+                            <strong>المالك:</strong> ${territory.owner_name || 'غير محدد'}
+                        </div>
+                        <div style="margin-bottom: 5px;">
+                            <i class="bi bi-rulers" style="color: #666;"></i>
+                            <strong>المساحة:</strong> ${areaKm2.toFixed(2)} كم²
+                        </div>
+                        <div style="margin-top: 10px;">
+                            ${isCurrentOperator 
+                                ? '<span class="badge bg-success" style="font-size: 12px;"><i class="bi bi-check-circle me-1"></i>منطقتك</span>' 
+                                : '<span class="badge bg-danger" style="font-size: 12px;"><i class="bi bi-x-circle me-1"></i>محجوزة</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            circle.bindPopup(popupContent, {
+                className: isCurrentOperator ? 'territory-popup-own' : 'territory-popup-other',
+                maxWidth: 250
+            });
+            
+            territoryCircles.push(circle);
         });
     }
+
+    // إزالة المناطق من الخريطة
+    function clearTerritories() {
+        territoryCircles.forEach(circle => {
+            map.removeLayer(circle);
+        });
+        territoryCircles = [];
+        document.getElementById('territoryLegend').classList.add('d-none');
+    }
+
+    // التحقق من توفر الموقع
+    async function checkTerritoryAvailability(lat, lng) {
+        if (!currentOperatorId) {
+            return;
+        }
+        
+        try {
+            // Include generation_unit_id for update operations
+            const generationUnitId = {{ $generationUnit->id ?? 'null' }};
+            const url = `{{ route("admin.territories.check") }}?latitude=${lat}&longitude=${lng}&operator_id=${currentOperatorId}` + 
+                       (generationUnitId ? `&generation_unit_id=${generationUnitId}` : '');
+            
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Expected JSON but got:', text.substring(0, 200));
+                territoryAlert.className = 'alert alert-warning mb-2';
+                territoryAlert.textContent = 'حدث خطأ أثناء التحقق من الموقع';
+                territoryAlert.classList.remove('d-none');
+                return;
+            }
+            
+            const data = await response.json();
+            
+            // Handle conflict with another generation unit
+            if (!data.success && data.conflict_type === 'generation_unit' && data.conflict_data) {
+                const conflict = data.conflict_data;
+                territoryAlert.className = 'alert alert-danger mb-2';
+                territoryAlert.innerHTML = `<strong>⚠ تحذير:</strong> يوجد وحدة توليد أخرى للمشغل "${conflict.operator_name}" (اسم الوحدة: "${conflict.generation_unit_name}") في نفس الموقع أو قريبة جداً (المسافة: ${conflict.distance.toFixed(3)} كم). الحد الأدنى للمسافة بين وحدات التوليد: 0.1 كم.`;
+                territoryAlert.classList.remove('d-none');
+                return;
+            }
+            
+            // Update radius from response if available (for reference only)
+            // But always use the radius calculated from territory_area_km2 input for drawing
+            if (data.operator_radius_km) {
+                operatorRadiusKm = parseFloat(data.operator_radius_km);
+            }
+            
+            // Always redraw circle using the radius from territory_area_km2 input
+            if (marker) {
+                const p = marker.getLatLng();
+                const radius = getRadiusFromInput(); // Always use input value, not operatorRadiusKm
+                if (typeof window.drawPreviewCircle === 'function') {
+                    window.drawPreviewCircle(p.lat, p.lng, radius);
+                }
+            }
+            
+            if (data.success && data.available) {
+                territoryAlert.className = 'alert alert-success mb-2';
+                territoryAlert.textContent = '✓ ' + (data.message || 'الموقع متاح') + ` (سيتم حجز ${operatorRadiusKm} كم)`;
+                territoryAlert.classList.remove('d-none');
+            } else {
+                territoryAlert.className = 'alert alert-danger mb-2';
+                let errorMessage = data.message || 'الموقع غير متاح';
+                
+                // If conflict is with another generation unit, show more details
+                if (data.conflict_type === 'generation_unit' && data.conflict_data) {
+                    const conflict = data.conflict_data;
+                    errorMessage = `⚠ يوجد وحدة توليد أخرى للمشغل "${conflict.operator_name}" (اسم الوحدة: "${conflict.generation_unit_name}") في نفس الموقع أو قريبة جداً (المسافة: ${conflict.distance.toFixed(3)} كم). الحد الأدنى للمسافة بين وحدات التوليد: 0.1 كم.`;
+                }
+                
+                territoryAlert.innerHTML = '<strong>⚠ تحذير:</strong> ' + errorMessage;
+                territoryAlert.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('فشل التحقق من الموقع:', error);
+            territoryAlert.className = 'alert alert-warning mb-2';
+            territoryAlert.textContent = 'حدث خطأ أثناء التحقق من الموقع';
+            territoryAlert.classList.remove('d-none');
+        }
+    }
+
+    // أحداث الأزرار
+    loadTerritoriesBtn?.addEventListener('click', loadTerritories);
+    clearTerritoriesBtn?.addEventListener('click', function() {
+        clearTerritories();
+        loadTerritoriesBtn.style.display = 'inline-block';
+        clearTerritoriesBtn.style.display = 'none';
+    });
 
     // when location tab shows
     document.querySelector('[data-bs-target="#tab-location"]')?.addEventListener('shown.bs.tab', function () {
         initMap();
-        setTimeout(() => { map && map.invalidateSize(); }, 200);
+        setTimeout(() => { 
+            if (map) {
+                map.invalidateSize();
+                if (mapInited) {
+                    loadTerritories();
+                }
+            }
+        }, 500);
     });
 
     // ====== AJAX submit ======
@@ -899,6 +1607,28 @@
         setLoading(true);
 
         try {
+            // Ensure territory_area_km2 has a valid value
+            if (territoryAreaInput) {
+                const area = parseFloat(territoryAreaInput.value);
+                if (isNaN(area) || area <= 0 || area > 360) {
+                    // Set default value if invalid
+                    territoryAreaInput.value = 5;
+                }
+            }
+
+            // Ensure territory_radius_km is calculated and set before submission
+            if (territoryAreaInput && territoryRadiusInput) {
+                const area = parseFloat(territoryAreaInput.value);
+                if (!isNaN(area) && area > 0) {
+                    const radius = calculateRadiusFromArea(area);
+                    territoryRadiusInput.value = radius.toFixed(8);
+                } else {
+                    // Use default if area is invalid
+                    const defaultRadius = calculateRadiusFromArea(5);
+                    territoryRadiusInput.value = defaultRadius.toFixed(8);
+                }
+            }
+
             const fd = new FormData(form);
 
             const res = await fetch(form.action, {
@@ -911,11 +1641,36 @@
                 body: fd
             });
 
+            // Check if response is JSON
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await res.text();
+                console.error('Expected JSON but got:', text.substring(0, 200));
+                notify('error', 'حدث خطأ أثناء الحفظ. يرجى المحاولة مرة أخرى.');
+                return;
+            }
+
             const data = await res.json();
 
             if (res.status === 422) {
-                showErrors(data.errors || {});
-                notify('error', 'تحقق من الحقول المطلوبة');
+                // Check if it's a validation error (with errors object) or a general error message
+                if (data.errors && Object.keys(data.errors).length > 0) {
+                    showErrors(data.errors || {});
+                } else if (data.message) {
+                    // Show the error message clearly
+                    notify('error', data.message);
+                    // Also show in territory alert if it exists
+                    const territoryAlert = document.getElementById('territoryAlert');
+                    if (territoryAlert) {
+                        territoryAlert.className = 'alert alert-danger mb-2';
+                        territoryAlert.innerHTML = '<strong>⚠ خطأ:</strong> ' + data.message;
+                        territoryAlert.classList.remove('d-none');
+                        // Scroll to alert
+                        territoryAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else {
+                    notify('error', 'تحقق من الحقول المطلوبة');
+                }
                 return;
             }
 
@@ -1151,18 +1906,34 @@
 
     // تهيئة أولية إذا كانت هناك خزانات موجودة
     @if($generationUnit->fuelTanks->count() > 0)
+        (function() {
         renderFuelTanks({{ $generationUnit->fuelTanks->count() }});
+            setTimeout(function() {
         @foreach($generationUnit->fuelTanks as $index => $tank)
-            document.querySelector(`input[name="fuel_tanks[{{ $index }}][capacity]"]`).value = '{{ $tank->capacity }}';
-            document.querySelector(`select[name="fuel_tanks[{{ $index }}][location_id]"]`).value = '{{ $tank->location_id ?? '' }}';
-            document.querySelector(`select[name="fuel_tanks[{{ $index }}][filtration_system_available]"]`).value = '{{ $tank->filtration_system_available ? 1 : 0 }}';
-            document.querySelector(`select[name="fuel_tanks[{{ $index }}][condition_id]"]`).value = '{{ $tank->condition_id ?? '' }}';
-            document.querySelector(`select[name="fuel_tanks[{{ $index }}][material_id]"]`).value = '{{ $tank->material_id ?? '' }}';
-            document.querySelector(`select[name="fuel_tanks[{{ $index }}][usage_id]"]`).value = '{{ $tank->usage_id ?? '' }}';
-            document.querySelector(`select[name="fuel_tanks[{{ $index }}][measurement_method_id]"]`).value = '{{ $tank->measurement_method_id ?? '' }}';
+                    (function() {
+                        const tankCapacityInput = document.querySelector('input[name="fuel_tanks[{{ $index }}][capacity]"]');
+                        const tankLocationSelect = document.querySelector('select[name="fuel_tanks[{{ $index }}][location_id]"]');
+                        const tankFiltrationSelect = document.querySelector('select[name="fuel_tanks[{{ $index }}][filtration_system_available]"]');
+                        const tankConditionSelect = document.querySelector('select[name="fuel_tanks[{{ $index }}][condition_id]"]');
+                        const tankMaterialSelect = document.querySelector('select[name="fuel_tanks[{{ $index }}][material_id]"]');
+                        const tankUsageSelect = document.querySelector('select[name="fuel_tanks[{{ $index }}][usage_id]"]');
+                        const tankMeasurementSelect = document.querySelector('select[name="fuel_tanks[{{ $index }}][measurement_method_id]"]');
+                        
+                        if (tankCapacityInput) tankCapacityInput.value = '{{ $tank->capacity }}';
+                        if (tankLocationSelect) tankLocationSelect.value = '{{ $tank->location_id ?? '' }}';
+                        if (tankFiltrationSelect) tankFiltrationSelect.value = '{{ $tank->filtration_system_available ? 1 : 0 }}';
+                        if (tankConditionSelect) tankConditionSelect.value = '{{ $tank->condition_id ?? '' }}';
+                        if (tankMaterialSelect) tankMaterialSelect.value = '{{ $tank->material_id ?? '' }}';
+                        if (tankUsageSelect) tankUsageSelect.value = '{{ $tank->usage_id ?? '' }}';
+                        if (tankMeasurementSelect) tankMeasurementSelect.value = '{{ $tank->measurement_method_id ?? '' }}';
+                    })();
         @endforeach
+            }, 200);
+        })();
     @elseif(old('external_fuel_tank') == '1' && old('fuel_tanks_count'))
+        (function() {
         renderFuelTanks({{ old('fuel_tanks_count') }});
+        })();
     @endif
 
 })();

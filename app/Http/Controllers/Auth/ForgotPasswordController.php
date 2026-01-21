@@ -67,10 +67,13 @@ class ForgotPasswordController extends Controller
             'attempts' => 0, // عدد محاولات التحقق
         ], now()->addMinutes(10));
 
+        // Get site name from settings
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
+        
         // إرسال OTP عبر SMS
         try {
             $smsService = new HotSMSService;
-            $message = "رمز استعادة كلمة المرور لمنصة راصد: {$otp}\nهذا الرمز صالح لمدة 10 دقائق فقط.";
+            $message = "رمز استعادة كلمة المرور لمنصة {$siteName}: {$otp}\nهذا الرمز صالح لمدة 10 دقائق فقط.";
             $result = $smsService->sendSMS($cleanPhone, $message, 2);
 
             if ($result['success']) {
@@ -211,8 +214,11 @@ class ForgotPasswordController extends Controller
                     'login_url' => $loginUrl,
                 ]);
             } else {
+                // Get site name from settings
+                $siteName = \App\Models\Setting::get('site_name', 'نور');
+                
                 // رسالة تفصيلية (حتى 220 حرف)
-                $message = "مرحباً {$user->name}،\nتم إعادة تعيين كلمة المرور لحسابك على منصة راصد.\n\nاسم المستخدم: {$user->username}\nكلمة المرور الجديدة: {$newPassword}\n\nرابط الدخول: {$loginUrl}";
+                $message = "مرحباً {$user->name}،\nتم إعادة تعيين كلمة المرور لحسابك على منصة {$siteName}.\n\nاسم المستخدم: {$user->username}\nكلمة المرور الجديدة: {$newPassword}\n\nرابط الدخول: {$loginUrl}";
             }
 
             $result = $smsService->sendSMS($cleanPhone, $message, 2);

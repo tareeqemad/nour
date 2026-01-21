@@ -246,7 +246,7 @@ class UserController extends Controller
         // Base scope (filter by user permissions)
         // -----------------------------
         $base = User::query()
-            ->where('username', '!=', 'platform_rased'); // Exclude system user (منصة راصد) from lists
+            ->where('username', '!=', 'platform_rased'); // Exclude system user (منصة نور) from lists
 
         if ($actor->isCompanyOwner()) {
             $operator = $actor->ownedOperators()->select('id')->first();
@@ -607,7 +607,7 @@ class UserController extends Controller
 
     public function show(User $user): View
     {
-        // Prevent viewing system user (منصة راصد)
+        // Prevent viewing system user (منصة نور)
         if ($user->isSystemUser()) {
             abort(404, 'User not found');
         }
@@ -1064,11 +1064,14 @@ class UserController extends Controller
                 'login_url' => $loginUrl,
             ]);
         } else {
+            // Get site name from settings
+            $siteName = \App\Models\Setting::get('site_name', 'نور');
+            
             // Fallback to default template if no template exists in database (max 160 characters)
             if ($isPasswordReset) {
-                $message = "مرحباً {$name}،\nتم إعادة تعيين كلمة المرور لحسابك على منصة راصد.\nاسم المستخدم: {$username}\nكلمة المرور الجديدة: {$password}\nرابط الدخول: {$loginUrl}";
+                $message = "مرحباً {$name}،\nتم إعادة تعيين كلمة المرور لحسابك على منصة {$siteName}.\nاسم المستخدم: {$username}\nكلمة المرور الجديدة: {$password}\nرابط الدخول: {$loginUrl}";
             } else {
-                $message = "مرحباً {$name}،\nتم تسجيلك على منصة راصد.\nالدور: {$roleName}\nاسم المستخدم: {$username}\nكلمة المرور: {$password}\nرابط الدخول: {$loginUrl}";
+                $message = "مرحباً {$name}،\nتم تسجيلك على منصة {$siteName}.\nالدور: {$roleName}\nاسم المستخدم: {$username}\nكلمة المرور: {$password}\nرابط الدخول: {$loginUrl}";
             }
 
             // Ensure message does not exceed 160 characters
@@ -1614,9 +1617,10 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'لا يمكنك الدخول بحسابك الخاص.');
         }
 
-        // منع الدخول بحساب system user (منصة راصد)
+        // منع الدخول بحساب system user (منصة نور)
         if ($user->isSystemUser()) {
-            return redirect()->back()->with('error', 'لا يمكن الدخول بحساب منصة راصد.');
+            $siteName = \App\Models\Setting::get('site_name', 'نور');
+            return redirect()->back()->with('error', "لا يمكن الدخول بحساب منصة {$siteName}.");
         }
 
         // حفظ معلومات المستخدم الأصلي في Session

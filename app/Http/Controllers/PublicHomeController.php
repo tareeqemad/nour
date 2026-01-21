@@ -141,6 +141,51 @@ class PublicHomeController extends Controller
     }
 
     /**
+     * جلب جميع المناطق الجغرافية للعرض على الخريطة العامة
+     */
+    public function getTerritoriesForMap(Request $request): JsonResponse
+    {
+        $territories = \App\Models\OperatorTerritory::with(['operator'])
+            ->whereHas('operator', function($q) {
+                $q->where('status', 'active');
+            })
+            ->get()
+            ->map(function($territory) {
+                // البحث عن وحدة التوليد التي أنشأت هذه المنطقة (من خلال مقارنة الإحداثيات)
+                $generationUnit = \App\Models\GenerationUnit::where('operator_id', $territory->operator_id)
+                    ->whereRaw('ABS(latitude - ?) < 0.0001', [$territory->center_latitude])
+                    ->whereRaw('ABS(longitude - ?) < 0.0001', [$territory->center_longitude])
+                    ->with(['governorateDetail', 'cityDetail'])
+                    ->first();
+
+                $operator = $territory->operator;
+                
+                return [
+                    'id' => $territory->id,
+                    'operator_id' => $territory->operator_id,
+                    'operator_name' => $operator->name ?? 'غير محدد',
+                    'owner_name' => $operator->owner_name ?? 'غير محدد',
+                    'center_latitude' => (float) $territory->center_latitude,
+                    'center_longitude' => (float) $territory->center_longitude,
+                    'radius_km' => (float) $territory->radius_km,
+                    'name' => $territory->name,
+                    'generation_unit' => $generationUnit ? [
+                        'id' => $generationUnit->id,
+                        'name' => $generationUnit->name,
+                        'unit_code' => $generationUnit->unit_code,
+                        'governorate' => $generationUnit->governorateDetail->label ?? 'غير محدد',
+                        'city' => $generationUnit->cityDetail->label ?? 'غير محدد',
+                    ] : null,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'territories' => $territories,
+        ])->header('Cache-Control', 'public, max-age=300');
+    }
+
+    /**
      * Display statistics page
      */
     public function stats(): View
@@ -623,9 +668,12 @@ class PublicHomeController extends Controller
         // url() helper يولد رابط كامل بناءً على APP_URL
         $loginUrl = url('/login');
         
+        // Get site name from settings
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
+        
         // بناء رسالة مختصرة مع الرابط
         // استخدام صيغة مختصرة لتوفير المساحة للرابط
-        $message = "راصد\n";
+        $message = "{$siteName}\n";
         $message .= "المستخدم: {$username}\n";
         $message .= "كلمة المرور: {$password}\n";
         $message .= "رابط: {$loginUrl}";
@@ -642,7 +690,7 @@ class PublicHomeController extends Controller
         // لكن نضمن وجود الرابط دائماً
         if (mb_strlen($message) > 70) {
             // استخدام صيغة أقصر مع الحفاظ على الرابط
-            $message = "راصد\n";
+            $message = "{$siteName}\n";
             $message .= "المستخدم: {$username}\n";
             $message .= "كلمة المرور: {$password}\n";
             $message .= $loginUrl; // بدون كلمة "رابط:" لتوفير المساحة
@@ -650,7 +698,7 @@ class PublicHomeController extends Controller
         
         // إذا كانت لا تزال طويلة جداً، نستخدم صيغة أقصر جداً
         if (mb_strlen($message) > 70) {
-            $message = "راصد\n";
+            $message = "{$siteName}\n";
             $message .= "المستخدم: {$username}\n";
             $message .= "كلمة المرور: {$password}\n";
             // استخدام فقط domain + path بدلاً من الرابط الكامل
@@ -701,7 +749,7 @@ class PublicHomeController extends Controller
      */
     private function createWelcomeMessages(\App\Models\User $user, \App\Models\Operator $operator, string $username): void
     {
-        // Get system user (منصة راصد) to send messages from
+        // Get system user (منصة نور) to send messages from
         $systemUser = \App\Models\User::where('username', 'platform_rased')->first();
 
         if (!$systemUser) {
@@ -714,6 +762,9 @@ class PublicHomeController extends Controller
 
         $loginUrl = route('login');
         $changePasswordUrl = route('admin.profile.show') . '#change-password';
+        
+        // Get site name from settings
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
 
         \Log::info('Creating welcome messages for new operator', [
             'user_id' => $user->id,
@@ -753,7 +804,7 @@ class PublicHomeController extends Controller
                     'receiver_id' => $user->id,
                     'operator_id' => $operator->id,
                     'subject' => 'يرجى تغيير كلمة المرور',
-                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد.\n\nلأسباب أمنية، نرجو منك تغيير كلمة المرور الافتراضية بعد تسجيل الدخول لأول مرة.\n\nاسم المستخدم: {$username}\n\nيمكنك تغيير كلمة المرور من صفحة الملف الشخصي بعد تسجيل الدخول.\n\nرابط تسجيل الدخول: {$loginUrl}",
+                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة {$siteName} لإدارة وحدات التوليد.\n\nلأسباب أمنية، نرجو منك تغيير كلمة المرور الافتراضية بعد تسجيل الدخول لأول مرة.\n\nاسم المستخدم: {$username}\n\nيمكنك تغيير كلمة المرور من صفحة الملف الشخصي بعد تسجيل الدخول.\n\nرابط تسجيل الدخول: {$loginUrl}",
                     'type' => 'admin_to_operator',
                     'is_read' => false,
                 ]);
@@ -766,7 +817,7 @@ class PublicHomeController extends Controller
             $existingMessage2 = \App\Models\Message::where('receiver_id', $user->id)
                 ->where('operator_id', $operator->id)
                 ->where('sender_id', $systemUser->id)
-                ->where('subject', 'مرحباً بك في منصة راصد')
+                ->where('subject', 'مرحباً بك في منصة ' . $siteName)
                 ->first();
             
             if (!$existingMessage2) {
@@ -774,8 +825,8 @@ class PublicHomeController extends Controller
                     'sender_id' => $systemUser->id,
                     'receiver_id' => $user->id,
                     'operator_id' => $operator->id,
-                    'subject' => 'مرحباً بك في منصة راصد',
-                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة راصد لإدارة وحدات التوليد.\n\nنتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nيمكنك الآن:\n- إضافة وحدات التوليد والمولدات\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n\nملاحظة: حسابك حالياً في حالة انتظار الاعتماد من سلطة الطاقة. بعد الاعتماد، ستحصل على صلاحيات كاملة للوصول لجميع خصائص النظام.\n\nنتمنى لك تجربة ممتعة!",
+                    'subject' => 'مرحباً بك في منصة ' . $siteName,
+                    'body' => "عزيزي/عزيزتي {$user->name}،\n\nنرحب بك في منصة {$siteName} لإدارة وحدات التوليد.\n\nنتمنى أن تجد في النظام كل ما تحتاجه لإدارة عملك بكفاءة وفعالية.\n\nيمكنك الآن:\n- إضافة وحدات التوليد والمولدات\n- متابعة سجلات التشغيل والوقود\n- إدارة أعمال الصيانة\n\nملاحظة: حسابك حالياً في حالة انتظار الاعتماد من سلطة الطاقة. بعد الاعتماد، ستحصل على صلاحيات كاملة للوصول لجميع خصائص النظام.\n\nنتمنى لك تجربة ممتعة!",
                     'type' => 'admin_to_operator',
                     'is_read' => false,
                 ]);

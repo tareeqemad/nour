@@ -32,6 +32,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'generators.create', 'label' => 'إنشاء مولد', 'group' => 'generators', 'group_label' => 'المولدات', 'description' => 'القدرة على إنشاء مولد جديد', 'order' => 10],
             ['name' => 'generators.update', 'label' => 'تحديث مولد', 'group' => 'generators', 'group_label' => 'المولدات', 'description' => 'القدرة على تحديث بيانات المولد', 'order' => 11],
             ['name' => 'generators.delete', 'label' => 'حذف مولد', 'group' => 'generators', 'group_label' => 'المولدات', 'description' => 'القدرة على حذف المولد', 'order' => 12],
+            ['name' => 'generators.transfer', 'label' => 'نقل مولد', 'group' => 'generators', 'group_label' => 'المولدات', 'description' => 'القدرة على نقل المولدات بين المشغلين', 'order' => 13],
 
             // سجلات التشغيل
             ['name' => 'operation_logs.view', 'label' => 'عرض سجلات التشغيل', 'group' => 'operation_logs', 'group_label' => 'سجلات التشغيل', 'description' => 'القدرة على عرض سجلات التشغيل', 'order' => 13],

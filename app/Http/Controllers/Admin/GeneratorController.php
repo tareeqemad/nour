@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreGeneratorRequest;
 use App\Http\Requests\Admin\UpdateGeneratorRequest;
+use App\Http\Requests\Admin\TransferGeneratorRequest;
 use App\Models\Generator;
 use App\Models\Notification;
 use App\Models\Operator;
@@ -15,8 +16,11 @@ use App\Helpers\ConstantsHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use App\Models\AuditLog;
+use App\Models\GenerationUnit;
 
 class GeneratorController extends Controller
 {
@@ -848,5 +852,124 @@ class GeneratorController extends Controller
                 ];
             })
         ]);
+    }
+
+    /**
+     * Show the form for transferring a generator to another operator.
+     */
+    public function showTransferForm(Generator $generator): View
+    {
+        $this->authorize('transfer', $generator);
+
+        $generator->load(['operator', 'generationUnit']);
+
+        // Get all operators except the current one
+        $operators = Operator::where('id', '!=', $generator->operator_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.generators.transfer', compact('generator', 'operators'));
+    }
+
+    /**
+     * Get generation units for a specific operator (for AJAX)
+     */
+    public function getGenerationUnitsForTransfer(Request $request, int $operatorId): JsonResponse
+    {
+        $generationUnits = GenerationUnit::where('operator_id', $operatorId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'unit_code']);
+
+        return response()->json([
+            'success' => true,
+            'generation_units' => $generationUnits,
+        ]);
+    }
+
+    /**
+     * Transfer a generator to another operator.
+     */
+    public function transfer(TransferGeneratorRequest $request, Generator $generator): RedirectResponse
+    {
+        $user = auth()->user();
+        $targetOperatorId = $request->input('target_operator_id');
+        $targetGenerationUnitId = $request->input('target_generation_unit_id');
+        $reason = $request->input('reason');
+
+        $targetOperator = Operator::findOrFail($targetOperatorId);
+        $targetGenerationUnit = GenerationUnit::findOrFail($targetGenerationUnitId);
+        $oldOperator = $generator->operator;
+        $oldGenerationUnit = $generator->generationUnit;
+
+        // Store old values for audit log
+        $oldValues = [
+            'operator_id' => $generator->operator_id,
+            'operator_name' => $oldOperator->name ?? null,
+            'generation_unit_id' => $generator->generation_unit_id,
+            'generation_unit_name' => $oldGenerationUnit->name ?? null,
+        ];
+
+        DB::beginTransaction();
+        try {
+            // Store old operator ID before updating
+            $oldOperatorId = $generator->operator_id;
+            
+            // Update generator operator and generation unit
+            $generator->operator_id = $targetOperatorId;
+            $generator->generation_unit_id = $targetGenerationUnitId;
+            $generator->last_updated_by = $user->id;
+            $generator->save();
+            
+            // Important: Keep old operation logs and maintenance records linked to the old operator
+            // Operation logs already have operator_id, so they will remain linked to the old operator
+            // Maintenance records don't have operator_id, but they are historical records
+            // We don't need to change them - they remain linked to the generator (which is correct)
+            
+            // Note: Operation logs have both generator_id and operator_id
+            // The operator_id in old logs will remain pointing to the old operator (correct behavior)
+            // New logs created after transfer will use the new operator_id
+            
+            // Count related records that will remain with old operator
+            $oldOperationLogsCount = \App\Models\OperationLog::where('generator_id', $generator->id)
+                ->where('operator_id', $oldOperatorId)
+                ->count();
+            $oldMaintenanceRecordsCount = \App\Models\MaintenanceRecord::where('generator_id', $generator->id)
+                ->count();
+            
+            // Log the transfer with information about preserved records
+            AuditLog::log(
+                'transfer',
+                $generator,
+                $user,
+                $oldValues,
+                [
+                    'operator_id' => $targetOperatorId,
+                    'operator_name' => $targetOperator->name ?? null,
+                    'generation_unit_id' => $targetGenerationUnitId,
+                    'generation_unit_name' => $targetGenerationUnit->name ?? null,
+                    'reason' => $reason,
+                    'preserved_records' => [
+                        'operation_logs_count' => $oldOperationLogsCount,
+                        'maintenance_records_count' => $oldMaintenanceRecordsCount,
+                        'note' => 'السجلات القديمة تبقى مرتبطة بالمشغل القديم',
+                    ],
+                ],
+                "تم نقل المولد '{$generator->name}' من المشغل '{$oldOperator->name}' (وحدة التوليد: '{$oldGenerationUnit->name}') إلى المشغل '{$targetOperator->name}' (وحدة التوليد: '{$targetGenerationUnit->name}'). السجلات القديمة ({$oldOperationLogsCount} سجل تشغيل، {$oldMaintenanceRecordsCount} سجل صيانة) تبقى مرتبطة بالمشغل القديم." . ($reason ? " - السبب: {$reason}" : '')
+            );
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.generators.show', $generator)
+                ->with('success', "تم نقل المولد بنجاح من المشغل '{$oldOperator->name}' إلى المشغل '{$targetOperator->name}'");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء نقل المولد: ' . $e->getMessage());
+        }
     }
 }

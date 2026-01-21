@@ -35,6 +35,9 @@ class Operator extends Model
         'status', // active/inactive
         'is_approved', // معتمد/غير معتمد
         'profile_completed', // اكتمال الملف الشخصي
+        
+        // المنطقة الجغرافية
+        'territory_radius_km', // نصف قطر المنطقة الجغرافية بالكيلومترات
     ];
 
     protected function casts(): array
@@ -42,6 +45,7 @@ class Operator extends Model
         return [
             'profile_completed' => 'boolean',
             'is_approved' => 'boolean',
+            'territory_radius_km' => 'decimal:2',
         ];
     }
 
@@ -82,6 +86,14 @@ class Operator extends Model
     public function generators(): HasManyThrough
     {
         return $this->hasManyThrough(Generator::class, GenerationUnit::class);
+    }
+
+    /**
+     * المناطق الجغرافية المملوكة لهذا المشغل
+     */
+    public function territories(): HasMany
+    {
+        return $this->hasMany(OperatorTerritory::class);
     }
 
     public function operationLogs(): HasMany

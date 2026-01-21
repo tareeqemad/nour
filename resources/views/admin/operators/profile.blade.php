@@ -155,12 +155,6 @@
                 </div>
             </div>
 
-                <div class="op-loading d-none" id="profileLoading">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status"></div>
-                        <div class="mt-2 text-muted fw-semibold">جاري الحفظ...</div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -295,7 +289,21 @@
 
     const form = document.getElementById('operatorProfileForm');
     const saveBtn = document.getElementById('saveProfileBtn');
-    const loading = document.getElementById('profileLoading');
+
+    /**
+     * Set loading state on save button
+     * @param {boolean} on - Whether loading is active
+     */
+    function setLoading(on) {
+        saveBtn.disabled = on;
+        if (on) {
+            // Add spinner to button
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>جاري الحفظ...';
+        } else {
+            // Restore original button content
+            saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>حفظ';
+        }
+    }
 
     // ====== منع إدخال غير الأرقام وحصر الإدخال بـ 9 أرقام فقط ======
     function setupIdNumberInputs() {
@@ -348,11 +356,6 @@
         document.addEventListener('DOMContentLoaded', setupIdNumberInputs);
     } else {
         setupIdNumberInputs();
-    }
-
-    function setLoading(on) {
-        loading.classList.toggle('d-none', !on);
-        saveBtn.disabled = on;
     }
 
     function clearErrors() {

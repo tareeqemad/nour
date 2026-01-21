@@ -11,11 +11,14 @@ use App\Models\FuelTank;
 use App\Models\FuelEfficiency;
 use App\Models\GenerationUnit;
 use App\Models\Operator;
+use App\Models\OperatorTerritory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use App\Models\AuditLog;
 
 class GenerationUnitController extends Controller
 {
@@ -395,6 +398,155 @@ class GenerationUnitController extends Controller
                     ->with('error', 'يجب تحديد المشغل.');
             }
         }
+
+        // التحقق من المناطق الجغرافية ووحدات التوليد
+        if (isset($data['latitude']) && isset($data['longitude'])) {
+            $latitude = (float) $data['latitude'];
+            $longitude = (float) $data['longitude'];
+            $operatorId = (int) $data['operator_id'];
+
+            // التحقق من وجود وحدة توليد أخرى في نفس الإحداثيات أو قريبة جداً (في نطاق 100 متر)
+            $minDistanceKm = 0.1; // 100 متر = 0.1 كم
+            $existingUnit = GenerationUnit::where('id', '!=', 0) // Exclude current unit (doesn't exist yet in create)
+                ->where('operator_id', '!=', $operatorId) // Different operator
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->get()
+                ->first(function ($unit) use ($latitude, $longitude, $minDistanceKm) {
+                    $distance = OperatorTerritory::calculateDistance(
+                        (float) $unit->latitude,
+                        (float) $unit->longitude,
+                        $latitude,
+                        $longitude
+                    );
+                    return $distance < $minDistanceKm;
+                });
+
+            if ($existingUnit) {
+                $existingOperator = $existingUnit->operator;
+                $distance = OperatorTerritory::calculateDistance(
+                    (float) $existingUnit->latitude,
+                    (float) $existingUnit->longitude,
+                    $latitude,
+                    $longitude
+                );
+
+                $errorMessage = sprintf(
+                    'لا يمكن إضافة وحدة التوليد في هذا الموقع. يوجد وحدة توليد أخرى للمشغل "%s" (اسم الوحدة: "%s") في نفس الموقع أو قريبة جداً (المسافة: %.2f كم). الحد الأدنى للمسافة بين وحدات التوليد: %s كم.',
+                    $existingOperator->name ?? 'مشغل آخر',
+                    $existingUnit->name ?? 'غير محدد',
+                    $distance,
+                    $minDistanceKm
+                );
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                    ], 422);
+                }
+
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', $errorMessage);
+            }
+
+            // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة
+            $existingTerritory = OperatorTerritory::findTerritoryContainingPoint(
+                $latitude,
+                $longitude,
+                $operatorId
+            );
+
+            if ($existingTerritory) {
+                $existingOperator = $existingTerritory->operator;
+                $distance = OperatorTerritory::calculateDistance(
+                    $existingTerritory->center_latitude,
+                    $existingTerritory->center_longitude,
+                    $latitude,
+                    $longitude
+                );
+
+                $errorMessage = sprintf(
+                    'لا يمكن إضافة وحدة التوليد في هذا الموقع. الموقع يقع ضمن منطقة جغرافية مملوكة للمشغل "%s" (نطاق %s كم). المسافة من مركز المنطقة: %s كم.',
+                    $existingOperator->name ?? 'مشغل آخر',
+                    $existingTerritory->radius_km,
+                    $distance
+                );
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                    ], 422);
+                }
+
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', $errorMessage);
+            }
+
+            // إذا لم تكن هناك منطقة موجودة، إنشاء منطقة جديدة للمشغل الحالي
+            // البحث عن منطقة قريبة للمشغل الحالي (في نطاق 100 كم)
+            $operatorTerritories = OperatorTerritory::where('operator_id', $operatorId)->get();
+            $nearbyTerritory = null;
+            $minDistance = PHP_FLOAT_MAX;
+
+            foreach ($operatorTerritories as $territory) {
+                $distance = OperatorTerritory::calculateDistance(
+                    $territory->center_latitude,
+                    $territory->center_longitude,
+                    $latitude,
+                    $longitude
+                );
+
+                // إذا كانت النقطة ضمن نطاق منطقة موجودة، لا حاجة لإنشاء منطقة جديدة
+                if ($territory->containsPoint($latitude, $longitude)) {
+                    $nearbyTerritory = $territory;
+                    break;
+                }
+
+                // تتبع أقرب منطقة (في حالة الرغبة في توسيع المنطقة)
+                if ($distance < $minDistance) {
+                    $minDistance = $distance;
+                    $nearbyTerritory = $territory;
+                }
+            }
+
+            // إذا لم تكن هناك منطقة قريبة، إنشاء منطقة جديدة
+            if (!$nearbyTerritory || !$nearbyTerritory->containsPoint($latitude, $longitude)) {
+                // حساب عدد المناطق الموجودة للمشغل لتحديد رقم المنطقة
+                $territoriesCount = OperatorTerritory::where('operator_id', $operatorId)->count();
+                $territoryNumber = $territoriesCount + 1;
+                
+                // حساب نصف القطر من المساحة إذا كانت المساحة محددة
+                if (isset($data['territory_area_km2']) && $data['territory_area_km2'] > 0) {
+                    // r = √(المساحة / π)
+                    $areaKm2 = (float) $data['territory_area_km2'];
+                    $radiusKm = sqrt($areaKm2 / M_PI);
+                } elseif (isset($data['territory_radius_km']) && $data['territory_radius_km'] > 0) {
+                    // إذا كان نصف القطر محدد مباشرة (للتوافق مع الكود القديم)
+                    $radiusKm = (float) $data['territory_radius_km'];
+                } else {
+                    // سيستخدم القيمة الافتراضية من المشغل
+                    $radiusKm = null;
+                }
+                
+                // Get territory name from request, or use default
+                $territoryName = $request->input('territory_name');
+                if (empty($territoryName)) {
+                    $territoryName = "منطقة #{$territoryNumber} - " . ($operator->name ?? "المشغل #{$operatorId}");
+                }
+                
+                OperatorTerritory::createForOperator(
+                    $operatorId,
+                    $latitude,
+                    $longitude,
+                    $radiusKm,
+                    $territoryName
+                );
+            }
+        }
         
         // Track users
         $data['created_by'] = $user->id;
@@ -621,6 +773,146 @@ class GenerationUnitController extends Controller
         }
 
         // لا حاجة لتحويل synchronization_available لأنه أصبح ID الآن
+
+        // التحقق من المناطق الجغرافية ووحدات التوليد (فقط إذا تم تغيير الإحداثيات)
+        if (isset($data['latitude']) && isset($data['longitude'])) {
+            $latitude = (float) $data['latitude'];
+            $longitude = (float) $data['longitude'];
+            $operatorId = (int) $generationUnit->operator_id;
+
+            // التحقق فقط إذا تغيرت الإحداثيات
+            $coordinatesChanged = 
+                abs($latitude - (float) $generationUnit->latitude) > 0.0001 ||
+                abs($longitude - (float) $generationUnit->longitude) > 0.0001;
+
+            if ($coordinatesChanged) {
+                // التحقق من وجود وحدة توليد أخرى في نفس الإحداثيات أو قريبة جداً (في نطاق 100 متر)
+                $minDistanceKm = 0.1; // 100 متر = 0.1 كم
+                $existingUnit = GenerationUnit::where('id', '!=', $generationUnit->id) // Exclude current unit
+                    ->where('operator_id', '!=', $operatorId) // Different operator
+                    ->whereNotNull('latitude')
+                    ->whereNotNull('longitude')
+                    ->get()
+                    ->first(function ($unit) use ($latitude, $longitude, $minDistanceKm) {
+                        $distance = OperatorTerritory::calculateDistance(
+                            (float) $unit->latitude,
+                            (float) $unit->longitude,
+                            $latitude,
+                            $longitude
+                        );
+                        return $distance < $minDistanceKm;
+                    });
+
+                if ($existingUnit) {
+                    $existingOperator = $existingUnit->operator;
+                    $distance = OperatorTerritory::calculateDistance(
+                        (float) $existingUnit->latitude,
+                        (float) $existingUnit->longitude,
+                        $latitude,
+                        $longitude
+                    );
+
+                    $errorMessage = sprintf(
+                        'لا يمكن نقل وحدة التوليد إلى هذا الموقع. يوجد وحدة توليد أخرى للمشغل "%s" (اسم الوحدة: "%s") في نفس الموقع أو قريبة جداً (المسافة: %.2f كم). الحد الأدنى للمسافة بين وحدات التوليد: %s كم.',
+                        $existingOperator->name ?? 'مشغل آخر',
+                        $existingUnit->name ?? 'غير محدد',
+                        $distance,
+                        $minDistanceKm
+                    );
+
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $errorMessage,
+                        ], 422);
+                    }
+
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', $errorMessage);
+                }
+
+                // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة
+                $existingTerritory = OperatorTerritory::findTerritoryContainingPoint(
+                    $latitude,
+                    $longitude,
+                    $operatorId
+                );
+
+                if ($existingTerritory) {
+                    $existingOperator = $existingTerritory->operator;
+                    $distance = OperatorTerritory::calculateDistance(
+                        $existingTerritory->center_latitude,
+                        $existingTerritory->center_longitude,
+                        $latitude,
+                        $longitude
+                    );
+
+                    $errorMessage = sprintf(
+                        'لا يمكن تحديث موقع وحدة التوليد. الموقع الجديد يقع ضمن منطقة جغرافية مملوكة للمشغل "%s" (نطاق %s كم). المسافة من مركز المنطقة: %s كم.',
+                        $existingOperator->name ?? 'مشغل آخر',
+                        $existingTerritory->radius_km,
+                        $distance
+                    );
+
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $errorMessage,
+                        ], 422);
+                    }
+
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', $errorMessage);
+                }
+
+                // إذا لم تكن هناك منطقة موجودة، إنشاء منطقة جديدة للمشغل الحالي
+                $operatorTerritories = OperatorTerritory::where('operator_id', $operatorId)->get();
+                $nearbyTerritory = null;
+
+                foreach ($operatorTerritories as $territory) {
+                    if ($territory->containsPoint($latitude, $longitude)) {
+                        $nearbyTerritory = $territory;
+                        break;
+                    }
+                }
+
+                // إذا لم تكن هناك منطقة قريبة، إنشاء منطقة جديدة
+                if (!$nearbyTerritory) {
+                    // حساب عدد المناطق الموجودة للمشغل لتحديد رقم المنطقة
+                    $territoriesCount = OperatorTerritory::where('operator_id', $operatorId)->count();
+                    $territoryNumber = $territoriesCount + 1;
+                    
+                    // حساب نصف القطر من المساحة إذا كانت المساحة محددة
+                    if (isset($data['territory_area_km2']) && $data['territory_area_km2'] > 0) {
+                        // r = √(المساحة / π)
+                        $areaKm2 = (float) $data['territory_area_km2'];
+                        $radiusKm = sqrt($areaKm2 / M_PI);
+                    } elseif (isset($data['territory_radius_km']) && $data['territory_radius_km'] > 0) {
+                        // إذا كان نصف القطر محدد مباشرة (للتوافق مع الكود القديم)
+                        $radiusKm = (float) $data['territory_radius_km'];
+                    } else {
+                        // سيستخدم القيمة الافتراضية من المشغل
+                        $radiusKm = null;
+                    }
+                    
+                    // Get territory name from request, or use default
+                    $territoryName = $request->input('territory_name');
+                    if (empty($territoryName)) {
+                        $territoryName = "منطقة #{$territoryNumber} - " . ($operator->name ?? "المشغل #{$operatorId}");
+                    }
+                    
+                    OperatorTerritory::createForOperator(
+                        $operatorId,
+                        $latitude,
+                        $longitude,
+                        $radiusKm,
+                        $territoryName
+                    );
+                }
+            }
+        }
 
         // تتبع المستخدمين
         $data['last_updated_by'] = $user->id;
@@ -886,5 +1178,177 @@ class GenerationUnitController extends Controller
         // If none of the above, deny access
         abort(403, 'غير مصرح لك بالوصول إلى بيانات هذا المشغل.');
     }
+
+    /**
+     * جلب جميع المناطق الجغرافية لعرضها على الخريطة
+     */
+    public function getAllTerritories(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        $operatorId = null;
+
+        // تحديد المشغل الحالي
+        if ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
+            if ($operator) {
+                $operatorId = $operator->id;
+            }
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $operator = $user->operators()->first();
+            if ($operator) {
+                $operatorId = $operator->id;
+            }
+        } else {
+            // للأدوار الأخرى: يمكن جلب operator_id من الطلب
+            $operatorId = (int) $request->input('operator_id', 0);
+        }
+
+        $territories = OperatorTerritory::with('operator')
+            ->get()
+            ->map(function($territory) use ($operatorId) {
+                $operator = $territory->operator;
+                return [
+                    'id' => $territory->id,
+                    'operator_id' => $territory->operator_id,
+                    'operator_name' => $operator->name ?? 'غير محدد',
+                    'owner_name' => $operator->owner_name ?? 'غير محدد',
+                    'center_latitude' => (float) $territory->center_latitude,
+                    'center_longitude' => (float) $territory->center_longitude,
+                    'radius_km' => (float) $territory->radius_km,
+                    'name' => $territory->name,
+                    'is_current_operator' => $territory->operator_id == $operatorId,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'territories' => $territories,
+            'current_operator_id' => $operatorId,
+        ]);
+    }
+
+    /**
+     * التحقق من أن الموقع المحدد متاح (لا يقع ضمن منطقة لمشغل آخر ولا يوجد وحدة توليد قريبة)
+     */
+    public function checkTerritory(Request $request): JsonResponse
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'operator_id' => 'required|exists:operators,id',
+            'generation_unit_id' => 'nullable|exists:generation_units,id', // For update operations
+        ]);
+
+        $latitude = (float) $request->input('latitude');
+        $longitude = (float) $request->input('longitude');
+        $operatorId = (int) $request->input('operator_id');
+        $generationUnitId = $request->input('generation_unit_id');
+
+        // التحقق من وجود وحدة توليد أخرى في نفس الإحداثيات أو قريبة جداً (في نطاق 100 متر)
+        $minDistanceKm = 0.1; // 100 متر = 0.1 كم
+        $query = GenerationUnit::where('operator_id', '!=', $operatorId) // Different operator
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude');
+
+        // Exclude current unit if updating
+        if ($generationUnitId) {
+            $query->where('id', '!=', $generationUnitId);
+        }
+
+        $existingUnit = $query->get()
+            ->first(function ($unit) use ($latitude, $longitude, $minDistanceKm) {
+                $distance = OperatorTerritory::calculateDistance(
+                    (float) $unit->latitude,
+                    (float) $unit->longitude,
+                    $latitude,
+                    $longitude
+                );
+                return $distance < $minDistanceKm;
+            });
+
+        if ($existingUnit) {
+            $existingOperator = $existingUnit->operator;
+            $distance = OperatorTerritory::calculateDistance(
+                (float) $existingUnit->latitude,
+                (float) $existingUnit->longitude,
+                $latitude,
+                $longitude
+            );
+
+            return response()->json([
+                'success' => false,
+                'available' => false,
+                'message' => sprintf(
+                    'يوجد وحدة توليد أخرى للمشغل "%s" (اسم الوحدة: "%s") في نفس الموقع أو قريبة جداً (المسافة: %.2f كم). الحد الأدنى للمسافة بين وحدات التوليد: %s كم.',
+                    $existingOperator->name ?? 'مشغل آخر',
+                    $existingUnit->name ?? 'غير محدد',
+                    $distance,
+                    $minDistanceKm
+                ),
+                'conflict_type' => 'generation_unit',
+                'conflict_data' => [
+                    'generation_unit_id' => $existingUnit->id,
+                    'generation_unit_name' => $existingUnit->name ?? 'غير محدد',
+                    'operator_id' => $existingOperator->id ?? null,
+                    'operator_name' => $existingOperator->name ?? 'غير محدد',
+                    'latitude' => (float) $existingUnit->latitude,
+                    'longitude' => (float) $existingUnit->longitude,
+                    'distance' => $distance,
+                ],
+            ]);
+        }
+
+        // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة
+        $existingTerritory = OperatorTerritory::findTerritoryContainingPoint(
+            $latitude,
+            $longitude,
+            $operatorId
+        );
+
+        if ($existingTerritory) {
+            $existingOperator = $existingTerritory->operator;
+            $distance = OperatorTerritory::calculateDistance(
+                $existingTerritory->center_latitude,
+                $existingTerritory->center_longitude,
+                $latitude,
+                $longitude
+            );
+
+            return response()->json([
+                'success' => false,
+                'available' => false,
+                'message' => sprintf(
+                    'الموقع يقع ضمن منطقة جغرافية مملوكة للمشغل "%s" (نطاق %s كم). المسافة من مركز المنطقة: %s كم.',
+                    $existingOperator->name ?? 'مشغل آخر',
+                    $existingTerritory->radius_km,
+                    $distance
+                ),
+                'conflict_type' => 'territory',
+                'territory' => [
+                    'id' => $existingTerritory->id,
+                    'operator_id' => $existingTerritory->operator_id,
+                    'operator_name' => $existingOperator->name ?? 'غير محدد',
+                    'center_latitude' => (float) $existingTerritory->center_latitude,
+                    'center_longitude' => (float) $existingTerritory->center_longitude,
+                    'radius_km' => (float) $existingTerritory->radius_km,
+                    'distance' => $distance,
+                ],
+            ]);
+        }
+
+        // الحصول على نصف القطر من المشغل
+        $operator = Operator::find($operatorId);
+        $radiusKm = $operator && $operator->territory_radius_km 
+            ? (float) $operator->territory_radius_km 
+            : 5.0; // Default to 5km
+
+        return response()->json([
+            'success' => true,
+            'available' => true,
+            'message' => 'الموقع متاح لإضافة وحدة التوليد.',
+            'operator_radius_km' => $radiusKm,
+        ]);
+    }
+
 }
 

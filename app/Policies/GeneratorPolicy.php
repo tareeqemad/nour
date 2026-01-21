@@ -156,4 +156,18 @@ class GeneratorPolicy
     {
         return $user->isSuperAdmin();
     }
+
+    /**
+     * Determine whether the user can transfer the generator to another operator.
+     */
+    public function transfer(User $user, Generator $generator): bool
+    {
+        // SuperAdmin, Admin, and EnergyAuthority can transfer
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+            return true;
+        }
+
+        // Check dynamic permission
+        return $user->hasPermission('generators.transfer');
+    }
 }

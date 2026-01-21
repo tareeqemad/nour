@@ -1,172 +1,325 @@
-// Map Page JavaScript
+/**
+ * Public Map JavaScript
+ * Handles interactive map functionality for generation units
+ */
 (function() {
     'use strict';
 
-    // Use variables defined in page, or fallback to defaults
-    const lat = typeof window.defaultLat !== 'undefined' ? window.defaultLat : 31.3547;
-    const lng = typeof window.defaultLng !== 'undefined' ? window.defaultLng : 34.3088;
-    const zoom = typeof window.defaultZoom !== 'undefined' ? window.defaultZoom : 10.5;
-    const apiUrl = typeof window.mapApiUrl !== 'undefined' ? window.mapApiUrl : '/api/operators/map';
-
-    // Wait for DOM and Leaflet to be ready
-    function initMap() {
-        // Check if Leaflet is loaded
-        if (typeof L === 'undefined') {
-            console.error('Leaflet library not loaded');
-            setTimeout(initMap, 100);
-            return;
+    // Configuration
+    const CONFIG = {
+        defaultLat: 31.3547,
+        defaultLng: 34.3088,
+        defaultZoom: 10.5,
+        markerIconsBase: window.markerIconsBase || '/assets/leaflet/images/markers',
+        markerShadowPath: window.markerShadowPath || '/assets/leaflet/images/marker-shadow.png',
+        routes: {
+            territories: window.territoriesRoute || '/api/territories/map',
+            operators: window.operatorsRoute || '/api/operators/map'
         }
-        
-        // Check if map element exists
-        const mapElement = document.getElementById('map');
-        if (!mapElement) {
-            console.error('Map element not found');
-            setTimeout(initMap, 100);
-            return;
-        }
+    };
 
         // Initialize map
-        const map = L.map('map').setView([lat, lng], zoom);
-        
-        // Tile layers
-        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+    let map = L.map('map').setView([CONFIG.defaultLat, CONFIG.defaultLng], CONFIG.defaultZoom);
+    
+    // Map layers
+    const detailedStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hot.openstreetmap.org/" target="_blank">HOT</a>',
             maxZoom: 19
         });
         
         const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '&copy; Esri',
+        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
             maxZoom: 19
         });
         
-        let currentLayer = streetLayer;
+    let currentLayer = detailedStreetLayer;
         currentLayer.addTo(map);
         
-        // Markers group
+    // Layer groups
         let markersGroup = L.layerGroup().addTo(map);
-        let currentOperators = [];
+    let territoriesGroup = L.layerGroup().addTo(map);
+    
+    // Data storage
+    let currentUnits = [];
         let currentMarkers = {};
+    let currentTerritories = [];
+    let territoryCircles = {};
         
-        // DOM elements
-        const governorateSelect = document.getElementById('governorate');
-        const loadingDiv = document.getElementById('loading');
-        const noOperatorsDiv = document.getElementById('noOperators');
-        const sidebar = document.getElementById('sidebar');
-        const operatorsList = document.getElementById('operatorsList');
-        const sidebarCount = document.getElementById('sidebarCount');
-        const statsPreview = document.getElementById('statsPreview');
+    // DOM elements
+    const governorateSelect = document.getElementById('governorate');
+    const searchBtn = document.getElementById('searchBtn');
+    const showTerritoriesCheckbox = document.getElementById('showTerritories');
+    const loadingOverlay = document.getElementById('loading');
+    const noOperatorsDiv = document.getElementById('noOperators');
+    const sidebar = document.getElementById('sidebar');
+    const unitsList = document.getElementById('unitsList');
+    const sidebarCount = document.getElementById('sidebarCount');
+    const statsDiv = document.getElementById('stats');
+    const mapTypeStreet = document.getElementById('mapTypeStreet');
+    const mapTypeSatellite = document.getElementById('mapTypeSatellite');
+    const mainMapLayout = document.getElementById('mainMapLayout');
+    
+    /**
+     * Change map type
+     */
+    function changeMapType(type) {
+        map.removeLayer(currentLayer);
+        mapTypeStreet.classList.remove('active');
+        mapTypeSatellite.classList.remove('active');
         
-        if (!governorateSelect || !loadingDiv || !noOperatorsDiv || !sidebar || !operatorsList || !sidebarCount || !statsPreview) {
-            console.error('Some required DOM elements not found');
+        if (type === 'street') {
+            currentLayer = detailedStreetLayer;
+            mapTypeStreet.classList.add('active');
+        } else {
+            currentLayer = satelliteLayer;
+            mapTypeSatellite.classList.add('active');
+        }
+        
+        currentLayer.addTo(map);
+    }
+    
+    /**
+     * Show/hide loading overlay
+     */
+        function showLoading(show) {
+            if (show) {
+            loadingOverlay.classList.add('active');
+            noOperatorsDiv.classList.remove('active');
+            } else {
+            loadingOverlay.classList.remove('active');
+        }
+        }
+        
+    /**
+     * Show/hide empty state
+     */
+        function showNoOperators(show) {
+            if (show) {
+            noOperatorsDiv.classList.add('active');
+            } else {
+            noOperatorsDiv.classList.remove('active');
+        }
+    }
+    
+    /**
+     * Calculate distance between two points (Haversine formula)
+     */
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    /**
+     * Load territories from server
+     */
+    async function loadTerritories() {
+        const showTerritories = showTerritoriesCheckbox ? showTerritoriesCheckbox.checked : true;
+        
+        if (!showTerritories) {
+            territoriesGroup.clearLayers();
+            territoryCircles = {};
             return;
         }
         
-        // Marker colors by governorate
-        const markerColors = {
-            'غزة': 'blue',
-            'الوسطى': 'green',
-            'خانيونس': 'orange',
-            'رفح': 'red'
-        };
-        
-        function createColoredIcon(color) {
-            return L.icon({
-                iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            });
+        try {
+            const response = await fetch(CONFIG.routes.territories);
+            const data = await response.json();
+            
+            if (data.success && data.territories) {
+                territoriesGroup.clearLayers();
+                territoryCircles = {};
+                
+                data.territories.forEach(territory => {
+                    const radiusMeters = territory.radius_km * 1000;
+                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+                    const colorIndex = territory.operator_id % colors.length;
+                    const color = colors[colorIndex];
+                    
+                    const circle = L.circle([territory.center_latitude, territory.center_longitude], {
+                        radius: radiusMeters,
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.2,
+                        weight: 2
+                    }).addTo(territoriesGroup);
+                    
+                    const areaKm2 = Math.PI * territory.radius_km * territory.radius_km;
+                    
+                    const popupContent = `
+                        <div class="territory-popup">
+                            <div class="territory-popup-header">
+                                <h4>
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    ${territory.name || 'منطقة جغرافية'}
+                                </h4>
+                            </div>
+                            <div class="territory-popup-content">
+                                <div class="territory-info-row">
+                                    <span class="territory-info-label">المشغل:</span>
+                                    <span class="territory-info-value">${territory.operator_name || 'غير محدد'}</span>
+                                </div>
+                                <div class="territory-info-row">
+                                    <span class="territory-info-label">المالك:</span>
+                                    <span class="territory-info-value">${territory.owner_name || 'غير محدد'}</span>
+                                </div>
+                                <div class="territory-info-row">
+                                    <span class="territory-info-label">المساحة:</span>
+                                    <span class="territory-info-value">${areaKm2.toFixed(2)} كم²</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    circle.bindPopup(popupContent, {
+                        maxWidth: 300,
+                        className: 'territory-popup-wrapper'
+                    });
+                    
+                    territoryCircles[territory.id] = circle;
+                });
+                
+                currentTerritories = data.territories;
+            }
+        } catch (error) {
+            console.error('Error loading territories:', error);
+        }
+    }
+    
+    /**
+     * Load generation units from server
+     */
+    async function loadUnits(governorate) {
+        if (!governorate || governorate === '') {
+            // Hide map layout when no governorate is selected
+            if (mainMapLayout) {
+                mainMapLayout.classList.add('hidden');
+            }
+            markersGroup.clearLayers();
+            showNoOperators(false);
+            statsDiv.style.display = 'none';
+            sidebar.style.display = 'none';
+            currentUnits = [];
+            currentMarkers = {};
+            map.setView([CONFIG.defaultLat, CONFIG.defaultLng], CONFIG.defaultZoom);
+            return;
         }
         
-        function showLoading(show) {
-            if (show) {
-                loadingDiv.style.display = 'flex';
-                noOperatorsDiv.style.display = 'none';
-            } else {
-                loadingDiv.style.display = 'none';
-            }
+        // Show map layout when governorate is selected
+        if (mainMapLayout) {
+            mainMapLayout.classList.remove('hidden');
+            // Make map full width initially
+            mainMapLayout.classList.add('full-width');
         }
-        
-        function showNoOperators(show) {
-            if (show) {
-                noOperatorsDiv.style.display = 'flex';
-                sidebar.style.display = 'none';
-                statsPreview.style.display = 'none';
-            } else {
-                noOperatorsDiv.style.display = 'none';
-            }
-        }
-        
-        async function loadOperators(governorate) {
-            if (!governorate || governorate === '') {
-                markersGroup.clearLayers();
-                showNoOperators(false);
-                sidebar.style.display = 'none';
-                statsPreview.style.display = 'none';
-                currentOperators = [];
-                currentMarkers = {};
-                map.setView([lat, lng], zoom);
-                return;
-            }
             
             showLoading(true);
             markersGroup.clearLayers();
+        statsDiv.style.display = 'none';
             sidebar.style.display = 'none';
-            statsPreview.style.display = 'none';
-            currentOperators = [];
+        currentUnits = [];
             currentMarkers = {};
             
             try {
-                const response = await fetch(`${apiUrl}?governorate=${governorate}`);
+            const response = await fetch(`${CONFIG.routes.operators}?governorate=${governorate}`);
                 const data = await response.json();
                 
                 showLoading(false);
                 
                 if (data.success && data.data.length > 0) {
                     showNoOperators(false);
-                    currentOperators = data.data;
+                    currentUnits = data.data;
                     currentMarkers = {};
                     
-                    // Update stats
-                    updateStats(data.data);
+                    // Remove full-width class to show sidebar
+                    if (mainMapLayout) {
+                        mainMapLayout.classList.remove('full-width');
+                    }
                     
-                    // Show sidebar
-                    sidebar.style.display = 'block';
+                    updateStats(data.data);
+                    sidebar.style.display = 'flex';
                     updateSidebar(data.data);
                     
-                    // Add markers
                     const bounds = [];
-                    data.data.forEach((operator) => {
-                        const color = markerColors[operator.governorate] || 'blue';
+                const markerColors = {
+                    'غزة': 'blue',
+                    'الوسطى': 'green',
+                    'خانيونس': 'orange',
+                    'رفح': 'red'
+                };
+                
+                function createColoredIcon(color) {
+                    return L.icon({
+                        iconUrl: `${CONFIG.markerIconsBase}/marker-icon-2x-${color}.png`,
+                        shadowUrl: CONFIG.markerShadowPath,
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    });
+                }
+                
+                data.data.forEach((unit) => {
+                    const color = markerColors[unit.governorate] || 'blue';
                         const icon = createColoredIcon(color);
                         
-                        const marker = L.marker([operator.latitude, operator.longitude], {
+                    const marker = L.marker([unit.latitude, unit.longitude], {
                             icon: icon
                         }).addTo(markersGroup);
                         
-                        currentMarkers[operator.id] = marker;
-                        
-                        let popupContent = `
-                            <div class="popup-content">
-                                <h3>${operator.name}</h3>
-                                ${operator.governorate ? `<p><strong>المحافظة:</strong> ${operator.governorate}</p>` : ''}
-                                ${operator.city ? `<p><strong>المدينة:</strong> ${operator.city}</p>` : ''}
-                                ${operator.phone ? `<p><strong>الهاتف:</strong> <a href="tel:${operator.phone}">${operator.phone}</a></p>` : ''}
+                    currentMarkers[unit.id] = marker;
+                    
+                    const popupContent = `
+                        <div class="unit-popup">
+                            <div class="unit-popup-header">
+                                <h3>${unit.name}</h3>
+                            </div>
+                            <div class="unit-popup-content">
+                                ${unit.governorate ? `
+                                    <div class="unit-info-row">
+                                        <span class="unit-info-label">المحافظة:</span>
+                                        <span class="unit-info-value">${unit.governorate}</span>
+                                    </div>
+                                ` : ''}
+                                ${unit.city ? `
+                                    <div class="unit-info-row">
+                                        <span class="unit-info-label">المدينة:</span>
+                                        <span class="unit-info-value">${unit.city}</span>
+                                    </div>
+                                ` : ''}
+                                ${unit.operator_name ? `
+                                    <div class="unit-info-row">
+                                        <span class="unit-info-label">المشغل:</span>
+                                        <span class="unit-info-value">${unit.operator_name}</span>
+                                    </div>
+                                ` : ''}
+                                ${unit.phone ? `
+                                    <div class="unit-info-row">
+                                        <span class="unit-info-label">الهاتف:</span>
+                                        <span class="unit-info-value"><a href="tel:${unit.phone}">${unit.phone}</a></span>
+                                    </div>
+                                ` : ''}
+                            </div>
                             </div>
                         `;
                         
-                        marker.bindPopup(popupContent);
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 350,
+                        className: 'custom-popup'
+                    });
                         
                         marker.on('click', function() {
-                            highlightOperatorInSidebar(operator.id);
-                        });
-                        
-                        bounds.push([operator.latitude, operator.longitude]);
+                        highlightUnitInSidebar(unit.id);
                     });
                     
-                    // Fit bounds
+                    bounds.push([unit.latitude, unit.longitude]);
+                });
+                
                     if (bounds.length > 0) {
                         if (bounds.length === 1) {
                             map.setView(bounds[0], 15);
@@ -174,54 +327,68 @@
                             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
                         }
                     }
+                
+                await loadTerritories();
                 } else {
+                    // Keep map full width when no units found
+                    if (mainMapLayout) {
+                        mainMapLayout.classList.add('full-width');
+                    }
                     showNoOperators(true);
+                    sidebar.style.display = 'none';
+                    statsDiv.style.display = 'none';
+                    await loadTerritories();
                 }
-            } catch (error) {
-                console.error('Error loading operators:', error);
-                showLoading(false);
-                showNoOperators(true);
-                alert('حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.');
-            }
+        } catch (error) {
+            console.error('Error loading units:', error);
+            showLoading(false);
+            showNoOperators(true);
         }
+    }
+    
+    /**
+     * Update statistics
+     */
+    function updateStats(units) {
+        const stats = {};
         
-        function updateStats(operators) {
-            const stats = {};
-            operators.forEach(op => {
-                const gov = op.governorate || 'غير محدد';
+        units.forEach(unit => {
+            const gov = unit.governorate || 'غير محدد';
                 stats[gov] = (stats[gov] || 0) + 1;
             });
             
-            let statsHTML = '<div class="stats-grid">';
+        let statsHTML = '';
             Object.keys(stats).forEach(gov => {
                 statsHTML += `
-                    <div class="stat-item">
-                        <span class="stat-label">${gov}</span>
-                        <span class="stat-value">${stats[gov]}</span>
+                <div class="stat-card">
+                    <div class="stat-card-label">${gov}</div>
+                    <div class="stat-card-value">${stats[gov]}</div>
                     </div>
                 `;
             });
-            statsHTML += '</div>';
-            
-            statsPreview.innerHTML = statsHTML;
-            statsPreview.style.display = 'block';
-        }
         
-        function updateSidebar(operators) {
-            sidebarCount.textContent = operators.length;
-            operatorsList.innerHTML = '';
-            
-            const uniqueGovernorates = [...new Set(operators.map(op => op.governorate).filter(Boolean))];
+        statsDiv.innerHTML = statsHTML;
+        statsDiv.style.display = 'grid';
+    }
+    
+    /**
+     * Update sidebar
+     */
+    function updateSidebar(units) {
+        sidebarCount.textContent = units.length;
+        unitsList.innerHTML = '';
+        
+        const uniqueGovernorates = [...new Set(units.map(unit => unit.governorate).filter(Boolean))];
             const isMultipleGovernorates = uniqueGovernorates.length > 1;
             
             if (isMultipleGovernorates) {
                 const groupedByGovernorate = {};
-                operators.forEach(operator => {
-                    const gov = operator.governorate || 'غير محدد';
+            units.forEach(unit => {
+                const gov = unit.governorate || 'غير محدد';
                     if (!groupedByGovernorate[gov]) {
                         groupedByGovernorate[gov] = [];
                     }
-                    groupedByGovernorate[gov].push(operator);
+                groupedByGovernorate[gov].push(unit);
                 });
                 
                 const governorateOrder = ['غزة', 'الوسطى', 'خانيونس', 'رفح'];
@@ -242,58 +409,76 @@
                     header.className = 'governorate-header';
                     header.innerHTML = `
                         <span>${governorate}</span>
-                        <span class="count-badge">${groupedByGovernorate[governorate].length}</span>
+                    <span class="governorate-badge">${groupedByGovernorate[governorate].length}</span>
                     `;
                     section.appendChild(header);
                     
-                    const operatorsContainer = document.createElement('div');
-                    operatorsContainer.className = 'governorate-operators';
+                const unitsContainer = document.createElement('div');
+                unitsContainer.className = 'governorate-operators';
+                
+                groupedByGovernorate[governorate].forEach(unit => {
+                    const li = document.createElement('li');
+                    li.className = 'unit-item';
+                    li.dataset.unitId = unit.id;
+                    li.innerHTML = `
+                        <div class="unit-name">${unit.name}</div>
+                        <div class="unit-details">
+                            ${unit.unit_code ? `<i class="bi bi-hash"></i>${unit.unit_code}<br>` : ''}
+                            ${unit.city ? `<i class="bi bi-geo-alt"></i>${unit.city}` : ''}
+                            ${unit.phone ? `<br><i class="bi bi-telephone"></i>${unit.phone}` : ''}
+                        </div>
+                    `;
                     
-                    groupedByGovernorate[governorate].forEach(operator => {
-                        const li = createOperatorListItem(operator);
-                        operatorsContainer.appendChild(li);
+                    li.addEventListener('click', function() {
+                        const marker = currentMarkers[unit.id];
+                        if (marker) {
+                            map.setView([unit.latitude, unit.longitude], 15);
+                            marker.openPopup();
+                            highlightUnitInSidebar(unit.id);
+                        }
                     });
                     
-                    section.appendChild(operatorsContainer);
-                    operatorsList.appendChild(section);
+                    unitsContainer.appendChild(li);
+                });
+                
+                section.appendChild(unitsContainer);
+                unitsList.appendChild(section);
                 });
             } else {
-                operators.forEach(operator => {
-                    const li = createOperatorListItem(operator);
-                    operatorsList.appendChild(li);
-                });
-            }
-        }
-        
-        function createOperatorListItem(operator) {
+            units.forEach(unit => {
             const li = document.createElement('li');
-            li.dataset.operatorId = operator.id;
-            const cityHtml = operator.city ? `<span>${operator.city}</span>` : '';
-            const phoneHtml = operator.phone ? `<span>📞 ${operator.phone}</span>` : '';
+                li.className = 'unit-item';
+                li.dataset.unitId = unit.id;
             li.innerHTML = `
-                <div class="operator-name">${operator.name}</div>
-                <div class="operator-details">
-                    ${cityHtml}
-                    ${phoneHtml}
+                    <div class="unit-name">${unit.name}</div>
+                    <div class="unit-details">
+                        ${unit.unit_code ? `<i class="bi bi-hash"></i>${unit.unit_code}<br>` : ''}
+                        ${unit.city ? `<i class="bi bi-geo-alt"></i>${unit.city}` : ''}
+                        ${unit.phone ? `<br><i class="bi bi-telephone"></i>${unit.phone}` : ''}
                 </div>
             `;
             
             li.addEventListener('click', function() {
-                const marker = currentMarkers[operator.id];
+                    const marker = currentMarkers[unit.id];
                 if (marker) {
-                    map.setView([operator.latitude, operator.longitude], 15);
+                        map.setView([unit.latitude, unit.longitude], 15);
                     marker.openPopup();
-                    highlightOperatorInSidebar(operator.id);
-                }
+                        highlightUnitInSidebar(unit.id);
+                    }
+                });
+                
+                unitsList.appendChild(li);
             });
-            
-            return li;
         }
-        
-        function highlightOperatorInSidebar(operatorId) {
-            const items = operatorsList.querySelectorAll('li');
+    }
+    
+    /**
+     * Highlight unit in sidebar
+     */
+    function highlightUnitInSidebar(unitId) {
+        const items = unitsList.querySelectorAll('.unit-item');
             items.forEach(item => {
-                if (item.dataset.operatorId == operatorId) {
+            if (item.dataset.unitId == unitId) {
                     item.classList.add('active');
                     const section = item.closest('.governorate-section');
                     if (section) {
@@ -307,26 +492,61 @@
             });
         }
         
-        // Event listeners
-        governorateSelect.addEventListener('change', function() {
-            loadOperators(this.value);
-        });
-        
-        // Hide loading overlay initially - map is ready
-        showLoading(false);
-        
-        // Trigger map resize after a short delay to ensure proper rendering
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 100);
+        /**
+     * Handle search button click
+     */
+    function handleSearch() {
+        const governorate = governorateSelect ? governorateSelect.value : '';
+        if (governorate) {
+            loadUnits(governorate);
+        } else {
+            // Show message if no governorate selected
+            alert('يرجى اختيار المحافظة أولاً');
+        }
     }
     
-    // Initialize when DOM and scripts are ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initMap, 200);
-        });
-    } else {
-        setTimeout(initMap, 200);
+    // Event listeners
+    if (mapTypeStreet) {
+        mapTypeStreet.addEventListener('click', () => changeMapType('street'));
     }
+    
+    if (mapTypeSatellite) {
+        mapTypeSatellite.addEventListener('click', () => changeMapType('satellite'));
+    }
+    
+    // Search button click event
+    if (searchBtn) {
+        searchBtn.addEventListener('click', handleSearch);
+    }
+    
+    // Allow Enter key to trigger search
+    if (governorateSelect) {
+        governorateSelect.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch();
+            }
+        });
+    }
+    
+    if (showTerritoriesCheckbox) {
+        showTerritoriesCheckbox.addEventListener('change', function() {
+            loadTerritories();
+        });
+    }
+    
+    // Don't load territories on page load - wait for user to select governorate
+    // loadTerritories();
+    
+    // Reload territories on zoom/move (only if map is visible)
+    map.on('zoomend', function() {
+        if (mainMapLayout && !mainMapLayout.classList.contains('hidden')) {
+            loadTerritories();
+        }
+    });
+    map.on('moveend', function() {
+        if (mainMapLayout && !mainMapLayout.classList.contains('hidden')) {
+            loadTerritories();
+        }
+    });
 })();

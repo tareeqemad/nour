@@ -10,7 +10,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/icons.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ asset('assets/leaflet/leaflet.css') }}" />
     <style>
         .stat-card {
             background: #fff;
@@ -689,7 +689,7 @@
 
 @push('scripts')
     @if($generationUnit->latitude && $generationUnit->longitude)
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="{{ asset('assets/leaflet/leaflet.js') }}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const lat = {{ $generationUnit->latitude }};

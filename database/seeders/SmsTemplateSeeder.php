@@ -16,14 +16,14 @@ class SmsTemplateSeeder extends Seeder
             [
                 'key' => 'user_credentials',
                 'name' => 'رسالة بيانات الدخول للمستخدم',
-                'template' => "مرحباً {name}،\nتم تسجيلك على منصة راصد.\nالدور: {role}\nاسم المستخدم: {username}\nكلمة المرور: {password}\nرابط الدخول: {login_url}",
+                'template' => "مرحباً {name}،\nتم تسجيلك على منصة نور.\nالدور: {role}\nاسم المستخدم: {username}\nكلمة المرور: {password}\nرابط الدخول: {login_url}",
                 'max_length' => 220,
                 'is_active' => true,
             ],
             [
                 'key' => 'password_reset',
                 'name' => 'رسالة إعادة تعيين كلمة المرور',
-                'template' => "مرحباً {name}،\nتم إعادة تعيين كلمة المرور لحسابك على منصة راصد.\n\nاسم المستخدم: {username}\nكلمة المرور الجديدة: {password}\n\nرابط الدخول: {login_url}",
+                'template' => "مرحباً {name}،\nتم إعادة تعيين كلمة المرور لحسابك على منصة نور.\n\nاسم المستخدم: {username}\nكلمة المرور الجديدة: {password}\n\nرابط الدخول: {login_url}",
                 'max_length' => 220,
                 'is_active' => true,
             ],

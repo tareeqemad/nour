@@ -124,7 +124,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if this is the system user (منصة راصد) used for system messages
+     * Check if this is the system user (منصة نور) used for system messages
      */
     public function isSystemUser(): bool
     {

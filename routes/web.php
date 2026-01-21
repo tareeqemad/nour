@@ -16,6 +16,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::get('/api/operators/map', [\App\Http\Controllers\PublicHomeController::class, 'getOperatorsForMap'])->name('front.operators.map');
+Route::get('/api/territories/map', [\App\Http\Controllers\PublicHomeController::class, 'getTerritoriesForMap'])->name('front.territories.map');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

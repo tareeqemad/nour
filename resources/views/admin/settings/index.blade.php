@@ -49,10 +49,10 @@
                                         <label class="form-label fw-semibold">لوجو الموقع</label>
                                         <div>
                                             @php
-                                                $currentLogo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/rased_logo.png');
+                                                $currentLogo = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/nour_logo.png');
                                             @endphp
                                             <div class="img-preview">
-                                                <img src="{{ asset($currentLogo) }}" alt="Logo" id="logoPreview" style="max-height: 150px;" onerror="this.src='{{ asset('assets/admin/images/brand-logos/rased_logo.png') }}'">
+                                                <img src="{{ asset($currentLogo) }}" alt="Logo" id="logoPreview" style="max-height: 150px;" onerror="this.src='{{ asset('assets/admin/images/brand-logos/nour_logo.png') }}'">
                                             </div>
                                         </div>
                                         <input type="file" name="logo" id="logoInput" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml">

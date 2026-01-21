@@ -164,9 +164,14 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::resource('generation-units', GenerationUnitController::class);
     Route::get('/operators/{operator}/data', [GenerationUnitController::class, 'getOperatorData'])->name('operators.data');
     Route::get('/operators/{operatorId}/generation-units-list', [GenerationUnitController::class, 'getGenerationUnitsByOperator'])->name('operators.generation-units-list');
+    Route::get('/territories/all', [GenerationUnitController::class, 'getAllTerritories'])->name('territories.all');
+    Route::get('/territories/check', [GenerationUnitController::class, 'checkTerritory'])->name('territories.check');
     Route::get('/generation-units/{generationUnit}/qr-code', [GenerationUnitController::class, 'qrCode'])->name('generation-units.qr-code');
     Route::get('/generation-units/{generationUnit}/can-delete', [GenerationUnitController::class, 'canDelete'])->name('generation-units.can-delete');
     Route::resource('generators', GeneratorController::class);
+    Route::get('/generators/{generator}/transfer', [GeneratorController::class, 'showTransferForm'])->name('generators.transfer');
+    Route::post('/generators/{generator}/transfer', [GeneratorController::class, 'transfer'])->name('generators.transfer.store');
+    Route::get('/generators/{generator}/transfer/operators/{operator}/generation-units', [GeneratorController::class, 'getGenerationUnitsForTransfer'])->name('generators.transfer.generation-units');
     Route::get('/generators/{generator}/qr-code', [GeneratorController::class, 'qrCode'])->name('generators.qr-code');
     Route::get('/generators/{generator}/can-delete', [GeneratorController::class, 'canDelete'])->name('generators.can-delete');
     Route::get('/operators/{operator}/generation-units', [GeneratorController::class, 'getGenerationUnits'])->name('operators.generation-units');

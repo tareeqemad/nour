@@ -113,6 +113,7 @@ class RoleSeeder extends Seeder
                     'fuel_efficiencies.update',
                     'generators.create',
                     'generators.update',
+                    'generators.transfer',
                     'generation_units.create',
                     'generation_units.update',
                     // Manage users and custom roles (under their authority)
@@ -147,6 +148,7 @@ class RoleSeeder extends Seeder
                     'operators.view',
                     'operators.approve', // Admin can approve operators
                     'generators.view',
+                    'generators.transfer',
                     'generation_units.view',
                     'operation_logs.view',
                     'fuel_efficiencies.view',

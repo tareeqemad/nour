@@ -69,6 +69,9 @@ class UpdateGenerationUnitRequest extends FormRequest
             'detailed_address' => ['required', 'string'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'territory_area_km2' => ['required', 'numeric', 'min:0.1', 'max:360'],
+            'territory_radius_km' => ['nullable', 'numeric'], // سيتم حسابه تلقائياً من المساحة
+            'territory_name' => ['required', 'string', 'max:255'],
 
             // القدرات الفنية
             'total_capacity' => ['required', 'numeric', 'min:0.01'],

@@ -659,52 +659,53 @@ class MessageController extends Controller
         
         $count = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(1), function () use ($user) {
             return Message::where(function ($q) use ($user) {
-            if ($user->isCompanyOwner()) {
-                $operator = $user->ownedOperators()->first();
-                if ($operator) {
-                    $q->where(function ($subQ) use ($user, $operator) {
+                if ($user->isCompanyOwner()) {
+                    $operator = $user->ownedOperators()->first();
+                    if ($operator) {
+                        $q->where(function ($subQ) use ($user, $operator) {
+                            $subQ->where('receiver_id', $user->id)
+                                 ->orWhere(function ($q2) use ($operator) {
+                                     $q2->where('type', 'admin_to_operator')
+                                        ->where('operator_id', $operator->id)
+                                        ->where('is_read', false);
+                                 })
+                                 ->orWhere(function ($q2) use ($operator) {
+                                     $q2->where('type', 'admin_to_all')
+                                        ->whereNull('operator_id')
+                                        ->where('is_read', false);
+                                 })
+                                 ->orWhere(function ($q2) use ($operator) {
+                                     $q2->where('type', 'operator_to_staff')
+                                        ->where('operator_id', $operator->id)
+                                        ->where('is_read', false);
+                                 });
+                        });
+                    } else {
+                        $q->where('receiver_id', $user->id);
+                    }
+                } elseif ($user->hasOperatorLinkedCustomRole()) {
+                    $operatorId = $user->roleModel->operator_id;
+                    $q->where(function ($subQ) use ($user, $operatorId) {
                         $subQ->where('receiver_id', $user->id)
-                             ->orWhere(function ($q2) use ($operator) {
-                                 $q2->where('type', 'admin_to_operator')
-                                    ->where('operator_id', $operator->id)
-                                    ->where('is_read', false);
-                             })
-                             ->orWhere(function ($q2) use ($operator) {
-                                 $q2->where('type', 'admin_to_all')
-                                    ->whereNull('operator_id')
-                                    ->where('is_read', false);
-                             })
-                             ->orWhere(function ($q2) use ($operator) {
+                             ->orWhere(function ($q2) use ($operatorId) {
                                  $q2->where('type', 'operator_to_staff')
-                                    ->where('operator_id', $operator->id)
+                                    ->where('operator_id', $operatorId)
                                     ->where('is_read', false);
                              });
                     });
                 } else {
                     $q->where('receiver_id', $user->id);
                 }
-            } elseif ($user->hasOperatorLinkedCustomRole()) {
-                $operatorId = $user->roleModel->operator_id;
-                $q->where(function ($subQ) use ($user, $operatorId) {
-                    $subQ->where('receiver_id', $user->id)
-                         ->orWhere(function ($q2) use ($operatorId) {
-                             $q2->where('type', 'operator_to_staff')
-                                ->where('operator_id', $operatorId)
-                                ->where('is_read', false);
-                         });
-                });
-            } else {
-                $q->where('receiver_id', $user->id);
-            }
-        })->where('is_read', false)
-          ->where('sender_id', '!=', $user->id)
-          ->where(function ($q) use ($user) {
-              // الرسائل المستقبلة: لا نعرضها إذا حذفها المستقبل
-              $q->whereNull('receiver_id')
-                ->orWhere('receiver_id', '!=', $user->id)
-                ->orWhere('deleted_by_receiver', false);
-          })
-          ->count();
+            })->where('is_read', false)
+              ->where('sender_id', '!=', $user->id)
+              ->where(function ($q) use ($user) {
+                  // الرسائل المستقبلة: لا نعرضها إذا حذفها المستقبل
+                  $q->whereNull('receiver_id')
+                    ->orWhere('receiver_id', '!=', $user->id)
+                    ->orWhere('deleted_by_receiver', false);
+              })
+              ->count();
+        });
 
         return response()->json(['count' => $count]);
     }

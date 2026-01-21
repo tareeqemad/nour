@@ -463,15 +463,18 @@ class AuthorizedPhoneController extends Controller
     private function sendWelcomeSMS(string $phone, ?string $name = null): void
     {
         $name = $name ?: 'عزيزي/عزيزتي';
+        // Get site name from settings
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
+        
         // استخدام رابط كامل (full URL) لرسائل SMS
         // url() helper يولد رابط كامل بناءً على APP_URL
         $joinUrl = url('/join');
         
         $message = "مرحباً {$name}،\n\n";
-        $message .= "تم إضافة رقمك ({$phone}) إلى قائمة الأرقام المصرح بها في منصة راصد.\n\n";
+        $message .= "تم إضافة رقمك ({$phone}) إلى قائمة الأرقام المصرح بها في منصة {$siteName}.\n\n";
         $message .= "يمكنك الآن التسجيل في المنصة من خلال الرابط التالي:\n";
         $message .= "{$joinUrl}\n\n";
-        $message .= "شكراً لانضمامك إلى منصة راصد.";
+        $message .= "شكراً لانضمامك إلى منصة {$siteName}.";
 
         \Log::info('Sending welcome SMS', [
             'phone' => $phone,
@@ -499,15 +502,18 @@ class AuthorizedPhoneController extends Controller
     private function sendRegistrationReminderSMS(string $phone, ?string $name = null): void
     {
         $name = $name ?: 'عزيزي/عزيزتي';
+        // Get site name from settings
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
+        
         // استخدام رابط كامل (full URL) لرسائل SMS
         // url() helper يولد رابط كامل بناءً على APP_URL
         $joinUrl = url('/join');
         
         $message = "مرحباً {$name}،\n\n";
-        $message .= "نود تذكيرك بأن رقمك ({$phone}) مصرح به في منصة راصد ولكن لم يتم التسجيل بعد.\n\n";
+        $message .= "نود تذكيرك بأن رقمك ({$phone}) مصرح به في منصة {$siteName} ولكن لم يتم التسجيل بعد.\n\n";
         $message .= "نرجو منك إكمال التسجيل في المنصة من خلال الرابط التالي:\n";
         $message .= "{$joinUrl}\n\n";
-        $message .= "شكراً لانضمامك إلى منصة راصد.";
+        $message .= "شكراً لانضمامك إلى منصة {$siteName}.";
 
         $smsService = new \App\Services\HotSMSService();
         $smsService->sendSMS($phone, $message, 2);
