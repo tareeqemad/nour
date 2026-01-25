@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
+use App\Traits\SanitizesInput;
 
 /**
  * ============================================
@@ -61,6 +62,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class UserController extends Controller
 {
+    use SanitizesInput;
     public function index(Request $request)
     {
         $this->authorize('viewAny', User::class);
@@ -1727,34 +1729,6 @@ class UserController extends Controller
         }
         
         return $username;
-    }
-
-    /**
-     * تنظيف مدخلات البحث لمنع SQL Injection
-     * 
-     * @param string|null $input
-     * @return string
-     */
-    protected function sanitizeSearchInput(?string $input): string
-    {
-        if (empty($input)) {
-            return '';
-        }
-
-        // إزالة المسافات الزائدة
-        $input = trim($input);
-        
-        // إزالة HTML tags
-        $input = strip_tags($input);
-        
-        // إزالة الأحرف الخاصة التي قد تستخدم في SQL Injection
-        // لكن نترك % و _ لأنها مفيدة في LIKE queries
-        $input = preg_replace('/[;\'"\\\]/', '', $input);
-        
-        // تحديد طول أقصى للبحث (255 حرف)
-        $input = mb_substr($input, 0, 255);
-        
-        return $input;
     }
 
     /**

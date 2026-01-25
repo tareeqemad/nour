@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Traits\ChecksSuperAdmin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -13,15 +14,7 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    /**
-     * Check if user is SuperAdmin
-     */
-    private function checkSuperAdmin()
-    {
-        if (!auth()->check() || !auth()->user()->isSuperAdmin()) {
-            abort(403, 'غير مصرح لك بالوصول إلى هذه الصفحة');
-        }
-    }
+    use ChecksSuperAdmin;
 
     public function index(): View
     {

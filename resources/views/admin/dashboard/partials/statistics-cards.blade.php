@@ -8,6 +8,8 @@
         @include('admin.dashboard.partials.statistics-cards.employee-technician')
     @elseif(auth()->user()->isCompanyOwner())
         @include('admin.dashboard.partials.statistics-cards.company-owner')
+    @elseif(auth()->user()->isEnergyAuthority())
+        @include('admin.dashboard.partials.statistics-cards.energy-authority')
     @elseif(auth()->user()->isAdmin())
         @include('admin.dashboard.partials.statistics-cards.admin')
     @elseif(auth()->user()->isSuperAdmin())

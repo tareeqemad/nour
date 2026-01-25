@@ -11,6 +11,7 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/fuel-efficiencies.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/cascading-selects.css') }}">
 @endpush
 
 @section('content')
@@ -45,116 +46,18 @@
                                     المعلومات الأساسية
                                 </h6>
                                 <div class="row g-3">
-                                    @if(auth()->user()->isSuperAdmin())
-                                        <div class="col-md-4">
-                                            <label class="form-label fw-semibold">
-                                                المشغل <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="operator_id" id="operator_id" 
-                                                    class="form-select select2 @error('operator_id') is-invalid @enderror">
-                                                <option value="0">-- اختر المشغل --</option>
-                                                @foreach($operators as $operator)
-                                                    <option value="{{ $operator->id }}" 
-                                                            {{ old('operator_id') == $operator->id ? 'selected' : '' }}>
-                                                        {{ $operator->name }}
-                                                        @if($operator->unit_number)
-                                                            - {{ $operator->unit_number }}
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('operator_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        <div class="col-md-4">
-                                            <label class="form-label fw-semibold">
-                                                وحدة التوليد <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="generation_unit_id" id="generation_unit_id" 
-                                                    class="form-select select2 @error('generation_unit_id') is-invalid @enderror" 
-                                                    required>
-                                                <option value="0">-- اختر وحدة التوليد --</option>
-                                            </select>
-                                            @error('generation_unit_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        <div class="col-md-4">
-                                            <label class="form-label fw-semibold">
-                                                المولد <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="generator_id" id="generator_id" 
-                                                    class="form-select select2 @error('generator_id') is-invalid @enderror">
-                                                <option value="0">-- اختر المولد --</option>
-                                            </select>
-                                            @error('generator_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    @else
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-semibold">
-                                                المشغل <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="operator_id" id="operator_id" 
-                                                    class="form-select select2 @error('operator_id') is-invalid @enderror" 
-                                                    disabled>
-                                                <option value="{{ $operators->first()->id }}" selected>
-                                                    {{ $operators->first()->name }}
-                                                    @if($operators->first()->unit_number)
-                                                        - {{ $operators->first()->unit_number }}
-                                                    @endif
-                                                </option>
-                                            </select>
-                                            <input type="hidden" name="operator_id" value="{{ $operators->first()->id }}">
-                                            @error('operator_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-semibold">
-                                                وحدة التوليد <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="generation_unit_id" id="generation_unit_id" 
-                                                    class="form-select select2 @error('generation_unit_id') is-invalid @enderror" 
-                                                    required>
-                                                <option value="0">-- اختر وحدة التوليد --</option>
-                                                @foreach($generationUnits as $unit)
-                                                    <option value="{{ $unit->id }}" 
-                                                            {{ old('generation_unit_id') == $unit->id ? 'selected' : '' }}>
-                                                        {{ $unit->name }} ({{ $unit->unit_code }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('generation_unit_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-semibold">
-                                                المولد <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="generator_id" id="generator_id" 
-                                                    class="form-select select2 @error('generator_id') is-invalid @enderror">
-                                                <option value="0">-- اختر المولد --</option>
-                                                @foreach($generators as $generator)
-                                                    <option value="{{ $generator->id }}" 
-                                                            data-generation-unit-id="{{ $generator->generation_unit_id }}"
-                                                            {{ old('generator_id') == $generator->id ? 'selected' : '' }}>
-                                                        {{ $generator->generator_number }} - {{ $generator->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('generator_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    @endif
+                                    {{-- Cascading Selects: المشغل → وحدة التوليد → المولد --}}
+                                    @php
+                                        $canSelect = !auth()->user()->isAffiliatedWithOperator();
+                                    @endphp
+                                    @include('admin.partials.cascading-selects', [
+                                        'operators' => $operators ?? collect(),
+                                        'showGenerator' => true,
+                                        'showGenerationUnit' => true,
+                                        'generationUnits' => $generationUnits ?? collect(),
+                                        'generators' => $generators ?? collect(),
+                                        'colClass' => $canSelect ? 'col-md-4' : 'col-md-6',
+                                    ])
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">
@@ -385,168 +288,33 @@
 @push('scripts')
 <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
 <script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
+<script src="{{ asset('assets/admin/js/cascading-selects.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {
-            // Initialize Select2 for all selects
-            $('.select2').select2({
-                dir: 'rtl',
-                language: 'ar',
-                allowClear: true,
-                width: '100%'
-            });
-
             const $form = $('#fuelEfficiencyForm');
             const $submitBtn = $form.find('button[type="submit"]');
-            
-            const $operatorSelect = $('#operator_id');
-            const $generationUnitSelect = $('#generation_unit_id');
-            const $generatorSelect = $('#generator_id');
-            
-            @if(auth()->user()->isSuperAdmin())
-                // للسوبر أدمن: المشغل → وحدة التوليد → المولد
-                // عند اختيار المشغل
-                $operatorSelect.on('change', async function() {
-                    const operatorId = $(this).val();
-                    
-                    // إعادة تهيئة Select2 لوحدة التوليد
-                    $generationUnitSelect.empty().append('<option value="0">-- اختر وحدة التوليد --</option>').select2('destroy').select2({
-                        dir: 'rtl',
-                        language: 'ar',
-                        allowClear: true,
-                        width: '100%'
-                    }).prop('disabled', true);
-                    
-                    // إعادة تهيئة Select2 للمولد
-                    $generatorSelect.empty().append('<option value="0">-- اختر المولد --</option>').select2('destroy').select2({
-                        dir: 'rtl',
-                        language: 'ar',
-                        allowClear: true,
-                        width: '100%'
-                    }).prop('disabled', true);
-                    
-                    if (!operatorId || operatorId == '0') {
-                        $generationUnitSelect.empty().append('<option value="0">-- اختر وحدة التوليد --</option>').prop('disabled', true);
-                        return;
-                    }
-                    
-                    try {
-                        const response = await fetch(`/admin/operators/${operatorId}/generation-units-for-efficiencies`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            $generationUnitSelect.empty().append('<option value="0">-- اختر وحدة التوليد --</option>');
-                            
-                            if (data.generation_units && data.generation_units.length > 0) {
-                                data.generation_units.forEach(unit => {
-                                    $generationUnitSelect.append(new Option(unit.label, unit.id, false, false));
-                                });
-                                $generationUnitSelect.prop('disabled', false).trigger('change');
-                            } else {
-                                $generationUnitSelect.append('<option value="">لا توجد وحدات توليد</option>');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error loading generation units:', error);
-                        $generationUnitSelect.empty().append('<option value="">حدث خطأ في التحميل</option>');
-                    }
-                });
-                
-                // عند اختيار وحدة التوليد
-                $generationUnitSelect.on('change', async function() {
-                    const generationUnitId = $(this).val();
-                    
-                    // إعادة تهيئة Select2 للمولد
-                    $generatorSelect.empty().append('<option value="0">-- اختر المولد --</option>').select2('destroy').select2({
-                        dir: 'rtl',
-                        language: 'ar',
-                        allowClear: true,
-                        width: '100%'
-                    }).prop('disabled', true);
-                    
-                    if (!generationUnitId || generationUnitId == '0') {
-                        $generatorSelect.empty().append('<option value="0">-- اختر المولد --</option>').prop('disabled', true);
-                        return;
-                    }
-                    
-                    try {
-                        const response = await fetch(`/admin/generation-units/${generationUnitId}/generators-for-efficiencies`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            $generatorSelect.empty().append('<option value="0">-- اختر المولد --</option>');
-                            
-                            if (data.generators && data.generators.length > 0) {
-                                data.generators.forEach(generator => {
-                                    $generatorSelect.append(new Option(generator.label, generator.id, false, false));
-                                });
-                                $generatorSelect.prop('disabled', false).trigger('change');
-                            } else {
-                                $generatorSelect.append('<option value="">لا توجد مولدات</option>');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error loading generators:', error);
-                        $generatorSelect.empty().append('<option value="">حدث خطأ في التحميل</option>');
-                    }
-                });
-                
-                @if(old('operator_id'))
-                    $operatorSelect.trigger('change');
-                @endif
-            @else
-                // للمشغل/الموظف: المشغل محدد → وحدات التوليد تظهر تلقائياً → يختار المولد
-                $generationUnitSelect.on('change', function() {
-                    const generationUnitId = $(this).val();
-                    const currentValue = $generatorSelect.val();
-                    
-                    // تصفية المولدات حسب وحدة التوليد
-                    $generatorSelect.find('option').each(function() {
-                        const $option = $(this);
-                        if (!$option.val() || $option.val() == '0') return; // تجاهل option الفارغ
-                        
-                        const optionGenerationUnitId = $option.data('generation-unit-id');
-                        if (generationUnitId && generationUnitId != '0' && optionGenerationUnitId == generationUnitId) {
-                            $option.prop('disabled', false).show();
-                        } else if (!generationUnitId || generationUnitId == '0') {
-                            $option.prop('disabled', false).show();
-                        } else {
-                            $option.prop('disabled', true).hide();
-                        }
-                    });
-                    
-                    // إعادة تهيئة Select2
-                    $generatorSelect.select2('destroy').select2({
-                        dir: 'rtl',
-                        language: 'ar',
-                        allowClear: true,
-                        width: '100%'
-                    });
-                    
-                    // إذا كانت القيمة الحالية غير متاحة، امسح الاختيار
-                    if (currentValue && currentValue != '0') {
-                        const $selectedOption = $generatorSelect.find(`option[value="${currentValue}"]`);
-                        if ($selectedOption.length && $selectedOption.prop('disabled')) {
-                            $generatorSelect.val('0').trigger('change');
-                        }
-                    }
-                });
-                
-                @if(old('generation_unit_id'))
-                    $generationUnitSelect.trigger('change');
-                @endif
+
+            // تهيئة Cascading Selects باستخدام المكتبة الموحدة
+            CascadingSelects.init({
+                canSelectOperator: {{ !auth()->user()->isAffiliatedWithOperator() ? 'true' : 'false' }},
+                operatorUrl: '/admin/operators/{id}/generation-units-for-efficiencies',
+                generationUnitUrl: '/admin/generation-units/{id}/generators-for-efficiencies',
+                useSelect2: true,
+                select2Options: {
+                    dir: 'rtl',
+                    language: 'ar',
+                    allowClear: true,
+                    width: '100%'
+                }
+            });
+
+            @if(old('operator_id') && !auth()->user()->isAffiliatedWithOperator())
+                $('#operator_id').trigger('change');
+            @endif
+
+            @if(old('generation_unit_id') && auth()->user()->isAffiliatedWithOperator())
+                $('#generation_unit_id').trigger('change');
             @endif
             
             // Calculate total operating cost

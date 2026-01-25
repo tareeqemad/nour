@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ComplaintSuggestion;
+use App\Traits\SanitizesInput;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ComplaintSuggestionController extends Controller
 {
+    use SanitizesInput;
     /**
      * عرض قائمة الشكاوى والمقترحات
      */
@@ -319,22 +321,5 @@ class ComplaintSuggestionController extends Controller
             'in_progress' => (clone $query)->where('status', 'in_progress')->count(),
             'resolved' => (clone $query)->where('status', 'resolved')->count(),
         ];
-    }
-
-    /**
-     * تنظيف مدخلات البحث
-     */
-    protected function sanitizeSearchInput(?string $input): string
-    {
-        if (empty($input)) {
-            return '';
-        }
-
-        $input = trim($input);
-        $input = strip_tags($input);
-        $input = preg_replace('/[;\'"\\\]/', '', $input);
-        $input = mb_substr($input, 0, 255);
-
-        return $input;
     }
 }

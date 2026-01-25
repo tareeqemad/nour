@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreRoleRequest;
 use App\Http\Requests\Admin\UpdateRoleRequest;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Traits\SanitizesInput;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\View\View;
 
 class RoleController extends Controller
 {
+    use SanitizesInput;
     /**
      * Display a listing of the resource.
      */
@@ -570,31 +572,4 @@ class RoleController extends Controller
         ];
     }
 
-    /**
-     * تنظيف مدخلات البحث لمنع SQL Injection
-     * 
-     * @param string|null $input
-     * @return string
-     */
-    protected function sanitizeSearchInput(?string $input): string
-    {
-        if (empty($input)) {
-            return '';
-        }
-
-        // إزالة المسافات الزائدة
-        $input = trim($input);
-        
-        // إزالة HTML tags
-        $input = strip_tags($input);
-        
-        // إزالة الأحرف الخاصة التي قد تستخدم في SQL Injection
-        // لكن نترك % و _ لأنها مفيدة في LIKE queries
-        $input = preg_replace('/[;\'"\\\]/', '', $input);
-        
-        // تحديد طول أقصى للبحث (255 حرف)
-        $input = mb_substr($input, 0, 255);
-        
-        return $input;
-    }
 }

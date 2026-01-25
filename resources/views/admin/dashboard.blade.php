@@ -23,6 +23,12 @@
 
     @include('admin.dashboard.partials.energy-distribution')
 
+    {{-- جداول مقارنة المشغلين ووحدات التوليد (لسلطة الطاقة والسوبر أدمن) --}}
+    @if(auth()->user()->isEnergyAuthority() || auth()->user()->isSuperAdmin())
+        @include('admin.dashboard.partials.operators-comparison')
+        @include('admin.dashboard.partials.generation-units-comparison')
+    @endif
+
     @include('admin.dashboard.partials.maintenance-statistics')
 
     @include('admin.dashboard.partials.recent-items')

@@ -53,6 +53,8 @@ class DashboardController extends Controller
         // إحصائيات عامة
         if ($user->isSuperAdmin()) {
             $stats = $this->getSuperAdminStats();
+        } elseif ($user->isEnergyAuthority()) {
+            $stats = $this->getEnergyAuthorityStats();
         } elseif ($user->isAdmin()) {
             $stats = $this->getAdminStats();
         } elseif ($user->isCompanyOwner()) {
@@ -82,6 +84,14 @@ class DashboardController extends Controller
 
         // إحصائيات الامتثال والسلامة
         $complianceStats = $this->getComplianceStats($operatorIds);
+
+        // بيانات مقارنة المشغلين (لسلطة الطاقة)
+        $operatorsComparison = null;
+        $generationUnitsComparison = null;
+        if ($user->isEnergyAuthority() || $user->isSuperAdmin()) {
+            $operatorsComparison = $this->getOperatorsComparisonData();
+            $generationUnitsComparison = $this->getGenerationUnitsComparisonData();
+        }
 
         // آخر المولدات المضافة
         $recentGenerators = Generator::with(['generationUnit.operator'])
@@ -151,7 +161,9 @@ class DashboardController extends Controller
             'recentOperationLogs',
             'generatorsNeedingMaintenance',
             'expiringCompliance',
-            'tasksData'
+            'tasksData',
+            'operatorsComparison',
+            'generationUnitsComparison'
         ));
     }
 
@@ -234,6 +246,106 @@ class DashboardController extends Controller
             ],
             'company_owners' => [
                 'total' => User::where('role', Role::CompanyOwner)->count(),
+            ],
+        ];
+    }
+
+    /**
+     * إحصائيات سلطة الطاقة الشاملة
+     */
+    private function getEnergyAuthorityStats(): array
+    {
+        // إحصائيات المشغلين
+        $totalOperators = Operator::count();
+        $activeOperators = Operator::where('status', 'active')->count();
+        $approvedOperators = Operator::where('is_approved', true)->count();
+        $pendingOperators = Operator::where('is_approved', false)->count();
+
+        // إحصائيات وحدات التوليد
+        $totalGenerationUnits = GenerationUnit::count();
+        $activeGenerationUnits = GenerationUnit::whereHas('statusDetail', function($q) {
+            $q->where('code', 'ACTIVE');
+        })->count();
+
+        // إحصائيات المولدات
+        $totalGenerators = Generator::count();
+        $activeGenerators = Generator::whereHas('statusDetail', function($q) {
+            $q->where('code', 'ACTIVE');
+        })->count();
+
+        // إحصائيات الإنتاج والوقود الإجمالية
+        $totalEnergyProduced = OperationLog::sum('energy_produced') ?? 0;
+        $totalFuelConsumed = OperationLog::sum('fuel_consumed') ?? 0;
+        
+        // إحصائيات الشهر الحالي
+        $thisMonthEnergy = OperationLog::whereMonth('operation_date', Carbon::now()->month)
+            ->whereYear('operation_date', Carbon::now()->year)
+            ->sum('energy_produced') ?? 0;
+        $thisMonthFuel = OperationLog::whereMonth('operation_date', Carbon::now()->month)
+            ->whereYear('operation_date', Carbon::now()->year)
+            ->sum('fuel_consumed') ?? 0;
+        
+        // متوسط الكفاءة العامة
+        $avgEfficiency = $totalFuelConsumed > 0 ? round($totalEnergyProduced / $totalFuelConsumed, 2) : 0;
+
+        // إجمالي القدرة المركبة
+        $totalCapacity = GenerationUnit::sum('total_capacity') ?? 0;
+        $totalGeneratorCapacity = Generator::sum('capacity_kva') ?? 0;
+
+        // إجمالي المستفيدين
+        $totalBeneficiaries = GenerationUnit::sum('beneficiaries_count') ?? 0;
+
+        // إحصائيات الامتثال
+        $complianceTotal = ComplianceSafety::count();
+        $complianceValid = ComplianceSafety::whereHas('safetyCertificateStatusDetail', function($q) {
+            $q->where('code', 'VALID');
+        })->count();
+        $complianceExpired = ComplianceSafety::whereHas('safetyCertificateStatusDetail', function($q) {
+            $q->where('code', 'EXPIRED');
+        })->count();
+
+        // إحصائيات الصيانة
+        $maintenanceThisMonth = MaintenanceRecord::whereMonth('maintenance_date', Carbon::now()->month)
+            ->whereYear('maintenance_date', Carbon::now()->year)->count();
+        $totalDowntime = MaintenanceRecord::sum('downtime_hours') ?? 0;
+        $totalMaintenanceCost = MaintenanceRecord::sum('maintenance_cost') ?? 0;
+
+        return [
+            'operators' => [
+                'total' => $totalOperators,
+                'active' => $activeOperators,
+                'approved' => $approvedOperators,
+                'pending' => $pendingOperators,
+            ],
+            'generation_units' => [
+                'total' => $totalGenerationUnits,
+                'active' => $activeGenerationUnits,
+            ],
+            'generators' => [
+                'total' => $totalGenerators,
+                'active' => $activeGenerators,
+            ],
+            'production' => [
+                'total_energy' => round($totalEnergyProduced, 2),
+                'total_fuel' => round($totalFuelConsumed, 2),
+                'this_month_energy' => round($thisMonthEnergy, 2),
+                'this_month_fuel' => round($thisMonthFuel, 2),
+                'avg_efficiency' => $avgEfficiency,
+            ],
+            'capacity' => [
+                'total_unit_capacity' => round($totalCapacity, 2),
+                'total_generator_capacity' => round($totalGeneratorCapacity, 2),
+                'total_beneficiaries' => $totalBeneficiaries,
+            ],
+            'compliance' => [
+                'total' => $complianceTotal,
+                'valid' => $complianceValid,
+                'expired' => $complianceExpired,
+            ],
+            'maintenance' => [
+                'this_month' => $maintenanceThisMonth,
+                'total_downtime' => round($totalDowntime, 2),
+                'total_cost' => round($totalMaintenanceCost, 2),
             ],
         ];
     }
@@ -811,5 +923,145 @@ class DashboardController extends Controller
             'tasks' => $tasks,
             'stats' => $stats,
         ];
+    }
+
+    /**
+     * بيانات مقارنة المشغلين (لسلطة الطاقة)
+     * تعرض الإنتاج والفاقد والكفاءة لكل مشغل
+     */
+    private function getOperatorsComparisonData(): array
+    {
+        $operators = Operator::with(['generationUnits', 'generators'])
+            ->where('status', 'active')
+            ->get()
+            ->map(function ($operator) {
+                // إحصائيات الإنتاج
+                $operationLogs = OperationLog::where('operator_id', $operator->id);
+                $totalEnergy = (clone $operationLogs)->sum('energy_produced') ?? 0;
+                $totalFuel = (clone $operationLogs)->sum('fuel_consumed') ?? 0;
+                $operationsCount = (clone $operationLogs)->count();
+                $avgLoad = (clone $operationLogs)->avg('load_percentage') ?? 0;
+
+                // إحصائيات الشهر الحالي
+                $thisMonthLogs = OperationLog::where('operator_id', $operator->id)
+                    ->whereMonth('operation_date', Carbon::now()->month)
+                    ->whereYear('operation_date', Carbon::now()->year);
+                $thisMonthEnergy = (clone $thisMonthLogs)->sum('energy_produced') ?? 0;
+                $thisMonthFuel = (clone $thisMonthLogs)->sum('fuel_consumed') ?? 0;
+
+                // حساب الكفاءة
+                $efficiency = $totalFuel > 0 ? round($totalEnergy / $totalFuel, 2) : 0;
+
+                // حساب القدرة المركبة
+                $installedCapacity = $operator->generators->sum('capacity_kva') ?? 0;
+                
+                // حساب الفاقد التقديري
+                // الفاقد = (القدرة المركبة × ساعات التشغيل المتوقعة) - الطاقة المنتجة الفعلية
+                $avgIdealEfficiency = $operator->generators->avg('ideal_fuel_efficiency') ?? 0.5;
+                $expectedEnergy = $avgIdealEfficiency > 0 ? $totalFuel * $avgIdealEfficiency : 0;
+                $energyLoss = max(0, $expectedEnergy - $totalEnergy);
+                $lossPercentage = $expectedEnergy > 0 ? round(($energyLoss / $expectedEnergy) * 100, 2) : 0;
+
+                // إحصائيات الصيانة
+                $generatorIds = $operator->generators->pluck('id');
+                $maintenanceCount = MaintenanceRecord::whereIn('generator_id', $generatorIds)->count();
+                $totalDowntime = MaintenanceRecord::whereIn('generator_id', $generatorIds)->sum('downtime_hours') ?? 0;
+
+                // حالة الامتثال
+                $compliance = ComplianceSafety::where('operator_id', $operator->id)->first();
+                $complianceStatus = $compliance?->safetyCertificateStatusDetail?->code ?? 'UNKNOWN';
+
+                return [
+                    'id' => $operator->id,
+                    'name' => $operator->name,
+                    'status' => $operator->status,
+                    'is_approved' => $operator->is_approved,
+                    'generation_units_count' => $operator->generationUnits->count(),
+                    'generators_count' => $operator->generators->count(),
+                    'installed_capacity' => round($installedCapacity, 2),
+                    'total_energy' => round($totalEnergy, 2),
+                    'total_fuel' => round($totalFuel, 2),
+                    'this_month_energy' => round($thisMonthEnergy, 2),
+                    'this_month_fuel' => round($thisMonthFuel, 2),
+                    'efficiency' => $efficiency,
+                    'avg_load' => round($avgLoad, 2),
+                    'operations_count' => $operationsCount,
+                    'energy_loss' => round($energyLoss, 2),
+                    'loss_percentage' => $lossPercentage,
+                    'maintenance_count' => $maintenanceCount,
+                    'total_downtime' => round($totalDowntime, 2),
+                    'compliance_status' => $complianceStatus,
+                ];
+            })
+            ->sortByDesc('total_energy')
+            ->values()
+            ->toArray();
+
+        return $operators;
+    }
+
+    /**
+     * بيانات مقارنة وحدات التوليد (لسلطة الطاقة)
+     * تعرض الإنتاج والفاقد لكل وحدة توليد
+     */
+    private function getGenerationUnitsComparisonData(): array
+    {
+        $units = GenerationUnit::with(['operator', 'generators', 'governorateDetail', 'cityDetail'])
+            ->get()
+            ->map(function ($unit) {
+                $generatorIds = $unit->generators->pluck('id');
+                
+                // إحصائيات الإنتاج
+                $operationLogs = OperationLog::whereIn('generator_id', $generatorIds);
+                $totalEnergy = (clone $operationLogs)->sum('energy_produced') ?? 0;
+                $totalFuel = (clone $operationLogs)->sum('fuel_consumed') ?? 0;
+                $operationsCount = (clone $operationLogs)->count();
+                $avgLoad = (clone $operationLogs)->avg('load_percentage') ?? 0;
+
+                // إحصائيات الشهر الحالي
+                $thisMonthLogs = OperationLog::whereIn('generator_id', $generatorIds)
+                    ->whereMonth('operation_date', Carbon::now()->month)
+                    ->whereYear('operation_date', Carbon::now()->year);
+                $thisMonthEnergy = (clone $thisMonthLogs)->sum('energy_produced') ?? 0;
+
+                // حساب الكفاءة
+                $efficiency = $totalFuel > 0 ? round($totalEnergy / $totalFuel, 2) : 0;
+
+                // القدرة المركبة
+                $installedCapacity = $unit->generators->sum('capacity_kva') ?? 0;
+
+                // حساب الفاقد
+                $avgIdealEfficiency = $unit->generators->avg('ideal_fuel_efficiency') ?? 0.5;
+                $expectedEnergy = $avgIdealEfficiency > 0 ? $totalFuel * $avgIdealEfficiency : 0;
+                $energyLoss = max(0, $expectedEnergy - $totalEnergy);
+                $lossPercentage = $expectedEnergy > 0 ? round(($energyLoss / $expectedEnergy) * 100, 2) : 0;
+
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->name ?? $unit->unit_code,
+                    'unit_code' => $unit->unit_code,
+                    'operator_id' => $unit->operator_id,
+                    'operator_name' => $unit->operator?->name,
+                    'governorate' => $unit->governorateDetail?->label,
+                    'city' => $unit->cityDetail?->label,
+                    'generators_count' => $unit->generators->count(),
+                    'installed_capacity' => round($installedCapacity, 2),
+                    'unit_capacity' => round($unit->total_capacity ?? 0, 2),
+                    'beneficiaries_count' => $unit->beneficiaries_count ?? 0,
+                    'total_energy' => round($totalEnergy, 2),
+                    'total_fuel' => round($totalFuel, 2),
+                    'this_month_energy' => round($thisMonthEnergy, 2),
+                    'efficiency' => $efficiency,
+                    'avg_load' => round($avgLoad, 2),
+                    'operations_count' => $operationsCount,
+                    'energy_loss' => round($energyLoss, 2),
+                    'loss_percentage' => $lossPercentage,
+                ];
+            })
+            ->sortByDesc('total_energy')
+            ->values()
+            ->toArray();
+
+        return $units;
     }
 }

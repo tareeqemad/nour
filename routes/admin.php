@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\TaskController;
 use App\Http\Controllers\Admin\GuideController;
 use App\Http\Controllers\Admin\LockScreenController;
+use App\Http\Controllers\Admin\VersionController;
 use Illuminate\Support\Facades\Route;
 
 // Lock Screen Routes - require auth but not lock check
@@ -245,6 +246,24 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      * User Guide (الدليل الإرشادي)
      */
     Route::get('guide', [GuideController::class, 'index'])->name('guide.index');
+
+    /**
+     * Version & About (الإصدارات وحول النظام)
+     */
+    Route::get('about', [VersionController::class, 'about'])->name('about');
+    Route::get('changelog', [VersionController::class, 'changelog'])->name('changelog');
+    
+    // إدارة الإصدارات (SuperAdmin فقط)
+    Route::prefix('versions')->as('versions.')->group(function () {
+        Route::get('/', [VersionController::class, 'index'])->name('index');
+        Route::get('/create', [VersionController::class, 'create'])->name('create');
+        Route::post('/', [VersionController::class, 'store'])->name('store');
+        Route::get('/{version}', [VersionController::class, 'show'])->name('show');
+        Route::get('/{version}/edit', [VersionController::class, 'edit'])->name('edit');
+        Route::put('/{version}', [VersionController::class, 'update'])->name('update');
+        Route::delete('/{version}', [VersionController::class, 'destroy'])->name('destroy');
+        Route::post('/{version}/set-current', [VersionController::class, 'setCurrent'])->name('set-current');
+    });
 
     /**
      * Welcome Messages (الرسائل الترحيبية)

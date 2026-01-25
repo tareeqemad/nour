@@ -10,6 +10,8 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/generators.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/cascading-selects.css') }}">
 @endpush
 
 @section('content')
@@ -75,63 +77,22 @@
                     <div class="tab-content pt-3" id="generatorTabsContent">
                         <!-- المعلومات الأساسية -->
                         <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                        @php
+                            $affiliatedOperator = auth()->user()->getAffiliatedOperator();
+                            $selectedGenerationUnitId = request()->query('generation_unit_id') ?? old('generation_unit_id');
+                            $canSelect = !auth()->user()->isAffiliatedWithOperator();
+                        @endphp
                         <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">المشغل <span class="text-danger">*</span></label>
-                                @if(auth()->user()->isSuperAdmin())
-                                    <select name="operator_id" id="operator_id" class="form-select @error('operator_id') is-invalid @enderror">
-                                        <option value="">اختر المشغل</option>
-                                        @foreach($operators as $operator)
-                                            <option value="{{ $operator->id }}" {{ old('operator_id') == $operator->id ? 'selected' : '' }}>
-                                                {{ $operator->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('operator_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                @else
-                                    @php
-                                        $affiliatedOperator = auth()->user()->ownedOperators()->first() ?? auth()->user()->operators()->first();
-                                    @endphp
-                                    <select name="operator_id" id="operator_id" class="form-select @error('operator_id') is-invalid @enderror" disabled style="background-color: #f8f9fa;">
-                                        <option value="{{ $affiliatedOperator->id }}" selected>{{ $affiliatedOperator->name }}</option>
-                                    </select>
-                                    {{-- لا نرسل operator_id في الـ form - سيتم أخذه من المستخدم في الـ controller لضمان السلامة --}}
-                                    @error('operator_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                @endif
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">وحدة التوليد <span class="text-danger">*</span></label>
-                                @if(auth()->user()->isSuperAdmin())
-                                    <select name="generation_unit_id" id="generation_unit_id" class="form-select @error('generation_unit_id') is-invalid @enderror" {{ old('operator_id') ? '' : 'disabled' }}>
-                                        <option value="">اختر المشغل أولاً</option>
-                                    </select>
-                                    @error('generation_unit_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                    <div class="form-text" id="generation_unit_help">يجب اختيار المشغل أولاً لعرض وحدات التوليد</div>
-                            @else
-                                @php
-                                    // قراءة generation_unit_id من query parameter أو old value
-                                    $selectedGenerationUnitId = request()->query('generation_unit_id') ?? old('generation_unit_id');
-                                @endphp
-                                    <select name="generation_unit_id" id="generation_unit_id" class="form-select @error('generation_unit_id') is-invalid @enderror">
-                                        <option value="">اختر وحدة التوليد</option>
-                                        @foreach($affiliatedOperator->generationUnits as $unit)
-                                            <option value="{{ $unit->id }}" {{ $selectedGenerationUnitId == $unit->id ? 'selected' : '' }}>
-                                                {{ $unit->name }} ({{ $unit->unit_code }}) - {{ $unit->generators()->count() }}/{{ $unit->generators_count }} مولد
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('generation_unit_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                    <div class="form-text">عدد المولدات الحالي/المطلوب</div>
-                            @endif
-                            </div>
+                                {{-- Cascading Selects: المشغل → وحدة التوليد --}}
+                                @include('admin.partials.cascading-selects', [
+                                    'operators' => $operators ?? collect(),
+                                    'affiliatedOperator' => $affiliatedOperator,
+                                    'showGenerator' => false,
+                                    'showGenerationUnit' => true,
+                                    'generationUnits' => $affiliatedOperator?->generationUnits ?? collect(),
+                                    'selectedGenerationUnitId' => $selectedGenerationUnitId,
+                                    'colClass' => 'col-md-6',
+                                ])
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold">رقم المولد</label>
                                 <input type="text" name="generator_number" id="generator_number" class="form-control @error('generator_number') is-invalid @enderror" 
@@ -617,6 +578,9 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
+<script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
+<script src="{{ asset('assets/admin/js/cascading-selects.js') }}"></script>
 <script>
     // تمرير الثوابت للـ JavaScript
     window.GENERATOR_CONSTANTS = {
@@ -626,6 +590,16 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة Select2 للحقول
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            $('.select2').select2({
+                dir: 'rtl',
+                language: 'ar',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+
         let currentTab = 0;
         const tabs = ['basic', 'specs', 'fuel', 'technical', 'control'];
         let lastRefreshTime = Date.now();

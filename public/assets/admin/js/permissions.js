@@ -244,57 +244,6 @@
         `);
     }
 
-    function initOperatorSelect() {
-        if (!$operatorSelect.length) return;
-
-        $operatorSelect.select2({
-            width: '100%',
-            placeholder: 'ابحث عن مشغل...',
-            allowClear: true,
-            dir: 'rtl',
-            language: 'ar',
-            ajax: {
-                url: routes.selectOperators,
-                dataType: 'json',
-                delay: 250,
-                data: params => ({
-                    q: params.term || '',
-                    page: params.page || 1
-                }),
-                processResults: data => ({
-                    results: data.results || [],
-                    pagination: data.pagination || { more: false }
-                })
-            },
-            templateResult: formatOperatorResult,
-            templateSelection: item => item.text || '—'
-        });
-
-        $operatorSelect.on('change', function () {
-            const operatorId = $(this).val();
-            currentUserId = null;
-            resetUserContextUI();
-
-            // reset sets
-            roleSet = new Set();
-            directSet = new Set();
-            revokedSet = new Set();
-            baselineDirect = new Set();
-            baselineRevoked = new Set();
-
-            // disable & clear user select
-            if ($userSelect.length) {
-                $userSelect.val(null).trigger('change');
-                $userSelect.prop('disabled', !operatorId);
-            }
-
-            // re-init users with selected operator_id
-            if (operatorId) {
-                initUserSelect(operatorId);
-            }
-        });
-    }
-
     function initRoleSelect() {
         if (!$roleSelect.length) return;
 

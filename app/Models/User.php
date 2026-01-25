@@ -17,6 +17,125 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
+    /**
+     * الصلاحيات المقيدة (لا يمكن للمشغل الوصول إليها أبداً)
+     */
+    private const RESTRICTED_PERMISSIONS = [
+        'settings.view',
+        'settings.update',
+        'constants.view',
+        'constants.create',
+        'constants.update',
+        'constants.delete',
+        'logs.view',
+        'logs.clear',
+        'logs.download',
+    ];
+
+    /**
+     * الصلاحيات المسموح بها للمشغل قبل الموافقة
+     */
+    private const PRE_APPROVAL_PERMISSIONS = [
+        'guide.view',
+        'operators.view',
+        'generators.view',
+        'generators.create',
+        'generation_units.view',
+        'generation_units.create',
+        'operation_logs.view',
+        'fuel_efficiencies.view',
+        'maintenance_records.view',
+        'compliance_safeties.view',
+        'electricity_tariff_prices.view',
+    ];
+
+    /**
+     * الصلاحيات الافتراضية للأدمن (إذا لم يكن لديه roleModel)
+     */
+    private const ADMIN_FALLBACK_PERMISSIONS = [
+        'operators.view',
+        'generators.view',
+        'generation_units.view',
+        'operation_logs.view',
+        'fuel_efficiencies.view',
+        'maintenance_records.view',
+        'compliance_safeties.view',
+        'electricity_tariff_prices.view',
+        'guide.view',
+    ];
+
+    /**
+     * الصلاحيات المستثناة للأدمن عند تعيين الصلاحيات الافتراضية
+     */
+    private const ADMIN_EXCLUDED_PERMISSIONS = [
+        'settings.view',
+        'settings.update',
+        'welcome_messages.view',
+        'welcome_messages.update',
+        'logs.view',
+        'logs.clear',
+        'logs.download',
+        'constants.view',
+        'constants.create',
+        'constants.update',
+        'constants.delete',
+    ];
+
+    /**
+     * الصلاحيات المستثناة لسلطة الطاقة عند تعيين الصلاحيات الافتراضية
+     */
+    private const ENERGY_AUTHORITY_EXCLUDED_PERMISSIONS = [
+        'settings.view',
+        'settings.update',
+        'logs.view',
+        'logs.clear',
+        'logs.download',
+        'constants.view',
+        'constants.create',
+        'constants.update',
+        'constants.delete',
+        'welcome_messages.view',
+        'welcome_messages.update',
+    ];
+
+    /**
+     * صلاحيات المشغل بعد الموافقة
+     */
+    private const COMPANY_OWNER_PERMISSIONS = [
+        'guide.view',
+        'operators.view',
+        'operators.update',
+        'generators.view',
+        'generators.create',
+        'generators.update',
+        'generation_units.view',
+        'generation_units.create',
+        'generation_units.update',
+        'generation_units.delete',
+        'operation_logs.view',
+        'operation_logs.create',
+        'operation_logs.update',
+        'fuel_efficiencies.view',
+        'fuel_efficiencies.create',
+        'fuel_efficiencies.update',
+        'maintenance_records.view',
+        'maintenance_records.create',
+        'maintenance_records.update',
+        'compliance_safeties.view',
+        'compliance_safeties.create',
+        'compliance_safeties.update',
+        'electricity_tariff_prices.view',
+        'electricity_tariff_prices.create',
+        'electricity_tariff_prices.update',
+        'users.view',
+        'users.create',
+        'users.update',
+        'permissions.manage',
+        'roles.view',
+        'roles.create',
+        'roles.update',
+    ];
+
     protected $fillable = [
         'name', // اسم المستخدم (العربي) - مثل: "أحمد محمد"
         'name_en', // اسم المستخدم (بالإنجليزية) - مثل: "Ahmad Mohammed" - يستخدم لتوليد username تلقائياً
@@ -275,6 +394,38 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the affiliated operator for this user
+     * Works for: CompanyOwner, Employee, Technician, and Custom Roles linked to operator
+     */
+    public function getAffiliatedOperator(): ?Operator
+    {
+        // CompanyOwner - gets operator they own
+        if ($this->isCompanyOwner()) {
+            return $this->ownedOperators()->first();
+        }
+
+        // Employee or Technician - gets operator they're linked to
+        if ($this->isEmployee() || $this->isTechnician()) {
+            return $this->operators()->first();
+        }
+
+        // Custom role linked to operator - gets operator from role
+        if ($this->hasOperatorLinkedCustomRole() && $this->roleModel) {
+            return $this->roleModel->operator;
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if user is affiliated with an operator (any type)
+     */
+    public function isAffiliatedWithOperator(): bool
+    {
+        return $this->getAffiliatedOperator() !== null;
+    }
+
+    /**
      * Check if operator is approved and active
      * Required for Company Owner to have full access to all permissions
      */
@@ -316,28 +467,14 @@ class User extends Authenticatable
 
         // Company Owner: Check if operator is approved before granting full access
         // Settings, constants, and logs are always restricted for Company Owner
-        $restrictedPermissions = ['settings.view', 'settings.update', 'constants.view', 'constants.create', 'constants.update', 'constants.delete', 'logs.view', 'logs.clear', 'logs.download'];
-        if ($this->isCompanyOwner() && in_array($permissionName, $restrictedPermissions, true)) {
+        if ($this->isCompanyOwner() && in_array($permissionName, self::RESTRICTED_PERMISSIONS, true)) {
             return false; // Company Owner never has access to settings, constants, logs
         }
 
         // Company Owner needs approved operator for full access to their permissions
         if ($this->isCompanyOwner() && ! $this->hasApprovedOperator()) {
             // Before approval, Company Owner has limited access
-            // Can add generation units and generators, but only view other things
-            return in_array($permissionName, [
-                'guide.view',
-                'operators.view',
-                'generators.view',
-                'generators.create',
-                'generation_units.view',
-                'generation_units.create',
-                'operation_logs.view',
-                'fuel_efficiencies.view',
-                'maintenance_records.view',
-                'compliance_safeties.view',
-                'electricity_tariff_prices.view',
-            ]);
+            return in_array($permissionName, self::PRE_APPROVAL_PERMISSIONS);
         }
 
         // If user has roleModel, use role permissions first
@@ -352,17 +489,7 @@ class User extends Authenticatable
 
         // Fallback for Admin (if no roleModel)
         if ($this->isAdmin() && ! $this->roleModel) {
-            return in_array($permissionName, [
-                'operators.view',
-                'generators.view',
-                'generation_units.view',
-                'operation_logs.view',
-                'fuel_efficiencies.view',
-                'maintenance_records.view',
-                'compliance_safeties.view',
-                'electricity_tariff_prices.view',
-                'guide.view',
-            ]);
+            return in_array($permissionName, self::ADMIN_FALLBACK_PERMISSIONS);
         }
 
         // Check if permission is revoked
@@ -386,32 +513,16 @@ class User extends Authenticatable
         }
 
         // Company Owner: Check if operator is approved and restrictions apply
-        $restrictedPermissions = ['settings.view', 'settings.update', 'constants.view', 'constants.create', 'constants.update', 'constants.delete', 'logs.view', 'logs.clear', 'logs.download'];
         if ($this->isCompanyOwner()) {
             // Check if any requested permission is restricted
-            $hasRestricted = ! empty(array_intersect($permissionNames, $restrictedPermissions));
+            $hasRestricted = ! empty(array_intersect($permissionNames, self::RESTRICTED_PERMISSIONS));
             if ($hasRestricted) {
                 return false; // Company Owner never has access to settings, constants, logs
             }
 
             // Company Owner needs approved operator for full access
             if (! $this->hasApprovedOperator()) {
-                // Before approval, can add generation units and generators, but only view other things
-                $allowedPermissions = [
-                    'guide.view',
-                    'operators.view',
-                    'generators.view',
-                    'generators.create',
-                    'generation_units.view',
-                    'generation_units.create',
-                    'operation_logs.view',
-                    'fuel_efficiencies.view',
-                    'maintenance_records.view',
-                    'compliance_safeties.view',
-                    'electricity_tariff_prices.view',
-                ];
-
-                return ! empty(array_intersect($permissionNames, $allowedPermissions));
+                return ! empty(array_intersect($permissionNames, self::PRE_APPROVAL_PERMISSIONS));
             }
         }
 
@@ -428,19 +539,7 @@ class User extends Authenticatable
 
         // Fallback for Admin (if no roleModel)
         if ($this->isAdmin() && ! $this->roleModel) {
-            $adminPermissions = [
-                'operators.view',
-                'generators.view',
-                'generation_units.view',
-                'operation_logs.view',
-                'fuel_efficiencies.view',
-                'maintenance_records.view',
-                'compliance_safeties.view',
-                'electricity_tariff_prices.view',
-                'guide.view',
-            ];
-
-            return ! empty(array_intersect($permissionNames, $adminPermissions));
+            return ! empty(array_intersect($permissionNames, self::ADMIN_FALLBACK_PERMISSIONS));
         }
 
         $revokedPermissionNames = $this->revokedPermissions()
@@ -477,32 +576,16 @@ class User extends Authenticatable
         }
 
         // Company Owner: Check if operator is approved and restrictions apply
-        $restrictedPermissions = ['settings.view', 'settings.update', 'constants.view', 'constants.create', 'constants.update', 'constants.delete', 'logs.view', 'logs.clear', 'logs.download'];
         if ($this->isCompanyOwner()) {
             // Check if any requested permission is restricted
-            $hasRestricted = ! empty(array_intersect($permissionNames, $restrictedPermissions));
+            $hasRestricted = ! empty(array_intersect($permissionNames, self::RESTRICTED_PERMISSIONS));
             if ($hasRestricted) {
                 return false; // Company Owner never has access to settings, constants, logs
             }
 
             // Company Owner needs approved operator for full access
             if (! $this->hasApprovedOperator()) {
-                // Before approval, can add generation units and generators, but only view other things
-                $allowedPermissions = [
-                    'guide.view',
-                    'operators.view',
-                    'generators.view',
-                    'generators.create',
-                    'generation_units.view',
-                    'generation_units.create',
-                    'operation_logs.view',
-                    'fuel_efficiencies.view',
-                    'maintenance_records.view',
-                    'compliance_safeties.view',
-                    'electricity_tariff_prices.view',
-                ];
-                $intersection = array_intersect($permissionNames, $allowedPermissions);
-
+                $intersection = array_intersect($permissionNames, self::PRE_APPROVAL_PERMISSIONS);
                 return count($permissionNames) === count($intersection);
             }
         }
@@ -523,20 +606,7 @@ class User extends Authenticatable
 
         // Fallback for Admin (if no roleModel)
         if ($this->isAdmin() && ! $this->roleModel) {
-            $adminPermissions = [
-                'operators.view',
-                'generators.view',
-                'generation_units.view',
-                'operation_logs.view',
-                'fuel_efficiencies.view',
-                'maintenance_records.view',
-                'compliance_safeties.view',
-                'electricity_tariff_prices.view',
-                'guide.view',
-            ];
-
-            $intersection = array_intersect($permissionNames, $adminPermissions);
-
+            $intersection = array_intersect($permissionNames, self::ADMIN_FALLBACK_PERMISSIONS);
             return count($permissionNames) === count($intersection);
         }
 
@@ -660,103 +730,23 @@ class User extends Authenticatable
             $permissionIds = $allPermissions->pluck('id')->toArray();
             
         } elseif ($this->isAdmin()) {
-            // Admin: كل الصلاحيات ما عدا: settings.*, welcome_messages.*, logs.*, constants.*
-            $excludedPermissions = [
-                'settings.view',
-                'settings.update',
-                'welcome_messages.view',
-                'welcome_messages.update',
-                'logs.view',
-                'logs.clear',
-                'logs.download',
-                'constants.view',
-                'constants.create',
-                'constants.update',
-                'constants.delete',
-            ];
-            
+            // Admin: كل الصلاحيات ما عدا المستثناة
             $permissionIds = $allPermissions
-                ->reject(function ($permission) use ($excludedPermissions) {
-                    return in_array($permission->name, $excludedPermissions, true);
-                })
+                ->reject(fn ($permission) => in_array($permission->name, self::ADMIN_EXCLUDED_PERMISSIONS, true))
                 ->pluck('id')
                 ->toArray();
                 
         } elseif ($this->isEnergyAuthority()) {
-            // EnergyAuthority: كل الصلاحيات ما عدا: settings.*, logs.*, constants.*, welcome_messages.*
-            $excludedPermissions = [
-                'settings.view',
-                'settings.update',
-                'logs.view',
-                'logs.clear',
-                'logs.download',
-                'constants.view',
-                'constants.create',
-                'constants.update',
-                'constants.delete',
-                'welcome_messages.view',
-                'welcome_messages.update',
-            ];
-            
+            // EnergyAuthority: كل الصلاحيات ما عدا المستثناة
             $permissionIds = $allPermissions
-                ->reject(function ($permission) use ($excludedPermissions) {
-                    return in_array($permission->name, $excludedPermissions, true);
-                })
+                ->reject(fn ($permission) => in_array($permission->name, self::ENERGY_AUTHORITY_EXCLUDED_PERMISSIONS, true))
                 ->pluck('id')
                 ->toArray();
                 
         } elseif ($this->isCompanyOwner()) {
-            // CompanyOwner: ما يخصه + permissions.manage + roles.view/create/update
-            $allowedPermissions = [
-                'guide.view',
-                // Operators
-                'operators.view',
-                'operators.update',
-                // Generators
-                'generators.view',
-                'generators.create',
-                'generators.update',
-                // Generation Units
-                'generation_units.view',
-                'generation_units.create',
-                'generation_units.update',
-                'generation_units.delete',
-                // Operation Logs
-                'operation_logs.view',
-                'operation_logs.create',
-                'operation_logs.update',
-                // Fuel Efficiencies
-                'fuel_efficiencies.view',
-                'fuel_efficiencies.create',
-                'fuel_efficiencies.update',
-                // Maintenance Records
-                'maintenance_records.view',
-                'maintenance_records.create',
-                'maintenance_records.update',
-                // Compliance & Safety
-                'compliance_safeties.view',
-                'compliance_safeties.create',
-                'compliance_safeties.update',
-                // Electricity Tariff Prices
-                'electricity_tariff_prices.view',
-                'electricity_tariff_prices.create',
-                'electricity_tariff_prices.update',
-                // Manage users with custom roles (under their operator only)
-                'users.view',
-                'users.create',
-                'users.update',
-                // Manage permissions for custom role users (under their operator)
-                'permissions.manage',
-                // Can view and manage custom roles (created by Energy Authority or themselves)
-                'roles.view',
-                'roles.create',
-                'roles.update',
-            ];
-            
+            // CompanyOwner: صلاحياته المحددة فقط
             $permissionIds = $allPermissions
-                ->filter(function ($permission) use ($allowedPermissions) {
-                    return in_array($permission->name, $allowedPermissions, true);
-                })
+                ->filter(fn ($permission) => in_array($permission->name, self::COMPANY_OWNER_PERMISSIONS, true))
                 ->pluck('id')
                 ->toArray();
         }
