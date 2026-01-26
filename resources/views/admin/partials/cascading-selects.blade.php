@@ -189,15 +189,7 @@
                     @if($generatorRequired) required @endif
                     disabled>
                 <option value="">-- اختر {{ $generatorLabel }} --</option>
-                @if($generators->count() > 0)
-                    @foreach($generators as $generator)
-                        <option value="{{ $generator->id }}" 
-                                data-generation-unit-id="{{ $generator->generation_unit_id }}"
-                                {{ $selectedGeneratorId == $generator->id ? 'selected' : '' }}>
-                            {{ $generator->generator_number }} - {{ $generator->name }}
-                        </option>
-                    @endforeach
-                @endif
+                {{-- لا نضع المولدات هنا - سيتم تحميلها عبر AJAX عند اختيار وحدة التوليد --}}
             </select>
             @error('generator_id')
                 <div class="invalid-feedback d-block">{{ $message }}</div>

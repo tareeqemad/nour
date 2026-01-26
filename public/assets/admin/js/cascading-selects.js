@@ -323,48 +323,57 @@
             const { generationUnit: $generationUnit, generator: $generator } = instance.elements;
             const prefix = settings.prefix;
 
-            // عند تغيير وحدة التوليد (تصفية المولدات المحلية)
+            // عند تغيير وحدة التوليد (تحميل المولدات عبر AJAX)
             if ($generationUnit.length && $generator.length) {
-                $generationUnit.on('change', function() {
+                $generationUnit.on('change', async function() {
                     const generationUnitId = $(this).val();
-                    const currentValue = $generator.val();
+
+                    // إعادة تهيئة المولدات
+                    self.resetSelect($generator, `-- اختر ${settings.labels.generator} --`, settings);
+                    self.updateHelpText(prefix, 'generator', `اختر ${settings.labels.generationUnit} أولاً`);
 
                     // callback
                     if (typeof settings.onGenerationUnitChange === 'function') {
                         settings.onGenerationUnitChange(generationUnitId);
                     }
 
-                    // تصفية المولدات حسب وحدة التوليد
-                    $generator.find('option').each(function() {
-                        const $option = $(this);
-                        if (!$option.val()) return;
+                    if (!generationUnitId || generationUnitId === '0') return;
 
-                        const optionGenerationUnitId = $option.data('generation-unit-id');
+                    // تحميل المولدات عبر AJAX
+                    try {
+                        self.updateHelpText(prefix, 'generator', settings.labels.loading, 'info');
                         
-                        if (generationUnitId && optionGenerationUnitId == generationUnitId) {
-                            $option.prop('disabled', false).show();
-                        } else if (!generationUnitId) {
-                            $option.prop('disabled', false).show();
-                        } else {
-                            $option.prop('disabled', true).hide();
-                            if ($option.val() === currentValue) {
-                                $generator.val('').trigger('change');
+                        const url = settings.generationUnitUrl.replace('{id}', generationUnitId);
+                        const response = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                             }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const generators = data.generators || data.data || data;
+                            
+                            self.populateSelect(
+                                $generator, 
+                                generators, 
+                                `-- اختر ${settings.labels.generator} --`, 
+                                settings
+                            );
+                            
+                            if (generators.length > 0) {
+                                self.updateHelpText(prefix, 'generator', `${generators.length} مولد متاح`, 'success');
+                            } else {
+                                self.updateHelpText(prefix, 'generator', settings.labels.noData, 'warning');
+                            }
+                        } else {
+                            self.updateHelpText(prefix, 'generator', settings.labels.error, 'error');
                         }
-                    });
-
-                    // تفعيل/تعطيل المولدات
-                    if (generationUnitId) {
-                        $generator.prop('disabled', false);
-                        self.updateHelpText(prefix, 'generator', 'اختر المولد', 'info');
-                    } else {
-                        $generator.prop('disabled', true);
-                        self.updateHelpText(prefix, 'generator', `اختر ${settings.labels.generationUnit} أولاً`);
-                    }
-
-                    // تحديث Select2
-                    if (settings.useSelect2) {
-                        self.initSelect2($generator, settings.select2Options);
+                    } catch (error) {
+                        console.error('Error loading generators:', error);
+                        self.updateHelpText(prefix, 'generator', settings.labels.error, 'error');
                     }
                 });
 

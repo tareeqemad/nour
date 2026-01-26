@@ -269,19 +269,18 @@ class PublicHomeController extends Controller
         ]);
 
         // Clean all validated input to ensure valid UTF-8 encoding
-        // Note: cleanInputArray uses AppServiceProvider::cleanStringStatic internally
-        $validated = $this->cleanInputArray($validated);
+        $validated = \App\Providers\AppServiceProvider::cleanInputArrayStatic($validated);
 
         // تنظيف رقم الجوال للتحقق (phone is numeric only, no UTF-8 issues)
         $cleanPhone = preg_replace('/[^0-9]/', '', $validated['phone']);
 
         // Clean ID numbers for validation and username generation
-        $cleanOwnerIdNumber = $this->cleanString($validated['owner_id_number']);
-        $cleanOperatorIdNumber = !empty($validated['operator_id_number']) ? $this->cleanString($validated['operator_id_number']) : null;
+        $cleanOwnerIdNumber = \App\Providers\AppServiceProvider::cleanStringStatic($validated['owner_id_number']);
+        $cleanOperatorIdNumber = !empty($validated['operator_id_number']) ? \App\Providers\AppServiceProvider::cleanStringStatic($validated['operator_id_number']) : null;
 
         // التحقق من أن الرقم مصرح به في authorized_phones
         if (!\App\Models\AuthorizedPhone::isAuthorized($cleanPhone)) {
-            $errorMessage = $this->cleanString('غير مخول لك بالتسجيل. يرجى التواصل مع الإدارة.');
+            $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('غير مخول لك بالتسجيل. يرجى التواصل مع الإدارة.');
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['phone' => $errorMessage]);
@@ -297,7 +296,7 @@ class PublicHomeController extends Controller
             // منع أي مستخدم موجود من استخدام طلب الانضمام
             // خاصة SuperAdmin, Admin, EnergyAuthority - هذه الأدوار لا يجب أن تستخدم طلب الانضمام
             if ($existingUserByPhone->isSuperAdmin() || $existingUserByPhone->isAdmin() || $existingUserByPhone->isEnergyAuthority()) {
-                $errorMessage = $this->cleanString('هذا الرقم مسجل لحساب إداري. لا يمكن استخدام طلب الانضمام.');
+                $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('هذا الرقم مسجل لحساب إداري. لا يمكن استخدام طلب الانضمام.');
                 return redirect()->back()
                     ->withInput()
                     ->withErrors(['phone' => $errorMessage]);
@@ -306,14 +305,14 @@ class PublicHomeController extends Controller
             // إذا كان المستخدم موجود وله مشغل، منع التسجيل
             $existingOperator = \App\Models\Operator::where('owner_id', $existingUserByPhone->id)->first();
             if ($existingOperator) {
-                $errorMessage = $this->cleanString('مسجل مسبقاً. غير مسموح لك التسجيل مرة أخرى.');
+                $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('مسجل مسبقاً. غير مسموح لك التسجيل مرة أخرى.');
                 return redirect()->back()
                     ->withInput()
                     ->withErrors(['phone' => $errorMessage]);
             }
             
             // إذا كان المستخدم موجود بأي دور آخر (Employee, Technician, etc.)، منع التسجيل
-            $errorMessage = $this->cleanString('هذا الرقم مسجل مسبقاً في النظام. لا يمكن استخدام طلب الانضمام.');
+            $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('هذا الرقم مسجل مسبقاً في النظام. لا يمكن استخدام طلب الانضمام.');
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['phone' => $errorMessage]);
@@ -327,7 +326,7 @@ class PublicHomeController extends Controller
         })->first();
         
         if ($existingOperatorByPhone) {
-            $errorMessage = $this->cleanString('رقم الجوال مسجل مسبقاً. غير مسموح لك التسجيل مرة أخرى.');
+            $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('رقم الجوال مسجل مسبقاً. غير مسموح لك التسجيل مرة أخرى.');
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['phone' => $errorMessage]);
@@ -336,7 +335,7 @@ class PublicHomeController extends Controller
         // التحقق من عدم وجود رقم هوية المالك مسجل مسبقاً
         $existingOperatorByOwnerId = \App\Models\Operator::where('owner_id_number', $cleanOwnerIdNumber)->first();
         if ($existingOperatorByOwnerId) {
-            $errorMessage = $this->cleanString('رقم هوية المالك مسجل مسبقاً');
+            $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('رقم هوية المالك مسجل مسبقاً');
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['owner_id_number' => $errorMessage]);
@@ -346,7 +345,7 @@ class PublicHomeController extends Controller
         if ($cleanOperatorIdNumber) {
             $existingOperatorByOperatorId = \App\Models\Operator::where('operator_id_number', $cleanOperatorIdNumber)->first();
             if ($existingOperatorByOperatorId) {
-                $errorMessage = $this->cleanString('رقم هوية المشغل مسجل مسبقاً');
+                $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('رقم هوية المشغل مسجل مسبقاً');
                 return redirect()->back()
                     ->withInput()
                     ->withErrors(['operator_id_number' => $errorMessage]);
@@ -354,14 +353,14 @@ class PublicHomeController extends Controller
         }
 
         // Check if email is provided
-        $email = !empty($validated['email']) ? trim($this->cleanString($validated['email'])) : null;
+        $email = !empty($validated['email']) ? trim(\App\Providers\AppServiceProvider::cleanStringStatic($validated['email'])) : null;
         
         // Validate email if provided
         if ($email) {
             // Check if email already exists
             $existingUser = \App\Models\User::where('email', $email)->whereNull('deleted_at')->first();
             if ($existingUser) {
-                $errorMessage = $this->cleanString('البريد الإلكتروني مسجل مسبقاً');
+                $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('البريد الإلكتروني مسجل مسبقاً');
                 return redirect()->back()
                     ->withInput()
                     ->withErrors(['email' => $errorMessage]);
@@ -372,7 +371,7 @@ class PublicHomeController extends Controller
         // استخدام owner_name_en (اسم المالك الإنجليزي) - مطلوب
         $nameForUsername = trim($validated['owner_name_en']);
         
-        $username = $this->generateUsername(\App\Enums\Role::CompanyOwner, $nameForUsername, $cleanOwnerIdNumber);
+        $username = \App\Helpers\UsernameHelper::generate(\App\Enums\Role::CompanyOwner, $nameForUsername, $cleanOwnerIdNumber);
 
         // Generate unique email if not provided (required in users table)
         if (!$email || empty($email)) {
@@ -409,10 +408,10 @@ class PublicHomeController extends Controller
         ]);
 
         // Ensure all data is clean before saving
-        $cleanOwnerName = $this->cleanString($validated['owner_name']);
-        $cleanOwnerNameEn = $this->cleanString($validated['owner_name_en']);
-        $cleanOperatorName = $this->cleanString($validated['operator_name']);
-        $cleanOperatorNameEn = !empty($validated['operator_name_en']) ? $this->cleanString($validated['operator_name_en']) : null;
+        $cleanOwnerName = \App\Providers\AppServiceProvider::cleanStringStatic($validated['owner_name']);
+        $cleanOwnerNameEn = \App\Providers\AppServiceProvider::cleanStringStatic($validated['owner_name_en']);
+        $cleanOperatorName = \App\Providers\AppServiceProvider::cleanStringStatic($validated['operator_name']);
+        $cleanOperatorNameEn = !empty($validated['operator_name_en']) ? \App\Providers\AppServiceProvider::cleanStringStatic($validated['operator_name_en']) : null;
 
         // إنشاء User جديد (باستخدام اسم المالك)
         $user = \App\Models\User::create([
@@ -442,7 +441,7 @@ class PublicHomeController extends Controller
             'owner_id_number' => $cleanOwnerIdNumber,
             'operator_id_number' => $cleanOperatorIdNumber, // قد يكون null
             'phone' => $cleanPhone, // استخدام الرقم المنظف
-            'email' => $validated['email'] ? $this->cleanString($validated['email']) : null,
+            'email' => $validated['email'] ? \App\Providers\AppServiceProvider::cleanStringStatic($validated['email']) : null,
             'status' => 'active', // مفعل - يمكنه تسجيل الدخول وإضافة وحدات ومولدات
             'is_approved' => false, // غير معتمد - يحتاج موافقة Admin/Super Admin للوصول الكامل
             'profile_completed' => false,
@@ -511,7 +510,7 @@ class PublicHomeController extends Controller
         }
 
         // Clean success message to ensure valid UTF-8
-        $successMessage = $this->cleanString('تم إرسال طلبك بنجاح! تم إرسال بيانات الدخول إلى رقم الموبايل المسجل.');
+        $successMessage = \App\Providers\AppServiceProvider::cleanStringStatic('تم إرسال طلبك بنجاح! تم إرسال بيانات الدخول إلى رقم الموبايل المسجل.');
         
         return redirect()->route('login')->with('success', $successMessage);
     }
@@ -524,132 +523,6 @@ class PublicHomeController extends Controller
      * @param string|null $fallbackIdNumber رقم هوية احتياطي في حالة فشل توليد الاسم
      * @return string اسم المستخدم الفريد
      */
-    private function generateUsername(\App\Enums\Role $role, string $nameEn, ?string $fallbackIdNumber = null): string
-    {
-        // تحديد البادئة حسب الدور
-        $prefix = match($role) {
-            \App\Enums\Role::SuperAdmin => 'sp_',
-            \App\Enums\Role::Admin => 'a_',
-            \App\Enums\Role::EnergyAuthority => 'ea_',
-            \App\Enums\Role::CompanyOwner => 'op_',
-            \App\Enums\Role::Technician => 't_',
-            \App\Enums\Role::CivilDefense => 'cd_',
-            default => 'user_',
-        };
-        
-        // تنظيف الاسم من الأحرف العربية والأحرف الخاصة
-        $cleanedName = $this->cleanString($nameEn);
-        
-        // إذا كان الاسم فارغاً أو يحتوي على أحرف عربية فقط، نحاول تحويله
-        // إزالة الأحرف غير اللاتينية أولاً للتحقق
-        $latinOnly = preg_replace('/[^a-z0-9\s]/i', '', $cleanedName);
-        if (empty(trim($latinOnly)) && !empty($cleanedName)) {
-            // الاسم يحتوي على أحرف عربية فقط، نحاول تحويله باستخدام transliteration بسيط
-            $cleanedName = $this->transliterateArabicToLatin($cleanedName);
-        }
-        
-        $nameParts = explode(' ', trim($cleanedName));
-        $nameParts = array_filter($nameParts, function($part) {
-            return !empty(trim($part));
-        });
-        $nameParts = array_values($nameParts); // إعادة ترقيم المصفوفة
-        
-        // استخراج أول حرف من الاسم الأول + الاسم الأخير كاملاً
-        if (count($nameParts) >= 2) {
-            // أول حرف من الاسم الأول
-            $firstChar = strtolower(substr(trim($nameParts[0]), 0, 1));
-            // الاسم الأخير كاملاً (اسم العائلة)
-            $lastName = strtolower(trim($nameParts[count($nameParts) - 1]));
-            // إزالة الأحرف الخاصة والمسافات من اسم العائلة (يحافظ على a-z0-9 فقط)
-            $lastName = preg_replace('/[^a-z0-9]/', '', $lastName);
-            $usernameBase = $firstChar . $lastName;
-        } else {
-            // إذا كان اسم واحد فقط، استخدم أول 8 أحرف
-            $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $cleanedName));
-            $usernameBase = substr($usernameBase, 0, 8);
-        }
-        
-        // التأكد من أن usernameBase ليس فارغاً
-        if (empty($usernameBase)) {
-            // استخدام رقم الهوية كبديل
-            $usernameBase = $fallbackIdNumber ? substr($fallbackIdNumber, -4) : 'user';
-        }
-        
-        // إضافة البادئة
-        $username = $prefix . $usernameBase;
-        
-        // التأكد من أن username فريد (استبعاد المستخدمين المحذوفين)
-        $counter = 1;
-        $originalUsername = $username;
-        while (\App\Models\User::where('username', $username)->whereNull('deleted_at')->exists()) {
-            $username = $originalUsername . $counter;
-            $counter++;
-        }
-        
-        return $username;
-    }
-
-    /**
-     * Clean UTF-8 string - uses AppServiceProvider's static method for consistency
-     */
-    private function cleanString(?string $value): string
-    {
-        return \App\Providers\AppServiceProvider::cleanStringStatic($value);
-    }
-
-    /**
-     * تحويل الأحرف العربية إلى لاتينية (transliteration بسيط)
-     * يستخدم لتحويل الأسماء العربية إلى أسماء لاتينية لتوليد username
-     */
-    private function transliterateArabicToLatin(string $arabicText): string
-    {
-        // خريطة بسيطة للأحرف العربية الشائعة إلى لاتينية
-        $transliterationMap = [
-            'أ' => 'a', 'ا' => 'a', 'إ' => 'i', 'آ' => 'aa',
-            'ب' => 'b', 'ت' => 't', 'ث' => 'th', 'ج' => 'j',
-            'ح' => 'h', 'خ' => 'kh', 'د' => 'd', 'ذ' => 'th',
-            'ر' => 'r', 'ز' => 'z', 'س' => 's', 'ش' => 'sh',
-            'ص' => 's', 'ض' => 'd', 'ط' => 't', 'ظ' => 'z',
-            'ع' => 'a', 'غ' => 'gh', 'ف' => 'f', 'ق' => 'q',
-            'ك' => 'k', 'ل' => 'l', 'م' => 'm', 'ن' => 'n',
-            'ه' => 'h', 'و' => 'w', 'ي' => 'y', 'ى' => 'a',
-            'ة' => 'h', 'ئ' => 'y', 'ء' => '', 'ؤ' => 'w',
-        ];
-
-        $result = '';
-        $text = mb_strtolower($arabicText, 'UTF-8');
-        
-        for ($i = 0; $i < mb_strlen($text, 'UTF-8'); $i++) {
-            $char = mb_substr($text, $i, 1, 'UTF-8');
-            if (isset($transliterationMap[$char])) {
-                $result .= $transliterationMap[$char];
-            } elseif (preg_match('/[a-z0-9\s]/', $char)) {
-                // الاحتفاظ بالأحرف اللاتينية والأرقام والمسافات
-                $result .= $char;
-            }
-            // تجاهل الأحرف الأخرى
-        }
-        
-        return trim($result);
-    }
-
-    /**
-     * Clean array of input values recursively
-     */
-    private function cleanInputArray(array $data): array
-    {
-        $cleaned = [];
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $cleaned[$key] = $this->cleanInputArray($value);
-            } elseif (is_string($value)) {
-                $cleaned[$key] = $this->cleanString($value);
-            } else {
-                $cleaned[$key] = $value;
-            }
-        }
-        return $cleaned;
-    }
 
     /**
      * إرسال بيانات الدخول عبر SMS

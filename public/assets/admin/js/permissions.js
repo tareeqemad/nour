@@ -513,9 +513,15 @@
             }
 
             if (roleId) {
+                // تحميل الصلاحيات المتاحة بناءً على الدور المختار
+                loadAvailablePermissions(null, roleId, '');
+                
                 // Show users for this custom role
                 $userSelect.prop('disabled', false);
                 initUserSelect('custom_role_' + roleId);
+            } else {
+                // إذا لم يتم اختيار دور، إعادة تحميل الصلاحيات الافتراضية
+                loadAvailablePermissions(null, null, '');
             }
         });
     }
@@ -600,6 +606,8 @@
             $selectedUserName.text(item.text || '—');
             setRoleBadge(currentUserRole);
 
+            // تحميل الصلاحيات المتاحة بناءً على المستخدم المختار
+            loadAvailablePermissions(currentUserId, null, '');
             loadUserPermissions(currentUserId);
         });
 
@@ -637,6 +645,53 @@
         $('.perm-badge-off').removeClass('d-none');
     }
 
+    // ===== Load available permissions based on selected user/role =====
+    function loadAvailablePermissions(userId = null, roleId = null, search = '') {
+        setLoading(true);
+
+        const data = {};
+        if (userId) data.user_id = userId;
+        if (roleId) data.role_id = roleId;
+        if (search) data.search = search;
+
+        $.ajax({
+            url: routes.availablePermissions || (window.PERM && window.PERM.routes && window.PERM.routes.availablePermissions) || '/admin/permissions/available',
+            method: 'POST',
+            data: data,
+            dataType: 'json'
+        })
+            .done(res => {
+                if (!res.success) {
+                    flash('danger', res.message || 'فشل تحميل الصلاحيات');
+                    return;
+                }
+
+                // تحديث شجرة الصلاحيات
+                $('#permissionsTreeContainer').html(res.html);
+                $treeCount.text(res.count || 0);
+
+                // إعادة تهيئة event listeners للصلاحيات الجديدة
+                initPermissionToggles();
+                initGroupActions();
+
+                flash('success', `تم تحميل ${res.count || 0} صلاحية متاحة.`);
+            })
+            .fail(xhr => {
+                let errorMsg = 'حدث خطأ أثناء تحميل الصلاحيات المتاحة';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.status === 403) {
+                    errorMsg = 'ليس لديك صلاحية لعرض هذه الصلاحيات';
+                } else if (xhr.status === 500) {
+                    errorMsg = 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً';
+                }
+                
+                flash('danger', errorMsg);
+            })
+            .always(() => setLoading(false));
+    }
+
     // ===== Load user perms =====
     function loadUserPermissions(userId) {
         if (!userId) {
@@ -645,6 +700,9 @@
         }
 
         setLoading(true);
+
+        // تحميل الصلاحيات المتاحة بناءً على المستخدم المختار
+        loadAvailablePermissions(userId, null, '');
 
         $.ajax({
             url: userPermissionsUrl(userId),

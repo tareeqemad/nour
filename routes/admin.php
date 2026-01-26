@@ -53,6 +53,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
         Route::get('/', [PermissionsController::class, 'index'])->name('index');
         Route::post('/assign', [PermissionsController::class, 'assignPermissions'])->name('assign');
         Route::match(['GET', 'POST'], '/search', [PermissionsController::class, 'search'])->name('search');
+        Route::match(['GET', 'POST'], '/available', [PermissionsController::class, 'getAvailablePermissions'])->name('available');
 
         Route::get('/user/{user}', [PermissionsController::class, 'getUserPermissions'])->name('user');
         Route::get('/user/{user}/permissions', [PermissionsController::class, 'getUserPermissions'])->name('user.permissions');

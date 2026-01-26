@@ -5,14 +5,19 @@ namespace App\Http\Controllers;
 use App\Governorate;
 use App\Helpers\ConstantsHelper;
 use App\Helpers\GeneralHelper;
+use App\Http\Requests\StoreComplaintSuggestionRequest;
 use App\Models\ComplaintSuggestion;
 use App\Models\Generator;
+use App\Services\ComplaintSuggestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ComplaintSuggestionController extends Controller
 {
+    public function __construct(
+        private ComplaintSuggestionService $complaintSuggestionService
+    ) {}
+
     /**
      * عرض الصفحة الرئيسية للمقترحات والشكاوى
      */
@@ -35,107 +40,30 @@ class ComplaintSuggestionController extends Controller
     /**
      * حفظ شكوى/مقترح جديد
      */
-    public function store(Request $request)
+    public function store(StoreComplaintSuggestionRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'type' => 'required|in:complaint,suggestion',
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'governorate' => ['required', 'integer', function ($attribute, $value, $fail) {
-                if (! Governorate::tryFrom($value)) {
-                    $fail('يرجى اختيار محافظة صحيحة');
-                }
-            }],
-            'generator_id' => 'nullable|exists:generators,id',
-            'message' => 'required|string|min:10',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-        ], [
-            'type.required' => 'يرجى اختيار نوع الطلب',
-            'name.required' => 'يرجى إدخال الاسم',
-            'phone.required' => 'يرجى إدخال رقم الهاتف',
-            'email.email' => 'البريد الإلكتروني غير صحيح',
-            'governorate.required' => 'يرجى اختيار المحافظة',
-            'governorate.integer' => 'يرجى اختيار محافظة صحيحة',
-            'generator_id.exists' => 'يرجى اختيار مولد صحيح',
-            'message.required' => 'يرجى إدخال الرسالة',
-            'message.min' => 'الرسالة يجب أن تكون على الأقل 10 أحرف',
-            'image.image' => 'الملف المرفوع يجب أن يكون صورة',
-            'image.mimes' => 'نوع الصورة يجب أن يكون: jpeg, png, jpg, gif',
-            'image.max' => 'حجم الصورة يجب أن لا يتجاوز 5 ميجابايت',
-        ]);
+        try {
+            $complaintSuggestion = $this->complaintSuggestionService->createComplaint(
+                $request->validated(),
+                $request->file('image')
+            );
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+            $typeLabel = $request->type === 'complaint' ? 'الشكوى' : 'المقترح';
+
+            return redirect()
+                ->route('complaints-suggestions.track', ['code' => $complaintSuggestion->tracking_code])
+                ->with('success', "تم إرسال {$typeLabel} بنجاح. رمز التتبع: {$complaintSuggestion->tracking_code}");
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating complaint/suggestion', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.');
         }
-
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('complaints-suggestions', 'public');
-        }
-
-        // تحديد المشغل بناءً على generator_id أو المحافظة
-        $operatorId = null;
-        if ($request->generator_id) {
-            // إذا تم اختيار مولد محدد، نأخذ المشغل من المولد
-            $generator = Generator::with('generationUnit.operator')->find($request->generator_id);
-            if ($generator) {
-                // البحث عن المشغل من خلال generation_unit (الطريقة المفضلة)
-                if ($generator->generationUnit && $generator->generationUnit->operator) {
-                    $operatorId = $generator->generationUnit->operator->id;
-                } 
-                // Fallback: إذا لم يكن هناك generation_unit، نستخدم operator_id المباشر
-                elseif ($generator->operator_id) {
-                    $operatorId = $generator->operator_id;
-                }
-            }
-        } else {
-            // إذا لم يتم اختيار مولد، نبحث عن المشغلين في المحافظة
-            // لكن لا يمكننا تحديد مشغل واحد، لذا سنتركه null
-            // وسيتم ربطه لاحقاً من قبل Admin/Energy Authority
-        }
-
-        $complaintSuggestion = ComplaintSuggestion::create([
-            'type' => $request->type,
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'governorate' => Governorate::from($request->governorate),
-            'operator_id' => $operatorId,
-            'generator_id' => $request->generator_id,
-            'subject' => $request->message, // استخدام الرسالة كعنوان
-            'message' => $request->message,
-            'image' => $imagePath,
-            'tracking_code' => ComplaintSuggestion::generateTrackingCode(),
-            'status' => 'pending',
-            'closed_by_operator' => false,
-        ]);
-
-        // إذا كان هناك مشغل محدد، إرسال إشعارات لـ Admin, SuperAdmin, Energy Authority
-        if ($operatorId) {
-            $operator = \App\Models\Operator::find($operatorId);
-            if ($operator) {
-                // إرسال إشعارات لـ Admin, SuperAdmin, Energy Authority
-                \App\Models\Notification::notifyOperatorApprovers(
-                    'complaint_new',
-                    'شكوى/مقترح جديد على مشغل',
-                    "تم إرسال ".($request->type === 'complaint' ? 'شكوى' : 'مقترح')." جديد على المشغل: {$operator->name} من {$request->name}",
-                    route('admin.complaints-suggestions.show', $complaintSuggestion)
-                );
-
-                // إرسال إشعار للمشغل
-                \App\Models\Notification::notifyOperatorUsers(
-                    $operator,
-                    'complaint_assigned',
-                    'شكوى/مقترح جديد',
-                    "تم إرسال ".($request->type === 'complaint' ? 'شكوى' : 'مقترح')." جديد متعلق بمشغلك",
-                    route('admin.complaints-suggestions.show', $complaintSuggestion)
-                );
-            }
-        }
-
-        return redirect()->route('complaints-suggestions.track', ['code' => $complaintSuggestion->tracking_code])
-            ->with('success', 'تم إرسال '.($request->type === 'complaint' ? 'الشكوى' : 'المقترح').' بنجاح. رمز التتبع: '.$complaintSuggestion->tracking_code);
     }
 
     /**

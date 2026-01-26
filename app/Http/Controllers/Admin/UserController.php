@@ -817,7 +817,7 @@ class UserController extends Controller
         $nameToUse = $nameEn ?: $name;
         // For custom roles, use a fallback role enum value for username generation
         $roleForUsername = $role ?? Role::Employee; // Use Employee as fallback for custom roles
-        $username = $this->generateUsername($roleForUsername, $nameToUse);
+        $username = \App\Helpers\UsernameHelper::generate($roleForUsername, $nameToUse);
 
         // Auto-generate password (8 random characters)
         $password = \Illuminate\Support\Str::random(8);
@@ -1183,7 +1183,7 @@ class UserController extends Controller
             // استخدام name_en إذا كان موجوداً، وإلا استخدام name (العربي)
             $nameForUsername = $nameEn ?: $newName;
             // توليد username جديد من الاسم
-            $newUsername = $this->generateUsername($newRole, $nameForUsername);
+            $newUsername = \App\Helpers\UsernameHelper::generate($newRole, $nameForUsername);
         } else {
             // إذا لم يتغير الاسم، نستخدم username الحالي (لا نغيره)
             $newUsername = $user->username;
@@ -1666,114 +1666,6 @@ class UserController extends Controller
     /**
      * Generate username based on role and name (same logic as PublicHomeController)
      */
-    private function generateUsername(\App\Enums\Role $role, string $nameEn, ?string $fallbackIdNumber = null): string
-    {
-        // تحديد البادئة حسب الدور
-        $prefix = match($role) {
-            \App\Enums\Role::SuperAdmin => 'sp_',
-            \App\Enums\Role::Admin => 'a_',
-            \App\Enums\Role::EnergyAuthority => 'ea_',
-            \App\Enums\Role::CompanyOwner => 'op_',
-            \App\Enums\Role::Technician => 't_',
-            \App\Enums\Role::CivilDefense => 'cd_',
-            default => 'user_',
-        };
-        
-        // تنظيف الاسم من الأحرف العربية والأحرف الخاصة
-        $cleanedName = $this->cleanString($nameEn);
-        
-        // إذا كان الاسم فارغاً أو يحتوي على أحرف عربية فقط، نحاول تحويله
-        // إزالة الأحرف غير اللاتينية أولاً للتحقق
-        $latinOnly = preg_replace('/[^a-z0-9\s]/i', '', $cleanedName);
-        if (empty(trim($latinOnly)) && !empty($cleanedName)) {
-            // الاسم يحتوي على أحرف عربية فقط، نحاول تحويله باستخدام transliteration بسيط
-            $cleanedName = $this->transliterateArabicToLatin($cleanedName);
-        }
-        
-        $nameParts = explode(' ', trim($cleanedName));
-        $nameParts = array_filter($nameParts, function($part) {
-            return !empty(trim($part));
-        });
-        $nameParts = array_values($nameParts); // إعادة ترقيم المصفوفة
-        
-        // استخراج أول حرف من الاسم الأول + الاسم الأخير كاملاً
-        if (count($nameParts) >= 2) {
-            // أول حرف من الاسم الأول
-            $firstChar = strtolower(substr(trim($nameParts[0]), 0, 1));
-            // الاسم الأخير كاملاً (اسم العائلة)
-            $lastName = strtolower(trim($nameParts[count($nameParts) - 1]));
-            // إزالة الأحرف الخاصة والمسافات من اسم العائلة (يحافظ على a-z0-9 فقط)
-            $lastName = preg_replace('/[^a-z0-9]/', '', $lastName);
-            $usernameBase = $firstChar . $lastName;
-        } else {
-            // إذا كان اسم واحد فقط، استخدم أول 8 أحرف
-            $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $cleanedName));
-            $usernameBase = substr($usernameBase, 0, 8);
-        }
-        
-        // التأكد من أن usernameBase ليس فارغاً
-        if (empty($usernameBase)) {
-            // استخدام رقم الهوية كبديل
-            $usernameBase = $fallbackIdNumber ? substr($fallbackIdNumber, -4) : 'user';
-        }
-        
-        // إضافة البادئة
-        $username = $prefix . $usernameBase;
-        
-        // التأكد من أن username فريد
-        $counter = 1;
-        $originalUsername = $username;
-        while (User::where('username', $username)->whereNull('deleted_at')->exists()) {
-            $username = $originalUsername . $counter;
-            $counter++;
-        }
-        
-        return $username;
-    }
-
-    /**
-     * Clean UTF-8 string - uses AppServiceProvider's static method for consistency
-     */
-    private function cleanString(?string $value): string
-    {
-        return \App\Providers\AppServiceProvider::cleanStringStatic($value);
-    }
-
-    /**
-     * تحويل الأحرف العربية إلى لاتينية (transliteration بسيط)
-     * يستخدم لتحويل الأسماء العربية إلى أسماء لاتينية لتوليد username
-     */
-    private function transliterateArabicToLatin(string $arabicText): string
-    {
-        // خريطة بسيطة للأحرف العربية الشائعة إلى لاتينية
-        $transliterationMap = [
-            'أ' => 'a', 'ا' => 'a', 'إ' => 'i', 'آ' => 'aa',
-            'ب' => 'b', 'ت' => 't', 'ث' => 'th', 'ج' => 'j',
-            'ح' => 'h', 'خ' => 'kh', 'د' => 'd', 'ذ' => 'th',
-            'ر' => 'r', 'ز' => 'z', 'س' => 's', 'ش' => 'sh',
-            'ص' => 's', 'ض' => 'd', 'ط' => 't', 'ظ' => 'z',
-            'ع' => 'a', 'غ' => 'gh', 'ف' => 'f', 'ق' => 'q',
-            'ك' => 'k', 'ل' => 'l', 'م' => 'm', 'ن' => 'n',
-            'ه' => 'h', 'و' => 'w', 'ي' => 'y', 'ى' => 'a',
-            'ة' => 'h', 'ئ' => 'y', 'ء' => '', 'ؤ' => 'w',
-        ];
-
-        $result = '';
-        $text = mb_strtolower($arabicText, 'UTF-8');
-        
-        for ($i = 0; $i < mb_strlen($text, 'UTF-8'); $i++) {
-            $char = mb_substr($text, $i, 1, 'UTF-8');
-            if (isset($transliterationMap[$char])) {
-                $result .= $transliterationMap[$char];
-            } elseif (preg_match('/[a-z0-9\s]/', $char)) {
-                // الاحتفاظ بالأحرف اللاتينية والأرقام والمسافات
-                $result .= $char;
-            }
-            // تجاهل الأحرف الأخرى
-        }
-        
-        return trim($result);
-    }
 
     private function jsonOrRedirect(Request $request, bool $ok, string $message, array $extraData = [])
     {

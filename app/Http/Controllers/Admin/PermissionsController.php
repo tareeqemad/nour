@@ -14,7 +14,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PermissionsController extends Controller
@@ -233,18 +232,8 @@ class PermissionsController extends Controller
             $query->whereIn('id', $assignableIds);
         }
 
-        if ($search !== '') {
-            // تنظيف المدخلات لمنع SQL Injection
-            $search = $this->sanitizeSearchInput($search);
-            if (!empty($search)) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('label', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhere('group_label', 'like', "%{$search}%");
-                });
-            }
-        }
+        // تطبيق البحث
+        $this->applySearchFilter($query, $search);
 
         $permissions = $query->get()->groupBy('group');
 
@@ -333,6 +322,248 @@ class PermissionsController extends Controller
 
 
 
+    /**
+     * جلب الصلاحيات المتاحة بناءً على المستخدم أو الدور المختار
+     * تعرض فقط الصلاحيات التي يمكن منحها للمستخدم/الدور المختار
+     */
+    public function getAvailablePermissions(Request $request): JsonResponse
+    {
+        $authUser = auth()->user();
+        $this->assertActorCanOpenTree($authUser);
+
+        $userId = $request->input('user_id');
+        $roleId = $request->input('role_id');
+        $search = trim((string) $request->input('search', ''));
+
+        $query = Permission::query()->orderBy('group')->orderBy('order');
+
+        // تحديد الصلاحيات المتاحة للمستخدم الحالي (الذي يقوم بالتعديل)
+        $actorAvailableIds = $this->getActorAvailablePermissionIds($authUser);
+        $query->whereIn('id', $actorAvailableIds);
+
+        // إذا تم اختيار مستخدم معين، فلترة الصلاحيات بناءً على دور المستخدم
+        if ($userId) {
+            $targetUser = User::find($userId);
+            if ($targetUser) {
+                $this->assertActorCanManageTarget($authUser, $targetUser);
+                
+                // تحديد الصلاحيات المتاحة للمستخدم المختار بناءً على دوره
+                $targetAvailableIds = $this->getTargetUserAvailablePermissionIds($authUser, $targetUser);
+                $query->whereIn('id', $targetAvailableIds);
+            }
+        }
+
+        // إذا تم اختيار دور معين (role)، فلترة الصلاحيات بناءً على الدور
+        if ($roleId) {
+            $targetRole = Role::find($roleId);
+            if ($targetRole) {
+                // تحديد الصلاحيات المتاحة للدور المختار
+                $roleAvailableIds = $this->getRoleAvailablePermissionIds($authUser, $targetRole);
+                $query->whereIn('id', $roleAvailableIds);
+            }
+        }
+
+        // تطبيق البحث
+        $this->applySearchFilter($query, $search);
+
+        $permissions = $query->get()->groupBy('group');
+
+        $html = view('admin.permissions.partials.permissions-tree', [
+            'permissions' => $permissions,
+            'search' => $search,
+        ])->render();
+
+        return response()->json([
+            'success' => true,
+            'html' => $html,
+            'count' => $permissions->flatten()->count(),
+        ]);
+    }
+
+    /**
+     * جلب الصلاحيات المتاحة للمستخدم الحالي (الذي يقوم بالتعديل)
+     */
+    private function getActorAvailablePermissionIds(User $actor): array
+    {
+        return match (true) {
+            $actor->isSuperAdmin() => Permission::pluck('id')->toArray(),
+            $actor->isEnergyAuthority(), $actor->isAdmin() => $this->getAllExceptSuperAdminOnly(),
+            $actor->isCompanyOwner() => $this->tenantAssignablePermissionIds(),
+            default => [],
+        };
+    }
+
+    /**
+     * جلب جميع الصلاحيات ما عدا الصلاحيات الحصرية لـ SuperAdmin
+     */
+    private function getAllExceptSuperAdminOnly(): array
+    {
+        $superAdminOnlyIds = $this->superAdminOnlyPermissionIds();
+        return Permission::whereNotIn('id', $superAdminOnlyIds)->pluck('id')->toArray();
+    }
+
+    /**
+     * جلب الصلاحيات المخصصة للدور من جدول role_permission
+     */
+    private function getRolePermissionIds(string $roleName): array
+    {
+        $role = Role::where('name', $roleName)->first();
+        if (!$role) {
+            return [];
+        }
+        
+        $role->load('permissions');
+        return $role->permissions->pluck('id')->toArray();
+    }
+
+    /**
+     * جلب صلاحيات الموظفين والفنيين (operation_logs و maintenance_records فقط)
+     */
+    private function getEmployeeTechnicianPermissionIds(): array
+    {
+        return Permission::where(function ($q) {
+            $q->where('name', 'like', 'operation_logs.%')
+              ->orWhere('name', 'like', 'maintenance_records.%');
+        })->pluck('id')->toArray();
+    }
+
+    /**
+     * جلب الصلاحيات المتاحة للمستخدم المختار بناءً على دوره
+     */
+    private function getTargetUserAvailablePermissionIds(User $actor, User $targetUser): array
+    {
+        $actorAvailableIds = $this->getActorAvailablePermissionIds($actor);
+        $rolePermissionIds = $this->getUserRolePermissionIds($targetUser);
+        
+        // إذا كان للدور صلاحيات محددة، نستخدمها مع التصفية المناسبة
+        if (!empty($rolePermissionIds)) {
+            $available = array_values(array_intersect($rolePermissionIds, $actorAvailableIds));
+            return $this->applyPermissionFilters($actor, $targetUser, $available);
+        }
+
+        // استخدام القواعد الافتراضية
+        return $this->getDefaultPermissionsForTargetUser($actor, $targetUser, $actorAvailableIds);
+    }
+
+    /**
+     * جلب صلاحيات الدور للمستخدم (مخصص أو نظامي)
+     */
+    private function getUserRolePermissionIds(User $user): array
+    {
+        if ($user->roleModel) {
+            $user->loadMissing(['roleModel.permissions']);
+            return $user->roleModel->permissions->pluck('id')->toArray();
+        }
+
+        return $user->role ? $this->getRolePermissionIds($user->role->value) : [];
+    }
+
+    /**
+     * التحقق إذا يجب تقييد الصلاحيات لصلاحيات الموظفين/الفنيين فقط
+     */
+    private function shouldLimitToEmployeeTechnicianPermissions(User $actor, User $targetUser): bool
+    {
+        return $actor->isCompanyOwner() && ($targetUser->isEmployee() || $targetUser->isTechnician());
+    }
+
+    /**
+     * تصفية الصلاحيات لتبقى فقط صلاحيات الموظفين/الفنيين
+     */
+    private function filterEmployeeTechnicianPermissions(array $permissionIds): array
+    {
+        $employeeTechnicianPermissions = $this->getEmployeeTechnicianPermissionIds();
+        return array_values(array_intersect($permissionIds, $employeeTechnicianPermissions));
+    }
+
+    /**
+     * جلب الصلاحيات الافتراضية للمستخدم المختار
+     */
+    private function getDefaultPermissionsForTargetUser(User $actor, User $targetUser, array $actorAvailableIds): array
+    {
+        return match (true) {
+            $targetUser->isSuperAdmin() => $actorAvailableIds,
+            $targetUser->isAdmin() || $targetUser->isEnergyAuthority() => $this->excludeSuperAdminOnly($actorAvailableIds),
+            $targetUser->isCompanyOwner() => $this->intersectWithTenantAssignable($actorAvailableIds),
+            $this->shouldLimitToEmployeeTechnicianPermissions($actor, $targetUser) => $this->filterEmployeeTechnicianPermissions($actorAvailableIds),
+            $actor->isCompanyOwner() => $this->intersectWithTenantAssignable($actorAvailableIds),
+            default => $actorAvailableIds,
+        };
+    }
+
+    /**
+     * جلب الصلاحيات المتاحة للدور المختار
+     */
+    private function getRoleAvailablePermissionIds(User $actor, Role $targetRole): array
+    {
+        $actorAvailableIds = $this->getActorAvailablePermissionIds($actor);
+        $targetRole->load('permissions');
+        $rolePermissionIds = $targetRole->permissions->pluck('id')->toArray();
+        
+        // إذا كان للدور صلاحيات محددة، نستخدمها مع التصفية المناسبة
+        if (!empty($rolePermissionIds)) {
+            $available = array_values(array_intersect($rolePermissionIds, $actorAvailableIds));
+            
+            // المشغل مع أدوار الموظفين/الفنيين: فقط صلاحيات التشغيل والصيانة
+            if ($actor->isCompanyOwner() && in_array($targetRole->name, ['employee', 'technician'])) {
+                return $this->filterEmployeeTechnicianPermissions($available);
+            }
+            
+            return $available;
+        }
+
+        // استخدام القواعد الافتراضية
+        return $this->getDefaultPermissionsForRole($actor, $targetRole, $actorAvailableIds);
+    }
+
+    /**
+     * جلب الصلاحيات الافتراضية للدور المختار
+     */
+    private function getDefaultPermissionsForRole(User $actor, Role $targetRole, array $actorAvailableIds): array
+    {
+        return match ($targetRole->name) {
+            'super_admin' => $actorAvailableIds,
+            'admin', 'energy_authority' => $this->excludeSuperAdminOnly($actorAvailableIds),
+            'company_owner' => $this->intersectWithTenantAssignable($actorAvailableIds),
+            'employee', 'technician' => $actor->isCompanyOwner() 
+                ? $this->filterEmployeeTechnicianPermissions($actorAvailableIds)
+                : $actorAvailableIds,
+            default => $targetRole->operator_id && $actor->isCompanyOwner()
+                ? $this->intersectWithTenantAssignable($actorAvailableIds)
+                : $actorAvailableIds,
+        };
+    }
+
+    /**
+     * تطبيق التصفيات المناسبة على الصلاحيات
+     */
+    private function applyPermissionFilters(User $actor, User $targetUser, array $permissions): array
+    {
+        // المشغل مع الموظفين/الفنيين: فقط صلاحيات التشغيل والصيانة
+        if ($this->shouldLimitToEmployeeTechnicianPermissions($actor, $targetUser)) {
+            return $this->filterEmployeeTechnicianPermissions($permissions);
+        }
+        
+        return $permissions;
+    }
+
+    /**
+     * استبعاد الصلاحيات الحصرية لـ SuperAdmin
+     */
+    private function excludeSuperAdminOnly(array $permissionIds): array
+    {
+        $superAdminOnlyIds = $this->superAdminOnlyPermissionIds();
+        return array_values(array_diff($permissionIds, $superAdminOnlyIds));
+    }
+
+    /**
+     * تقاطع مع الصلاحيات المتاحة للتوزيع
+     */
+    private function intersectWithTenantAssignable(array $permissionIds): array
+    {
+        $tenantAssignableIds = $this->tenantAssignablePermissionIds();
+        return array_values(array_intersect($permissionIds, $tenantAssignableIds));
+    }
+
     public function search(Request $request): JsonResponse
     {
         $authUser = auth()->user();
@@ -354,18 +585,8 @@ class PermissionsController extends Controller
             $query->whereIn('id', $ceilingIds);
         }
 
-        if ($search !== '') {
-            // تنظيف المدخلات لمنع SQL Injection
-            $search = $this->sanitizeSearchInput($search);
-            if (!empty($search)) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('label', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhere('group_label', 'like', "%{$search}%");
-                });
-            }
-        }
+        // تطبيق البحث
+        $this->applySearchFilter($query, $search);
 
         $permissions = $query->get()->groupBy('group');
 
@@ -379,6 +600,28 @@ class PermissionsController extends Controller
             'html' => $html,
             'count' => $permissions->flatten()->count(),
         ]);
+    }
+
+    /**
+     * تطبيق فلتر البحث على الاستعلام
+     */
+    private function applySearchFilter($query, string $search): void
+    {
+        if (empty($search)) {
+            return;
+        }
+
+        $search = $this->sanitizeSearchInput($search);
+        if (empty($search)) {
+            return;
+        }
+
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('label', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%")
+              ->orWhere('group_label', 'like', "%{$search}%");
+        });
     }
 
     public function getUserPermissions(User $user): JsonResponse

@@ -6,54 +6,12 @@ use App\Models\Permission;
 use App\Models\Role as RoleModel;
 use App\Models\User;
 use App\Enums\Role;
+use App\Helpers\UsernameHelper;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * توليد username بناءً على الآلية الجديدة
-     * SuperAdmin: sp_ + الحرف الأول + اسم العائلة
-     * Admin: ad_ + الحرف الأول + اسم العائلة  
-     * EnergyAuthority: ea_ + الحرف الأول + اسم العائلة
-     * CompanyOwner: co_ + الحرف الأول + اسم العائلة
-     */
-    private function generateUsername(string $nameEn, Role $role): string
-    {
-        // تقسيم الاسم إلى كلمات
-        $nameParts = preg_split('/[\s\-_]+/', trim($nameEn));
-        $firstName = $nameParts[0] ?? '';
-        $lastName = $nameParts[count($nameParts) - 1] ?? $firstName;
-
-        // الحصول على الحرف الأول من الاسم الأول
-        $firstChar = mb_substr($firstName, 0, 1, 'UTF-8');
-        $firstChar = mb_strtolower($firstChar, 'UTF-8');
-
-        // تنظيف اسم العائلة
-        $cleanLastName = preg_replace('/[^a-zA-Z0-9]/', '', $lastName);
-        $cleanLastName = mb_strtolower($cleanLastName, 'UTF-8');
-
-        // تحديد البادئة حسب الدور
-        $prefix = match($role) {
-            Role::SuperAdmin => 'sp_',
-            Role::EnergyAuthority => 'ea_',
-            Role::CompanyOwner => 'co_',
-            default => 'ad_',
-        };
-
-        // username = prefix + first_char + last_name
-        $usernameBase = $prefix . $firstChar . $cleanLastName;
-
-        // التأكد من أن username فريد
-        $counter = 1;
-        $username = $usernameBase;
-        while (User::where('username', $username)->whereNull('deleted_at')->exists()) {
-            $username = $usernameBase . $counter;
-            $counter++;
-        }
-
-        return $username;
-    }
 
     /**
      * Run the database seeds.
@@ -66,7 +24,7 @@ class UserSeeder extends Seeder
         $defaultPassword = 'tareq123';
 
         // 1. Super Admin - طارق البواب
-        $superAdmin1Username = $this->generateUsername('Tareq Elbawab', Role::SuperAdmin);
+        $superAdmin1Username = UsernameHelper::generate(Role::SuperAdmin, 'Tareq Elbawab');
         $superAdmin1 = User::updateOrCreate(
             ['email' => 'tareq@gazarased.com'],
             [
@@ -102,7 +60,7 @@ class UserSeeder extends Seeder
         $superAdmin2->assignDefaultPermissions();
 
         // 3. Super Admin - فهيم المملوك
-        $superAdmin3Username = $this->generateUsername('Fahim Almalook', Role::SuperAdmin);
+        $superAdmin3Username = UsernameHelper::generate(Role::SuperAdmin, 'Fahim Almalook');
         $superAdmin3 = User::updateOrCreate(
             ['email' => 'fahim@gazarased.com'],
             [
