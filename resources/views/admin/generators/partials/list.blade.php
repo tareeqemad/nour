@@ -66,7 +66,7 @@
                                 @if($generator->capacity_kva)
                                 <span class="badge bg-info px-3 py-2">
                                     <i class="bi bi-speedometer2 me-1"></i>
-                                    {{ number_format($generator->capacity_kva, 2) }}
+                                    {{ number_format($generator->capacity_kva, 0) }}
                                 </span>
                             @else
                                 <span class="text-muted">-</span>

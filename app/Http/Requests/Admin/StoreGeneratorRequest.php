@@ -21,9 +21,20 @@ class StoreGeneratorRequest extends FormRequest
             return $user->ownedOperators()->first() !== null;
         }
         
+        // التحقق من الصلاحية الديناميكية
+        if ($user->hasPermission('generators.create')) {
+            // يجب أن يكون تابع لمشغل واحد على الأقل
+            return $user->operators()->exists() || $user->ownedOperators()->exists();
+        }
+        
         // Technician يمكنه أيضاً (من خلال Policy)
         if ($user->isTechnician()) {
-            return $user->can('create', \App\Models\Generator::class);
+            return $user->operators()->exists();
+        }
+        
+        // Employee مع صلاحية يمكنه أيضاً
+        if ($user->isEmployee() && $user->hasPermission('generators.create')) {
+            return $user->operators()->exists();
         }
         
         return false;
@@ -42,8 +53,8 @@ class StoreGeneratorRequest extends FormRequest
             // المواصفات الفنية
             'capacity_kva' => [
                 'nullable',
-                'numeric',
-                'min:0',
+                'integer',
+                'min:1',
                 function ($attribute, $value, $fail) {
                     if (empty($value) || $value <= 0) {
                         return; // إذا كانت القيمة فارغة أو صفر، لا حاجة للتحقق
@@ -83,7 +94,7 @@ class StoreGeneratorRequest extends FormRequest
             'measurement_indicator_id' => ['nullable', 'exists:constant_details,id'],
             // الحالة الفنية والتوثيق
             'technical_condition_id' => ['nullable', 'exists:constant_details,id'],
-            'last_major_maintenance_date' => ['nullable', 'date'],
+            'last_major_maintenance_date' => ['nullable', 'date', 'before_or_equal:today'],
             'engine_data_plate_image' => ['nullable', 'image', 'max:2048'],
             'generator_data_plate_image' => ['nullable', 'image', 'max:2048'],
             // نظام التحكم
@@ -116,6 +127,7 @@ class StoreGeneratorRequest extends FormRequest
             'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
             'status_id.required' => 'حالة المولد مطلوبة.',
             'status_id.exists' => 'حالة المولد المحددة غير صحيحة.',
+            'last_major_maintenance_date.before_or_equal' => 'تاريخ آخر صيانة كبرى لا يمكن أن يكون لاحقاً لليوم الحالي.',
             // رسائل خزانات الوقود
             'fuel_tanks.*.capacity.required_with' => 'سعة الخزان مطلوبة.',
             'fuel_tanks.*.capacity.integer' => 'سعة الخزان يجب أن تكون رقماً صحيحاً.',

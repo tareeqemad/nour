@@ -19,7 +19,14 @@ class StoreGenerationUnitRequest extends FormRequest
             'operator_id' => ['required', 'exists:operators,id'],
             
             // الحقول الأساسية المطلوبة فقط
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required', 
+                'string', 
+                'max:255',
+                Rule::unique('generation_units')->where(function ($query) {
+                    return $query->where('operator_id', $this->input('operator_id'));
+                })->whereNull('deleted_at'),
+            ],
             'governorate_id' => ['required', 'exists:constant_details,id'],
             'city_id' => ['required', 'exists:constant_details,id'],
             'detailed_address' => ['required', 'string'],
@@ -78,7 +85,7 @@ class StoreGenerationUnitRequest extends FormRequest
             'email' => ['nullable', 'string', 'email', 'max:255'],
 
             // القدرات الفنية
-            'total_capacity' => ['required', 'numeric', 'min:0.01'],
+            'total_capacity' => ['required', 'integer', 'min:1'],
             'synchronization_available_id' => ['nullable', 'exists:constant_details,id'],
             'max_synchronization_capacity' => [
                 'nullable',
@@ -128,6 +135,7 @@ class StoreGenerationUnitRequest extends FormRequest
             'operator_id.required' => 'يجب اختيار المشغل.',
             'operator_id.exists' => 'المشغل المحدد غير موجود.',
             'name.required' => 'اسم وحدة التوليد مطلوب.',
+            'name.unique' => 'يوجد وحدة توليد بنفس الاسم للمشغل المحدد. يرجى اختيار اسم آخر.',
             'governorate_id.required' => 'المحافظة مطلوبة.',
             'governorate_id.exists' => 'المحافظة المحددة غير صحيحة.',
             'city_id.required' => 'المدينة مطلوبة.',

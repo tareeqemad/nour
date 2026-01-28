@@ -84,7 +84,7 @@ class Notification extends Model
             })->orWhereHas('roleModel', function ($q2) {
                 $q2->whereIn('name', ['super_admin', 'admin', 'energy_authority']);
             });
-        })->get()->each(function ($user) use ($type, $title, $message, $link) {
+        })->each(function ($user) use ($type, $title, $message, $link) {
             // Check if user has operators.approve permission or is Super Admin
             if ($user->isSuperAdmin() || $user->hasPermission('operators.approve')) {
                 self::createNotification($user->id, $type, $title, $message, $link);

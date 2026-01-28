@@ -82,8 +82,8 @@ class GeneratorPolicy
             return $user->operators()->exists() || $user->ownedOperators()->exists();
         }
 
-        // Fallback للأدوار - Technician يمكنه الإضافة إذا كان تابع لمشغل
-        if ($user->isTechnician()) {
+        // Fallback للأدوار - Technician و Employee يمكنهم الإضافة إذا كانوا تابعين لمشغل
+        if ($user->isTechnician() || ($user->isEmployee() && $user->hasPermission('generators.create'))) {
             return $user->operators()->exists();
         }
 

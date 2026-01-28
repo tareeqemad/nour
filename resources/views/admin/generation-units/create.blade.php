@@ -388,8 +388,8 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">إجمالي القدرة (KVA) <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" name="total_capacity" class="form-control @error('total_capacity') is-invalid @enderror"
-                                               value="{{ old('total_capacity') }}" required min="0.01">
+                                        <input type="number" step="1" name="total_capacity" class="form-control @error('total_capacity') is-invalid @enderror"
+                                               value="{{ old('total_capacity') }}" required min="1">
                                         @error('total_capacity')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror

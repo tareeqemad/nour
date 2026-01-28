@@ -9,9 +9,6 @@ use App\Http\Requests\Admin\TransferGeneratorRequest;
 use App\Models\Generator;
 use App\Models\Notification;
 use App\Models\Operator;
-use App\Models\Task;
-use App\Models\ComplaintSuggestion;
-use App\Models\FuelConsumptionSummary;
 use App\Helpers\ConstantsHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -141,7 +138,7 @@ class GeneratorController extends Controller
 
         // تحديد المشغل بناءً على دور المستخدم
         if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if (!$operator) {
@@ -149,21 +146,15 @@ class GeneratorController extends Controller
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك. يرجى التواصل مع مدير النظام.');
             }
             $operators = $user->ownedOperators;
-        } elseif ($user->hasPermission('generators.create')) {
-            // المستخدم التابع لمشغل مع صلاحية generators.create
+        } elseif ($user->hasPermission('generators.create') || $user->isTechnician() || ($user->isEmployee() && $user->hasPermission('generators.create'))) {
+            // المستخدم التابع لمشغل مع صلاحية generators.create أو Technician أو Employee مع صلاحية
             // التحقق من أن المستخدم تابع لمشغل
             if ($user->operators()->exists()) {
                 $operator = $user->operators()->first();
+                $operators = $user->operators;
             } elseif ($user->ownedOperators()->exists()) {
                 $operator = $user->ownedOperators()->first();
-            } else {
-                return redirect()->route('admin.dashboard')
-                    ->with('error', 'لا يوجد مشغل مرتبط بحسابك. يرجى التواصل مع مدير النظام.');
-            }
-        } elseif ($user->isTechnician()) {
-            // Technician يجب أن يكون تابع لمشغل
-            if ($user->operators()->exists()) {
-                $operator = $user->operators()->first();
+                $operators = $user->ownedOperators;
             } else {
                 return redirect()->route('admin.dashboard')
                     ->with('error', 'لا يوجد مشغل مرتبط بحسابك. يرجى التواصل مع مدير النظام.');
@@ -174,8 +165,14 @@ class GeneratorController extends Controller
         }
 
         // التحقق من وجود وحدات التوليد
+        $generationUnits = collect();
         if ($operator) {
-            $generationUnits = $operator->generationUnits;
+            $generationUnits = $operator->generationUnits()
+                ->select('id', 'name', 'unit_code', 'status_id', 'generators_count', 'operator_id')
+                ->withCount('generators as current_generators_count')
+                ->orderBy('name')
+                ->get();
+                
             if ($generationUnits->isEmpty()) {
                 return redirect()->route('admin.generation-units.create')
                     ->with('warning', 'يجب إضافة وحدة توليد على الأقل قبل إضافة المولدات.');
@@ -191,10 +188,10 @@ class GeneratorController extends Controller
                 }
 
                 // التحقق من أن عدد المولدات لم يتجاوز العدد المطلوب
-                $currentCount = $generationUnit->generators()->count();
-                $maxCount = $generationUnit->generators_count;
+                $currentCount = $generationUnit->current_generators_count ?? 0;
+                $maxCount = $generationUnit->generators_count ?? 0;
 
-                if ($currentCount >= $maxCount) {
+                if ($maxCount > 0 && $currentCount >= $maxCount) {
                     return redirect()->route('admin.generators.index')
                         ->with('error', "لقد وصلت إلى الحد الأقصى لعدد المولدات في هذه الوحدة ({$maxCount}). يمكنك إضافة مولدات جديدة بعد تحديث عدد المولدات في وحدة التوليد.");
                 }
@@ -214,7 +211,7 @@ class GeneratorController extends Controller
             'measurement_method' => ConstantsHelper::get(19), // طريقة القياس
         ];
 
-        return view('admin.generators.create', compact('operators', 'constants'));
+        return view('admin.generators.create', compact('operators', 'constants', 'generationUnits', 'operator'));
     }
 
     /**
@@ -456,7 +453,7 @@ class GeneratorController extends Controller
         $operators = collect();
 
         if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
         } elseif ($user->isCompanyOwner()) {
             $operators = $user->ownedOperators;
         } elseif ($user->isTechnician()) {
@@ -719,9 +716,10 @@ class GeneratorController extends Controller
 
         $generationUnits = $operator->generationUnits()
             ->select('id', 'name', 'unit_code', 'generators_count')
+            ->withCount('generators as current_count')
             ->get()
             ->map(function ($unit) {
-                $currentCount = $unit->generators()->count();
+                $currentCount = $unit->current_count ?? 0;
                 $maxCount = $unit->generators_count;
                 return [
                     'id' => $unit->id,

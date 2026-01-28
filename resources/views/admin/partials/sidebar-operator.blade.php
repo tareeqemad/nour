@@ -40,12 +40,14 @@
         </li>
 
         {{-- شجرة الصلاحيات --}}
-        <li class="slide {{ $isActive('admin.permissions.index') }}">
-            <a href="{{ route('admin.permissions.index') }}" class="side-menu__item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span class="side-menu__label">شجرة الصلاحيات</span>
-            </a>
-        </li>
+        @if($u->hasPermission('permissions.manage'))
+            <li class="slide {{ $isActive('admin.permissions.index') }}">
+                <a href="{{ route('admin.permissions.index') }}" class="side-menu__item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span class="side-menu__label">شجرة الصلاحيات</span>
+                </a>
+            </li>
+        @endif
     @endif
 
     {{-- إدارة العمليات --}}
@@ -81,25 +83,10 @@
                 </li>
             @endcan
             @can('viewAny', App\Models\Generator::class)
-                <li class="slide has-sub {{ request()->routeIs('admin.generators.*') ? 'open' : '' }}">
-                    <a href="javascript:void(0);" class="side-menu__item {{ request()->routeIs('admin.generators.*') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__angle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                <li class="slide">
+                    <a href="{{ route('admin.generators.index') }}" class="side-menu__item {{ $isActive('admin.generators.*') }}">
                         المولدات
                     </a>
-                    <ul class="slide-menu child2" style="{{ request()->routeIs('admin.generators.*') ? 'display:block' : '' }}">
-                        <li class="slide">
-                            <a href="{{ route('admin.generators.index') }}" class="side-menu__item {{ $isActive('admin.generators.index') }}">
-                                قائمة المولدات
-                            </a>
-                        </li>
-                        @can('create', App\Models\Generator::class)
-                            <li class="slide">
-                                <a href="{{ route('admin.generators.create') }}" class="side-menu__item {{ $isActive('admin.generators.create') }}">
-                                    إضافة مولد جديد
-                                </a>
-                            </li>
-                        @endcan
-                    </ul>
                 </li>
             @endcan
             {{-- أسعار التعرفة (للمشغل المعتمد فقط) --}}

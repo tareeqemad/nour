@@ -14,7 +14,7 @@
         'operatorRequired' => true,                   // Optional: is operator required?
         'generationUnitRequired' => true,             // Optional: is generation unit required?
         'generatorRequired' => true,                  // Optional: is generator required?
-        'colClass' => 'col-md-4',                     // Optional: column class for each select
+        'colClass' => 'col-md-3',                     // Optional: column class for each select (default: col-md-3)
         'operatorLabel' => 'المشغل',                  // Optional: custom labels
         'generationUnitLabel' => 'وحدة التوليد',
         'generatorLabel' => 'المولد',
@@ -31,7 +31,7 @@
     $operatorRequired = $operatorRequired ?? true;
     $generationUnitRequired = $generationUnitRequired ?? true;
     $generatorRequired = $generatorRequired ?? true;
-    $colClass = $colClass ?? 'col-md-4';
+    $colClass = $colClass ?? 'col-md-3';
     $operatorLabel = $operatorLabel ?? 'المشغل';
     $generationUnitLabel = $generationUnitLabel ?? 'وحدة التوليد';
     $generatorLabel = $generatorLabel ?? 'المولد';

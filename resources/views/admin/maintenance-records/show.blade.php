@@ -321,7 +321,7 @@
                                     </label>
                                     <div class="form-control-plaintext">
                                         @if($maintenanceRecord->generator)
-                                            {{ number_format($maintenanceRecord->generator->capacity_kva, 2) }} KVA
+                                            {{ number_format($maintenanceRecord->generator->capacity_kva, 0) }} KVA
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif

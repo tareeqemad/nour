@@ -36,6 +36,7 @@
                     </div>
 
                     <div class="card-body">
+                        @can('create', App\Models\FuelEfficiency::class)
                         <form action="{{ route('admin.fuel-efficiencies.store') }}" method="POST" id="fuelEfficiencyForm">
                             @csrf
 
@@ -278,6 +279,12 @@
                                 </button>
                             </div>
                         </form>
+                        @else
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                ليس لديك صلاحية لإضافة سجل كفاءة وقود.
+                            </div>
+                        @endcan
                     </div>
                 </div>
             </div>

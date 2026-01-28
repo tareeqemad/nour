@@ -302,29 +302,56 @@ class Operator extends Model
     private static function createDefaultRolesForOperator(Operator $operator): void
     {
         try {
-            // 1. دور فني المشغل
-            Role::create([
+            // جلب جميع الصلاحيات المتاحة
+            $permissions = \App\Models\Permission::all();
+            
+            // 1. دور فني المشغل - صلاحيات الصيانة والتشغيل
+            $technicianRole = Role::create([
                 'name' => 'technician_' . $operator->id,
                 'label' => 'فني مشغل',
                 'description' => 'دور فني المشغل - تم إنشاؤه تلقائياً للمشغل: ' . $operator->name,
                 'is_system' => false,
                 'operator_id' => $operator->id,
-                'created_by' => $operator->owner_id, // ربط الدور بالمشغل (المالك)
+                'created_by' => $operator->owner_id,
                 'order' => 100,
             ]);
             
-            // 2. دور المحاسب
-            Role::create([
+            // إضافة صلاحيات فني المشغل (مشابهة لدور Technician النظامي)
+            $technicianPermissions = $permissions->whereIn('name', [
+                'generation_units.view',
+                'generators.view',
+                'maintenance_records.view',
+                'maintenance_records.create',
+                'maintenance_records.update',
+                'operation_logs.view',
+                'operation_logs.create',
+                'operation_logs.update',
+            ])->pluck('id');
+            $technicianRole->permissions()->attach($technicianPermissions);
+            
+            // 2. دور المحاسب - صلاحيات عرض التقارير والبيانات المالية
+            $accountantRole = Role::create([
                 'name' => 'accountant_' . $operator->id,
                 'label' => 'محاسب',
                 'description' => 'دور المحاسب - تم إنشاؤه تلقائياً للمشغل: ' . $operator->name,
                 'is_system' => false,
                 'operator_id' => $operator->id,
-                'created_by' => $operator->owner_id, // ربط الدور بالمشغل (المالك)
+                'created_by' => $operator->owner_id,
                 'order' => 101,
             ]);
             
-            \Log::info("تم إنشاء أدوار افتراضية للمشغل: {$operator->name} (ID: {$operator->id})");
+            // إضافة صلاحيات المحاسب (عرض فقط للتقارير والبيانات المالية)
+            $accountantPermissions = $permissions->whereIn('name', [
+                'generation_units.view',
+                'generators.view',
+                'operation_logs.view',
+                'fuel_efficiencies.view',
+                'maintenance_records.view',
+                'compliance_safeties.view',
+            ])->pluck('id');
+            $accountantRole->permissions()->attach($accountantPermissions);
+            
+            \Log::info("تم إنشاء أدوار افتراضية مع صلاحيات للمشغل: {$operator->name} (ID: {$operator->id})");
         } catch (\Exception $e) {
             \Log::error("فشل إنشاء أدوار افتراضية للمشغل: {$operator->name} (ID: {$operator->id}). الخطأ: " . $e->getMessage());
         }

@@ -13,6 +13,7 @@
             </div>
             <div class="dashboard-card-body">
                 <div class="dashboard-quick-actions">
+                    @can('create', App\Models\GenerationUnit::class)
                     <a href="{{ route('admin.generation-units.create') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-primary">
                             <i class="bi bi-building"></i>
@@ -22,6 +23,8 @@
                             <div class="dashboard-quick-action-desc">تسجيل وحدة توليد جديدة</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('create', App\Models\Generator::class)
                     <a href="{{ route('admin.generators.create') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-success">
                             <i class="bi bi-lightning-charge-fill"></i>
@@ -31,6 +34,8 @@
                             <div class="dashboard-quick-action-desc">تسجيل مولد جديد</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('create', App\Models\OperationLog::class)
                     <a href="{{ route('admin.operation-logs.create') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-warning">
                             <i class="bi bi-journal-plus"></i>
@@ -40,6 +45,8 @@
                             <div class="dashboard-quick-action-desc">إضافة سجل جديد</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('create', App\Models\MaintenanceRecord::class)
                     <a href="{{ route('admin.maintenance-records.create') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-danger">
                             <i class="bi bi-tools"></i>
@@ -63,6 +70,7 @@
                             </div>
                         </a>
                     @endif
+                    @endcan
                 </div>
             </div>
         </div>

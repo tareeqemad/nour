@@ -56,7 +56,7 @@ class Generator extends Model
     protected function casts(): array
     {
         return [
-            'capacity_kva' => 'decimal:2',
+            'capacity_kva' => 'integer',
             'power_factor' => 'decimal:2',
             'fuel_consumption_rate' => 'decimal:2',
             'ideal_fuel_efficiency' => 'decimal:3',

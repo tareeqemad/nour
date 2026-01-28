@@ -38,8 +38,9 @@
 {{-- الأدوار والصلاحيات --}}
 @php
     $canViewRoles = true;
-    // EnergyAuthority يمكنه رؤية شجرة الصلاحيات
-    $canViewPermissions = $u->isEnergyAuthority() || $u->can('viewAny', \App\Models\Permission::class);
+    // التحقق من صلاحية permissions.manage (SuperAdmin دائماً لديه جميع الصلاحيات)
+    // EnergyAuthority يمكنه رؤية شجرة الصلاحيات إذا كان لديه صلاحية permissions.manage
+    $canViewPermissions = $u->isSuperAdmin() || $u->hasPermission('permissions.manage');
     $canViewAuditLogs = $u->can('viewAny', \App\Models\PermissionAuditLog::class);
     $canViewRolesPermissions = $canViewRoles || $canViewPermissions || $canViewAuditLogs;
     $isRolesPermissionsOpen = $isOpen('admin.roles.*') || $isOpen('admin.permissions.*') || $isOpen('admin.permission-audit-logs.*');

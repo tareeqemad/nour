@@ -1,80 +1,74 @@
-# نور - نظام إدارة سوق الطاقة
+# Nour - Energy Market Management System
 
-منصة رقمية شاملة لإدارة المولدات الكهربائية والمشغلين في فلسطين. يوفر النظام إدارة كاملة لبيانات المشغلين، المولدات، سجلات التشغيل، الصيانة، الامتثال البيئي، والشكاوى والاقتراحات.
+A comprehensive digital platform for managing electrical generators and operators in Palestine. The system provides complete management of operator data, generators, operation logs, maintenance, environmental compliance, and complaints & suggestions.
 
 **Repository**: [https://github.com/tareeqemad/nour](https://github.com/tareeqemad/nour)
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Features](#-features)
-- [Requirements](#-requirements)
-- [Installation & Setup](#-installation--setup)
-- [Project Structure](#-project-structure)
-- [Roles & Permissions](#-roles--permissions)
-- [Database](#-database)
-- [Development](#-development)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Project Structure](#project-structure)
+- [Roles & Permissions](#roles--permissions)
+- [Database](#database)
+- [Development Guide](#development-guide)
+- [API Documentation](#api-documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## ✨ Features
+## Features
 
-### 1. User Management & Permissions
-- Advanced role-based system (SuperAdmin, Admin, Energy Authority, CompanyOwner, Employee, Technician)
-- **Dynamic custom roles** - Create custom roles with specific permissions
-- Dynamic permission management with interactive permission tree
-- Permission audit logs to track permission changes
-- Direct permissions, role-based permissions, and permission revocation capability
-- **Dynamic role filtering** - Filter users by system roles or custom roles
+### User Management & Permissions
+- Advanced role-based access control system
+- Dynamic custom roles with granular permissions
+- Interactive permission tree management
+- Permission audit logs
+- Direct permissions, role-based permissions, and permission revocation
 
-### 2. Operator Management
-- Comprehensive operator profile (location, capacity, owner data, etc.)
-- Link operators to company owners (CompanyOwners)
-- Manage employees and technicians for each operator
-- Operator profile completion tracking system
+### Operator Management
+- Comprehensive operator profiles
+- Link operators to company owners
+- Employee and technician management
+- Profile completion tracking
 
-### 3. Generator Management
-- Complete technical data (capacity, voltage, frequency, engine type)
+### Generator Management
+- Complete technical specifications
 - Operating and fuel information
-- Technical status and documentation (data plate images)
-- Control system (control panel, status, images)
-- External fuel tank management
+- Technical status and documentation
+- Control system management
+- External fuel tank tracking
 
-### 4. Records & Reports
+### Records & Reports
 - Operation logs
 - Fuel efficiency tracking
 - Maintenance records
 - Environmental compliance & safety
 
-### 5. Complaints & Suggestions System
-- Public interface for submitting complaints and suggestions
-- Unique tracking code system
+### Complaints & Suggestions System
+- Public interface for submissions
+- Unique tracking codes
 - Link complaints to generators and operators
 
-### 6. Dynamic Constants System
-- Manage system constants from database
-- Support for governorates, engine types, generator statuses, etc.
-- Easy addition and modification of constants
+### Dynamic Constants System
+- Database-driven constants management
+- Support for governorates, engine types, statuses, etc.
+- Easy addition and modification
 
-### 7. Internal Messaging System
-- Advanced messaging features with forwarding, CC/BCC support
+### Internal Messaging System
+- Advanced messaging with forwarding, CC/BCC support
 - Message starring and importance marking
-- Message archiving functionality
-- Advanced search filters (date range, sender, receiver, important, starred, archived)
-- Real-time unread message count with caching
-
-### 8. Recent Improvements
-- **Dynamic Role System**: Support for both system roles (4 roles) and custom roles created by users
-- **Role Filter Enhancement**: Users filter now supports filtering by custom roles dynamically
-- **Role Show Page Redesign**: Redesigned role details page using general-card component
-- **Collapsible Permission Cards**: Added toggle functionality to permission group cards
-- **Security Enhancement**: Removed plain text password storage, all passwords are now hashed
-- **Site Name Management**: Dynamic site name management through settings
+- Archiving functionality
+- Advanced search filters
+- Real-time unread message count
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 - **PHP**: ^8.2
 - **Laravel**: ^12.0
@@ -85,9 +79,9 @@
 
 ---
 
-## 🚀 Installation & Setup
+## Installation
 
-### 1. Clone the Project
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/tareeqemad/nour.git
@@ -97,26 +91,18 @@ cd nour
 ### 2. Install Dependencies
 
 ```bash
-# Install PHP dependencies
 composer install
-
-# Install JavaScript dependencies
 npm install
 ```
 
-### 3. Environment Setup
+### 3. Environment Configuration
 
 ```bash
-# Copy environment file
 cp .env.example .env
-
-# Generate application key
 php artisan key:generate
 ```
 
-### 4. Database Setup
-
-Update `.env` file with database credentials:
+Update `.env` with your database credentials:
 
 ```env
 DB_CONNECTION=mysql
@@ -127,315 +113,303 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Then run migrations:
+### 4. Database Setup
 
 ```bash
 php artisan migrate
-```
-
-### 5. Seed Database
-
-```bash
-# Run seeders
 php artisan db:seed --class=ConstantSeeder
 php artisan db:seed --class=RoleSeeder
 php artisan db:seed --class=PermissionSeeder
-
-# (Optional) Seed test data
-php artisan db:seed --class=OperatorsWithDataSeeder
 ```
 
-### 6. Create Storage Link
+### 5. Storage Link
 
 ```bash
 php artisan storage:link
 ```
 
-### 7. Run the Application
+### 6. Run the Application
 
-#### Development Environment:
-
+**Development:**
 ```bash
-# Run server and Vite together
 npm run dev
-
-# Or separately:
-php artisan serve        # Server at http://127.0.0.1:8000
-npm run dev              # Vite for assets
 ```
 
-#### Production Environment:
-
+**Production:**
 ```bash
-# Build assets
 npm run build
-
-# Run server
 php artisan serve
 ```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 nour/
 ├── app/
-│   ├── Governorate.php              # Enum for governorates
-│   ├── Role.php                     # Enum for roles
-│   ├── Helpers/
-│   │   ├── ConstantsHelper.php      # Constants helper
-│   │   └── GeneralHelper.php        # General helper (operators by governorate)
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Admin/              # Admin panel controllers
-│   │   │   └── ComplaintSuggestionController.php
+│   │   │   ├── Admin/
+│   │   │   └── Api/
 │   │   ├── Middleware/
-│   │   │   └── AdminMiddleware.php  # Admin permission middleware
-│   │   └── Requests/               # Form validation requests
-│   ├── Mail/
-│   │   └── OperatorCredentialsMail.php
-│   ├── Models/                      # Eloquent models
-│   └── Policies/                    # Authorization policies
+│   │   └── Requests/
+│   ├── Models/
+│   ├── Policies/
+│   ├── Services/
+│   └── Helpers/
 ├── database/
-│   ├── migrations/                  # Database migrations
-│   └── seeders/                     # Database seeders
+│   ├── migrations/
+│   └── seeders/
 ├── public/
 │   └── assets/
-│       └── admin/                   # Admin panel assets
-│           ├── css/
-│           ├── js/
-│           │   ├── general-helpers.js  # JavaScript helper functions
-│           │   ├── permissions.js      # Permissions page logic
-│           │   └── generators.js       # Generators page logic
-│           └── images/
 ├── resources/
 │   ├── views/
-│   │   ├── admin/                  # Admin panel views
-│   │   ├── auth/                   # Authentication views
-│   │   └── complaints-suggestions/ # Complaints & suggestions views
 │   ├── css/
 │   └── js/
 └── routes/
-    ├── admin.php                   # Admin panel routes
-    └── web.php                     # Public routes
+    ├── admin.php
+    └── web.php
 ```
 
 ---
 
-## 👥 Roles & Permissions
+## Roles & Permissions
 
-### Available Roles:
+### System Roles
 
-1. **SuperAdmin** (System Administrator)
-   - Full access to all functions
+1. **SuperAdmin**
+   - Full system access
    - User and role management
    - Constants management
 
-2. **Admin** (Administrator)
+2. **Admin**
    - Operator and generator management
-   - View reports
-   - Can create general custom roles
+   - Report viewing
+   - General custom role creation
 
-3. **Energy Authority** (سلطة الطاقة)
-   - Can create general and operator-specific custom roles
-   - User management under their authority
+3. **Energy Authority**
+   - General and operator-specific custom roles
+   - User management under authority
    - Operator approval and management
 
-4. **CompanyOwner** (Company Owner)
-   - Manage their own operator
-   - Manage employees and technicians
-   - Manage generators
-   - Manage employee permissions
-   - Can create custom roles for their operator
+4. **CompanyOwner**
+   - Own operator management
+   - Employee and technician management
+   - Generator management
+   - Employee permission management
+   - Custom role creation for operator
 
-5. **Employee** (Employee)
-   - View data according to granted permissions
+5. **Employee**
+   - View data based on permissions
    - Enter operation logs
 
-6. **Technician** (Technician)
+6. **Technician**
    - View and enter generator data
    - Manage maintenance records
 
-### Permission System:
+### Permission System
 
 - **Direct Permissions**: Granted directly to users
-- **Role Permissions**: Granted through roles (system roles or custom roles)
-- **Revoked Permissions**: Ability to revoke specific permissions even if granted through role
-
-### Role System:
-
-- **System Roles**: 4 predefined system roles (SuperAdmin, Admin, Energy Authority, CompanyOwner) stored in database
-- **Custom Roles**: Dynamic roles created by Energy Authority or Company Owner with custom permissions
-- **Role Filtering**: Filter users by system roles or custom roles dynamically
+- **Role Permissions**: Granted through roles (system or custom)
+- **Revoked Permissions**: Explicitly revoked permissions override role permissions
 
 ---
 
-## 🗄️ Database
+## Database
 
-### Main Tables:
+### Main Tables
 
-- `users`: Users
-- `operators`: Operators
-- `generators`: Generators
-- `fuel_tanks`: Fuel tanks
-- `operation_logs`: Operation logs
-- `fuel_efficiencies`: Fuel efficiency
-- `maintenance_records`: Maintenance records
-- `compliance_safeties`: Environmental compliance & safety
-- `permissions`: Permissions
-- `roles`: Roles (system and custom)
-- `role_permission`: Role-permission pivot table
-- `user_permission`: Direct user permissions
-- `user_permission_revoked`: Revoked user permissions
-- `constant_masters`: Constant masters
-- `constant_details`: Constant details
-- `complaints_suggestions`: Complaints and suggestions
+- `users` - User accounts
+- `operators` - Operator entities
+- `generators` - Generator records
+- `fuel_tanks` - Fuel tank information
+- `operation_logs` - Operation history
+- `fuel_efficiencies` - Fuel efficiency data
+- `maintenance_records` - Maintenance history
+- `compliance_safeties` - Compliance and safety records
+- `permissions` - System permissions
+- `roles` - System and custom roles
+- `role_permission` - Role-permission relationships
+- `user_permission` - Direct user permissions
+- `user_permission_revoked` - Revoked permissions
+- `constant_masters` - Constant categories
+- `constant_details` - Constant values
+- `complaints_suggestions` - Public complaints and suggestions
 
-### Relationships:
+### Key Relationships
 
-- `User` → `Operator` (owner: belongsTo)
-- `User` ↔ `Operator` (many-to-many: employees/technicians)
-- `User` → `Role` (role_id: belongsTo for custom roles)
-- `Role` → `Permission` (many-to-many: role_permission)
-- `Operator` → `Generator` (hasMany)
-- `Generator` → `FuelTank` (hasMany)
-- `Generator` → `OperationLog` (hasMany)
-- `Generator` → `MaintenanceRecord` (hasMany)
+- User → Operator (owner relationship)
+- User ↔ Operator (many-to-many for employees/technicians)
+- User → Role (custom role assignment)
+- Role → Permission (many-to-many)
+- Operator → Generator (hasMany)
+- Generator → FuelTank, OperationLog, MaintenanceRecord (hasMany)
 
 ---
 
-## 💻 Development
-
-### Recent Improvements:
-
-#### 1. Dynamic Role System
-- Added support for custom roles alongside system roles
-- System roles are stored in database (4 roles: SuperAdmin, Admin, Energy Authority, CompanyOwner)
-- Custom roles can be created by Energy Authority or Company Owner
-- Custom roles can be general (operator_id = null) or operator-specific (operator_id = specific operator)
-
-#### 2. Enhanced User Filtering
-- Updated user filtering to support both system roles (enum) and custom roles (from roles table)
-- Role filter dynamically loads available roles based on user permissions
-- Filter displays system roles first, then custom roles
-
-#### 3. Role Show Page Redesign
-- Redesigned role details page using `general-card` component
-- Added statistics cards for users count, permissions count, permission groups count, and order
-- Separated basic information and permissions into distinct cards
-- Added collapsible permission group cards with toggle functionality
+## Development Guide
 
 ### Helper Functions
 
-#### PHP Helpers
+**PHP Helpers:**
 
-**ConstantsHelper** - Constants management:
 ```php
 use App\Helpers\ConstantsHelper;
-
-// Get constant by name
-$governorates = ConstantsHelper::getByName('المحافظة');
-
-// Get constant by number
-$statuses = ConstantsHelper::get(3); // Generator status
-```
-
-**GeneralHelper** - General functions:
-```php
 use App\Helpers\GeneralHelper;
 
+// Get constants
+$governorates = ConstantsHelper::getByName('المحافظة');
+$statuses = ConstantsHelper::get(3);
+
 // Get operators by governorate
-$operators = GeneralHelper::getOperatorsByGovernorate(10); // Gaza governorate
+$operators = GeneralHelper::getOperatorsByGovernorate(10);
 ```
 
-#### JavaScript Helpers
+**JavaScript Helpers:**
 
-**GeneralHelpers** - Available in all admin pages:
 ```javascript
 // Get operators by governorate
 GeneralHelpers.getOperatorsByGovernorate(10)
     .then(operators => console.log(operators));
 
-// Fill select with operators
+// Fill select dropdown
 GeneralHelpers.fillOperatorsSelect(10, '#operator-select');
-
-// With jQuery
-$('#operator-select').fillOperatorsByGovernorate(10);
 ```
 
-### Testing
+### Best Practices
+
+1. **Use Form Requests** for validation
+2. **Use Service Classes** for business logic
+3. **Use Policies** for authorization
+4. **Use Eager Loading** to avoid N+1 queries
+5. **Use ConstantsHelper** instead of hardcoding values
+6. **Use `@can` directive** in Blade templates
+7. **Cache frequently accessed data**
+
+### Cascading Selects Component
+
+The cascading selects component allows sequential selection of Operator → Generation Unit → Generator.
+
+**Usage:**
+
+```blade
+@include('admin.partials.cascading-selects', [
+    'operators' => $operators,
+    'affiliatedOperator' => $affiliatedOperator,
+    'canSelectOperator' => $canSelectOperator,
+    'showGenerator' => true,
+    'showGenerationUnit' => true,
+])
+
+@push('scripts')
+    @include('admin.partials.cascading-selects-scripts', [
+        'canSelectOperator' => $canSelectOperator,
+        'affiliatedOperatorId' => $affiliatedOperator?->id,
+    ])
+@endpush
+```
+
+**Required Routes:**
+- `GET /admin/operators/{operator}/generation-units`
+- `GET /admin/generation-units/{generationUnitId}/generators-list`
+
+---
+
+## API Documentation
+
+### Base URL
+
+```
+https://gazarased.com/api
+```
+
+### Authentication
+
+All protected endpoints require a Bearer token in the Authorization header:
+
+```
+Authorization: Bearer {token}
+```
+
+### Endpoints
+
+#### Authentication
+- `POST /api/login` - User login
+- `POST /api/logout` - User logout
+- `GET /api/user` - Get current user info
+
+#### QR Code Scanning
+- `POST /api/qr/scan` - Scan generator QR code
+
+#### Maintenance Records (Technicians)
+- `GET /api/maintenance/form-data/{generator}` - Get form data
+- `POST /api/maintenance/store` - Create maintenance record
+- `GET /api/maintenance/records` - List maintenance records
+- `GET /api/maintenance/records/{id}` - Get specific record
+
+#### Compliance Safety (Civil Defense)
+- `GET /api/compliance-safety/form-data/{generator}` - Get form data
+- `POST /api/compliance-safety/store` - Create compliance record
+- `GET /api/compliance-safety/records` - List compliance records
+- `GET /api/compliance-safety/records/{id}` - Get specific record
+
+### Error Responses
+
+All errors follow this format:
+
+```json
+{
+    "success": false,
+    "message": "Error message in Arabic"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `422` - Validation Error
+- `500` - Server Error
+
+### API Setup
+
+**Install Laravel Sanctum:**
 
 ```bash
-# Run all tests
-php artisan test
+composer require laravel/sanctum
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+php artisan migrate
+```
 
-# Run specific test
-php artisan test --filter TestName
+**Update User Model:**
+
+```php
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, ...;
+}
 ```
 
 ---
 
-## 📝 Important Notes for Developers
-
-### 1. Permission System
-
-- **Always use Policies** for permission checks in Controllers
-- Use `@can` directive in Blade templates
-- Ensure CompanyOwner can only access their own employees and generators
-- Support both system roles (enum) and custom roles (role_id)
-
-### 2. RTL (Right-to-Left)
-
-- Project uses RTL layout
-- Ensure Bootstrap RTL is used
-- In CSS, use `direction: rtl`
-
-### 3. Constants
-
-- **Do not hardcode values** in code
-- Always use `ConstantsHelper` to get values
-- Add new constants in the seeder
-
-### 4. AJAX Requests
-
-- Use jQuery AJAX or Fetch API
-- Use `showToast` to display messages (from `toast.blade.php`)
-- Ensure JSON responses are returned in AJAX endpoints
-
-### 5. Form Validation
-
-- Use Form Requests (`app/Http/Requests/`)
-- Add clear Arabic error messages
-- Use `old()` in views to retain values on errors
-
-### 6. Relationships
-
-- Use Eager Loading to avoid N+1 queries
-- Example: `Generator::with('operator', 'fuelTanks')->get()`
-
-### 7. Images & Files
-
-- Images are saved in `storage/app/public/`
-- Use `php artisan storage:link` to create symbolic link
-- Use `asset('storage/...')` in views
-
----
-
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Permission Issues
 
 ```bash
-# Clear permission cache
 php artisan cache:clear
 php artisan config:clear
 ```
 
-### Constants Issues
+### Constants Cache
 
 ```bash
-# Clear constants cache
 php artisan tinker
 >>> App\Helpers\ConstantsHelper::clearCache();
 ```
@@ -443,47 +417,32 @@ php artisan tinker
 ### Assets Issues
 
 ```bash
-# Rebuild assets
 npm run build
 php artisan optimize:clear
 ```
 
 ---
 
-## 📚 Useful Resources
+## Contributing
 
-- [Laravel Documentation](https://laravel.com/docs)
-- [Laravel 12 Release Notes](https://laravel.com/docs/releases)
-- [Bootstrap RTL](https://getbootstrap.com/docs/5.3/getting-started/rtl/)
-
----
-
-## 🤝 Contributing
-
-1. Fork the project
-2. Create a new branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
 ---
 
-## 👨‍💻 Support
+## Support
 
-For any questions or issues, please open an issue in the project repository: [https://github.com/tareeqemad/nour/issues](https://github.com/tareeqemad/nour/issues)
-
----
-
-## 🔗 Links
-
-- **GitHub Repository**: [https://github.com/tareeqemad/nour](https://github.com/tareeqemad/nour)
+For questions or issues, please open an issue in the repository: [https://github.com/tareeqemad/nour/issues](https://github.com/tareeqemad/nour/issues)
 
 ---
 
-**Built with ❤️ using Laravel 12**
+**Built with Laravel 12**

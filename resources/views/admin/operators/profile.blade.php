@@ -228,8 +228,8 @@
                                             </td>
                                             <td class="text-center">
                                                 @php
-                                                    $actualCount = $unit->generators()->count();
-                                                    $requiredCount = $unit->generators_count;
+                                                    $actualCount = $unit->actual_generators_count ?? 0; // من withCount('generators as actual_generators_count')
+                                                    $requiredCount = $unit->generators_count; // العدد المطلوب من قاعدة البيانات
                                                 @endphp
                                                 <span class="badge {{ $actualCount >= $requiredCount ? 'bg-success' : 'bg-warning' }}">
                                                     {{ $actualCount }} / {{ $requiredCount }}
@@ -437,9 +437,6 @@
                     updateAddUnitButton();
                 }
                 
-                // تحديث زر "إضافة وحدة توليد" بناءً على اكتمال البيانات
-                updateAddUnitButton();
-                
                 // إعادة تحميل الصفحة بعد ثانية واحدة لتحديث جميع البيانات
                 setTimeout(() => {
                     window.location.reload();
@@ -518,17 +515,6 @@
 
 })();
 
-// إدارة وحدات التوليد
-(function() {
-    const btnAddUnit = document.getElementById('btnAddGenerationUnit');
-    if (btnAddUnit) {
-        btnAddUnit.addEventListener('click', function() {
-            // TODO: فتح modal لإضافة وحدة توليد جديدة
-            // سيتم إضافتها لاحقاً عند إنشاء Controller وViews لوحدات التوليد
-            alert('سيتم إضافة وظيفة إضافة وحدة توليد قريباً');
-        });
-    }
-})();
 </script>
 @endpush
 

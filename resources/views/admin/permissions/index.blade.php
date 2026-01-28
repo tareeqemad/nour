@@ -293,8 +293,6 @@
             },
             rolesMeta: @json($rolesMeta),
             routes: {
-                availablePermissions: '{{ route("admin.permissions.available") }}',
-            routes: {
                 selectOperators: @json(route('admin.permissions.select2.operators')),
                 selectUsers: @json(route('admin.permissions.select2.users')),
                 selectRoles: @json(route('admin.permissions.select2.roles')),

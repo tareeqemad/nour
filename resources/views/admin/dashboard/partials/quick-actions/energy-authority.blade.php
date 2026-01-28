@@ -13,6 +13,7 @@
             </div>
             <div class="dashboard-card-body">
                 <div class="dashboard-quick-actions">
+                    @can('viewAny', App\Models\Operator::class)
                     <a href="{{ route('admin.operators.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-info">
                             <i class="bi bi-building"></i>
@@ -22,6 +23,8 @@
                             <div class="dashboard-quick-action-desc">إدارة ومراقبة المشغلين</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\GenerationUnit::class)
                     <a href="{{ route('admin.generation-units.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-primary">
                             <i class="bi bi-diagram-3-fill"></i>
@@ -31,6 +34,8 @@
                             <div class="dashboard-quick-action-desc">عرض جميع وحدات التوليد</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\Generator::class)
                     <a href="{{ route('admin.generators.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-success">
                             <i class="bi bi-lightning-charge-fill"></i>
@@ -40,6 +45,8 @@
                             <div class="dashboard-quick-action-desc">عرض جميع المولدات</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\OperationLog::class)
                     <a href="{{ route('admin.operation-logs.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-warning">
                             <i class="bi bi-journal-text"></i>
@@ -49,6 +56,8 @@
                             <div class="dashboard-quick-action-desc">متابعة الإنتاج والاستهلاك</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\FuelEfficiency::class)
                     <a href="{{ route('admin.fuel-efficiencies.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-secondary">
                             <i class="bi bi-fuel-pump-fill"></i>
@@ -58,6 +67,8 @@
                             <div class="dashboard-quick-action-desc">تحليل استهلاك الوقود</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\ComplianceSafety::class)
                     <a href="{{ route('admin.compliance-safeties.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-danger">
                             <i class="bi bi-shield-check"></i>
@@ -67,6 +78,8 @@
                             <div class="dashboard-quick-action-desc">مراقبة معايير السلامة</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\MaintenanceRecord::class)
                     <a href="{{ route('admin.maintenance-records.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-dark">
                             <i class="bi bi-tools"></i>
@@ -76,6 +89,8 @@
                             <div class="dashboard-quick-action-desc">متابعة أعمال الصيانة</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\User::class)
                     <a href="{{ route('admin.users.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-purple">
                             <i class="bi bi-people-fill"></i>
@@ -85,6 +100,7 @@
                             <div class="dashboard-quick-action-desc">إدارة المستخدمين</div>
                         </div>
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>

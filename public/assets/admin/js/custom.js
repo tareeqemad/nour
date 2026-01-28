@@ -167,3 +167,36 @@ customSwitch.forEach((e) =>
 /* toggle switches */
 
 /* header dropdown close button - تم إزالة أكواد cart و notifications لأننا نستخدم notification-panel.js و messages-panel.js */
+
+/* Fix nested sidebar menus - إصلاح القوائم المتداخلة في السايدبار */
+document.addEventListener('DOMContentLoaded', function() {
+    // إصلاح بسيط: فتح القوائم المتداخلة بناءً على العناصر النشطة فقط
+    const activeMenuItems = document.querySelectorAll('.side-menu__item.active');
+    
+    activeMenuItems.forEach(function(activeItem) {
+        // البحث عن جميع القوائم الفرعية التي تحتوي على هذا العنصر النشط
+        let currentElement = activeItem.closest('ul');
+        let depth = 0;
+        const maxDepth = 3; // حماية من الحلقات اللانهائية
+        
+        while (currentElement && depth < maxDepth) {
+            if (currentElement.classList.contains('slide-menu')) {
+                // فتح القائمة
+                currentElement.style.display = 'block';
+                
+                // فتح القائمة الأم
+                const parentSlide = currentElement.closest('.slide.has-sub');
+                if (parentSlide) {
+                    parentSlide.classList.add('open');
+                }
+            }
+            
+            // الانتقال للعنصر الأب
+            const nextElement = currentElement.closest('ul');
+            if (!nextElement || nextElement === currentElement) break; // حماية من الحلقات
+            currentElement = nextElement;
+            depth++;
+        }
+    });
+});
+/* End Fix nested sidebar menus */

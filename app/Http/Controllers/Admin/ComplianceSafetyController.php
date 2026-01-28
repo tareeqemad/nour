@@ -112,7 +112,7 @@ class ComplianceSafetyController extends Controller
         $operators = collect();
 
         if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
@@ -147,8 +147,9 @@ class ComplianceSafetyController extends Controller
         }
 
         $complianceSafety = ComplianceSafety::create($data);
-
-        $operator = Operator::find($complianceSafety->operator_id);
+        $complianceSafety->load('operator');
+        
+        $operator = $complianceSafety->operator;
         $user = auth()->user();
         
         if ($operator) {
@@ -210,7 +211,7 @@ class ComplianceSafetyController extends Controller
         $operators = collect();
 
         if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {

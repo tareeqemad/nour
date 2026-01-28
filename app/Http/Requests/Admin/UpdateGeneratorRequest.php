@@ -28,8 +28,8 @@ class UpdateGeneratorRequest extends FormRequest
             // المواصفات الفنية
             'capacity_kva' => [
                 'nullable',
-                'numeric',
-                'min:0',
+                'integer',
+                'min:1',
                 function ($attribute, $value, $fail) use ($generator) {
                     if (empty($value) || $value <= 0) {
                         return; // إذا كانت القيمة فارغة أو صفر، لا حاجة للتحقق
@@ -66,7 +66,7 @@ class UpdateGeneratorRequest extends FormRequest
             'measurement_indicator_id' => ['nullable', 'exists:constant_details,id'],
             // الحالة الفنية والتوثيق
             'technical_condition_id' => ['nullable', 'exists:constant_details,id'],
-            'last_major_maintenance_date' => ['nullable', 'date'],
+            'last_major_maintenance_date' => ['nullable', 'date', 'before_or_equal:today'],
             'engine_data_plate_image' => ['nullable', 'image', 'max:2048'],
             'generator_data_plate_image' => ['nullable', 'image', 'max:2048'],
             // نظام التحكم
@@ -99,6 +99,7 @@ class UpdateGeneratorRequest extends FormRequest
             'operator_id.exists' => 'المشغل المحدد غير موجود.',
             'status_id.required' => 'حالة المولد مطلوبة.',
             'status_id.exists' => 'حالة المولد المحددة غير صحيحة.',
+            'last_major_maintenance_date.before_or_equal' => 'تاريخ آخر صيانة كبرى لا يمكن أن يكون لاحقاً لليوم الحالي.',
             // رسائل خزانات الوقود
             'fuel_tanks.*.capacity.required_with' => 'سعة الخزان مطلوبة.',
             'fuel_tanks.*.capacity.integer' => 'سعة الخزان يجب أن تكون رقماً صحيحاً.',

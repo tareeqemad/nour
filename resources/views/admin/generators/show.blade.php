@@ -320,7 +320,7 @@
                                                     <i class="bi bi-speedometer2 text-warning"></i>
                                                     القدرة
                                                 </div>
-                                                <div class="info-value">{{ number_format($generator->capacity_kva, 2) }} KVA</div>
+                                                <div class="info-value">{{ number_format($generator->capacity_kva, 0) }} KVA</div>
                                             </div>
                                         </div>
                                     @endif

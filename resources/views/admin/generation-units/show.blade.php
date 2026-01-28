@@ -242,7 +242,7 @@
                                     </div>
                                     <div class="stat-content">
                                         <div class="stat-label">القدرة الإجمالية</div>
-                                        <div class="stat-value">{{ number_format($generationUnit->total_capacity, 2) }} KVA</div>
+                                        <div class="stat-value">{{ number_format($generationUnit->total_capacity, 0) }} KVA</div>
                                     </div>
                                 </div>
                             </div>
@@ -470,7 +470,7 @@
                                                     <i class="bi bi-speedometer2 text-warning"></i>
                                                     إجمالي القدرة
                                                 </div>
-                                                <div class="info-value">{{ number_format($generationUnit->total_capacity, 2) }} KVA</div>
+                                                <div class="info-value">{{ number_format($generationUnit->total_capacity, 0) }} KVA</div>
                                             </div>
                                         @endif
                                         @if($generationUnit->synchronizationAvailableDetail)

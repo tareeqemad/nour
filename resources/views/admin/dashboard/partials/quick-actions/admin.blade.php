@@ -13,6 +13,7 @@
             </div>
             <div class="dashboard-card-body">
                 <div class="dashboard-quick-actions">
+                    @can('viewAny', App\Models\Operator::class)
                     <a href="{{ route('admin.operators.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-info">
                             <i class="bi bi-building"></i>
@@ -22,6 +23,8 @@
                             <div class="dashboard-quick-action-desc">عرض جميع المشغلين</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\Generator::class)
                     <a href="{{ route('admin.generators.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-success">
                             <i class="bi bi-lightning-charge-fill"></i>
@@ -31,6 +34,8 @@
                             <div class="dashboard-quick-action-desc">عرض جميع المولدات</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\OperationLog::class)
                     <a href="{{ route('admin.operation-logs.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-warning">
                             <i class="bi bi-journal-text"></i>
@@ -40,6 +45,8 @@
                             <div class="dashboard-quick-action-desc">عرض جميع السجلات</div>
                         </div>
                     </a>
+                    @endcan
+                    @can('viewAny', App\Models\ComplianceSafety::class)
                     <a href="{{ route('admin.compliance-safeties.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-danger">
                             <i class="bi bi-shield-check"></i>
@@ -49,6 +56,7 @@
                             <div class="dashboard-quick-action-desc">عرض الشهادات والامتثال</div>
                         </div>
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>

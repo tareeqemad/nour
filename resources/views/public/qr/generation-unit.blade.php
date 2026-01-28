@@ -193,7 +193,7 @@
                 <h3><i class="bi bi-speedometer2 me-2"></i>القدرات</h3>
                 <div class="info-row">
                     <span class="info-label">القدرة الإجمالية:</span>
-                    <span class="info-value"><strong>{{ number_format($generationUnit->total_capacity, 2) }} KVA</strong></span>
+                    <span class="info-value"><strong>{{ number_format($generationUnit->total_capacity, 0) }} KVA</strong></span>
                 </div>
             </div>
             @endif

@@ -44,7 +44,10 @@ class OperatorProfileController extends Controller
         }
 
         // جلب وحدات التوليد للمشغل
-        $generationUnits = $operator->generationUnits()->with('statusDetail')->withCount('generators')->get();
+        $generationUnits = $operator->generationUnits()
+            ->with('statusDetail')
+            ->withCount('generators as actual_generators_count')
+            ->get();
 
         return view('admin.operators.profile', compact('operator', 'generationUnits'));
     }

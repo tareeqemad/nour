@@ -458,6 +458,15 @@ class User extends Authenticatable
         return false;
     }
 
+    /**
+     * Check if user has a specific permission
+     * 
+     * BEST PRACTICE: Uses loaded relationships to avoid N+1 queries
+     * Caching is handled at the application level if needed
+     * 
+     * @param string $permissionName
+     * @return bool
+     */
     public function hasPermission(string $permissionName): bool
     {
         // SuperAdmin has all permissions (including settings, constants, logs)
@@ -477,29 +486,33 @@ class User extends Authenticatable
             return in_array($permissionName, self::PRE_APPROVAL_PERMISSIONS);
         }
 
-        // If user has roleModel, use role permissions first
+        // Load relationships if not already loaded (eager loading optimization)
+        $this->loadMissing(['permissions', 'revokedPermissions', 'roleModel.permissions']);
+
+        // Check revoked permissions first (fastest check using loaded collection)
+        $revokedPermissionNames = $this->revokedPermissions->pluck('name')->toArray();
+        if (in_array($permissionName, $revokedPermissionNames, true)) {
+            return false;
+        }
+
+        // Check direct user permissions (assigned individually) - using loaded collection
+        $directPermissionNames = $this->permissions->pluck('name')->toArray();
+        if (in_array($permissionName, $directPermissionNames, true)) {
+            return true;
+        }
+
+        // If user has roleModel, use role permissions
         if ($this->roleModel) {
+            $this->roleModel->loadMissing('permissions');
             if ($this->roleModel->hasPermission($permissionName)) {
-                // Check if permission is not revoked
-                if (! $this->revokedPermissions()->where('name', $permissionName)->exists()) {
-                    return true;
-                }
+                // Already checked revoked above, so if we reach here, permission is valid
+                return true;
             }
         }
 
         // Fallback for Admin (if no roleModel)
         if ($this->isAdmin() && ! $this->roleModel) {
             return in_array($permissionName, self::ADMIN_FALLBACK_PERMISSIONS);
-        }
-
-        // Check if permission is revoked
-        if ($this->revokedPermissions()->where('name', $permissionName)->exists()) {
-            return false;
-        }
-
-        // Check direct user permissions (assigned individually)
-        if ($this->permissions()->where('name', $permissionName)->exists()) {
-            return true;
         }
 
         return false;

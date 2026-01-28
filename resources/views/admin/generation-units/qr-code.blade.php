@@ -153,7 +153,7 @@
                 @if($generationUnit->total_capacity)
                 <div class="info-row">
                     <span class="info-label">القدرة الإجمالية:</span>
-                    <span class="info-value">{{ number_format($generationUnit->total_capacity, 2) }} KVA</span>
+                    <span class="info-value">{{ number_format($generationUnit->total_capacity, 0) }} KVA</span>
                 </div>
                 @endif
                 <div class="info-row">

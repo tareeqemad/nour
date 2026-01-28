@@ -51,7 +51,9 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      */
     Route::prefix('permissions')->as('permissions.')->group(function () {
         Route::get('/', [PermissionsController::class, 'index'])->name('index');
-        Route::post('/assign', [PermissionsController::class, 'assignPermissions'])->name('assign');
+        Route::post('/assign', [PermissionsController::class, 'assignPermissions'])
+            ->middleware('throttle:10,1') // Rate limit: 10 requests per minute
+            ->name('assign');
         Route::match(['GET', 'POST'], '/search', [PermissionsController::class, 'search'])->name('search');
         Route::match(['GET', 'POST'], '/available', [PermissionsController::class, 'getAvailablePermissions'])->name('available');
 
@@ -63,7 +65,9 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
         Route::get('/select2/roles', [PermissionsController::class, 'select2Roles'])->name('select2.roles');
         Route::get('/select2/custom-roles/{operator}', [PermissionsController::class, 'select2CustomRoles'])->name('select2.custom-roles');
         Route::get('/role/{role}/permissions', [PermissionsController::class, 'getRolePermissions'])->name('role.permissions');
-        Route::post('/role/{role}/assign', [PermissionsController::class, 'assignRolePermissions'])->name('role.assign');
+        Route::post('/role/{role}/assign', [PermissionsController::class, 'assignRolePermissions'])
+            ->middleware('throttle:10,1') // Rate limit: 10 requests per minute
+            ->name('role.assign');
     });
 
     /**

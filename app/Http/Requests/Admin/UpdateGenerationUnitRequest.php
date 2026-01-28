@@ -14,8 +14,18 @@ class UpdateGenerationUnitRequest extends FormRequest
 
     public function rules(): array
     {
+        $generationUnit = $this->route('generation_unit');
+        
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required', 
+                'string', 
+                'max:255',
+                Rule::unique('generation_units')->where(function ($query) use ($generationUnit) {
+                    return $query->where('operator_id', $generationUnit->operator_id)
+                                 ->where('id', '!=', $generationUnit->id);
+                })->whereNull('deleted_at'),
+            ],
             'generators_count' => ['required', 'integer', 'min:1', 'max:99'],
             'status_id' => ['required', 'exists:constant_details,id'],
 
@@ -74,7 +84,7 @@ class UpdateGenerationUnitRequest extends FormRequest
             'territory_name' => ['required', 'string', 'max:255'],
 
             // القدرات الفنية
-            'total_capacity' => ['required', 'numeric', 'min:0.01'],
+            'total_capacity' => ['required', 'integer', 'min:1'],
             'synchronization_available_id' => ['nullable', 'exists:constant_details,id'],
             'max_synchronization_capacity' => [
                 'nullable',
@@ -122,6 +132,7 @@ class UpdateGenerationUnitRequest extends FormRequest
     {
         return [
             'name.required' => 'اسم وحدة التوليد مطلوب.',
+            'name.unique' => 'يوجد وحدة توليد بنفس الاسم للمشغل المحدد. يرجى اختيار اسم آخر.',
             'generators_count.required' => 'عدد المولدات مطلوب.',
             'generators_count.min' => 'يجب أن يكون عدد المولدات على الأقل 1.',
             'generators_count.max' => 'يجب ألا يتجاوز عدد المولدات 99.',

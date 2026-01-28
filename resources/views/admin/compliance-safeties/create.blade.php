@@ -34,6 +34,7 @@
                     </div>
 
                     <div class="card-body p-4">
+                        @can('create', App\Models\ComplianceSafety::class)
                         <form action="{{ route('admin.compliance-safeties.store') }}" method="POST" id="complianceSafetyForm">
                             @csrf
 
@@ -152,6 +153,12 @@
                                 </button>
                             </div>
                         </form>
+                        @else
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                ليس لديك صلاحية لإضافة سجل امتثال وسلامة.
+                            </div>
+                        @endcan
                     </div>
                 </div>
             </div>

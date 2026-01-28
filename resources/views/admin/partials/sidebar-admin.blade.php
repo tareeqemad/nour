@@ -30,7 +30,8 @@
 {{-- الأدوار والصلاحيات --}}
 @php
     $canViewRoles = $u->isSuperAdmin();
-    $canViewPermissions = $u->isSuperAdmin() || $u->can('viewAny', \App\Models\Permission::class);
+    // التحقق من صلاحية permissions.manage (SuperAdmin دائماً لديه جميع الصلاحيات)
+    $canViewPermissions = $u->isSuperAdmin() || $u->hasPermission('permissions.manage');
     $canViewAuditLogs = $u->isSuperAdmin() || $u->can('viewAny', \App\Models\PermissionAuditLog::class);
     $canViewRolesPermissions = $canViewRoles || $canViewPermissions || $canViewAuditLogs;
     $isRolesPermissionsOpen = $isOpen('admin.roles.*') || $isOpen('admin.permissions.*') || $isOpen('admin.permission-audit-logs.*');

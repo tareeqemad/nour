@@ -187,8 +187,8 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">قدرة المولد (KVA)</label>
-                                <input type="number" step="0.01" name="capacity_kva" class="form-control @error('capacity_kva') is-invalid @enderror" 
-                                       value="{{ old('capacity_kva', $generator->capacity_kva ?? '250') }}" min="0">
+                                <input type="number" step="1" name="capacity_kva" class="form-control @error('capacity_kva') is-invalid @enderror" 
+                                       value="{{ old('capacity_kva', (int)($generator->capacity_kva ?? 250)) }}" min="1">
                                 
                             </div>
                             <div class="col-md-6">
@@ -313,7 +313,10 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">تاريخ آخر صيانة كبرى</label>
                                 <input type="date" name="last_major_maintenance_date" class="form-control @error('last_major_maintenance_date') is-invalid @enderror" 
-                                       value="{{ old('last_major_maintenance_date', $generator->last_major_maintenance_date?->format('Y-m-d')) }}">
+                                       value="{{ old('last_major_maintenance_date', $generator->last_major_maintenance_date?->format('Y-m-d')) }}" max="{{ date('Y-m-d') }}">
+                                @error('last_major_maintenance_date')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                                 
                             </div>
                             <div class="col-md-6">
@@ -706,8 +709,6 @@
                         timerBadge.textContent = '✓ تم التحديث';
                         setTimeout(() => updateSessionTimer(), 2000);
                     }
-                    
-                    console.log('✓ تم تحديث CSRF token بنجاح');
                 }
             })
             .catch(error => {

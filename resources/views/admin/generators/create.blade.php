@@ -77,12 +77,12 @@
                     <div class="tab-content pt-3" id="generatorTabsContent">
                         <!-- المعلومات الأساسية -->
                         <div class="tab-pane fade show active" id="basic" role="tabpanel">
-                        @php
-                            $affiliatedOperator = auth()->user()->getAffiliatedOperator();
-                            $selectedGenerationUnitId = request()->query('generation_unit_id') ?? old('generation_unit_id');
-                            $canSelect = !auth()->user()->isAffiliatedWithOperator();
-                        @endphp
-                        <div class="row g-3">
+                            @php
+                                $affiliatedOperator = auth()->user()->getAffiliatedOperator();
+                                $selectedGenerationUnitId = request()->query('generation_unit_id') ?? old('generation_unit_id');
+                                $canSelect = !auth()->user()->isAffiliatedWithOperator();
+                            @endphp
+                            <div class="row g-3">
                                 {{-- Cascading Selects: المشغل → وحدة التوليد --}}
                                 @include('admin.partials.cascading-selects', [
                                     'operators' => $operators ?? collect(),
@@ -91,45 +91,47 @@
                                     'showGenerationUnit' => true,
                                     'generationUnits' => $affiliatedOperator?->generationUnits ?? collect(),
                                     'selectedGenerationUnitId' => $selectedGenerationUnitId,
-                                    'colClass' => 'col-md-6',
+                                    'colClass' => 'col-md-3',
                                 ])
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">رقم المولد</label>
-                                <input type="text" name="generator_number" id="generator_number" class="form-control @error('generator_number') is-invalid @enderror" 
-                                       value="{{ old('generator_number') }}" readonly placeholder="مثال: GU-MD-DR-001-G01" style="background-color: #f8f9fa;">
-                                <div class="form-text">يتم توليده تلقائياً بناءً على وحدة التوليد.</div>
-                                @error('generator_number')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">رقم المولد</label>
+                                    <input type="text" name="generator_number" id="generator_number" class="form-control @error('generator_number') is-invalid @enderror" 
+                                           value="{{ old('generator_number') }}" readonly placeholder="مثال: GU-MD-DR-001-G01" style="background-color: #f8f9fa;">
+                                    <div class="form-text">يتم توليده تلقائياً بناءً على وحدة التوليد.</div>
+                                    @error('generator_number')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">اسم المولد <span class="text-danger">*</span></label>
+                                    <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
+                                           value="{{ old('name') }}">
+                                    @error('name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">الوصف</label>
+                                    <textarea name="description" class="form-control @error('description') is-invalid @enderror" rows="3">{{ old('description') }}</textarea>
+                                    @error('description')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">حالة المولد <span class="text-danger">*</span></label>
+                                    <select name="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
+                                        <option value="">اختر الحالة</option>
+                                        @foreach($constants['status'] ?? [] as $status)
+                                            <option value="{{ $status->id }}" {{ old('status_id') == $status->id ? 'selected' : '' }}>
+                                                {{ $status->label }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('status_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">اسم المولد <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
-                                       value="{{ old('name') }}">
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">حالة المولد <span class="text-danger">*</span></label>
-                                <select name="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
-                                    <option value="">اختر الحالة</option>
-                                    @foreach($constants['status'] ?? [] as $status)
-                                        <option value="{{ $status->id }}" {{ old('status_id') == $status->id ? 'selected' : '' }}>
-                                            {{ $status->label }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('status_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">الوصف</label>
-                                <textarea name="description" class="form-control @error('description') is-invalid @enderror" rows="3">{{ old('description') }}</textarea>
-                                
-                        </div>
-                    </div>
                         </div>
 
                         <!-- المواصفات الفنية -->
@@ -137,8 +139,8 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">قدرة المولد (KVA)</label>
-                                <input type="number" step="0.01" name="capacity_kva" class="form-control @error('capacity_kva') is-invalid @enderror" 
-                                       value="{{ old('capacity_kva', '250') }}" min="0">
+                                <input type="number" step="1" name="capacity_kva" class="form-control @error('capacity_kva') is-invalid @enderror" 
+                                       value="{{ old('capacity_kva', '250') }}" min="1">
                                 
                             </div>
                             <div class="col-md-6">
@@ -259,8 +261,10 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">تاريخ آخر صيانة كبرى</label>
                                 <input type="date" name="last_major_maintenance_date" class="form-control @error('last_major_maintenance_date') is-invalid @enderror" 
-                                       value="{{ old('last_major_maintenance_date') }}">
-                                
+                                       value="{{ old('last_major_maintenance_date') }}" max="{{ date('Y-m-d') }}">
+                                @error('last_major_maintenance_date')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">صورة لوحة البيانات للمحرك</label>
@@ -632,19 +636,35 @@
         
         // تحديث CSRF Token كل 10 دقائق لتجنب مشكلة Page Expired
         function refreshCSRFToken() {
-            fetch('{{ route("admin.generators.create") }}', {
+            // استخدام route أبسط بدلاً من create route لتجنب أي مشاكل
+            fetch('{{ route("admin.dashboard") }}', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
             .then(html => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const newToken = doc.querySelector('input[name="_token"]');
+                const newToken = doc.querySelector('meta[name="csrf-token"]') || doc.querySelector('input[name="_token"]');
                 if (newToken) {
-                    document.querySelector('input[name="_token"]').value = newToken.value;
+                    const tokenValue = newToken.getAttribute('content') || newToken.value;
+                    const tokenInput = document.querySelector('input[name="_token"]');
+                    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+                    
+                    if (tokenInput) {
+                        tokenInput.value = tokenValue;
+                    }
+                    if (tokenMeta) {
+                        tokenMeta.setAttribute('content', tokenValue);
+                    }
+                    
                     lastRefreshTime = Date.now();
                     updateSessionTimer();
                     
@@ -655,8 +675,6 @@
                         timerBadge.textContent = '✓ تم التحديث';
                         setTimeout(() => updateSessionTimer(), 2000);
                     }
-                    
-                    console.log('✓ تم تحديث CSRF token بنجاح');
                 }
             })
             .catch(error => {
@@ -699,7 +717,7 @@
             const hiddenInputs = [];
             
             hiddenTabs.forEach(tab => {
-                const inputs = tab.querySelectorAll('input[type="number"], input[type="text"]');
+                const inputs = tab.querySelectorAll('input[type="number"], input[type="text"], input[type="date"]');
                 inputs.forEach(input => {
                     // حفظ القيود الحالية
                     const constraints = {

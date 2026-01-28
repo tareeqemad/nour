@@ -361,7 +361,7 @@
                                 @endif
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">قدرة المولد (KVA)</label>
-                                    <p class="form-control-plaintext">{{ number_format($operationLog->generator->capacity_kva, 2) }}</p>
+                                    <p class="form-control-plaintext">{{ number_format($operationLog->generator->capacity_kva, 0) }}</p>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">حالة المولد</label>

@@ -58,7 +58,7 @@ class GenerationUnit extends Model
         return [
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
-            'total_capacity' => 'decimal:2',
+            'total_capacity' => 'integer',
             'max_synchronization_capacity' => 'decimal:2',
             'beneficiaries_count' => 'integer',
             'qr_code_generated_at' => 'datetime',

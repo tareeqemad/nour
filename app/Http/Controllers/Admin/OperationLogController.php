@@ -334,7 +334,7 @@ class OperationLogController extends Controller
         $generationUnits = collect();
 
         if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
             // لا نحمل وحدات التوليد والمولدات إلا بعد اختيار المشغل
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
@@ -473,7 +473,7 @@ class OperationLogController extends Controller
         $generationUnits = collect();
 
         if ($user->isSuperAdmin()) {
-            $operators = Operator::all();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
             // لا نحمل وحدات التوليد والمولدات إلا بعد اختيار المشغل
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();

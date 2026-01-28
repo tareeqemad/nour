@@ -170,7 +170,7 @@
                 @if($generator->capacity_kva)
                 <div class="info-row">
                     <span class="info-label">القدرة:</span>
-                    <span class="info-value"><strong>{{ number_format($generator->capacity_kva, 2) }} KVA</strong></span>
+                    <span class="info-value"><strong>{{ number_format($generator->capacity_kva, 0) }} KVA</strong></span>
                 </div>
                 @endif
                 @if($generator->voltage)

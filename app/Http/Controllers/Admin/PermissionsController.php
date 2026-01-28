@@ -63,9 +63,6 @@ class PermissionsController extends Controller
     }
 
     /**
-     * الصلاحيات الفعلية للمستخدم (Role + Direct - Revoked)
-     */
-    /**
      * الصلاحيات الحصرية لـ SuperAdmin فقط (مثل إعدادات الموقع)
      */
     private function superAdminOnlyPermissionIds(): array
@@ -121,10 +118,32 @@ class PermissionsController extends Controller
         return array_values(array_intersect($effective, $assignable));
     }
 
+    /**
+     * التحقق من أن المستخدم يمكنه الوصول لشجرة الصلاحيات
+     * 
+     * يجب أن يكون لديه:
+     * 1. دور مناسب (SuperAdmin, Admin, EnergyAuthority, CompanyOwner)
+     * 2. صلاحية permissions.manage (ما عدا SuperAdmin الذي لديه جميع الصلاحيات دائماً)
+     * 
+     * إذا قام SuperAdmin بإلغاء صلاحية permissions.manage من أي دور آخر،
+     * لن يتمكنوا من الوصول لشجرة الصلاحيات حتى لو كان لديهم الدور المناسب.
+     */
     private function assertActorCanOpenTree(User $actor): void
     {
+        // التحقق من الدور أولاً
         if (! $actor->isSuperAdmin() && ! $actor->isAdmin() && ! $actor->isEnergyAuthority() && ! $actor->isCompanyOwner()) {
-            abort(403);
+            abort(403, 'ليس لديك صلاحية للوصول إلى شجرة الصلاحيات.');
+        }
+
+        // SuperAdmin دائماً لديه جميع الصلاحيات (حتى لو تم إلغاء permissions.manage)
+        if ($actor->isSuperAdmin()) {
+            return;
+        }
+
+        // التحقق من صلاحية permissions.manage
+        // إذا تم إلغاء هذه الصلاحية من المستخدم، لن يتمكن من الوصول
+        if (! $actor->hasPermission('permissions.manage')) {
+            abort(403, 'ليس لديك صلاحية إدارة الصلاحيات. يرجى التواصل مع مدير النظام.');
         }
     }
 
@@ -195,16 +214,6 @@ class PermissionsController extends Controller
     {
         $authUser = auth()->user();
         
-        // Log for debugging
-        \Log::info('PermissionsController@index', [
-            'user_id' => $authUser->id,
-            'role' => $authUser->role?->value ?? null,
-            'role_id' => $authUser->role_id,
-            'isSuperAdmin' => $authUser->isSuperAdmin(),
-            'isEnergyAuthority' => $authUser->isEnergyAuthority(),
-            'isCompanyOwner' => $authUser->isCompanyOwner(),
-        ]);
-        
         $this->assertActorCanOpenTree($authUser);
 
         $search = trim((string) $request->input('search', ''));
@@ -215,22 +224,8 @@ class PermissionsController extends Controller
             $operator = $authUser->ownedOperators()->first();
         }
 
-        // Permissions query
-        $query = Permission::query()->orderBy('group')->orderBy('order');
-
-        // SuperAdmin: يرى جميع الصلاحيات (لا حاجة لفلترة)
-        // EnergyAuthority: يرى جميع الصلاحيات ما عدا الصلاحيات الحصرية لـ SuperAdmin
-        if ($authUser->isEnergyAuthority()) {
-            $superAdminOnlyIds = $this->superAdminOnlyPermissionIds();
-            $query->whereNotIn('id', $superAdminOnlyIds);
-        }
-        // CompanyOwner: فلترة بالسقف (TenantAssignable permissions)
-        elseif ($authUser->isCompanyOwner()) {
-            // المشغل المعتمد يرى جميع الصلاحيات المتاحة للتوزيع (TenantAssignable)
-            // حتى لو لم يكن لديه هذه الصلاحيات في roleModel
-            $assignableIds = $this->tenantAssignablePermissionIds();
-            $query->whereIn('id', $assignableIds);
-        }
+        // Permissions query with filtering based on user role
+        $query = $this->buildPermissionsQuery($authUser);
 
         // تطبيق البحث
         $this->applySearchFilter($query, $search);
@@ -579,7 +574,8 @@ class PermissionsController extends Controller
             $superAdminOnlyIds = $this->superAdminOnlyPermissionIds();
             $query->whereNotIn('id', $superAdminOnlyIds);
         }
-        // CompanyOwner: فلترة بالسقف
+        // CompanyOwner: فلترة بالسقف (ceiling) - فقط الصلاحيات الفعلية
+        // Note: search() uses ceiling (effective permissions) while index() uses tenantAssignable (all assignable)
         elseif ($authUser->isCompanyOwner()) {
             $ceilingIds = $this->companyOwnerCeilingPermissionIds($authUser);
             $query->whereIn('id', $ceilingIds);
@@ -600,6 +596,31 @@ class PermissionsController extends Controller
             'html' => $html,
             'count' => $permissions->flatten()->count(),
         ]);
+    }
+
+    /**
+     * بناء استعلام الصلاحيات مع الفلترة حسب دور المستخدم
+     * تجنب تكرار الكود بين index() و search()
+     */
+    private function buildPermissionsQuery(User $authUser)
+    {
+        $query = Permission::query()->orderBy('group')->orderBy('order');
+
+        // SuperAdmin: يرى جميع الصلاحيات (لا حاجة لفلترة)
+        // EnergyAuthority: يرى جميع الصلاحيات ما عدا الصلاحيات الحصرية لـ SuperAdmin
+        if ($authUser->isEnergyAuthority()) {
+            $superAdminOnlyIds = $this->superAdminOnlyPermissionIds();
+            $query->whereNotIn('id', $superAdminOnlyIds);
+        }
+        // CompanyOwner: فلترة بالسقف (TenantAssignable permissions)
+        elseif ($authUser->isCompanyOwner()) {
+            // المشغل المعتمد يرى جميع الصلاحيات المتاحة للتوزيع (TenantAssignable)
+            // حتى لو لم يكن لديه هذه الصلاحيات في roleModel
+            $assignableIds = $this->tenantAssignablePermissionIds();
+            $query->whereIn('id', $assignableIds);
+        }
+
+        return $query;
     }
 
     /**
@@ -676,7 +697,7 @@ class PermissionsController extends Controller
     {
         $authUser = auth()->user();
         $this->assertActorCanOpenTree($authUser);
-
+        
         try {
             $request->validate([
                 'user_id' => ['required', 'exists:users,id'],
@@ -902,11 +923,13 @@ class PermissionsController extends Controller
             ->where('id', '!=', $authUser->id)
             ->where('username', '!=', 'platform_rased'); // Exclude system user (منصة نور)
 
+        // Get allowed system roles once (avoid repetition)
+        $allowedSystemRoles = array_map(fn (RoleEnum $r) => $r->value, RoleEnum::cases());
+        
         if ($authUser->isSuperAdmin()) {
             // SuperAdmin: البحث بالدور النظامي
             if ($role !== '') {
                 // Check if it's a system role (enum)
-                $allowedSystemRoles = array_map(fn (RoleEnum $r) => $r->value, RoleEnum::cases());
                 if (in_array($role, $allowedSystemRoles, true)) {
                     $query->where('role', $role);
                     
@@ -934,7 +957,6 @@ class PermissionsController extends Controller
             
             if ($role !== '') {
                 // Check if it's a system role (enum)
-                $allowedSystemRoles = array_map(fn (RoleEnum $r) => $r->value, RoleEnum::cases());
                 if (in_array($role, $allowedSystemRoles, true) && $role !== 'super_admin') {
                     $query->where('role', $role);
                 } elseif ($roleId > 0) {
@@ -949,7 +971,6 @@ class PermissionsController extends Controller
             
             if ($role !== '') {
                 // Check if it's a system role (enum)
-                $allowedSystemRoles = array_map(fn (RoleEnum $r) => $r->value, RoleEnum::cases());
                 if (in_array($role, $allowedSystemRoles, true) && $role !== 'super_admin') {
                     $query->where('role', $role);
                     
@@ -1165,10 +1186,14 @@ class PermissionsController extends Controller
         $permissionIds = array_map('intval', (array) $request->input('permissions', []));
 
         // Filter system permissions if user is not SuperAdmin
+        // Note: Using whereIn with wildcards won't work, so we filter by specific permission groups
         if ($authUser->isAdmin() || $authUser->isCompanyOwner()) {
-            $systemPermissions = Permission::whereIn('name', [
-                'users.*', 'operators.*', 'permissions.*', 'settings.*', 'constants.*', 'logs.*'
-            ])->pluck('id')->toArray();
+            $systemPermissionGroups = ['settings', 'constants', 'logs'];
+            $systemPermissions = Permission::where(function ($q) use ($systemPermissionGroups) {
+                foreach ($systemPermissionGroups as $group) {
+                    $q->orWhere('name', 'like', "{$group}.%");
+                }
+            })->pluck('id')->toArray();
             $permissionIds = array_diff($permissionIds, $systemPermissions);
         }
 
