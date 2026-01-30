@@ -15,17 +15,20 @@ return new class extends Migration
         if (!Schema::hasTable('electricity_tariff_prices')) {
             Schema::create('electricity_tariff_prices', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('operator_id')->constrained('operators')->cascadeOnDelete();
+                // تتبع من أضاف السعر
+                $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
                 $table->date('start_date'); // تاريخ بداية تطبيق السعر
                 $table->date('end_date')->nullable(); // تاريخ نهاية تطبيق السعر (null = لا يزال ساري)
-                $table->decimal('price_per_kwh', 10, 4); // سعر التعرفة لكل كيلووات ساعة
+                // سعر التعرفة بخانتين عشريتين (₪/kWh)
+                $table->decimal('price_per_kwh', 10, 2); // سعر التعرفة لكل كيلووات ساعة
                 $table->boolean('is_active')->default(true); // هل السعر نشط
                 $table->text('notes')->nullable(); // ملاحظات (مثل: تغيير السعر الشهري)
                 $table->timestamps();
                 $table->softDeletes();
                 
-                // فهرس لتحسين البحث عن السعر النشط حسب التاريخ
-                $table->index(['operator_id', 'start_date', 'end_date', 'is_active'], 'tariff_price_search_idx');
+                // فهارس لتحسين البحث
+                $table->index(['start_date', 'end_date', 'is_active'], 'tariff_price_search_idx');
+                $table->index('created_by');
             });
             
             // إضافة Constraints للتحقق من صحة البيانات (بعد إنشاء الجدول)

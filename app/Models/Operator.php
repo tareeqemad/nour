@@ -106,10 +106,11 @@ class Operator extends Model
         return $this->hasMany(ComplianceSafety::class);
     }
 
-    public function electricityTariffPrices(): HasMany
-    {
-        return $this->hasMany(ElectricityTariffPrice::class);
-    }
+    // تم إزالة العلاقة لأن الأسعار الآن عامة لجميع المشغلين (لا يوجد operator_id)
+    // public function electricityTariffPrices(): HasMany
+    // {
+    //     return $this->hasMany(ElectricityTariffPrice::class);
+    // }
 
     /**
      * علاقة مع ثابت المدينة (city_id)

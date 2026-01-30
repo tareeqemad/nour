@@ -404,15 +404,16 @@
 
         loadTariffPrice: async function(instance) {
             const settings = instance.settings;
-            const operatorId = instance.elements.operator.val();
             const $dateField = $(settings.tariffDateField);
             const $priceField = $(settings.tariffPriceField);
             const operationDate = $dateField.val();
 
-            if (!operatorId || operatorId === '0' || !operationDate || !$priceField.length) return;
+            // الأسعار عامة لجميع المشغلين - لا نحتاج operatorId
+            if (!operationDate || !$priceField.length) return;
 
             try {
-                const url = settings.tariffUrl.replace('{id}', operatorId) + `?date=${operationDate}`;
+                // استخدام API route الجديد بدون operatorId
+                const url = settings.tariffUrl + `?date=${operationDate}`;
                 const response = await fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -424,7 +425,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.price && !$priceField.val()) {
-                        $priceField.val(parseFloat(data.price).toFixed(4));
+                        $priceField.val(parseFloat(data.price).toFixed(2)); // خانتان عشريتان
                     }
                 }
             } catch (error) {

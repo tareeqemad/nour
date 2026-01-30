@@ -76,7 +76,7 @@
                                     </label>
                                     <input type="date" name="operation_date" 
                                            class="form-control @error('operation_date') is-invalid @enderror" 
-                                           value="{{ old('operation_date', date('Y-m-d')) }}">
+                                           value="{{ old('operation_date', date('Y-m-d')) }}" max="{{ date('Y-m-d') }}">
                                     @error('operation_date')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
@@ -252,14 +252,14 @@
                                     <label class="form-label fw-semibold">
                                         سعر التعرفة الكهربائية (₪/kWh)
                                     </label>
-                                    <input type="number" step="0.0001" name="electricity_tariff_price" 
+                                    <input type="number" step="0.01" name="electricity_tariff_price" 
                                            class="form-control @error('electricity_tariff_price') is-invalid @enderror" 
                                            value="{{ old('electricity_tariff_price') }}" 
                                            min="0" 
                                            max="500"
-                                           placeholder="0.0000"
+                                           placeholder="0.00"
                                            id="electricity_tariff_price">
-                                    <small class="text-muted">سيتم تعبئته تلقائياً حسب المشغل وتاريخ التشغيل (يمكن التعديل) - مثال: في غزة قد يصل السعر إلى 30+ شيكل</small>
+                                    <small class="text-muted">سيتم تعبئته تلقائياً حسب تاريخ التشغيل (يمكن التعديل)</small>
                                     @error('electricity_tariff_price')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
@@ -343,7 +343,7 @@
                 canSelectOperator: {{ !auth()->user()->isAffiliatedWithOperator() ? 'true' : 'false' }},
                 operatorUrl: '/admin/operators/{id}/generation-units-for-logs',
                 generationUnitUrl: '/admin/generation-units/{id}/generators-for-logs',
-                tariffUrl: '/admin/operators/{id}/api/tariff-price',
+                tariffUrl: '/admin/api/tariff-price',
                 tariffDateField: 'input[name="operation_date"]',
                 tariffPriceField: '#electricity_tariff_price',
                 useSelect2: true,

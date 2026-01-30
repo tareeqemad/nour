@@ -79,6 +79,17 @@
                         </div>
                     </a>
                     @endcan
+                    @can('viewAny', App\Models\ElectricityTariffPrice::class)
+                    <a href="{{ route('admin.electricity-tariff-prices.index') }}" class="dashboard-quick-action">
+                        <div class="dashboard-quick-action-icon bg-primary">
+                            <i class="bi bi-currency-exchange"></i>
+                        </div>
+                        <div class="dashboard-quick-action-text">
+                            <div class="dashboard-quick-action-title">أسعار التعرفة</div>
+                            <div class="dashboard-quick-action-desc">إدارة أسعار التعرفة الكهربائية</div>
+                        </div>
+                    </a>
+                    @endcan
                     @can('viewAny', App\Models\MaintenanceRecord::class)
                     <a href="{{ route('admin.maintenance-records.index') }}" class="dashboard-quick-action">
                         <div class="dashboard-quick-action-icon bg-dark">

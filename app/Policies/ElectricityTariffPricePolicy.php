@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Models\ElectricityTariffPrice;
-use App\Models\Operator;
 use App\Models\User;
 
 class ElectricityTariffPricePolicy
@@ -13,8 +12,8 @@ class ElectricityTariffPricePolicy
      */
     public function viewAny(User $user): bool
     {
-        // السوبر أدمن والأدمن يمكنهم رؤية كل شيء
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        // السوبر أدمن والأدمن وسلطة الطاقة يمكنهم رؤية كل شيء
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
             return true;
         }
 
@@ -27,18 +26,14 @@ class ElectricityTariffPricePolicy
      */
     public function view(User $user, ElectricityTariffPrice $tariffPrice): bool
     {
-        // السوبر أدمن والأدمن يمكنهم رؤية كل شيء
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        // السوبر أدمن والأدمن وسلطة الطاقة يمكنهم رؤية كل شيء
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
             return true;
         }
 
         // التحقق من الصلاحية الديناميكية
-        if (! $user->hasPermission('electricity_tariff_prices.view')) {
-            return false;
-        }
-
-        // المشغل يمكنه رؤية أسعار مشغله فقط
-        return $user->belongsToOperator($tariffPrice->operator);
+        // الأسعار عامة متاحة للجميع الذين لديهم صلاحية view
+        return $user->hasPermission('electricity_tariff_prices.view');
     }
 
     /**
@@ -46,14 +41,14 @@ class ElectricityTariffPricePolicy
      */
     public function create(User $user): bool
     {
+        // السوبر أدمن وسلطة الطاقة يمكنهم إنشاء الأسعار
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            return true;
+        }
+
         // الأدمن يمكنهم الاستعلام فقط (view only)
         if ($user->isAdmin()) {
             return false;
-        }
-
-        // السوبر أدمن يمكنه إنشاء كل شيء
-        if ($user->isSuperAdmin()) {
-            return true;
         }
 
         // التحقق من الصلاحية الديناميكية
@@ -65,23 +60,19 @@ class ElectricityTariffPricePolicy
      */
     public function update(User $user, ElectricityTariffPrice $tariffPrice): bool
     {
+        // السوبر أدمن وسلطة الطاقة يمكنهم تحديث الأسعار
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            return true;
+        }
+
         // الأدمن يمكنهم الاستعلام فقط (view only)
         if ($user->isAdmin()) {
             return false;
         }
 
-        // السوبر أدمن يمكنه تحديث كل شيء
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
         // التحقق من الصلاحية الديناميكية
-        if (! $user->hasPermission('electricity_tariff_prices.update')) {
-            return false;
-        }
-
-        // المشغل يمكنه تحديث أسعار مشغله فقط
-        return $user->ownsOperator($tariffPrice->operator);
+        // الأسعار عامة يمكن تحديثها فقط من قبل السوبر أدمن وسلطة الطاقة
+        return $user->hasPermission('electricity_tariff_prices.update');
     }
 
     /**
@@ -89,23 +80,19 @@ class ElectricityTariffPricePolicy
      */
     public function delete(User $user, ElectricityTariffPrice $tariffPrice): bool
     {
+        // السوبر أدمن وسلطة الطاقة يمكنهم حذف الأسعار
+        if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
+            return true;
+        }
+
         // الأدمن يمكنهم الاستعلام فقط (view only)
         if ($user->isAdmin()) {
             return false;
         }
 
-        // السوبر أدمن يمكنه حذف كل شيء
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
         // التحقق من الصلاحية الديناميكية
-        if (! $user->hasPermission('electricity_tariff_prices.delete')) {
-            return false;
-        }
-
-        // المشغل يمكنه حذف أسعار مشغله فقط
-        return $user->ownsOperator($tariffPrice->operator);
+        // الأسعار عامة يمكن حذفها فقط من قبل السوبر أدمن وسلطة الطاقة
+        return $user->hasPermission('electricity_tariff_prices.delete');
     }
 
     /**
@@ -113,7 +100,7 @@ class ElectricityTariffPricePolicy
      */
     public function restore(User $user, ElectricityTariffPrice $tariffPrice): bool
     {
-        return $user->isSuperAdmin();
+        return $user->isSuperAdmin() || $user->isEnergyAuthority();
     }
 
     /**
@@ -121,6 +108,6 @@ class ElectricityTariffPricePolicy
      */
     public function forceDelete(User $user, ElectricityTariffPrice $tariffPrice): bool
     {
-        return $user->isSuperAdmin();
+        return $user->isSuperAdmin() || $user->isEnergyAuthority();
     }
 }

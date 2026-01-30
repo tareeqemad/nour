@@ -12,7 +12,7 @@ class ElectricityTariffPrice extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'operator_id',
+        'created_by',
         'start_date',
         'end_date',
         'price_per_kwh',
@@ -25,37 +25,53 @@ class ElectricityTariffPrice extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
-            'price_per_kwh' => 'decimal:4',
+            'price_per_kwh' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
-    public function operator(): BelongsTo
+    /**
+     * المستخدم الذي أضاف السعر
+     */
+    public function creator(): BelongsTo
     {
-        return $this->belongsTo(Operator::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
-     * الحصول على سعر التعرفة النشط لمشغل معين في تاريخ معين
+     * الحصول على سعر التعرفة النشط العام في تاريخ معين
+     * الأسعار عامة لجميع المشغلين
+     * يتم البحث عن آخر سعر نشط حسب التاريخ (آخر تحديث)
+     * 
+     * المنطق:
+     * 1. البحث عن الأسعار النشطة التي start_date <= التاريخ المطلوب
+     * 2. والتحقق من أن end_date >= التاريخ المطلوب (أو null)
+     * 3. ترتيب حسب start_date (الأحدث أولاً) ثم created_at (آخر تحديث أولاً)
+     * 
+     * @param Carbon $date التاريخ المطلوب
+     * @return self|null
      */
-    public static function getActivePriceForDate(int $operatorId, Carbon $date): ?self
+    public static function getActivePriceForDate(Carbon $date): ?self
     {
-        return self::where('operator_id', $operatorId)
-            ->where('is_active', true)
+        // الأسعار عامة لجميع المشغلين
+        // البحث عن آخر سعر نشط حسب التاريخ (آخر تحديث)
+        return self::where('is_active', true)
             ->where('start_date', '<=', $date->format('Y-m-d'))
             ->where(function ($query) use ($date) {
                 $query->whereNull('end_date')
                     ->orWhere('end_date', '>=', $date->format('Y-m-d'));
             })
-            ->orderBy('start_date', 'desc')
+            ->orderBy('start_date', 'desc') // آخر تاريخ بدء أولاً
+            ->orderBy('created_at', 'desc') // إذا كان نفس start_date، نأخذ آخر تحديث
+            ->orderBy('id', 'desc') // كترتيب نهائي للتأكد
             ->first();
     }
 
     /**
-     * الحصول على سعر التعرفة النشط الحالي لمشغل معين
+     * الحصول على سعر التعرفة النشط الحالي
      */
-    public static function getCurrentActivePrice(int $operatorId): ?self
+    public static function getCurrentActivePrice(): ?self
     {
-        return self::getActivePriceForDate($operatorId, Carbon::now());
+        return self::getActivePriceForDate(Carbon::now());
     }
 }

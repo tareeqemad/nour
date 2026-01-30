@@ -4,8 +4,13 @@
 
 @php
     $breadcrumbTitle = 'أسعار التعرفة الكهربائية';
-    $breadcrumbParent = $operator->name;
-    $breadcrumbParentUrl = route('admin.operators.show', $operator);
+    if ($operator) {
+        $breadcrumbParent = $operator->name;
+        $breadcrumbParentUrl = route('admin.operators.show', $operator);
+    } else {
+        $breadcrumbParent = 'إدارة التعرفة';
+        $breadcrumbParentUrl = route('admin.dashboard');
+    }
 @endphp
 
 @push('styles')
@@ -13,33 +18,50 @@
 @endpush
 
 @section('content')
-    <div class="fuel-efficiencies-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header log-toolbar-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <div class="general-card">
+                    <div class="general-card-header">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
                             <div>
-                                <div class="log-title">
+                                <div class="general-title">
                                     <i class="bi bi-currency-exchange me-2"></i>
-                                    أسعار التعرفة الكهربائية - {{ $operator->name }}
+                                    @if($operator)
+                                        أسعار التعرفة الكهربائية - {{ $operator->name }}
+                                    @else
+                                        أسعار التعرفة الكهربائية العامة
+                                    @endif
                                 </div>
-                                <div class="log-subtitle">
-                                    إدارة أسعار التعرفة الكهربائية للمشغل. العدد: <span>{{ $tariffPrices->total() }}</span>
+                                <div class="general-subtitle">
+                                    @if($operator)
+                                        إدارة أسعار التعرفة الكهربائية للمشغل. العدد: <span>{{ $tariffPrices->total() }}</span>
+                                    @else
+                                        إدارة أسعار التعرفة الكهربائية العامة لجميع المشغلين. العدد: <span>{{ $tariffPrices->total() }}</span>
+                                    @endif
                                 </div>
                             </div>
 
-                            @can('create', [\App\Models\ElectricityTariffPrice::class, $operator])
-                                <a href="{{ route('admin.operators.tariff-prices.create', $operator) }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    إضافة سعر جديد
-                                </a>
-                            @endcan
-                            
-                            <a href="{{ route('admin.operators.show', $operator) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
-                                العودة للمشغل
-                            </a>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @can('create', \App\Models\ElectricityTariffPrice::class)
+                                    <a href="{{ route('admin.electricity-tariff-prices.create') }}" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        إضافة سعر جديد
+                                    </a>
+                                @endcan
+                                
+                                @if($operator)
+                                    <a href="{{ route('admin.operators.show', $operator) }}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-right me-2"></i>
+                                        العودة للمشغل
+                                    </a>
+                                @else
+                                    <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-right me-2"></i>
+                                        العودة
+                                    </a>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -53,6 +75,7 @@
                                             <th>تاريخ الانتهاء</th>
                                             <th>السعر (₪/kWh)</th>
                                             <th>الحالة</th>
+                                            <th>أضافه</th>
                                             <th>ملاحظات</th>
                                             <th>الإجراءات</th>
                                         </tr>
@@ -62,7 +85,7 @@
                                             <tr>
                                                 <td>{{ $tariffPrice->start_date->format('Y-m-d') }}</td>
                                                 <td>{{ $tariffPrice->end_date ? $tariffPrice->end_date->format('Y-m-d') : '—' }}</td>
-                                                <td><strong>{{ number_format($tariffPrice->price_per_kwh, 4) }}</strong> ₪/kWh</td>
+                                                <td><strong>{{ number_format($tariffPrice->price_per_kwh, 2) }}</strong> ₪/kWh</td>
                                                 <td>
                                                     @if($tariffPrice->is_active)
                                                         <span class="badge bg-success">نشط</span>
@@ -70,16 +93,29 @@
                                                         <span class="badge bg-secondary">غير نشط</span>
                                                     @endif
                                                 </td>
+                                                <td>
+                                                    @if($tariffPrice->creator)
+                                                        <div class="small">
+                                                            <i class="bi bi-person-circle me-1"></i>
+                                                            {{ $tariffPrice->creator->name }}
+                                                        </div>
+                                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                                            {{ $tariffPrice->created_at->format('Y-m-d H:i') }}
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ $tariffPrice->notes ?? '—' }}</td>
                                                 <td>
                                                     @can('update', $tariffPrice)
-                                                        <a href="{{ route('admin.operators.tariff-prices.edit', [$operator, $tariffPrice]) }}" 
+                                                        <a href="{{ route('admin.electricity-tariff-prices.edit', $tariffPrice) }}" 
                                                            class="btn btn-sm btn-outline-primary">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
                                                     @endcan
                                                     @can('delete', $tariffPrice)
-                                                        <form action="{{ route('admin.operators.tariff-prices.destroy', [$operator, $tariffPrice]) }}" 
+                                                        <form action="{{ route('admin.electricity-tariff-prices.destroy', $tariffPrice) }}" 
                                                               method="POST" 
                                                               class="d-inline"
                                                               onsubmit="return confirm('هل أنت متأكد من حذف هذا السعر؟');">
@@ -104,8 +140,8 @@
                             <div class="text-center py-5">
                                 <i class="bi bi-inbox fs-1 text-muted"></i>
                                 <p class="text-muted mt-3">لا توجد أسعار تعرفة مسجلة</p>
-                                @can('create', [\App\Models\ElectricityTariffPrice::class, $operator])
-                                    <a href="{{ route('admin.operators.tariff-prices.create', $operator) }}" class="btn btn-primary">
+                                @can('create', \App\Models\ElectricityTariffPrice::class)
+                                    <a href="{{ route('admin.electricity-tariff-prices.create') }}" class="btn btn-primary">
                                         <i class="bi bi-plus-circle me-2"></i>
                                         إضافة سعر جديد
                                     </a>
@@ -118,4 +154,3 @@
         </div>
     </div>
 @endsection
-

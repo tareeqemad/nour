@@ -10,8 +10,6 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/compliance-safeties.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/cascading-selects.css') }}">
 @endpush
 
 @section('content')
@@ -34,7 +32,6 @@
                     </div>
 
                     <div class="card-body p-4">
-                        @can('create', App\Models\ComplianceSafety::class)
                         <form action="{{ route('admin.compliance-safeties.store') }}" method="POST" id="complianceSafetyForm">
                             @csrf
 
@@ -45,13 +42,31 @@
                                     المعلومات الأساسية
                                 </h6>
                                 <div class="row g-3">
-                                    {{-- Cascading Selects: المشغل فقط --}}
-                                    @include('admin.partials.cascading-selects', [
-                                        'operators' => $operators ?? collect(),
-                                        'showGenerationUnit' => false,
-                                        'showGenerator' => false,
-                                        'colClass' => 'col-md-6',
-                                    ])
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-building text-info me-1"></i>
+                                            المشغل <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="operator_id" class="form-select @error('operator_id') is-invalid @enderror"
+                                            @if(auth()->user()->isCompanyOwner()) disabled @endif>
+                                            <option value="">اختر المشغل</option>
+                                            @foreach($operators as $operator)
+                                                <option value="{{ $operator->id }}" 
+                                                        {{ old('operator_id', auth()->user()->isCompanyOwner() ? auth()->user()->ownedOperators()->first()->id : '') == $operator->id ? 'selected' : '' }}>
+                                                    {{ $operator->name }}
+                                                    @if($operator->unit_number)
+                                                        - {{ $operator->unit_number }}
+                                                    @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @if(auth()->user()->isCompanyOwner())
+                                            <input type="hidden" name="operator_id" value="{{ auth()->user()->ownedOperators()->first()->id }}">
+                                        @endif
+                                        @error('operator_id')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">
@@ -153,12 +168,6 @@
                                 </button>
                             </div>
                         </form>
-                        @else
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                ليس لديك صلاحية لإضافة سجل امتثال وسلامة.
-                            </div>
-                        @endcan
                     </div>
                 </div>
             </div>
@@ -167,23 +176,8 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
-<script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
-<script src="{{ asset('assets/admin/js/cascading-selects.js') }}"></script>
 <script>
     $(document).ready(function() {
-        // تهيئة Select2 للمشغل
-        CascadingSelects.init({
-            canSelectOperator: {{ !auth()->user()->isAffiliatedWithOperator() ? 'true' : 'false' }},
-            useSelect2: true,
-            select2Options: {
-                dir: 'rtl',
-                language: 'ar',
-                allowClear: true,
-                width: '100%'
-            }
-        });
-
         AdminCRUD.submitForm({
             form: '#complianceSafetyForm',
             method: 'POST',

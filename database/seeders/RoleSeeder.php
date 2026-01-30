@@ -116,6 +116,10 @@ class RoleSeeder extends Seeder
                     'generators.transfer',
                     'generation_units.create',
                     'generation_units.update',
+                    // Electricity Tariff Prices (عامة لجميع المشغلين)
+                    'electricity_tariff_prices.create',
+                    'electricity_tariff_prices.update',
+                    'electricity_tariff_prices.delete',
                     // Manage users and custom roles (under their authority)
                     'users.view',
                     'users.create',
@@ -202,10 +206,8 @@ class RoleSeeder extends Seeder
                     'compliance_safeties.view',
                     'compliance_safeties.create',
                     'compliance_safeties.update',
-                    // Electricity Tariff Prices
+                    // Electricity Tariff Prices (view only - الأسعار عامة ويديرها السوبر أدمن وسلطة الطاقة فقط)
                     'electricity_tariff_prices.view',
-                    'electricity_tariff_prices.create',
-                    'electricity_tariff_prices.update',
                     // Manage users with custom roles (under their operator only)
                     'users.view',
                     'users.create',

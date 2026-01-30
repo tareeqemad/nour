@@ -4,8 +4,8 @@
 
 @php
     $breadcrumbTitle = 'تعديل سعر التعرفة';
-    $breadcrumbParent = $operator->name;
-    $breadcrumbParentUrl = route('admin.operators.show', $operator);
+    $breadcrumbParent = 'أسعار التعرفة الكهربائية';
+    $breadcrumbParentUrl = route('admin.electricity-tariff-prices.index');
 @endphp
 
 @push('styles')
@@ -13,22 +13,22 @@
 @endpush
 
 @section('content')
-    <div class="fuel-efficiencies-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header">
+                <div class="general-card">
+                    <div class="general-card-header">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
                             <div>
-                                <div class="log-title">
+                                <div class="general-title">
                                     <i class="bi bi-currency-exchange me-2"></i>
-                                    تعديل سعر التعرفة - {{ $operator->name }}
+                                    تعديل سعر التعرفة
                                 </div>
-                                <div class="log-subtitle">
-                                    قم بتعديل بيانات سعر التعرفة الكهربائية
+                                <div class="general-subtitle">
+                                    قم بتعديل بيانات سعر التعرفة الكهربائية العامة
                                 </div>
                             </div>
-                            <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('admin.electricity-tariff-prices.index') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-right me-2"></i>
                                 العودة للقائمة
                             </a>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="card-body p-4">
-                        <form action="{{ route('admin.operators.tariff-prices.update', [$operator, $tariffPrice]) }}" method="POST" id="tariffPriceForm">
+                        <form action="{{ route('admin.electricity-tariff-prices.update', $tariffPrice) }}" method="POST" id="tariffPriceForm">
                             @csrf
                             @method('PUT')
 
@@ -52,7 +52,7 @@
                                         </label>
                                         <input type="date" name="start_date" 
                                                class="form-control @error('start_date') is-invalid @enderror" 
-                                               value="{{ old('start_date', $tariffPrice->start_date->format('Y-m-d')) }}">
+                                               value="{{ old('start_date', $tariffPrice->start_date->format('Y-m-d')) }}" max="{{ date('Y-m-d') }}">
                                         @error('start_date')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
@@ -64,7 +64,7 @@
                                         </label>
                                         <input type="date" name="end_date" 
                                                class="form-control @error('end_date') is-invalid @enderror" 
-                                               value="{{ old('end_date', $tariffPrice->end_date?->format('Y-m-d')) }}">
+                                               value="{{ old('end_date', $tariffPrice->end_date?->format('Y-m-d')) }}" max="{{ date('Y-m-d') }}">
                                         <small class="text-muted">اتركه فارغاً إذا كان السعر لا يزال ساري</small>
                                         @error('end_date')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -75,13 +75,12 @@
                                         <label class="form-label fw-semibold">
                                             سعر التعرفة (₪/kWh) <span class="text-danger">*</span>
                                         </label>
-                                        <input type="number" step="0.0001" name="price_per_kwh" 
+                                        <input type="number" step="0.01" name="price_per_kwh" 
                                                class="form-control @error('price_per_kwh') is-invalid @enderror" 
                                                value="{{ old('price_per_kwh', $tariffPrice->price_per_kwh) }}" 
                                                min="0" 
                                                max="500"
-                                               placeholder="0.0000">
-                                        <small class="text-muted">مثال: في غزة قد يصل السعر إلى 30 شيكل أو أكثر</small>
+                                               placeholder="0.00">
                                         @error('price_per_kwh')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
@@ -116,7 +115,7 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-outline-secondary">
+                                <a href="{{ route('admin.electricity-tariff-prices.index') }}" class="btn btn-outline-secondary">
                                     إلغاء
                                 </a>
                                 <button type="submit" class="btn btn-primary">
@@ -131,4 +130,3 @@
         </div>
     </div>
 @endsection
-

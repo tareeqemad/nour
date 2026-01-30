@@ -414,10 +414,7 @@ class OperationLogController extends Controller
         // Auto-fill electricity tariff price if not provided
         if (!isset($data['electricity_tariff_price']) || empty($data['electricity_tariff_price'])) {
             $operationDate = Carbon::parse($data['operation_date']);
-            $tariffPrice = \App\Models\ElectricityTariffPrice::getActivePriceForDate(
-                $data['operator_id'],
-                $operationDate
-            );
+            $tariffPrice = \App\Models\ElectricityTariffPrice::getActivePriceForDate($operationDate);
             
             if ($tariffPrice) {
                 $data['electricity_tariff_price'] = $tariffPrice->price_per_kwh;
@@ -560,10 +557,7 @@ class OperationLogController extends Controller
         // Auto-fill electricity tariff price if not provided
         if (!isset($data['electricity_tariff_price']) || empty($data['electricity_tariff_price'])) {
             $operationDate = Carbon::parse($data['operation_date']);
-            $tariffPrice = \App\Models\ElectricityTariffPrice::getActivePriceForDate(
-                $data['operator_id'],
-                $operationDate
-            );
+            $tariffPrice = \App\Models\ElectricityTariffPrice::getActivePriceForDate($operationDate);
             
             if ($tariffPrice) {
                 $data['electricity_tariff_price'] = $tariffPrice->price_per_kwh;

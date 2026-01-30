@@ -151,17 +151,21 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('operators/pending-approval', [OperatorController::class, 'pendingApproval'])->name('operators.pending-approval');
     Route::resource('operators', OperatorController::class);
     
-    // Electricity Tariff Prices (nested under operators)
+    // Electricity Tariff Prices (عامة لجميع المشغلين)
+    Route::get('electricity-tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'index'])->name('electricity-tariff-prices.index');
+    Route::get('electricity-tariff-prices/create', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'create'])->name('electricity-tariff-prices.create');
+    Route::post('electricity-tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'store'])->name('electricity-tariff-prices.store');
+    Route::get('electricity-tariff-prices/{electricityTariffPrice}/edit', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'edit'])->name('electricity-tariff-prices.edit');
+    Route::put('electricity-tariff-prices/{electricityTariffPrice}', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'update'])->name('electricity-tariff-prices.update');
+    Route::delete('electricity-tariff-prices/{electricityTariffPrice}', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'destroy'])->name('electricity-tariff-prices.destroy');
+    
+    // API route for getting tariff price
+    Route::get('api/tariff-price', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'getTariffPrice'])->name('api.tariff-price');
+    
+    // Electricity Tariff Prices (nested under operators - للعرض فقط، الأسعار العامة فقط)
     Route::prefix('operators/{operator}')->name('operators.')->group(function () {
-        Route::get('tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'index'])->name('tariff-prices.index');
-        Route::get('tariff-prices/create', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'create'])->name('tariff-prices.create');
-        Route::post('tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'store'])->name('tariff-prices.store');
-        Route::get('tariff-prices/{tariffPrice}/edit', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'edit'])->name('tariff-prices.edit');
-        Route::put('tariff-prices/{tariffPrice}', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'update'])->name('tariff-prices.update');
-        Route::delete('tariff-prices/{tariffPrice}', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'destroy'])->name('tariff-prices.destroy');
-        
-        // API route for getting tariff price
-        Route::get('api/tariff-price', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'getTariffPrice'])->name('api.tariff-price');
+        Route::get('tariff-prices', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'indexForOperator'])->name('tariff-prices.index');
+        // تم إزالة routes الإنشاء والتعديل لأن الأسعار عامة فقط
     });
 
     /**
