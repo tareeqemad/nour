@@ -147,6 +147,29 @@
     </li>
 @endcan
 
+{{-- إدارة بيانات المشتركين --}}
+@can('viewAny', App\Models\Subscriber::class)
+    <li class="slide has-sub {{ $isOpen('admin.subscribers.*') }}">
+        <a href="javascript:void(0);" class="side-menu__item {{ $isActive('admin.subscribers.*') }}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__angle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/></svg>
+            <span class="side-menu__label">إدارة بيانات المشتركين</span>
+        </a>
+        <ul class="slide-menu child1" style="{{ $show('admin.subscribers.*') }}">
+            <li class="slide">
+                <a href="{{ route('admin.subscribers.index') }}" class="side-menu__item {{ $isActive('admin.subscribers.index') }}">
+                    بيانات المشتركين
+                </a>
+            </li>
+            <li class="slide">
+                <a href="{{ route('admin.meter-readings.index') }}" class="side-menu__item {{ $isActive('admin.meter-readings.*') }}">
+                    قراءات العدادات
+                </a>
+            </li>
+        </ul>
+    </li>
+@endcan
+
 {{-- أسعار التعرفة الكهربائية --}}
 @can('viewAny', App\Models\ElectricityTariffPrice::class)
     <li class="slide {{ $isActive('admin.electricity-tariff-prices.*') }}">

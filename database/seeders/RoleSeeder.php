@@ -141,6 +141,16 @@ class RoleSeeder extends Seeder
                     'tasks.create',
                     'tasks.update',
                     'tasks.delete',
+                    // Subscribers management
+                    'subscribers.view',
+                    'subscribers.create',
+                    'subscribers.update',
+                    'subscribers.delete',
+                    // Meter readings management
+                    'meter_readings.view',
+                    'meter_readings.create',
+                    'meter_readings.update',
+                    'meter_readings.delete',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'admin') {
@@ -168,6 +178,10 @@ class RoleSeeder extends Seeder
                     'tasks.create',
                     'tasks.update',
                     'tasks.delete',
+                    // Subscribers management (view only for Admin)
+                    'subscribers.view',
+                    // Meter readings management (view only for Admin)
+                    'meter_readings.view',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'company_owner') {
@@ -218,6 +232,14 @@ class RoleSeeder extends Seeder
                     'roles.view',
                     'roles.create',
                     'roles.update',
+                    // Subscribers management
+                    'subscribers.view',
+                    'subscribers.create',
+                    'subscribers.update',
+                    // Meter readings management
+                    'meter_readings.view',
+                    'meter_readings.create',
+                    'meter_readings.update',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'employee') {
@@ -234,6 +256,12 @@ class RoleSeeder extends Seeder
                     'fuel_efficiencies.view',
                     'fuel_efficiencies.create',
                     'fuel_efficiencies.update',
+                    // Subscribers management (view only for employees)
+                    'subscribers.view',
+                    // Meter readings management
+                    'meter_readings.view',
+                    'meter_readings.create',
+                    'meter_readings.update',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'technician') {
@@ -247,6 +275,12 @@ class RoleSeeder extends Seeder
                     'maintenance_records.view',
                     'maintenance_records.create',
                     'maintenance_records.update',
+                    // Subscribers management (view only for technicians)
+                    'subscribers.view',
+                    // Meter readings management
+                    'meter_readings.view',
+                    'meter_readings.create',
+                    'meter_readings.update',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'civil_defense') {

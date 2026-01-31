@@ -61,7 +61,8 @@
                     @include('admin.partials.sidebar-admin')
                 @elseif($u->isEnergyAuthority())
                     @include('admin.partials.sidebar-energy-authority')
-                @elseif($u->isCompanyOwner() || $u->isEmployee())
+                @elseif($u->isCompanyOwner() || $u->isEmployee() || ($u->hasCustomRole() && $u->hasOperatorLinkedCustomRole()))
+                    {{-- المشغل، الموظف، والأدوار المخصصة المرتبطة بمشغل --}}
                     @include('admin.partials.sidebar-operator')
                 @elseif($u->isTechnician())
                     @include('admin.partials.sidebar-technician')

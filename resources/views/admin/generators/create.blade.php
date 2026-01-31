@@ -211,9 +211,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">كفاءة الوقود المثالية (kWh/لتر)</label>
-                                <input type="number" step="0.001" name="ideal_fuel_efficiency" class="form-control @error('ideal_fuel_efficiency') is-invalid @enderror" 
-                                       value="{{ old('ideal_fuel_efficiency', '0.5') }}" min="0" max="10" placeholder="0.5">
-                                <small class="form-text text-muted">تستخدم لحساب الفاقد في الوقود في لوحة التحكم (القيمة الافتراضية: 0.5)</small>
+                                <input type="number" step="0.01" name="ideal_fuel_efficiency" id="ideal_fuel_efficiency" class="form-control @error('ideal_fuel_efficiency') is-invalid @enderror" 
+                                       value="{{ old('ideal_fuel_efficiency', '0.5') }}" min="0" max="10" placeholder="0.5" readonly>
                                 @error('ideal_fuel_efficiency')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -1242,6 +1241,45 @@
                 generationUnitSelectForCompanyOwner.dispatchEvent(new Event('change'));
             }
         @endif
+
+        // حساب كفاءة الوقود المثالية تلقائياً
+        function calculateIdealFuelEfficiency() {
+            const capacityKva = parseFloat(document.querySelector('input[name="capacity_kva"]')?.value) || 0;
+            const powerFactor = parseFloat(document.querySelector('input[name="power_factor"]')?.value) || 0;
+            const fuelConsumptionRate = parseFloat(document.querySelector('input[name="fuel_consumption_rate"]')?.value) || 0;
+            const idealEfficiencyInput = document.getElementById('ideal_fuel_efficiency');
+
+            if (idealEfficiencyInput && capacityKva > 0 && powerFactor > 0 && fuelConsumptionRate > 0) {
+                // المعادلة: (قدرة المولد kva * معامل القدرة) / معدل استهلاك الوقود
+                const idealEfficiency = (capacityKva * powerFactor) / fuelConsumptionRate;
+                idealEfficiencyInput.value = idealEfficiency.toFixed(2);
+            } else if (idealEfficiencyInput && (capacityKva === 0 || powerFactor === 0 || fuelConsumptionRate === 0)) {
+                idealEfficiencyInput.value = '0.5';
+            }
+        }
+
+        // إضافة event listeners للحقول المطلوبة
+        document.addEventListener('DOMContentLoaded', function() {
+            const capacityInput = document.querySelector('input[name="capacity_kva"]');
+            const powerFactorInput = document.querySelector('input[name="power_factor"]');
+            const fuelConsumptionInput = document.querySelector('input[name="fuel_consumption_rate"]');
+
+            if (capacityInput) {
+                capacityInput.addEventListener('input', calculateIdealFuelEfficiency);
+                capacityInput.addEventListener('change', calculateIdealFuelEfficiency);
+            }
+            if (powerFactorInput) {
+                powerFactorInput.addEventListener('input', calculateIdealFuelEfficiency);
+                powerFactorInput.addEventListener('change', calculateIdealFuelEfficiency);
+            }
+            if (fuelConsumptionInput) {
+                fuelConsumptionInput.addEventListener('input', calculateIdealFuelEfficiency);
+                fuelConsumptionInput.addEventListener('change', calculateIdealFuelEfficiency);
+            }
+
+            // حساب القيمة الأولية عند تحميل الصفحة
+            calculateIdealFuelEfficiency();
+        });
     });
 </script>
 @endpush

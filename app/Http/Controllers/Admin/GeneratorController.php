@@ -318,10 +318,12 @@ class GeneratorController extends Controller
             $newTotalCapacity = $currentTotalCapacity + $data['capacity_kva'];
             
             if ($newTotalCapacity > $generationUnit->total_capacity) {
-                $remaining = $generationUnit->total_capacity - $currentTotalCapacity;
+                $remaining = (int)($generationUnit->total_capacity - $currentTotalCapacity);
+                $newTotalCapacityInt = (int)$newTotalCapacity;
+                $totalCapacityInt = (int)$generationUnit->total_capacity;
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', "مجموع قدرات المولدات ({$newTotalCapacity} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$generationUnit->total_capacity} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
+                    ->with('error', "مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
             }
         }
 
@@ -335,6 +337,11 @@ class GeneratorController extends Controller
                     ->withInput()
                     ->with('error', 'تعذر توليد رقم المولد. تأكد من أن وحدة التوليد لديها unit_code وأن عدد المولدات لم يتجاوز 99.');
             }
+        }
+
+        // تحويل capacity_kva إلى integer
+        if (isset($data['capacity_kva'])) {
+            $data['capacity_kva'] = (int) $data['capacity_kva'];
         }
 
         $generator = Generator::create($data);
@@ -589,11 +596,18 @@ class GeneratorController extends Controller
             $newTotalCapacity = $currentTotalCapacity + $data['capacity_kva'];
             
             if ($newTotalCapacity > $generationUnit->total_capacity) {
-                $remaining = $generationUnit->total_capacity - $currentTotalCapacity;
+                $remaining = (int)($generationUnit->total_capacity - $currentTotalCapacity);
+                $newTotalCapacityInt = (int)$newTotalCapacity;
+                $totalCapacityInt = (int)$generationUnit->total_capacity;
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', "مجموع قدرات المولدات ({$newTotalCapacity} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$generationUnit->total_capacity} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
+                    ->with('error', "مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
             }
+        }
+
+        // تحويل capacity_kva إلى integer
+        if (isset($data['capacity_kva'])) {
+            $data['capacity_kva'] = (int) $data['capacity_kva'];
         }
 
         $generator->update($data);

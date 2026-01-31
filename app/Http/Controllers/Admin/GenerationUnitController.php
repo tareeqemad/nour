@@ -552,6 +552,11 @@ class GenerationUnitController extends Controller
         $data['created_by'] = $user->id;
         $data['last_updated_by'] = $user->id;
 
+        // تحويل total_capacity إلى integer
+        if (isset($data['total_capacity'])) {
+            $data['total_capacity'] = (int) $data['total_capacity'];
+        }
+
         // معالجة خزانات الوقود
         $fuelTanksData = $data['fuel_tanks'] ?? [];
         unset($data['fuel_tanks']);
@@ -916,6 +921,11 @@ class GenerationUnitController extends Controller
 
         // تتبع المستخدمين
         $data['last_updated_by'] = $user->id;
+
+        // تحويل total_capacity إلى integer
+        if (isset($data['total_capacity'])) {
+            $data['total_capacity'] = (int) $data['total_capacity'];
+        }
 
         // معالجة خزانات الوقود
         $fuelTanksData = $data['fuel_tanks'] ?? [];

@@ -67,7 +67,7 @@
                                         </label>
                                         <input type="date" name="consumption_date" 
                                                class="form-control @error('consumption_date') is-invalid @enderror" 
-                                               value="{{ old('consumption_date', date('Y-m-d')) }}">
+                                               value="{{ old('consumption_date', date('Y-m-d')) }}" max="{{ date('Y-m-d') }}">
                                         @error('consumption_date')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror

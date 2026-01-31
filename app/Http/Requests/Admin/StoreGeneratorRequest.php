@@ -76,8 +76,10 @@ class StoreGeneratorRequest extends FormRequest
                     $newTotalCapacity = $currentTotalCapacity + $value;
                     
                     if ($newTotalCapacity > $generationUnit->total_capacity) {
-                        $remaining = $generationUnit->total_capacity - $currentTotalCapacity;
-                        $fail("مجموع قدرات المولدات ({$newTotalCapacity} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$generationUnit->total_capacity} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
+                        $remaining = (int)($generationUnit->total_capacity - $currentTotalCapacity);
+                        $newTotalCapacityInt = (int)$newTotalCapacity;
+                        $totalCapacityInt = (int)$generationUnit->total_capacity;
+                        $fail("مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
                     }
                 },
             ],

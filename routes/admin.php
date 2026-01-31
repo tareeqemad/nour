@@ -287,4 +287,15 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('sms-templates', [\App\Http\Controllers\Admin\SmsTemplateController::class, 'index'])->name('sms-templates.index');
     Route::get('sms-templates/{smsTemplate}/edit', [\App\Http\Controllers\Admin\SmsTemplateController::class, 'edit'])->name('sms-templates.edit');
     Route::put('sms-templates/{smsTemplate}', [\App\Http\Controllers\Admin\SmsTemplateController::class, 'update'])->name('sms-templates.update');
+
+    /**
+     * Subscribers (إدارة بيانات المشتركين)
+     */
+    Route::resource('subscribers', \App\Http\Controllers\Admin\SubscriberController::class);
+
+    /**
+     * Meter Readings (قراءات العدادات)
+     */
+    Route::resource('meter-readings', \App\Http\Controllers\Admin\MeterReadingController::class);
+    Route::get('meter-readings/subscriber/last-reading', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getLastReading'])->name('meter-readings.last-reading');
 });

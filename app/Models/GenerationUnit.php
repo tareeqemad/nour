@@ -6,6 +6,7 @@ use App\Governorate;
 use App\Models\ConstantDetail;
 use App\Models\Task;
 use App\Models\FuelEfficiency;
+use App\Models\Subscriber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -73,6 +74,15 @@ class GenerationUnit extends Model
     public function generators(): HasMany
     {
         return $this->hasMany(Generator::class);
+    }
+
+    /**
+     * علاقة مع المشتركين (Many-to-Many)
+     */
+    public function subscribers(): BelongsToMany
+    {
+        return $this->belongsToMany(Subscriber::class, 'subscriber_generation_unit')
+            ->withTimestamps();
     }
 
     public function fuelTanks(): HasMany

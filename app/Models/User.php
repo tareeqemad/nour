@@ -62,6 +62,8 @@ class User extends Authenticatable
         'compliance_safeties.view',
         'electricity_tariff_prices.view',
         'guide.view',
+        'subscribers.view',
+        'meter_readings.view',
     ];
 
     /**
@@ -134,6 +136,12 @@ class User extends Authenticatable
         'roles.view',
         'roles.create',
         'roles.update',
+        'subscribers.view',
+        'subscribers.create',
+        'subscribers.update',
+        'meter_readings.view',
+        'meter_readings.create',
+        'meter_readings.update',
     ];
 
     protected $fillable = [

@@ -10,6 +10,8 @@ use App\Models\MaintenanceRecord;
 use App\Models\OperationLog;
 use App\Models\Operator;
 use App\Models\PermissionAuditLog;
+use App\Models\MeterReading;
+use App\Models\Subscriber;
 use App\Models\Task;
 use App\Models\User;
 use App\Policies\ComplianceSafetyPolicy;
@@ -22,6 +24,8 @@ use App\Policies\OperatorPolicy;
 use App\Policies\PermissionAuditLogPolicy;
 use App\Policies\TaskPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\SubscriberPolicy;
+use App\Policies\MeterReadingPolicy;
 use Carbon\Carbon;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -45,6 +49,8 @@ class AppServiceProvider extends ServiceProvider
         MaintenanceRecord::class => MaintenanceRecordPolicy::class,
         ComplianceSafety::class => ComplianceSafetyPolicy::class,
         Task::class => TaskPolicy::class,
+        Subscriber::class => SubscriberPolicy::class,
+        MeterReading::class => MeterReadingPolicy::class,
         \App\Models\AuditLog::class => \App\Policies\AuditLogPolicy::class,
         \App\Models\Message::class => \App\Policies\MessagePolicy::class,
         PermissionAuditLog::class => PermissionAuditLogPolicy::class,

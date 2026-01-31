@@ -331,9 +331,14 @@
                                             <i class="bi bi-rulers me-1"></i>
                                             مساحة المنطقة (كم²) <span class="text-danger">*</span>
                                         </label>
+                                        @php
+                                            // تنسيق القيمة المعروضة لتكون بخانة عشرية واحدة فقط
+                                            $displayArea = old('territory_area_km2', 5);
+                                            $displayArea = round((float)$displayArea, 1);
+                                        @endphp
                                         <input type="number" step="0.1" name="territory_area_km2" id="territory_area_km2" 
                                                class="form-control @error('territory_area_km2') is-invalid @enderror"
-                                               value="{{ old('territory_area_km2', 5) }}" 
+                                               value="{{ $displayArea }}" 
                                                min="0.1" max="360" required>
                                         @error('territory_area_km2')
                                             <div class="invalid-feedback">{{ $message }}</div>

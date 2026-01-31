@@ -138,6 +138,18 @@ class PermissionSeeder extends Seeder
 
             // سجل الأنشطة (Audit Logs)
             ['name' => 'activity_logs.view', 'label' => 'عرض سجل الأنشطة', 'group' => 'activity_logs', 'group_label' => 'سجل الأنشطة', 'description' => 'القدرة على عرض سجل أنشطة النظام', 'order' => 71],
+
+            // إدارة المشتركين
+            ['name' => 'subscribers.view', 'label' => 'عرض المشتركين', 'group' => 'subscribers', 'group_label' => 'إدارة المشتركين', 'description' => 'القدرة على عرض قائمة المشتركين', 'order' => 72],
+            ['name' => 'subscribers.create', 'label' => 'إنشاء مشترك', 'group' => 'subscribers', 'group_label' => 'إدارة المشتركين', 'description' => 'القدرة على إنشاء مشترك جديد', 'order' => 73],
+            ['name' => 'subscribers.update', 'label' => 'تحديث مشترك', 'group' => 'subscribers', 'group_label' => 'إدارة المشتركين', 'description' => 'القدرة على تحديث بيانات المشترك', 'order' => 74],
+            ['name' => 'subscribers.delete', 'label' => 'حذف مشترك', 'group' => 'subscribers', 'group_label' => 'إدارة المشتركين', 'description' => 'القدرة على حذف المشترك', 'order' => 75],
+
+            // قراءات العدادات
+            ['name' => 'meter_readings.view', 'label' => 'عرض قراءات العدادات', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على عرض قراءات العدادات', 'order' => 76],
+            ['name' => 'meter_readings.create', 'label' => 'إنشاء قراءة عداد', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على إنشاء قراءة عداد جديدة', 'order' => 77],
+            ['name' => 'meter_readings.update', 'label' => 'تحديث قراءة عداد', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على تحديث قراءة العداد', 'order' => 78],
+            ['name' => 'meter_readings.delete', 'label' => 'حذف قراءة عداد', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على حذف قراءة العداد', 'order' => 79],
         ];
 
         foreach ($permissions as $permission) {

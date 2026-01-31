@@ -1046,7 +1046,7 @@ class DashboardController extends Controller
                     'city' => $unit->cityDetail?->label,
                     'generators_count' => $unit->generators->count(),
                     'installed_capacity' => round($installedCapacity, 2),
-                    'unit_capacity' => round($unit->total_capacity ?? 0, 2),
+                    'unit_capacity' => (int)($unit->total_capacity ?? 0),
                     'beneficiaries_count' => $unit->beneficiaries_count ?? 0,
                     'total_energy' => round($totalEnergy, 2),
                     'total_fuel' => round($totalFuel, 2),
