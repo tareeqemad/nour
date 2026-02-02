@@ -51,7 +51,7 @@
                                         </label>
                                         <input type="date" name="start_date" 
                                                class="form-control @error('start_date') is-invalid @enderror" 
-                                               value="{{ old('start_date', date('Y-m-d')) }}" max="{{ date('Y-m-d') }}">
+                                               value="{{ old('start_date', date('Y-m-d')) }}">
                                         @error('start_date')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
@@ -63,7 +63,7 @@
                                         </label>
                                         <input type="date" name="end_date" 
                                                class="form-control @error('end_date') is-invalid @enderror" 
-                                               value="{{ old('end_date') }}" max="{{ date('Y-m-d') }}">
+                                               value="{{ old('end_date') }}">
                                         <small class="text-muted">اتركه فارغاً إذا كان السعر لا يزال ساري</small>
                                         @error('end_date')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -77,8 +77,6 @@
                                         <input type="number" step="0.01" name="price_per_kwh" 
                                                class="form-control @error('price_per_kwh') is-invalid @enderror" 
                                                value="{{ old('price_per_kwh') }}" 
-                                               min="0" 
-                                               max="500"
                                                placeholder="0.00">
                                         @error('price_per_kwh')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>

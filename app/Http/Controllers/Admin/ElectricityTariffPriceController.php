@@ -51,7 +51,7 @@ class ElectricityTariffPriceController extends Controller
         $validated = $request->validate([
             'start_date' => ['required', 'date', 'max:' . date('Y-m-d')],
             'end_date' => ['nullable', 'date', 'after:start_date', 'max:' . date('Y-m-d')],
-            'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:500'],
+            'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:100', 'regex:/^[0-9]+(\.[0-9]{1,2})?$/'],
             'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -112,7 +112,7 @@ class ElectricityTariffPriceController extends Controller
         $validated = $request->validate([
             'start_date' => ['required', 'date', 'max:' . date('Y-m-d')],
             'end_date' => ['nullable', 'date', 'after:start_date', 'max:' . date('Y-m-d')],
-            'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:500'],
+            'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:100', 'regex:/^[0-9]+(\.[0-9]{1,2})?$/'],
             'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
