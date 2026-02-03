@@ -48,12 +48,12 @@ class ElectricityTariffPriceController extends Controller
     {
         $this->authorize('create', ElectricityTariffPrice::class);
 
-        $validated = $request->validate([
-            'start_date' => ['required', 'date', 'max:' . date('Y-m-d')],
-            'end_date' => ['nullable', 'date', 'after:start_date', 'max:' . date('Y-m-d')],
-            'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:100', 'regex:/^[0-9]+(\.[0-9]{1,2})?$/'],
-            'is_active' => ['nullable', 'boolean'],
-            'notes' => ['nullable', 'string', 'max:1000'],
+       $validated = $request->validate([
+        'start_date' => ['required', 'date', 'before_or_equal:today'],
+        'end_date'   => ['nullable', 'date', 'after_or_equal:start_date', 'before_or_equal:today'],
+        'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:100', 'regex:/^[0-9]+(\.[0-9]{1,2})?$/'],
+        'is_active'  => ['nullable', 'boolean'],
+        'notes'      => ['nullable', 'string', 'max:1000'],
         ]);
 
         // الأسعار عامة لجميع المشغلين
@@ -109,12 +109,12 @@ class ElectricityTariffPriceController extends Controller
     {
         $this->authorize('update', $electricityTariffPrice);
 
-        $validated = $request->validate([
-            'start_date' => ['required', 'date', 'max:' . date('Y-m-d')],
-            'end_date' => ['nullable', 'date', 'after:start_date', 'max:' . date('Y-m-d')],
+       $validated = $request->validate([
+            'start_date' => ['required', 'date', 'before_or_equal:today'],
+            'end_date'   => ['nullable', 'date', 'after_or_equal:start_date', 'before_or_equal:today'],
             'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:100', 'regex:/^[0-9]+(\.[0-9]{1,2})?$/'],
-            'is_active' => ['nullable', 'boolean'],
-            'notes' => ['nullable', 'string', 'max:1000'],
+            'is_active'  => ['nullable', 'boolean'],
+            'notes'      => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['is_active'] = $validated['is_active'] ?? true;
