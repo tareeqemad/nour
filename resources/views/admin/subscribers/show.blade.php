@@ -65,10 +65,15 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted">رقم الجوال</label>
+                                <label class="form-label fw-semibold text-muted">رقم الموبايل</label>
                                 <div class="form-control-plaintext">
                                     {{ $subscriber->phone ?? '-' }}
                                 </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted">المحافظة</label>
+                                <div class="form-control-plaintext">{{ $subscriber->governorate_name ?? '-' }}</div>
                             </div>
 
                             <div class="col-md-12">

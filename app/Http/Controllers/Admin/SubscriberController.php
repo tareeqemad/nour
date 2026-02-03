@@ -94,7 +94,30 @@ class SubscriberController extends Controller
                 ->get();
         }
 
-        return view('admin.subscribers.index', compact('subscribers', 'operators', 'currentOperator', 'canSelectOperator'));
+        // جلب وحدات التوليد للاستيراد
+        $generationUnits = collect();
+        if ($user->isSuperAdmin()) {
+            $generationUnits = GenerationUnit::with('operator:id,name')
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('name')
+                ->get();
+        } elseif ($user->isCompanyOwner()) {
+            $operatorIds = $user->ownedOperators()->pluck('id');
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
+                ->with('operator:id,name')
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('name')
+                ->get();
+        } else {
+            $operatorIds = $user->operators()->pluck('operators.id');
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
+                ->with('operator:id,name')
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('admin.subscribers.index', compact('subscribers', 'operators', 'currentOperator', 'canSelectOperator', 'generationUnits'));
     }
 
     /**
@@ -136,11 +159,25 @@ class SubscriberController extends Controller
 
         // جلب وحدات التوليد
         $generationUnits = collect();
+        $defaultGovernorate = null;
+        
         if ($operator) {
             $generationUnits = $operator->generationUnits()
-                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->select('id', 'name', 'unit_code', 'operator_id', 'governorate_id')
+                ->with('governorateDetail')
                 ->orderBy('name')
                 ->get();
+                
+            // الحصول على المحافظة من أول وحدة توليد
+            $firstUnit = $generationUnits->first();
+            if ($firstUnit && $firstUnit->governorateDetail) {
+                try {
+                    $governorateEnum = \App\Governorate::fromValue((int) $firstUnit->governorateDetail->value);
+                    $defaultGovernorate = $governorateEnum->label();
+                } catch (\Exception $e) {
+                    $defaultGovernorate = $firstUnit->governorateDetail->label;
+                }
+            }
         } elseif ($user->isSuperAdmin()) {
             $generationUnits = GenerationUnit::select('id', 'name', 'unit_code', 'operator_id')
                 ->with('operator:id,name')
@@ -148,7 +185,7 @@ class SubscriberController extends Controller
                 ->get();
         }
 
-        return view('admin.subscribers.create', compact('operators', 'generationUnits', 'operator'));
+        return view('admin.subscribers.create', compact('operators', 'generationUnits', 'operator', 'defaultGovernorate'));
     }
 
     /**
@@ -159,7 +196,36 @@ class SubscriberController extends Controller
         $this->authorize('create', Subscriber::class);
 
         try {
-            $subscriber = Subscriber::create($request->validated());
+            $data = $request->validated();
+            
+            // توليد رقم الاشتراك تلقائياً
+            if (!empty($request->generation_unit_ids) && is_array($request->generation_unit_ids)) {
+                $firstUnitId = $request->generation_unit_ids[0];
+                $phaseType = $data['phase_type'];
+                
+                $data['subscription_number'] = Subscriber::generateSubscriptionNumber($firstUnitId, $phaseType);
+            } else {
+                throw new \Exception('يجب اختيار وحدة توليد واحدة على الأقل لتوليد رقم الاشتراك');
+            }
+            
+            // إذا لم يتم تعيين governorate_name، استخرجه من وحدات التوليد المرتبطة
+            if (empty($data['governorate_name'])) {
+                $generationUnit = \App\Models\GenerationUnit::with(['governorateDetail'])
+                    ->find($firstUnitId);
+                    
+                if ($generationUnit && $generationUnit->governorateDetail) {
+                    // محاولة الحصول على اسم المحافظة من enum
+                    try {
+                        $governorateEnum = \App\Governorate::fromValue((int) $generationUnit->governorateDetail->value);
+                        $data['governorate_name'] = $governorateEnum->label();
+                    } catch (\Exception $e) {
+                        // إذا فشلت، استخدم label من الثوابت
+                        $data['governorate_name'] = $generationUnit->governorateDetail->label;
+                    }
+                }
+            }
+            
+            $subscriber = Subscriber::create($data);
 
             // ربط وحدات التوليد
             if ($request->has('generation_unit_ids') && is_array($request->generation_unit_ids)) {
@@ -167,11 +233,30 @@ class SubscriberController extends Controller
             }
 
             return redirect()->route('admin.subscribers.index')
-                ->with('success', 'تم إضافة المشترك بنجاح.');
+                ->with('success', "تم إضافة المشترك بنجاح. رقم الاشتراك: {$subscriber->subscription_number}");
         } catch (\Exception $e) {
+            // معالجة خاصة لأخطاء تكرار البيانات
+            if (str_contains($e->getMessage(), 'unique_subscriber_id_number')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['subscriber_id_number' => 'رقم الهوية مسجل مسبقاً، يرجى استخدام رقم هوية مختلف.']);
+            }
+            
+            if (str_contains($e->getMessage(), 'unique_subscriber_phone')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['phone' => 'رقم الموبايل مسجل مسبقاً، يرجى استخدام رقم موبايل مختلف.']);
+            }
+            
+            if (str_contains($e->getMessage(), '23000') && str_contains($e->getMessage(), 'Duplicate entry')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'البيانات المدخلة موجودة مسبقاً، يرجى التحقق من البيانات وإعادة المحاولة.');
+            }
+            
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'حدث خطأ أثناء إضافة المشترك: ' . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء إضافة المشترك، يرجى المحاولة مرة أخرى.');
         }
     }
 
@@ -259,27 +344,104 @@ class SubscriberController extends Controller
             return redirect()->route('admin.subscribers.index')
                 ->with('success', 'تم تحديث بيانات المشترك بنجاح.');
         } catch (\Exception $e) {
+            // معالجة خاصة لأخطاء تكرار البيانات
+            if (str_contains($e->getMessage(), 'unique_subscriber_phone')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['phone' => 'رقم الموبايل مسجل مسبقاً، يرجى استخدام رقم موبايل مختلف.']);
+            }
+            
+            if (str_contains($e->getMessage(), 'unique_subscriber_meter_number')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['meter_number' => 'رقم العداد مسجل مسبقاً، يرجى استخدام رقم عداد مختلف.']);
+            }
+            
+            if (str_contains($e->getMessage(), '23000') && str_contains($e->getMessage(), 'Duplicate entry')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'البيانات المدخلة موجودة مسبقاً، يرجى التحقق من البيانات وإعادة المحاولة.');
+            }
+            
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'حدث خطأ أثناء تحديث بيانات المشترك: ' . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء تحديث بيانات المشترك، يرجى المحاولة مرة أخرى.');
         }
     }
 
     /**
      * Remove the specified subscriber from storage.
      */
-    public function destroy(Subscriber $subscriber): RedirectResponse
+    public function destroy(Subscriber $subscriber): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $this->authorize('delete', $subscriber);
 
         try {
-            $subscriber->delete();
+            // حذف العلاقات أولاً
+            $subscriber->generationUnits()->detach();
+            
+            // حذف المشترك نهائياً من قاعدة البيانات
+            $subscriber->forceDelete();
+
+            // إرجاع JSON للـ AJAX requests
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'تم حذف المشترك بنجاح.'
+                ]);
+            }
 
             return redirect()->route('admin.subscribers.index')
                 ->with('success', 'تم حذف المشترك بنجاح.');
         } catch (\Exception $e) {
+            \Log::error('Error deleting subscriber: ' . $e->getMessage());
+            
+            // إرجاع JSON للـ AJAX requests
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'حدث خطأ أثناء حذف المشترك: ' . $e->getMessage()
+                ], 500);
+            }
+
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء حذف المشترك: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Check if a field value is unique (AJAX endpoint)
+     */
+    public function checkUnique(Request $request)
+    {
+        $field = $request->input('field');
+        $value = $request->input('value');
+        $excludeId = $request->input('exclude_id'); // للتعديل
+        
+        $allowedFields = ['subscriber_id_number', 'phone', 'meter_number'];
+        
+        if (!in_array($field, $allowedFields) || empty($value)) {
+            return response()->json(['exists' => false]);
+        }
+        
+        $query = Subscriber::where($field, $value);
+        
+        // استبعاد السجل الحالي في حالة التعديل
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        
+        $exists = $query->exists();
+        
+        $messages = [
+            'subscriber_id_number' => 'رقم الهوية موجود مسبقاً',
+            'phone' => 'رقم الموبايل موجود مسبقاً', 
+            'meter_number' => 'رقم العداد موجود مسبقاً'
+        ];
+        
+        return response()->json([
+            'exists' => $exists,
+            'message' => $exists ? $messages[$field] : null
+        ]);
     }
 }

@@ -18,15 +18,13 @@ class UpdateSubscriberRequest extends FormRequest
         $user = $this->user();
         
         $rules = [
-            'subscriber_id_number' => ['required', 'string', 'max:255'],
-            'subscriber_name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'regex:/^05[69]\\d{7}$/', 'unique:subscribers,phone,' . $subscriberId],
+            'governorate_name' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string'],
-            'subscription_date' => ['required', 'date'],
             'subscription_category' => ['required', 'integer', 'in:1,2,3,4'],
             'phase_type' => ['required', 'integer', 'in:1,2'],
             'subscription_status' => ['required', 'integer', 'in:1,2,3'],
-            'meter_number' => ['nullable', 'string', 'max:255'],
+            'meter_number' => ['required', 'string', 'max:255', 'unique:subscribers,meter_number,' . $subscriberId],
             'service_type' => ['required', 'integer', 'in:1,2,3'],
             'generation_unit_ids' => ['required', 'array', 'min:1'],
             'generation_unit_ids.*' => ['exists:generation_units,id'],
@@ -48,17 +46,18 @@ class UpdateSubscriberRequest extends FormRequest
     public function messages(): array
     {
         $messages = [
-            'subscriber_id_number.required' => 'رقم هوية المشترك مطلوب.',
-            'subscriber_name.required' => 'اسم المشترك مطلوب.',
-            'phone.required' => 'رقم الجوال مطلوب.',
+            'phone.required' => 'رقم الموبايل مطلوب.',
+            'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 059 أو 056.',
+            'phone.unique' => 'رقم الموبايل مسجل مسبقاً، يرجى استخدام رقم موبايل مختلف.',
             'address.required' => 'عنوان المشترك مطلوب.',
-            'subscription_date.required' => 'تاريخ الاشتراك مطلوب.',
             'subscription_category.required' => 'تصنيف الاشتراك مطلوب.',
             'subscription_category.in' => 'تصنيف الاشتراك غير صحيح.',
             'phase_type.required' => 'نوع الفاز مطلوب.',
             'phase_type.in' => 'نوع الفاز غير صحيح.',
             'subscription_status.required' => 'حالة الاشتراك مطلوبة.',
             'subscription_status.in' => 'حالة الاشتراك غير صحيحة.',
+            'meter_number.required' => 'رقم العداد مطلوب.',
+            'meter_number.unique' => 'رقم العداد مسجل مسبقاً، يرجى استخدام رقم عداد مختلف.',
             'service_type.required' => 'نوع الخدمة مطلوب.',
             'service_type.in' => 'نوع الخدمة غير صحيح.',
             'generation_unit_ids.required' => 'يجب اختيار وحدة توليد واحدة على الأقل.',
