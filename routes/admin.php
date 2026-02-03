@@ -292,6 +292,22 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      * Subscribers (إدارة بيانات المشتركين)
      */
     Route::resource('subscribers', \App\Http\Controllers\Admin\SubscriberController::class);
+    Route::post('subscribers/check-unique', [\App\Http\Controllers\Admin\SubscriberController::class, 'checkUnique'])
+        ->name('subscribers.check-unique');
+    
+    // Subscriber Import Routes
+    Route::get('subscribers/import/modal', [\App\Http\Controllers\Admin\SubscriberImportController::class, 'showImportModal'])
+        ->name('subscribers.import.modal');
+    Route::post('subscribers/import/preview', [\App\Http\Controllers\Admin\SubscriberImportController::class, 'preview'])
+        ->name('subscribers.import.preview');
+    Route::post('subscribers/import/execute', [\App\Http\Controllers\Admin\SubscriberImportController::class, 'import'])
+        ->name('subscribers.import.execute');
+    Route::get('subscribers/import/template', [\App\Http\Controllers\Admin\SubscriberImportController::class, 'downloadTemplate'])
+        ->name('subscribers.import.template');
+    
+    // Subscription Number API Routes
+    Route::get('/subscription-number/preview', [\App\Http\Controllers\Admin\SubscriptionNumberController::class, 'preview'])->name('subscription-number.preview');
+    Route::get('/subscription-number/stats', [\App\Http\Controllers\Admin\SubscriptionNumberController::class, 'stats'])->name('subscription-number.stats');
 
     /**
      * Meter Readings (قراءات العدادات)

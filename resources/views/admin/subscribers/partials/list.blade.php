@@ -97,7 +97,7 @@
                                     </a>
                                 @endcan
                                 @if(auth()->user()->isSuperAdmin())
-                                    <form action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا المشترك؟');">
+                                    <form action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST" class="d-inline delete-subscriber-form">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">

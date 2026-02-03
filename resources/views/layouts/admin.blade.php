@@ -347,14 +347,6 @@
                     window.adminNotifications.info('{{ session('info') }}');
                 }
             @endif
-
-            @if($errors->any())
-                @foreach($errors->all() as $error)
-                    if (window.adminNotifications) {
-                        window.adminNotifications.error('{{ $error }}');
-                    }
-                @endforeach
-            @endif
         });
     </script>
 
