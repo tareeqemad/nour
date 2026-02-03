@@ -3,8 +3,11 @@
         <table class="table table-hover align-middle table-striped mb-0">
             <thead class="table-light">
                 <tr>
+                    <th class="fw-semibold text-center" style="width: 60px;">
+                        <i class="bi bi-list-ol me-1"></i>
+                        #
+                    </th>
                     <th class="fw-semibold">
-                        <i class="bi bi-hash me-1"></i>
                         رقم الاشتراك
                     </th>
                     <th class="fw-semibold">
@@ -36,6 +39,9 @@
             <tbody>
                 @foreach($subscribers as $subscriber)
                     <tr>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark">{{ ($subscribers->currentPage() - 1) * $subscribers->perPage() + $loop->iteration }}</span>
+                        </td>
                         <td>
                             <code class="text-primary fw-semibold">{{ $subscriber->subscription_number }}</code>
                         </td>

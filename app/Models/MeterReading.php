@@ -92,14 +92,9 @@ class MeterReading extends Model
      */
     public static function generateReadingNumber(int $subscriberId): string
     {
-        $subscriber = Subscriber::find($subscriberId);
-        if (!$subscriber) {
-            return 'READ-' . date('Ymd') . '-001';
-        }
-
-        // استخدام رقم الاشتراك + التاريخ + رقم تسلسلي
+        // استخدام التاريخ + رقم تسلسلي فقط
         $date = date('Ymd');
-        $prefix = $subscriber->subscription_number . '-' . $date . '-';
+        $prefix = $date . '-';
         
         $lastReading = static::where('reading_number', 'like', $prefix . '%')
             ->get()

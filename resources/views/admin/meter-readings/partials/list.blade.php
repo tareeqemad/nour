@@ -3,8 +3,11 @@
         <table class="table table-hover align-middle table-striped mb-0">
             <thead class="table-light">
                 <tr>
+                    <th class="fw-semibold text-center" style="width: 60px;">
+                        <i class="bi bi-list-ol me-1"></i>
+                        #
+                    </th>
                     <th class="fw-semibold">
-                        <i class="bi bi-hash me-1"></i>
                         رقم القراءة
                     </th>
                     <th class="fw-semibold">
@@ -44,6 +47,9 @@
             <tbody>
                 @foreach($meterReadings as $reading)
                     <tr>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark">{{ ($meterReadings->currentPage() - 1) * $meterReadings->perPage() + $loop->iteration }}</span>
+                        </td>
                         <td>
                             <code class="text-primary fw-semibold">{{ $reading->reading_number }}</code>
                         </td>

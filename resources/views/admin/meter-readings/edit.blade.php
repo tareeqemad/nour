@@ -67,7 +67,8 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">رقم العداد <span class="text-danger">*</span></label>
                                     <input type="text" name="meter_number" id="meter_number" class="form-control @error('meter_number') is-invalid @enderror" 
-                                           value="{{ old('meter_number', $meterReading->meter_number) }}" required>
+                                           value="{{ old('meter_number', $meterReading->meter_number) }}" required readonly style="background-color: #f8f9fa;">
+                                    <small class="form-text text-muted">يتم تعبئته تلقائياً من بيانات المشترك</small>
                                     @error('meter_number')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -181,6 +182,13 @@
                 placeholder: 'اختر المشترك',
                 allowClear: true,
                 dir: 'rtl'
+            });
+
+            // تعبئة رقم العداد تلقائياً عند اختيار المشترك
+            $('#subscriber_id').on('change', function() {
+                const selectedOption = $(this).find('option:selected');
+                const meterNumber = selectedOption.data('meter-number');
+                $('#meter_number').val(meterNumber || '');
             });
 
             // حساب الاستهلاك تلقائياً
