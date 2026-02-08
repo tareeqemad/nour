@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             SmsTemplateSeeder::class,
             UserSeeder::class,
             TestDataSeeder::class,
+            TechnicianCivilDefenseSeeder::class, // يوزر فني + يوزر دفاع مدني
             TestUsersSeeder::class,
             CreateDefaultOperatorRolesSeeder::class, // إنشاء أدوار افتراضية للمشغلين
             // Note: OperatorSeeder, AuthorizedPhoneSeeder, ComplaintSuggestionSeeder, MessageSeeder are not called

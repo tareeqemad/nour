@@ -200,11 +200,50 @@ class ComplianceSafetyController extends Controller
     }
 
     /**
+     * تحديث سجل وقاية وسلامة (دفاع مدني فقط)
+     */
+    public function update(Request $request, ComplianceSafety $complianceSafety): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$this->isCivilDefense($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح لك بالوصول.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'safety_certificate_status_id' => ['required', 'exists:constant_details,id'],
+            'last_inspection_date' => ['nullable', 'date'],
+            'inspection_authority' => ['nullable', 'string', 'max:255'],
+            'inspection_result' => ['nullable', 'string'],
+            'violations' => ['nullable', 'string'],
+        ]);
+
+        $complianceSafety->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث سجل الوقاية والسلامة بنجاح.',
+            'data' => [
+                'compliance_safety' => [
+                    'id' => $complianceSafety->id,
+                    'operator_id' => $complianceSafety->operator_id,
+                    'last_inspection_date' => $complianceSafety->last_inspection_date
+                        ? $complianceSafety->last_inspection_date->format('Y-m-d')
+                        : null,
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * التحقق من أن المستخدم هو دفاع مدني
      */
     private function isCivilDefense($user): bool
     {
-        $roleName = $user->roleModel?->name ?? $user->role?->value;
+        $roleName = $user->roleModel ? $user->roleModel->name : ($user->role?->value ?? null);
         
         $hasPermission = method_exists($user, 'hasPermission') 
             ? $user->hasPermission('compliance_safety.create') 

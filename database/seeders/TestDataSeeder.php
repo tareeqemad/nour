@@ -24,7 +24,7 @@ class TestDataSeeder extends Seeder
         // الحصول على الأدوار
         $energyAuthorityRole = RoleModel::where('name', 'energy_authority')->first();
         $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
-        
+
         if (!$energyAuthorityRole || !$companyOwnerRole) {
             $this->command->error('يجب تشغيل RoleSeeder أولاً!');
             return;

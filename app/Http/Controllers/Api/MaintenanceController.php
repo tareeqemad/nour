@@ -260,11 +260,97 @@ class MaintenanceController extends Controller
     }
 
     /**
+     * تحديث سجل صيانة (فني فقط)
+     */
+    public function update(Request $request, MaintenanceRecord $maintenanceRecord): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isTechnician()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح لك بالوصول.',
+            ], 403);
+        }
+
+        $generatorForRecord = $maintenanceRecord->generator;
+        if (!$generatorForRecord || !$this->canAccessGenerator($user, $generatorForRecord)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح لك بتحديث هذا السجل.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'generator_id' => ['required', 'exists:generators,id'],
+            'maintenance_type_id' => ['required', 'exists:constant_details,id'],
+            'next_maintenance_type_id' => ['nullable', 'exists:constant_details,id'],
+            'maintenance_date' => ['required', 'date'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
+            'technician_name' => ['nullable', 'string', 'max:255'],
+            'work_performed' => ['nullable', 'string'],
+            'downtime_hours' => ['nullable', 'numeric', 'min:0'],
+            'parts_cost' => ['nullable', 'numeric', 'min:0'],
+            'labor_hours' => ['nullable', 'numeric', 'min:0'],
+            'labor_rate_per_hour' => ['nullable', 'numeric', 'min:0'],
+            'maintenance_cost' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $generator = Generator::find($validated['generator_id']);
+        if (!$this->canAccessGenerator($user, $generator)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح لك بالوصول لهذا المولد.',
+            ], 403);
+        }
+
+        if (isset($validated['start_time']) && isset($validated['end_time'])
+            && !empty($validated['start_time']) && !empty($validated['end_time'])) {
+            try {
+                $startTime = \Carbon\Carbon::createFromFormat('H:i', $validated['start_time']);
+                $endTime = \Carbon\Carbon::createFromFormat('H:i', $validated['end_time']);
+                if ($endTime < $startTime) {
+                    $endTime->addDay();
+                }
+                $validated['downtime_hours'] = round($startTime->diffInMinutes($endTime) / 60, 2);
+            } catch (\Exception $e) {
+                $validated['downtime_hours'] = null;
+            }
+        } else {
+            $validated['downtime_hours'] = null;
+        }
+
+        if (isset($validated['parts_cost'], $validated['labor_hours'], $validated['labor_rate_per_hour'])) {
+            $validated['maintenance_cost'] = round(
+                ($validated['parts_cost'] ?? 0) + (($validated['labor_hours'] ?? 0) * ($validated['labor_rate_per_hour'] ?? 0)),
+                2
+            );
+        } else {
+            $validated['maintenance_cost'] = null;
+        }
+
+        $maintenanceRecord->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث سجل الصيانة بنجاح.',
+            'data' => [
+                'maintenance_record' => [
+                    'id' => $maintenanceRecord->id,
+                    'generator_id' => $maintenanceRecord->generator_id,
+                    'maintenance_date' => $maintenanceRecord->maintenance_date->format('Y-m-d'),
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * التحقق من إمكانية الوصول للمولد
      */
     private function canAccessGenerator($user, Generator $generator): bool
     {
-        if (!$generator->operator_id) {
+        if (!$generator || !$generator->operator_id) {
             return false;
         }
 
