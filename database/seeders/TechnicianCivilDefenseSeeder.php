@@ -28,12 +28,12 @@ class TechnicianCivilDefenseSeeder extends Seeder
 
         // يوزر فني - مرتبط بالمشغل op_test (صلاحيات سجلات الصيانة فقط)
         $technicianUser = User::updateOrCreate(
-            ['username' => 't_technician'],
+            ['username' => 't_402144398'],
             [
                 'name' => 'فني الاختبار',
                 'name_en' => 'Test Technician',
                 'email' => 'technician@gazarased.com',
-                'username' => 't_technician',
+                'username' => 't_402144398',
                 'password' => Hash::make('12345678'),
                 'role' => Role::Technician,
                 'role_id' => $technicianRole->id,
@@ -44,16 +44,16 @@ class TechnicianCivilDefenseSeeder extends Seeder
         if ($operator) {
             $technicianUser->operators()->syncWithoutDetaching([$operator->id]);
         }
-        $this->command->info("تم إنشاء يوزر الفني: t_technician / 12345678");
+        $this->command->info("تم إنشاء يوزر الفني: t_402144398 / 12345678");
 
         // يوزر دفاع مدني - صلاحيات سجلات الوقاية والسلامة فقط
         User::updateOrCreate(
-            ['username' => 'cd_defense'],
+            ['username' => 'cd_402144398'],
             [
                 'name' => 'دفاع مدني الاختبار',
                 'name_en' => 'Test Civil Defense',
                 'email' => 'civildefense@gazarased.com',
-                'username' => 'cd_defense',
+                'username' => 'cd_402144398',
                 'password' => Hash::make('12345678'),
                 'role' => Role::CivilDefense,
                 'role_id' => $civilDefenseRole->id,
@@ -61,6 +61,6 @@ class TechnicianCivilDefenseSeeder extends Seeder
                 'phone' => '0596666666',
             ]
         );
-        $this->command->info("تم إنشاء يوزر الدفاع المدني: cd_defense / 12345678");
+        $this->command->info("تم إنشاء يوزر الدفاع المدني: cd_402144398 / 12345678");
     }
 }

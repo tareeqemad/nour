@@ -21,8 +21,8 @@ class TestUsersSeeder extends Seeder
         // Energy Authority: ea_authority / 123456
         // CompanyOwner: op_owner / 123456
         // Employee: emp_user / 123456
-        // Technician: t_technician / 123456
-        // CivilDefense: cd_defense / 123456
+        // Technician: t_402144398 / 12345678
+        // CivilDefense: cd_402144398 / 12345678
         return;
     }
 }
