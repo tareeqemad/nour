@@ -1,4 +1,4 @@
-@foreach($maintenanceRecords as $record)
+@forelse($maintenanceRecords as $record)
     <tr>
         <td>{{ $maintenanceRecords->firstItem() + $loop->index }}</td>
         <td>
@@ -62,7 +62,14 @@
             </div>
         </td>
     </tr>
-@endforeach
+@empty
+    <tr>
+        <td colspan="8" class="text-center text-muted py-5">
+            <i class="bi bi-inbox d-block fs-2 mb-2 opacity-50"></i>
+            لا توجد سجلات صيانة
+        </td>
+    </tr>
+@endforelse
 
 
 

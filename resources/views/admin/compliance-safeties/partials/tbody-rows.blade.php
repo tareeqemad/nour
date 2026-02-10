@@ -9,6 +9,20 @@
             @endif
         </td>
         <td>
+            @if($compliance->generationUnit)
+                <a href="{{ route('admin.generation-units.show', $compliance->generationUnit) }}" class="text-decoration-none">{{ $compliance->generationUnit->name }}</a>
+            @else
+                <span class="text-muted">-</span>
+            @endif
+        </td>
+        <td>
+            @if($compliance->generator)
+                <a href="{{ route('admin.generators.show', $compliance->generator) }}" class="text-decoration-none">{{ $compliance->generator->generator_number }} — {{ $compliance->generator->name }}</a>
+            @else
+                <span class="text-muted">-</span>
+            @endif
+        </td>
+        <td>
             <span class="badge bg-{{ $compliance->safetyCertificateStatusDetail?->getBadgeColor() ?? 'secondary' }}">
                 {{ $compliance->safetyCertificateStatusDetail?->label ?? '-' }}
             </span>

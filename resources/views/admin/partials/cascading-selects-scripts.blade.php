@@ -25,6 +25,10 @@
     $onOperatorChange = $onOperatorChange ?? 'null';
     $onGenerationUnitChange = $onGenerationUnitChange ?? 'null';
     $onGeneratorChange = $onGeneratorChange ?? 'null';
+    $cascadingRoutes = $cascadingRoutes ?? [
+        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units',
+        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-list'
+    ];
 @endphp
 
 <script src="{{ asset('assets/admin/js/cascading-selects.js') }}"></script>
@@ -38,8 +42,8 @@
             generationUnitSelect: '#{{ $idPrefix }}generation_unit_id',
             generatorSelect: '#{{ $idPrefix }}generator_id',
             routes: {
-                generationUnits: "{{ url('/admin/operators') }}/__OPERATOR__/generation-units",
-                generators: "{{ url('/admin/generation-units') }}/__UNIT__/generators-list"
+                generationUnits: "{{ $cascadingRoutes['generationUnits'] ?? url('/admin/operators') . '/__OPERATOR__/generation-units' }}",
+                generators: "{{ $cascadingRoutes['generators'] ?? url('/admin/generation-units') . '/__UNIT__/generators-list' }}"
             },
             canSelectOperator: @json($canSelectOperator),
             affiliatedOperatorId: @json($affiliatedOperatorId),

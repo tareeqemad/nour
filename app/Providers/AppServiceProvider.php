@@ -27,6 +27,7 @@ use App\Policies\UserPolicy;
 use App\Policies\SubscriberPolicy;
 use App\Policies\MeterReadingPolicy;
 use Carbon\Carbon;
+use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\MessageBag;
@@ -69,6 +70,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ConsoleApplication::starting(function ($artisan) {
+            $artisan->resolve(\App\Console\Commands\RemoveOrphanedMigrationRecords::class);
+        });
+
         // تعيين التوقيت المحلي واللغة
         Carbon::setLocale('ar');
         date_default_timezone_set('Asia/Gaza');

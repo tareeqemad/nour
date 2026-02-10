@@ -57,36 +57,31 @@ class ConstantDetail extends Model
         return $master->details;
     }
 
+    /** Bootstrap badge/background color names that are safe to use */
+    private const BADGE_COLOR_WHITELIST = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'];
+
     /**
-     * الحصول على لون الـ badge بناءً على value أو code
+     * Get badge color for Bootstrap (bg-*). Uses value only if it's a valid Bootstrap color name.
      */
     public function getBadgeColor(): string
     {
-        // إذا كان value موجوداً وليس فارغاً، استخدمه كلون
-        if ($this->value && !empty(trim($this->value))) {
-            return trim($this->value);
+        $value = $this->value ? trim((string) $this->value) : '';
+        if ($value !== '' && in_array(strtolower($value), self::BADGE_COLOR_WHITELIST, true)) {
+            return strtolower($value);
         }
 
-        // إذا لم يكن value موجوداً، استخدم code كلون
         $code = strtolower($this->code ?? '');
-        
-        // تحويل الكود إلى لون بناءً على النوع
-        return match($code) {
-            // Maintenance Type (constant 12)
+
+        return match ($code) {
             'emergency' => 'danger',
             'periodic', 'preventive' => 'info',
             'major' => 'warning',
-            
-            // Safety Certificate Status (constant 13)
             'available', 'valid' => 'success',
             'expired' => 'danger',
             'not_available', 'pending' => 'warning',
-            
-            // Fuel/Energy Efficiency Comparison (constants 17, 18)
             'within_standard' => 'success',
             'above' => 'warning',
             'below' => 'danger',
-            
             default => 'secondary'
         };
     }

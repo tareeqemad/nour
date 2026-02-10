@@ -195,6 +195,12 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('/operators/{operator}/generation-units-for-efficiencies', [FuelEfficiencyController::class, 'getGenerationUnits'])->name('fuel-efficiencies.generation-units');
     Route::get('/generation-units/{generationUnit}/generators-for-efficiencies', [FuelEfficiencyController::class, 'getGenerators'])->name('fuel-efficiencies.generators');
     Route::resource('fuel-efficiencies', FuelEfficiencyController::class);
+
+    // Maintenance Records AJAX routes (cascading: operator → generation unit → generator)
+    Route::get('/operators/{operator}/generation-units-for-maintenance-records', [MaintenanceRecordController::class, 'getGenerationUnits'])->name('maintenance-records.generation-units');
+    Route::get('/generation-units/{generationUnit}/generators-for-maintenance-records', [MaintenanceRecordController::class, 'getGenerators'])->name('maintenance-records.generators');
+    Route::get('/operators/{operator}/generation-units-for-compliance-safeties', [ComplianceSafetyController::class, 'getGenerationUnits'])->name('compliance-safeties.generation-units');
+    Route::get('/generation-units/{generationUnit}/generators-for-compliance-safeties', [ComplianceSafetyController::class, 'getGenerators'])->name('compliance-safeties.generators');
     Route::resource('maintenance-records', MaintenanceRecordController::class);
     Route::resource('compliance-safeties', ComplianceSafetyController::class);
     Route::resource('tasks', TaskController::class);

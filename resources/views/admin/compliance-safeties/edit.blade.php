@@ -1,15 +1,16 @@
 @extends('layouts.admin')
 
-@section('title', 'تعديل سجل امتثال وسلامة')
+@section('title', 'تعديل سجل الامتثال والسلامة')
 
 @php
-    $breadcrumbTitle = 'تعديل سجل امتثال وسلامة';
-    $breadcrumbParent = 'سجلات الامتثال والسلامة';
+    $breadcrumbTitle = 'تعديل سجل الامتثال والسلامة';
+    $breadcrumbParent = 'الامتثال والسلامة';
     $breadcrumbParentUrl = route('admin.compliance-safeties.index');
 @endphp
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/compliance-safeties.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
 @endpush
 
 @section('content')
@@ -17,18 +18,27 @@
         <div class="row g-3">
             <div class="col-12">
                 <div class="card log-card">
-                    <div class="log-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-shield-check me-2"></i>
-                                    تعديل سجل امتثال وسلامة
-                                </div>
-                                <div class="log-subtitle">
+                    <div class="log-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h1 class="log-title mb-0">
+                                <i class="bi bi-shield-check me-2"></i>
+                                تعديل سجل الامتثال والسلامة
+                            </h1>
+                            <div class="log-subtitle text-muted mt-1">
+                                @if($complianceSafety->operator)
+                                    {{ $complianceSafety->operator->name }}
+                                    @if($complianceSafety->last_inspection_date)
+                                        · {{ $complianceSafety->last_inspection_date->format('Y-m-d') }}
+                                    @endif
+                                @else
                                     قم بتعديل بيانات الامتثال والسلامة
-                                </div>
+                                @endif
                             </div>
                         </div>
+                        <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            العودة للقائمة
+                        </a>
                     </div>
 
                     <div class="card-body p-4">
@@ -36,129 +46,81 @@
                             @csrf
                             @method('PUT')
 
-                            <!-- Basic Information Section -->
-                            <div class="mb-4">
-                                <h6 class="fw-bold mb-3 text-muted">
-                                    <i class="bi bi-info-circle-fill text-primary me-2"></i>
-                                    المعلومات الأساسية
-                                </h6>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building text-info me-1"></i>
-                                            المشغل <span class="text-danger">*</span>
-                                        </label>
-                                        <select name="operator_id" class="form-select @error('operator_id') is-invalid @enderror"
-                                            @if(auth()->user()->isCompanyOwner()) disabled @endif>
-                                            <option value="">اختر المشغل</option>
-                                            @foreach($operators as $operator)
-                                                <option value="{{ $operator->id }}" 
-                                                        {{ old('operator_id', $complianceSafety->operator_id) == $operator->id ? 'selected' : '' }}>
-                                                    {{ $operator->name }}
-                                                    @if($operator->unit_number)
-                                                        - {{ $operator->unit_number }}
-                                                    @endif
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @if(auth()->user()->isCompanyOwner())
-                                            <input type="hidden" name="operator_id" value="{{ $complianceSafety->operator_id }}">
-                                        @endif
-                                        @error('operator_id')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-shield-check text-success me-1"></i>
-                                            حالة شهادة السلامة <span class="text-danger">*</span>
-                                        </label>
-                                        <select name="safety_certificate_status_id" class="form-select @error('safety_certificate_status_id') is-invalid @enderror">
-                                            <option value="">اختر الحالة</option>
-                                            @foreach($constants['safety_certificate_status'] ?? [] as $status)
-                                                <option value="{{ $status->id }}" {{ old('safety_certificate_status_id', $complianceSafety->safety_certificate_status_id) == $status->id ? 'selected' : '' }}>
-                                                    {{ $status->label }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @error('safety_certificate_status_id')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                            <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">المعلومات الأساسية</h6>
+                            <div class="row g-3 mb-4">
+                                @include('admin.partials.cascading-selects', [
+                                    'operators' => $operators ?? collect(),
+                                    'showGenerator' => true,
+                                    'showGenerationUnit' => true,
+                                    'generationUnits' => $generationUnits ?? collect(),
+                                    'generators' => $generators ?? collect(),
+                                    'colClass' => 'col-md-6 col-lg-3',
+                                    'operatorRequired' => true,
+                                    'generationUnitRequired' => true,
+                                    'generatorRequired' => true,
+                                    'selectedOperatorId' => old('operator_id', $complianceSafety->operator_id),
+                                    'selectedGenerationUnitId' => old('generation_unit_id', $complianceSafety->generation_unit_id),
+                                    'selectedGeneratorId' => old('generator_id', $complianceSafety->generator_id),
+                                    'useSelect2' => true,
+                                ])
+                                <div class="col-md-6 col-lg-3">
+                                    <label class="form-label fw-semibold">حالة شهادة السلامة <span class="text-danger">*</span></label>
+                                    <select name="safety_certificate_status_id" class="form-select select2 @error('safety_certificate_status_id') is-invalid @enderror" required>
+                                        <option value="">اختر الحالة</option>
+                                        @foreach($constants['safety_certificate_status'] ?? [] as $status)
+                                            <option value="{{ $status->id }}" {{ old('safety_certificate_status_id', $complianceSafety->safety_certificate_status_id) == $status->id ? 'selected' : '' }}>
+                                                {{ $status->label }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('safety_certificate_status_id')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
 
-                            <hr class="my-4">
-
-                            <!-- Inspection Details Section -->
-                            <div class="mb-4">
-                                <h6 class="fw-bold mb-3 text-muted">
-                                    <i class="bi bi-clipboard-check text-warning me-2"></i>
-                                    تفاصيل الزيارة التفقدية
-                                </h6>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar3 text-primary me-1"></i>
-                                            تاريخ آخر زيارة تفقدية
-                                        </label>
-                                        <input type="date" name="last_inspection_date" 
-                                               class="form-control @error('last_inspection_date') is-invalid @enderror" 
-                                               value="{{ old('last_inspection_date', $complianceSafety->last_inspection_date ? $complianceSafety->last_inspection_date->format('Y-m-d') : '') }}">
-                                        @error('last_inspection_date')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building-check text-info me-1"></i>
-                                            الجهة المنفذة
-                                        </label>
-                                        <input type="text" name="inspection_authority" 
-                                               class="form-control @error('inspection_authority') is-invalid @enderror" 
-                                               value="{{ old('inspection_authority', $complianceSafety->inspection_authority) }}" 
-                                               placeholder="اسم الجهة المنفذة للزيارة">
-                                        @error('inspection_authority')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-file-text text-secondary me-1"></i>
-                                            نتيجة الزيارة
-                                        </label>
-                                        <textarea name="inspection_result" 
-                                                  class="form-control @error('inspection_result') is-invalid @enderror" 
-                                                  rows="4"
-                                                  placeholder="تفاصيل نتيجة الزيارة التفقدية">{{ old('inspection_result', $complianceSafety->inspection_result) }}</textarea>
-                                        @error('inspection_result')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-exclamation-triangle text-danger me-1"></i>
-                                            المخالفات المسجلة
-                                        </label>
-                                        <textarea name="violations" 
-                                                  class="form-control @error('violations') is-invalid @enderror" 
-                                                  rows="4"
-                                                  placeholder="تفاصيل المخالفات المسجلة إن وجدت">{{ old('violations', $complianceSafety->violations) }}</textarea>
-                                        @error('violations')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                            <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">تفاصيل الزيارة التفقدية</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">تاريخ آخر زيارة</label>
+                                    <input type="date" name="last_inspection_date"
+                                           class="form-control @error('last_inspection_date') is-invalid @enderror"
+                                           value="{{ old('last_inspection_date', $complianceSafety->last_inspection_date ? $complianceSafety->last_inspection_date->format('Y-m-d') : '') }}">
+                                    @error('last_inspection_date')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">الجهة المنفذة</label>
+                                    <input type="text" name="inspection_authority"
+                                           class="form-control @error('inspection_authority') is-invalid @enderror"
+                                           value="{{ old('inspection_authority', $complianceSafety->inspection_authority) }}"
+                                           placeholder="اسم الجهة المنفذة">
+                                    @error('inspection_authority')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">نتيجة الزيارة</label>
+                                    <textarea name="inspection_result"
+                                              class="form-control @error('inspection_result') is-invalid @enderror"
+                                              rows="3" placeholder="تفاصيل نتيجة الزيارة">{{ old('inspection_result', $complianceSafety->inspection_result) }}</textarea>
+                                    @error('inspection_result')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">المخالفات المسجلة</label>
+                                    <textarea name="violations"
+                                              class="form-control @error('violations') is-invalid @enderror"
+                                              rows="3" placeholder="تفاصيل المخالفات إن وجدت">{{ old('violations', $complianceSafety->violations) }}</textarea>
+                                    @error('violations')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
 
-                            <hr class="my-4">
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center pt-2">
                                 <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>
                                     إلغاء
@@ -177,17 +139,27 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
+<script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
+@include('admin.partials.cascading-selects-scripts', [
+    'cascadingRoutes' => [
+        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-compliance-safeties',
+        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-for-compliance-safeties',
+    ],
+    'initialOperatorId' => old('operator_id', $complianceSafety->operator_id),
+    'initialGenerationUnitId' => old('generation_unit_id', $complianceSafety->generation_unit_id),
+    'initialGeneratorId' => old('generator_id', $complianceSafety->generator_id),
+])
 <script>
-    $(document).ready(function() {
-        AdminCRUD.submitForm({
-            form: '#complianceSafetyForm',
-            method: 'PUT',
-            onSuccess: function(response) {
-                setTimeout(function() {
-                    window.location.href = '{{ route('admin.compliance-safeties.index') }}';
-                }, 500);
-            }
-        });
+$(document).ready(function() {
+    $('select[name="safety_certificate_status_id"]').select2({ dir: document.documentElement.dir || 'rtl', width: '100%' });
+    AdminCRUD.submitForm({
+        form: '#complianceSafetyForm',
+        method: 'PUT',
+        onSuccess: function() {
+            setTimeout(function() { window.location.href = '{{ route('admin.compliance-safeties.index') }}'; }, 500);
+        }
     });
+});
 </script>
 @endpush

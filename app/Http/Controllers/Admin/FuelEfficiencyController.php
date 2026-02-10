@@ -28,66 +28,33 @@ class FuelEfficiencyController extends Controller
         // التحقق من وجود المشغل ووحدة التوليد على الأقل (اختياري للبحث)
         $hasFilters = $request->filled('operator_id') || $request->filled('generation_unit_id') || $request->filled('generator_id') || $request->filled('date_from') || $request->filled('date_to');
         
+        // No filters and not AJAX: show index with empty list; user chooses operator → unit → generator (or unit → generator if affiliated)
         if (!$hasFilters && !$request->ajax() && !$request->wantsJson()) {
-            // إذا لم يكن هناك فلاتر وليس طلب AJAX، نرجع الصفحة بدون بيانات أو نحدد الفلاتر تلقائياً
             $operators = collect();
             $generators = collect();
             $generationUnits = collect();
-            // إنشاء paginated collection فارغ بدلاً من null
             $fuelEfficiencies = FuelEfficiency::query()->paginate(100);
             $groupedLogs = null;
-            $autoSelectGenerationUnit = false;
-            
-            // SuperAdmin, Admin, EnergyAuthority: يمكنهم رؤية جميع المشغلين
+
             if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
-                $operators = \App\Models\Operator::orderBy('name')->get();
-                $generationUnits = \App\Models\GenerationUnit::orderBy('unit_code')->get();
-                $generators = \App\Models\Generator::orderBy('generator_number')->get();
+                $operators = \App\Models\Operator::select('id', 'name')->orderBy('name')->get();
             } elseif ($user->isCompanyOwner()) {
                 $operator = $user->ownedOperators()->first();
                 if ($operator) {
                     $operators = collect([$operator]);
-                    $generationUnits = $operator->generationUnits()->orderBy('unit_code')->get();
-                    $generators = \App\Models\Generator::whereHas('generationUnit', function($q) use ($operator) {
+                    $generationUnits = $operator->generationUnits()->select('id', 'name', 'unit_code', 'operator_id')->orderBy('unit_code')->get();
+                    $generators = \App\Models\Generator::whereHas('generationUnit', function ($q) use ($operator) {
                         $q->where('operator_id', $operator->id);
-                    })->orderBy('generator_number')->get();
-                    
-                    // إذا كان هناك وحدة توليد واحدة فقط، نحددها تلقائياً
-                    if ($generationUnits->count() == 1) {
-                        $autoSelectGenerationUnit = $generationUnits->first()->id;
-                    }
+                    })->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')->orderBy('generator_number')->get();
                 }
             } elseif ($user->isEmployee() || $user->isTechnician()) {
                 $operators = $user->operators;
-                $generationUnits = \App\Models\GenerationUnit::whereHas('operator', function($q) use ($operators) {
-                    $q->whereIn('operators.id', $operators->pluck('id'));
-                })->orderBy('unit_code')->get();
-                $generators = \App\Models\Generator::whereHas('generationUnit', function($q) use ($operators) {
-                    $q->whereHas('operator', function($qq) use ($operators) {
-                        $qq->whereIn('operators.id', $operators->pluck('id'));
-                    });
-                })->orderBy('generator_number')->get();
-                
-                // إذا كان المستخدم لديه مشغل واحد فقط ووحدة توليد واحدة، نحددها تلقائياً
-                if ($operators->count() == 1 && $generationUnits->count() == 1) {
-                    $autoSelectGenerationUnit = $generationUnits->first()->id;
-                }
+                $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operators->pluck('id'))
+                    ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('unit_code')->get();
+                $generators = \App\Models\Generator::whereIn('operator_id', $operators->pluck('id'))
+                    ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')->orderBy('generator_number')->get();
             }
-            
-            // إذا تم تحديد وحدة توليد تلقائياً، نعيد توجيه مع الفلاتر المطلوبة
-            if ($autoSelectGenerationUnit) {
-                $operatorId = $user->isCompanyOwner() 
-                    ? $user->ownedOperators()->first()->id 
-                    : ($user->isEmployee() || $user->isTechnician() ? $operators->first()->id : null);
-                
-                if ($operatorId) {
-                    return redirect()->route('admin.fuel-efficiencies.index', [
-                        'operator_id' => $operatorId,
-                        'generation_unit_id' => $autoSelectGenerationUnit
-                    ]);
-                }
-            }
-            
+
             return view('admin.fuel-efficiencies.index', compact('operators', 'generators', 'generationUnits', 'fuelEfficiencies', 'groupedLogs'));
         }
         

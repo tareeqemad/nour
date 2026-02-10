@@ -380,38 +380,29 @@ class GeneratorController extends Controller
 
         $generator->load(['operator', 'generationUnit']);
 
-        // إنشاء بيانات QR Code - استخدام URL يفتح معلومات المولد
-        $qrData = route('qr.generator', ['code' => $generator->generator_number ?? 'GEN-' . $generator->id]);
-        
-        // مسار حفظ QR Code
+        // QR يحتوي فقط: رقم المشغل، رقم الوحدة، رقم المولد
+        $qrPayload = [
+            'operator_number' => $generator->operator?->unit_number ?? (string) $generator->operator_id,
+            'unit_number' => $generator->generationUnit?->unit_code ?? $generator->generationUnit?->unit_number ?? (string) $generator->generation_unit_id,
+            'generator_number' => $generator->generator_number ?? 'GEN-' . $generator->id,
+        ];
+        $qrData = json_encode($qrPayload, JSON_UNESCAPED_UNICODE);
+
         $qrCodePath = 'qr-codes/generators/' . $generator->id . '.svg';
         $fullPath = storage_path('app/public/' . $qrCodePath);
-
-        // التحقق من وجود QR Code محفوظ
-        if (!file_exists($fullPath) || !$generator->qr_code_generated_at) {
-            // إنشاء مجلد إذا لم يكن موجوداً
-            $directory = dirname($fullPath);
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            // إنشاء QR Code
-            $renderer = new \BaconQrCode\Renderer\ImageRenderer(
-                new \BaconQrCode\Renderer\RendererStyle\RendererStyle(400),
-                new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
-            );
-            $writer = new \BaconQrCode\Writer($renderer);
-            $qrCodeSvg = $writer->writeString($qrData);
-
-            // حفظ QR Code
-            file_put_contents($fullPath, $qrCodeSvg);
-
-            // تسجيل تاريخ توليد QR Code
-            $generator->update(['qr_code_generated_at' => now()]);
-        } else {
-            // قراءة QR Code المحفوظ
-            $qrCodeSvg = file_get_contents($fullPath);
+        $directory = dirname($fullPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
         }
+
+        $renderer = new \BaconQrCode\Renderer\ImageRenderer(
+            new \BaconQrCode\Renderer\RendererStyle\RendererStyle(400),
+            new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
+        );
+        $writer = new \BaconQrCode\Writer($renderer);
+        $qrCodeSvg = $writer->writeString($qrData, 'UTF-8');
+        file_put_contents($fullPath, $qrCodeSvg);
+        $generator->update(['qr_code_generated_at' => now()]);
 
         // بيانات إضافية للعرض في الصفحة
         $qrInfo = [

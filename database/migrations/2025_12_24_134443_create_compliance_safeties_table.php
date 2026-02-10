@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('compliance_safeties')) {
+            return;
+        }
         Schema::create('compliance_safeties', function (Blueprint $table) {
             $table->id();
             $table->foreignId('operator_id')->constrained('operators')->cascadeOnDelete();
+            $table->foreignId('generation_unit_id')->constrained('generation_units')->cascadeOnDelete();
+            $table->foreignId('generator_id')->constrained('generators')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             // شهادة السلامة - تخزن ID من constant_details، ثابت Master رقم 13 (حالة شهادة السلامة)
             $table->foreignId('safety_certificate_status_id')

@@ -49,6 +49,10 @@
 .compliance-safeties-page .log-card-header *{
     color: inherit;
 }
+/* Badges in header: force white text on colored backgrounds so label is always visible */
+.compliance-safeties-page .log-card-header .badge{
+    color: #fff !important;
+}
 
 .compliance-safeties-page .log-card-header:not(.log-toolbar-header) {
     display: flex;

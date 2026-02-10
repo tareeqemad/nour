@@ -44,9 +44,12 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     * FK constraints are disabled because rollback order may drop this before child tables.
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('operators');
+        Schema::enableForeignKeyConstraints();
     }
 };

@@ -761,7 +761,7 @@
                             method: formMethod,
                             data: formData,
                             processData: !(formData instanceof FormData),
-                            contentType: !(formData instanceof FormData),
+                            contentType: formData instanceof FormData ? false : 'application/x-www-form-urlencoded; charset=UTF-8',
                             ...ajaxOptions
                         });
 

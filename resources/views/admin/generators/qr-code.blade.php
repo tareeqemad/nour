@@ -158,7 +158,7 @@
                 @endif
                 <div class="info-row">
                     <span class="info-label">ملاحظة:</span>
-                    <span class="info-value" style="font-size: 12px; color: #666;">QR Code يحتوي على رقم المولد فقط. استخدمه للبحث في النظام.</span>
+                    <span class="info-value" style="font-size: 12px; color: #666;">عند المسح (Scan) تُعرض بيانات المولد أوفلاين بصيغة JSON دون فتح أي رابط.</span>
                 </div>
             </div>
         </div>

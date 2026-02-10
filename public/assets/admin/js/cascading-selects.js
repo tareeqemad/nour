@@ -56,6 +56,14 @@
         instances: {},
 
         init: function(options) {
+            if (options && options.routes) {
+                if (options.routes.generationUnits) {
+                    options.operatorUrl = options.routes.generationUnits.replace(/__OPERATOR__/g, '{id}');
+                }
+                if (options.routes.generators) {
+                    options.generationUnitUrl = options.routes.generators.replace(/__UNIT__/g, '{id}');
+                }
+            }
             const settings = $.extend(true, {}, this.defaults, options);
             const prefix = settings.prefix;
             const instanceId = prefix || 'default';
@@ -236,6 +244,13 @@
                         } else {
                             self.updateHelpText(prefix, 'generation_unit', settings.labels.noData, 'warning');
                         }
+                        // تعبئة القيمة الأولية (مثلاً في صفحة التعديل)
+                        if (settings.initialGenerationUnitId && $generationUnit.find('option[value="' + settings.initialGenerationUnitId + '"]').length) {
+                            $generationUnit.val(settings.initialGenerationUnitId);
+                            if (settings.useSelect2) self.initSelect2($generationUnit, settings.select2Options);
+                            $generationUnit.trigger('change');
+                            settings.initialGenerationUnitId = null;
+                        }
                     } else {
                         self.updateHelpText(prefix, 'generation_unit', settings.labels.error, 'error');
                     }
@@ -294,6 +309,12 @@
                                 self.updateHelpText(prefix, 'generator', `${generators.length} مولد متاح`, 'success');
                             } else {
                                 self.updateHelpText(prefix, 'generator', settings.labels.noData, 'warning');
+                            }
+                            // تعبئة القيمة الأولية (مثلاً في صفحة التعديل)
+                            if (settings.initialGeneratorId && $generator.find('option[value="' + settings.initialGeneratorId + '"]').length) {
+                                $generator.val(settings.initialGeneratorId);
+                                if (settings.useSelect2) self.initSelect2($generator, settings.select2Options);
+                                settings.initialGeneratorId = null;
                             }
                         } else {
                             self.updateHelpText(prefix, 'generator', settings.labels.error, 'error');
@@ -367,6 +388,11 @@
                                 self.updateHelpText(prefix, 'generator', `${generators.length} مولد متاح`, 'success');
                             } else {
                                 self.updateHelpText(prefix, 'generator', settings.labels.noData, 'warning');
+                            }
+                            if (settings.initialGeneratorId && $generator.find('option[value="' + settings.initialGeneratorId + '"]').length) {
+                                $generator.val(settings.initialGeneratorId);
+                                if (settings.useSelect2) self.initSelect2($generator, settings.select2Options);
+                                settings.initialGeneratorId = null;
                             }
                         } else {
                             self.updateHelpText(prefix, 'generator', settings.labels.error, 'error');

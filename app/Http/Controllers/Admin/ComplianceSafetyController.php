@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreComplianceSafetyRequest;
 use App\Http\Requests\Admin\UpdateComplianceSafetyRequest;
 use App\Models\ComplianceSafety;
+use App\Models\Generator;
+use App\Models\GenerationUnit;
 use App\Models\Notification;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +25,7 @@ class ComplianceSafetyController extends Controller
         $this->authorize('viewAny', ComplianceSafety::class);
 
         $user = auth()->user();
-        $query = ComplianceSafety::with(['operator', 'creator']);
+        $query = ComplianceSafety::with(['operator', 'generationUnit', 'generator', 'creator']);
 
         if ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
@@ -35,21 +37,32 @@ class ComplianceSafetyController extends Controller
             $query->whereIn('operator_id', $operators->pluck('id'));
         }
 
-        // Search
-        $q = trim((string) $request->input('q', ''));
-        if ($q !== '') {
-            $query->whereHas('operator', function ($oq) use ($q) {
-                $oq->where('name', 'like', "%{$q}%");
-            })
-            ->orWhere('inspection_authority', 'like', "%{$q}%")
-            ->orWhere('inspection_result', 'like', "%{$q}%")
-            ->orWhere('violations', 'like', "%{$q}%");
-        }
-
         // Filter by operator
         $operatorId = (int) $request->input('operator_id', 0);
+        $generationUnitId = (int) $request->input('generation_unit_id', 0);
+        $generatorId = (int) $request->input('generator_id', 0);
+
+        // If generation unit or generator selected, resolve operator (compliance records are operator-scoped only)
+        if ($generatorId > 0) {
+            $gen = Generator::find($generatorId);
+            if ($gen) {
+                $operatorId = $operatorId ?: (int) $gen->operator_id;
+            }
+        }
+        if ($generationUnitId > 0) {
+            $unit = GenerationUnit::find($generationUnitId);
+            if ($unit) {
+                $operatorId = $operatorId ?: (int) $unit->operator_id;
+            }
+        }
         if ($operatorId > 0) {
             $query->where('operator_id', $operatorId);
+        }
+        if ($generationUnitId > 0) {
+            $query->where('generation_unit_id', $generationUnitId);
+        }
+        if ($generatorId > 0) {
+            $query->where('generator_id', $generatorId);
         }
 
         // Date filters
@@ -84,21 +97,59 @@ class ComplianceSafetyController extends Controller
         }
 
         $operators = collect();
-        
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        $generationUnits = collect();
+        $generators = collect();
+
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
             $operators = Operator::select('id', 'name')
                 ->orderBy('name')
                 ->get();
+            $selectedOperatorId = (int) $request->input('operator_id', 0);
+            if ($selectedOperatorId > 0) {
+                $generationUnits = GenerationUnit::where('operator_id', $selectedOperatorId)
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                $selectedGenerationUnitId = (int) $request->input('generation_unit_id', 0);
+                if ($selectedGenerationUnitId > 0) {
+                    $generators = Generator::where('generation_unit_id', $selectedGenerationUnitId)
+                        ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                        ->orderBy('generator_number')
+                        ->get();
+                } else {
+                    $generators = Generator::where('operator_id', $selectedOperatorId)
+                        ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                        ->orderBy('generator_number')
+                        ->get();
+                }
+            }
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
                 $operators = collect([$operator]);
+                $generationUnits = $operator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                $generators = $operator->generators()
+                    ->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'generators.generation_unit_id')
+                    ->orderBy('generators.generator_number')
+                    ->get();
             }
         } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
+            $userOperators = $user->operators;
+            $operators = $userOperators;
+            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('unit_code')
+                ->get();
+            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                ->orderBy('generator_number')
+                ->get();
         }
 
-        return view('admin.compliance-safeties.index', compact('complianceSafeties', 'operators', 'groupedLogs'));
+        return view('admin.compliance-safeties.index', compact('complianceSafeties', 'operators', 'generationUnits', 'generators', 'groupedLogs'));
     }
 
     /**
@@ -110,24 +161,42 @@ class ComplianceSafetyController extends Controller
 
         $user = auth()->user();
         $operators = collect();
+        $generationUnits = collect();
+        $generators = collect();
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
             $operators = Operator::select('id', 'name')->orderBy('name')->get();
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
                 $operators = collect([$operator]);
+                $generationUnits = $operator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                $generators = $operator->generators()
+                    ->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'generators.generation_unit_id')
+                    ->orderBy('generators.generator_number')
+                    ->get();
             }
-        } elseif ($user->isEmployee()) {
-            $operators = $user->operators;
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $userOperators = $user->operators;
+            $operators = $userOperators;
+            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('unit_code')
+                ->get();
+            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                ->orderBy('generator_number')
+                ->get();
         }
-        
-        // جلب ثوابت حالة شهادة السلامة
+
         $constants = [
-            'safety_certificate_status' => \App\Helpers\ConstantsHelper::get(13), // حالة شهادة السلامة
+            'safety_certificate_status' => \App\Helpers\ConstantsHelper::get(13),
         ];
 
-        return view('admin.compliance-safeties.create', compact('operators', 'constants'));
+        return view('admin.compliance-safeties.create', compact('operators', 'generationUnits', 'generators', 'constants'));
     }
 
     /**
@@ -146,6 +215,15 @@ class ComplianceSafetyController extends Controller
             }
         }
 
+        // When generator_id is set, ensure operator_id and generation_unit_id match the generator
+        if (!empty($data['generator_id'])) {
+            $generator = Generator::find($data['generator_id']);
+            if ($generator) {
+                $data['operator_id'] = $generator->operator_id;
+                $data['generation_unit_id'] = $generator->generation_unit_id;
+            }
+        }
+
         $complianceSafety = ComplianceSafety::create($data);
         $complianceSafety->load('operator');
         
@@ -153,7 +231,7 @@ class ComplianceSafetyController extends Controller
         $user = auth()->user();
         
         if ($operator) {
-            // إشعار للمشغل
+            // Notify operator users
             Notification::notifyOperatorUsers(
                 $operator,
                 'compliance_added',
@@ -162,7 +240,7 @@ class ComplianceSafetyController extends Controller
                 route('admin.compliance-safeties.show', $complianceSafety)
             );
             
-            // إشعار لسلطة الطاقة والسوبر ادمن والادمن إذا كان من دفاع مدني
+            // Notify energy authority / super admin / admin when submitted by civil defense
             if ($user->isTechnician() || $user->isCivilDefense()) {
                 Notification::notifyOperatorApprovers(
                     'compliance_added',
@@ -191,8 +269,13 @@ class ComplianceSafetyController extends Controller
     {
         $this->authorize('view', $complianceSafety);
 
+        // Avoid showing any stale session('info') alert when loading this page
+        session()->forget('info');
+
         $complianceSafety->load([
             'operator',
+            'generationUnit',
+            'generator',
             'safetyCertificateStatusDetail',
             'creator'
         ]);
@@ -209,24 +292,59 @@ class ComplianceSafetyController extends Controller
 
         $user = auth()->user();
         $operators = collect();
+        $generationUnits = collect();
+        $generators = collect();
 
         if ($user->isSuperAdmin()) {
-            $operators = Operator::select('id', 'name')->orderBy('name')->get();
+            $operators = Operator::select('id', 'name', 'unit_number')->orderBy('name')->get();
+            if ($complianceSafety->operator_id) {
+                $generationUnits = GenerationUnit::where('operator_id', $complianceSafety->operator_id)
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                if ($complianceSafety->generation_unit_id) {
+                    $generators = Generator::where('generation_unit_id', $complianceSafety->generation_unit_id)
+                        ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                        ->orderBy('generator_number')
+                        ->get();
+                } else {
+                    $generators = Generator::where('operator_id', $complianceSafety->operator_id)
+                        ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                        ->orderBy('generator_number')
+                        ->get();
+                }
+            }
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             if ($operator) {
                 $operators = collect([$operator]);
+                $generationUnits = $operator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('unit_code')
+                    ->get();
+                $generators = $operator->generators()
+                    ->select('generators.id', 'generators.name', 'generators.generator_number', 'generators.operator_id', 'generators.generation_unit_id')
+                    ->orderBy('generators.generator_number')
+                    ->get();
             }
-        } elseif ($user->isEmployee()) {
-            $operators = $user->operators;
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $userOperators = $user->operators;
+            $operators = $userOperators;
+            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'unit_code', 'operator_id')
+                ->orderBy('unit_code')
+                ->get();
+            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+                ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
+                ->orderBy('generator_number')
+                ->get();
         }
-        
-        // جلب ثوابت حالة شهادة السلامة
+
         $constants = [
-            'safety_certificate_status' => \App\Helpers\ConstantsHelper::get(13), // حالة شهادة السلامة
+            'safety_certificate_status' => \App\Helpers\ConstantsHelper::get(13),
         ];
 
-        return view('admin.compliance-safeties.edit', compact('complianceSafety', 'operators', 'constants'));
+        return view('admin.compliance-safeties.edit', compact('complianceSafety', 'operators', 'generationUnits', 'generators', 'constants'));
     }
 
     /**
@@ -242,6 +360,15 @@ class ComplianceSafetyController extends Controller
             $operator = auth()->user()->ownedOperators()->first();
             if ($operator) {
                 $data['operator_id'] = $operator->id;
+            }
+        }
+
+        // When generator_id is set, ensure operator_id and generation_unit_id match the generator
+        if (!empty($data['generator_id'])) {
+            $generator = Generator::find($data['generator_id']);
+            if ($generator) {
+                $data['operator_id'] = $generator->operator_id;
+                $data['generation_unit_id'] = $generator->generation_unit_id;
             }
         }
 
@@ -287,5 +414,56 @@ class ComplianceSafetyController extends Controller
 
         return redirect()->route('admin.compliance-safeties.index')
             ->with('success', 'تم حذف سجل الامتثال والسلامة بنجاح.');
+    }
+
+    /**
+     * Get generation units for the given operator (AJAX for cascading select).
+     */
+    public function getGenerationUnits(Request $request, Operator $operator): JsonResponse
+    {
+        $this->authorize('view', $operator);
+
+        $generationUnits = $operator->generationUnits()
+            ->select('id', 'name', 'unit_code', 'unit_number')
+            ->get()
+            ->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->name,
+                    'unit_code' => $unit->unit_code ?? '',
+                    'unit_number' => $unit->unit_number ?? '',
+                    'label' => $unit->unit_code ? "{$unit->name} ({$unit->unit_code})" : $unit->name,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generation_units' => $generationUnits,
+        ]);
+    }
+
+    /**
+     * Get generators for the given generation unit (AJAX for cascading select).
+     */
+    public function getGenerators(Request $request, GenerationUnit $generationUnit): JsonResponse
+    {
+        $this->authorize('view', $generationUnit);
+
+        $generators = $generationUnit->generators()
+            ->select('id', 'name', 'generator_number', 'generation_unit_id')
+            ->get()
+            ->map(function ($generator) {
+                return [
+                    'id' => $generator->id,
+                    'name' => $generator->name,
+                    'generator_number' => $generator->generator_number,
+                    'label' => "{$generator->generator_number} — {$generator->name}",
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'generators' => $generators,
+        ]);
     }
 }

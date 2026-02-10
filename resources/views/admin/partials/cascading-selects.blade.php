@@ -92,15 +92,24 @@
                     class="{{ $selectClass }} @error('generation_unit_id') is-invalid @enderror"
                     data-placeholder="-- اختر {{ $generationUnitLabel }} --"
                     @if($generationUnitRequired) required @endif
-                    disabled>
+                    @if(!$generationUnits->isNotEmpty()) disabled @endif>
                 <option value="">-- اختر {{ $generationUnitLabel }} --</option>
+                @foreach($generationUnits as $unit)
+                    <option value="{{ $unit->id }}" {{ (string)$selectedGenerationUnitId === (string)$unit->id ? 'selected' : '' }}>
+                        {{ $unit->name }} ({{ $unit->unit_code ?? $unit->unit_number ?? '' }})
+                    </option>
+                @endforeach
             </select>
             @error('generation_unit_id')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
             <small class="form-text text-muted" id="{{ $idPrefix }}generation_unit_help">
                 <i class="bi bi-info-circle me-1"></i>
-                اختر {{ $operatorLabel }} أولاً
+                @if($generationUnits->isNotEmpty())
+                    {{ $generationUnits->count() }} وحدة متاحة
+                @else
+                    اختر {{ $operatorLabel }} أولاً
+                @endif
             </small>
         </div>
     @endif
@@ -116,15 +125,24 @@
                     class="{{ $selectClass }} @error('generator_id') is-invalid @enderror"
                     data-placeholder="-- اختر {{ $generatorLabel }} --"
                     @if($generatorRequired) required @endif
-                    disabled>
+                    @if(!$generators->isNotEmpty()) disabled @endif>
                 <option value="">-- اختر {{ $generatorLabel }} --</option>
+                @foreach($generators as $gen)
+                    <option value="{{ $gen->id }}" {{ (string)$selectedGeneratorId === (string)$gen->id ? 'selected' : '' }}>
+                        {{ $gen->name }} ({{ $gen->generator_number ?? $gen->id }})
+                    </option>
+                @endforeach
             </select>
             @error('generator_id')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
             <small class="form-text text-muted" id="{{ $idPrefix }}generator_help">
                 <i class="bi bi-info-circle me-1"></i>
-                اختر {{ $generationUnitLabel }} أولاً
+                @if($generators->isNotEmpty())
+                    {{ $generators->count() }} مولد متاح
+                @else
+                    اختر {{ $generationUnitLabel }} أولاً
+                @endif
             </small>
         </div>
     @endif

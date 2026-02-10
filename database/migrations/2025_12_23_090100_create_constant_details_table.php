@@ -32,21 +32,19 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Reverse the migrations. Drop self-reference first, then table.
      */
     public function down(): void
     {
-        // حذف self-referencing foreign key (parent_detail_id)
         Schema::table('constant_details', function (Blueprint $table) {
             if (Schema::hasColumn('constant_details', 'parent_detail_id')) {
                 try {
                     $table->dropForeign(['parent_detail_id']);
                 } catch (\Exception $e) {
-                    // تجاهل الخطأ إذا كان foreign key غير موجود
+                    // ignore if foreign key does not exist
                 }
             }
         });
-
         Schema::dropIfExists('constant_details');
     }
 };

@@ -1,20 +1,78 @@
-/node_modules
-/public/hot
-/public/storage
-/storage/*.key
-/vendor
-.env
+# ============================================
+# Environment files (.env is tracked as exception)
+# ============================================
 .env.backup
 .env.production
+.env.local
+.env.*.local
+.env.testing
+!.env
+
+# ============================================
+# Dependencies
+# ============================================
+/node_modules
+/vendor
+
+# ============================================
+# Laravel
+# ============================================
+/public/hot
+/public/storage
+/public/build
+/storage/*.key
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Composer
+# ============================================
 auth.json
-npm-debug.log
-yarn-error.log
+composer.phar
+
+# ============================================
+# IDE and editor
+# ============================================
+/.cursor
+/.junie
 /.fleet
 /.idea
 /.vscode
+*.swp
+*.swo
+*~
+
+# ============================================
+# Logs and cache
+# ============================================
 *.log
+storage/logs/*
+!storage/logs/.gitignore
+bootstrap/cache/*
+!bootstrap/cache/.gitignore
+
+# ============================================
+# OS files
+# ============================================
 .DS_Store
+.DS_Store?
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============================================
+# Tests and temp
+# ============================================
+.phpunit.cache
+coverage/
+.nyc_output/
+*.cache
+
+# ============================================
+# Sensitive / keys
+# ============================================
+*.pem

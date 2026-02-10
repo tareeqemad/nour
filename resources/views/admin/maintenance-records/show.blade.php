@@ -6,6 +6,9 @@
     $breadcrumbTitle = 'تفاصيل سجل الصيانة';
     $breadcrumbParent = 'سجلات الصيانة';
     $breadcrumbParentUrl = route('admin.maintenance-records.index');
+    $typeDetail = $maintenanceRecord->maintenanceTypeDetail;
+    $badgeColor = $typeDetail ? $typeDetail->getBadgeColor() : 'secondary';
+    $typeLabel = $typeDetail?->label ?? '—';
 @endphp
 
 @push('styles')
@@ -13,355 +16,130 @@
 @endpush
 
 @section('content')
-    <div class="maintenance-records-page">
+    <div class="maintenance-records-page maintenance-record-show">
         <div class="row g-3">
             <div class="col-12">
                 <div class="card log-card">
-                    <div class="log-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
+                    {{-- Header: title, badge, actions --}}
+                    <div class="log-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
                             <div>
-                                <div class="log-title">
+                                <h1 class="maintenance-record-show__title">
                                     <i class="bi bi-tools me-2"></i>
                                     تفاصيل سجل الصيانة
-                                </div>
-                                <div class="log-subtitle">
+                                </h1>
+                                <div class="maintenance-record-show__meta">
                                     @if($maintenanceRecord->generator)
-                                        المولد: {{ $maintenanceRecord->generator->name }} | 
+                                        <a href="{{ route('admin.generators.show', $maintenanceRecord->generator) }}" class="maintenance-record-show__generator-link">
+                                            {{ $maintenanceRecord->generator->generator_number }} — {{ $maintenanceRecord->generator->name }}
+                                        </a>
+                                        <span class="maintenance-record-show__meta-sep">·</span>
                                     @endif
-                                    التاريخ: {{ $maintenanceRecord->maintenance_date->format('Y-m-d') }}
+                                    <span>{{ $maintenanceRecord->maintenance_date->format('Y-m-d') }}</span>
+                                    <span class="text-muted ms-1">({{ $maintenanceRecord->maintenance_date->diffForHumans() }})</span>
+                                    @php
+                                        $technicianDisplay = $maintenanceRecord->creator
+                                            ? $maintenanceRecord->creator->name . ($maintenanceRecord->technician_name && $maintenanceRecord->technician_name !== $maintenanceRecord->creator->name ? ' (' . $maintenanceRecord->technician_name . ')' : '')
+                                            : ($maintenanceRecord->technician_name ?? null);
+                                    @endphp
+                                    @if($technicianDisplay)
+                                        <span class="maintenance-record-show__meta-sep">·</span>
+                                        <span>الفني: {{ $technicianDisplay }}</span>
+                                    @endif
                                 </div>
                             </div>
-                            <div class="d-flex gap-2">
-                                @can('update', $maintenanceRecord)
-                                    <a href="{{ route('admin.maintenance-records.edit', $maintenanceRecord) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-pencil me-1"></i>
-                                        تعديل
-                                    </a>
-                                @endcan
-                                <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-arrow-right me-1"></i>
-                                    رجوع
+                            <span class="badge maintenance-record-show__type-badge bg-{{ $badgeColor }}">{{ $typeLabel }}</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            @can('update', $maintenanceRecord)
+                                <a href="{{ route('admin.maintenance-records.edit', $maintenanceRecord) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil me-1"></i>
+                                    تعديل
                                 </a>
-                            </div>
+                            @endcan
+                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                رجوع
+                            </a>
                         </div>
                     </div>
 
                     <div class="card-body p-4">
-                        <!-- Basic Information Section -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3 text-muted">
-                                <i class="bi bi-info-circle-fill text-primary me-2"></i>
-                                المعلومات الأساسية
+                        {{-- Work performed --}}
+                        @if($maintenanceRecord->work_performed)
+                        <div class="maintenance-record-show__block">
+                            <h6 class="maintenance-record-show__block-title">
+                                <i class="bi bi-clipboard-check me-2"></i>
+                                الأعمال المنفذة
                             </h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i>
-                                        المولد
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->generator)
-                                            <a href="{{ route('admin.generators.show', $maintenanceRecord->generator) }}" class="text-decoration-none">
-                                                {{ $maintenanceRecord->generator->generator_number }} - {{ $maintenanceRecord->generator->name }}
-                                            </a>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-tag text-info me-1"></i>
-                                        نوع الصيانة
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        <span class="badge bg-{{ $maintenanceRecord->maintenanceTypeDetail?->getBadgeColor() ?? 'secondary' }}">
-                                            {{ $maintenanceRecord->maintenanceTypeDetail?->label ?? '-' }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-calendar3 text-primary me-1"></i>
-                                        تاريخ الصيانة
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ $maintenanceRecord->maintenance_date->format('Y-m-d') }}
-                                        <small class="text-muted ms-2">({{ $maintenanceRecord->maintenance_date->diffForHumans() }})</small>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person-badge text-success me-1"></i>
-                                        المستخدم الذي أنشأ السجل
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->creator)
-                                            <span class="fw-semibold">{{ $maintenanceRecord->creator->name }}</span>
-                                            @if($maintenanceRecord->technician_name && $maintenanceRecord->technician_name !== $maintenanceRecord->creator->name)
-                                                <br>
-                                                <small class="text-muted">اسم الفني: {{ $maintenanceRecord->technician_name }}</small>
-                                            @endif
-                                        @elseif($maintenanceRecord->technician_name)
-                                            {{ $maintenanceRecord->technician_name }}
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if($maintenanceRecord->technician_name && (!$maintenanceRecord->creator || $maintenanceRecord->technician_name !== $maintenanceRecord->creator->name))
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person-badge text-success me-1"></i>
-                                        اسم الفني المسؤول
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ $maintenanceRecord->technician_name ?? '-' }}
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="maintenance-record-show__work-text">{{ $maintenanceRecord->work_performed }}</div>
                         </div>
-
-                        <hr class="my-4">
-
-                        <!-- Work Details Section -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3 text-muted">
-                                <i class="bi bi-clipboard-check text-warning me-2"></i>
-                                تفاصيل الأعمال
-                            </h6>
-                            <div class="row g-3">
-                                <div class="col-md-12">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-journal-text text-info me-1"></i>
-                                        الأعمال المنفذة
-                                    </label>
-                                    <div class="form-control-plaintext bg-light p-3 rounded">
-                                        {{ $maintenanceRecord->work_performed ?? '-' }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Time Section -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3 text-muted">
-                                <i class="bi bi-clock-history text-danger me-2"></i>
-                                معلومات الوقت
-                            </h6>
-                            <div class="row g-3">
-                                @if($maintenanceRecord->start_time)
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-clock text-info me-1"></i>
-                                        وقت البدء
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ \Carbon\Carbon::parse($maintenanceRecord->start_time)->format('H:i') }}
-                                    </div>
-                                </div>
-                                @endif
-
-                                @if($maintenanceRecord->end_time)
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-clock-history text-warning me-1"></i>
-                                        وقت الانتهاء
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ \Carbon\Carbon::parse($maintenanceRecord->end_time)->format('H:i') }}
-                                    </div>
-                                </div>
-                                @endif
-
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-hourglass-split text-primary me-1"></i>
-                                        زمن التوقف (ساعات)
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->downtime_hours)
-                                            <strong class="text-primary">{{ number_format($maintenanceRecord->downtime_hours, 2) }} ساعة</strong>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Cost Details Section -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3 text-muted">
-                                <i class="bi bi-cash-stack text-success me-2"></i>
-                                تفاصيل التكلفة
-                            </h6>
-                            <div class="row g-3">
-                                @if($maintenanceRecord->parts_cost)
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-box-seam text-info me-1"></i>
-                                        تكلفة القطع (₪)
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ number_format($maintenanceRecord->parts_cost, 2) }} ₪
-                                    </div>
-                                </div>
-                                @endif
-
-                                @if($maintenanceRecord->labor_hours)
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-clock text-warning me-1"></i>
-                                        ساعات العمل
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ number_format($maintenanceRecord->labor_hours, 2) }} ساعة
-                                    </div>
-                                </div>
-                                @endif
-
-                                @if($maintenanceRecord->labor_rate_per_hour)
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-currency-exchange text-primary me-1"></i>
-                                        أجر الساعة (₪)
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        {{ number_format($maintenanceRecord->labor_rate_per_hour, 2) }} ₪
-                                    </div>
-                                </div>
-                                @endif
-
-                                <div class="col-md-12">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-calculator text-success me-1"></i>
-                                        التكلفة الإجمالية (₪)
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->maintenance_cost)
-                                            <strong class="text-success fs-5">{{ number_format($maintenanceRecord->maintenance_cost, 2) }} ₪</strong>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Generator Information Section -->
-                        @if($maintenanceRecord->generator)
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3 text-muted">
-                                <i class="bi bi-lightning-charge-fill text-warning me-2"></i>
-                                معلومات المولد
-                            </h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-lightning-charge text-warning me-1"></i>
-                                        اسم المولد
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->generator)
-                                            <a href="{{ route('admin.generators.show', $maintenanceRecord->generator) }}" class="text-decoration-none">
-                                                {{ $maintenanceRecord->generator->name }}
-                                                @if($maintenanceRecord->generator->trashed())
-                                                    <span class="badge bg-secondary ms-1" title="مولد محذوف">محذوف</span>
-                                                @endif
-                                            </a>
-                                        @else
-                                            <span class="text-muted">مولد محذوف</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-hash text-primary me-1"></i>
-                                        رقم المولد
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->generator)
-                                            <code class="text-primary">{{ $maintenanceRecord->generator->generator_number }}</code>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if($maintenanceRecord->generator && $maintenanceRecord->generator->operator)
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-building text-info me-1"></i>
-                                        المشغل
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        <a href="{{ route('admin.operators.show', $maintenanceRecord->generator->operator) }}" class="text-decoration-none">
-                                            {{ $maintenanceRecord->generator->operator->name }}
-                                        </a>
-                                    </div>
-                                </div>
-                                @endif
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-speedometer text-success me-1"></i>
-                                        القدرة
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->generator)
-                                            {{ number_format($maintenanceRecord->generator->capacity_kva, 0) }} KVA
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-check-circle text-success me-1"></i>
-                                        الحالة
-                                    </label>
-                                    <div class="form-control-plaintext">
-                                        @if($maintenanceRecord->generator)
-                                            <span class="badge bg-{{ $maintenanceRecord->generator->status === 'active' ? 'success' : 'secondary' }}">
-                                                {{ $maintenanceRecord->generator->status === 'active' ? 'نشط' : 'غير نشط' }}
-                                            </span>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
                         @endif
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
-                                رجوع
-                            </a>
-                            @can('update', $maintenanceRecord)
-                                <a href="{{ route('admin.maintenance-records.edit', $maintenanceRecord) }}" class="btn btn-primary px-4">
-                                    <i class="bi bi-pencil me-2"></i>
-                                    تعديل
-                                </a>
-                            @endcan
+                        {{-- Time (only if any present) --}}
+                        @if($maintenanceRecord->start_time || $maintenanceRecord->end_time || $maintenanceRecord->downtime_hours)
+                        <div class="maintenance-record-show__block">
+                            <h6 class="maintenance-record-show__block-title">
+                                <i class="bi bi-clock-history me-2"></i>
+                                الوقت
+                            </h6>
+                            <div class="maintenance-record-show__row">
+                                @if($maintenanceRecord->start_time)
+                                    <span>بدء: {{ \Carbon\Carbon::parse($maintenanceRecord->start_time)->format('H:i') }}</span>
+                                @endif
+                                @if($maintenanceRecord->end_time)
+                                    <span>انتهاء: {{ \Carbon\Carbon::parse($maintenanceRecord->end_time)->format('H:i') }}</span>
+                                @endif
+                                @if($maintenanceRecord->downtime_hours)
+                                    <span>زمن التوقف: <strong>{{ number_format($maintenanceRecord->downtime_hours, 2) }}</strong> ساعة</span>
+                                @endif
+                            </div>
                         </div>
+                        @endif
+
+                        {{-- Cost (only if any present) --}}
+                        @if($maintenanceRecord->parts_cost || $maintenanceRecord->labor_hours || $maintenanceRecord->labor_rate_per_hour || $maintenanceRecord->maintenance_cost)
+                        <div class="maintenance-record-show__block">
+                            <h6 class="maintenance-record-show__block-title">
+                                <i class="bi bi-cash-stack me-2"></i>
+                                التكلفة
+                            </h6>
+                            <div class="maintenance-record-show__row">
+                                @if($maintenanceRecord->parts_cost)
+                                    <span>قطع: {{ number_format($maintenanceRecord->parts_cost, 2) }} ₪</span>
+                                @endif
+                                @if($maintenanceRecord->labor_hours)
+                                    <span>ساعات عمل: {{ number_format($maintenanceRecord->labor_hours, 2) }}</span>
+                                @endif
+                                @if($maintenanceRecord->labor_rate_per_hour)
+                                    <span>أجر الساعة: {{ number_format($maintenanceRecord->labor_rate_per_hour, 2) }} ₪</span>
+                                @endif
+                                @if($maintenanceRecord->maintenance_cost)
+                                    <span class="maintenance-record-show__total-cost">{{ number_format($maintenanceRecord->maintenance_cost, 2) }} ₪ إجمالي</span>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Generator details only (name/link already in header) --}}
+                        @if($maintenanceRecord->generator)
+                        <div class="maintenance-record-show__block">
+                            <h6 class="maintenance-record-show__block-title">
+                                <i class="bi bi-lightning-charge me-2"></i>
+                                تفاصيل المولد
+                            </h6>
+                            <div class="maintenance-record-show__row">
+                                {{ number_format($maintenanceRecord->generator->capacity_kva, 0) }} KVA
+                                <span class="badge bg-{{ $maintenanceRecord->generator->status === 'active' ? 'success' : 'secondary' }}">
+                                    {{ $maintenanceRecord->generator->status === 'active' ? 'نشط' : 'غير نشط' }}
+                                </span>
+                                @if($maintenanceRecord->generator->operator)
+                                    <a href="{{ route('admin.operators.show', $maintenanceRecord->generator->operator) }}" class="text-decoration-none text-muted">{{ $maintenanceRecord->generator->operator->name }}</a>
+                                @endif
+                                <a href="{{ route('admin.generators.show', $maintenanceRecord->generator) }}" class="text-decoration-none ms-1">عرض المولد</a>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -371,28 +149,55 @@
 
 @push('styles')
 <style>
-    .form-control-plaintext {
-        min-height: 38px;
-        padding: 0.5rem 0;
+    .maintenance-record-show__title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--log-text, #0f172a);
+    }
+    .maintenance-record-show__meta {
+        font-size: 0.9rem;
+        color: var(--log-muted, #6b7280);
+        margin-top: 0.25rem;
+    }
+    .maintenance-record-show__meta-sep { margin: 0 0.35rem; }
+    .maintenance-record-show__generator-link { color: inherit; text-decoration: none; }
+    .maintenance-record-show__generator-link:hover { text-decoration: underline; }
+    .maintenance-record-show__type-badge {
+        font-size: 0.875rem;
+        padding: 0.35em 0.65em;
+        font-weight: 600;
+    }
+    .maintenance-record-show__block {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--log-border-2, #eef2f7);
+    }
+    .maintenance-record-show__block:last-of-type { border-bottom: none; }
+    .maintenance-record-show__block-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--log-muted, #6b7280);
+        margin: 0 0 0.5rem 0;
+    }
+    .maintenance-record-show__work-text {
+        background: var(--log-subtle, #f8fafc);
+        padding: 1rem;
+        border-radius: 8px;
+        white-space: pre-wrap;
         line-height: 1.5;
+    }
+    .maintenance-record-show__row {
         display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
         align-items: center;
     }
-    
-    .form-control-plaintext.bg-light {
-        min-height: auto;
-        padding: 0.75rem;
-    }
-    
-    code {
-        background-color: rgba(0, 86, 179, 0.1);
+    .maintenance-record-show__row code {
+        background: rgba(0, 86, 179, 0.1);
         padding: 0.2em 0.4em;
-        border-radius: 3px;
+        border-radius: 4px;
         font-size: 0.9em;
     }
-    
-    a.text-decoration-none:hover {
-        text-decoration: underline !important;
-    }
+    .maintenance-record-show__total-cost { font-weight: 700; color: var(--bs-success, #198754); }
 </style>
 @endpush

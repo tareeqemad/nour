@@ -14,6 +14,8 @@ class ComplianceSafety extends Model
 
     protected $fillable = [
         'operator_id',
+        'generation_unit_id',
+        'generator_id',
         'safety_certificate_status_id', // ID من constant_details - ثابت Master رقم 13 (حالة شهادة السلامة)
         'last_inspection_date',
         'inspection_authority',
@@ -31,6 +33,16 @@ class ComplianceSafety extends Model
     public function operator(): BelongsTo
     {
         return $this->belongsTo(Operator::class);
+    }
+
+    public function generationUnit(): BelongsTo
+    {
+        return $this->belongsTo(GenerationUnit::class);
+    }
+
+    public function generator(): BelongsTo
+    {
+        return $this->belongsTo(Generator::class);
     }
 
     // Relationships للثوابت - ثابت Master رقم 13 (حالة شهادة السلامة)
