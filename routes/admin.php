@@ -320,4 +320,13 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      */
     Route::resource('meter-readings', \App\Http\Controllers\Admin\MeterReadingController::class);
     Route::get('meter-readings/subscriber/last-reading', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getLastReading'])->name('meter-readings.last-reading');
+
+    /**
+     * قضايا التفتيش والتعدي
+     */
+    Route::get('inspection-violation-cases/export', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'export'])->name('inspection-violation-cases.export');
+    Route::resource('inspection-violation-cases', \App\Http\Controllers\Admin\InspectionViolationCaseController::class);
+    Route::post('inspection-violation-cases/import/preview', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'preview'])->name('inspection-violation-cases.import.preview');
+    Route::post('inspection-violation-cases/import/execute', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'import'])->name('inspection-violation-cases.import.execute');
+    Route::get('inspection-violation-cases/import/template', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'downloadTemplate'])->name('inspection-violation-cases.import.template');
 });

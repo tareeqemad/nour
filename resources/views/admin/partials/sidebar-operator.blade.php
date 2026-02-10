@@ -129,6 +129,16 @@
 
     {{-- السجلات (للمشغل المعتمد فقط) --}}
     @if($u->hasApprovedOperator())
+        {{-- قضايا التفتيش والتعدي (قائمة لحالها) --}}
+        @can('viewAny', App\Models\InspectionViolationCase::class)
+            <li class="slide {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.inspection-violation-cases.index') }}" class="side-menu__item {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <span class="side-menu__label">قضايا التفتيش والتعدي</span>
+                </a>
+            </li>
+        @endcan
+
         @php
             $canViewOperationLogs = auth()->user()->can('viewAny', App\Models\OperationLog::class);
             $canViewFuelEfficiencies = auth()->user()->can('viewAny', App\Models\FuelEfficiency::class);
@@ -216,6 +226,16 @@
                     </li>
                 @endcan
             </ul>
+        </li>
+    @endcan
+
+    {{-- قضايا التفتيش والتعدي (قائمة لحالها) --}}
+    @can('viewAny', App\Models\InspectionViolationCase::class)
+        <li class="slide {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.inspection-violation-cases.index') }}" class="side-menu__item {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span class="side-menu__label">قضايا التفتيش والتعدي</span>
+            </a>
         </li>
     @endcan
 

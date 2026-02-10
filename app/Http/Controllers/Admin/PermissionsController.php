@@ -49,7 +49,8 @@ class PermissionsController extends Controller
                     ->orWhere('name', 'like', 'fuel_efficiencies.%')
                     ->orWhere('name', 'like', 'maintenance_records.%')
                     ->orWhere('name', 'like', 'compliance_safeties.%')
-                    ->orWhere('name', 'like', 'electricity_tariff_prices.%');
+                    ->orWhere('name', 'like', 'electricity_tariff_prices.%')
+                    ->orWhere('name', 'like', 'inspection_violation_cases.%');
                     
                     // ملاحظة: welcome_messages.* و sms_templates.* غير موجودة هنا عمداً
                     // لأنها مخصصة فقط للـ Admin و SuperAdmin

@@ -150,6 +150,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'meter_readings.create', 'label' => 'إنشاء قراءة عداد', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على إنشاء قراءة عداد جديدة', 'order' => 77],
             ['name' => 'meter_readings.update', 'label' => 'تحديث قراءة عداد', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على تحديث قراءة العداد', 'order' => 78],
             ['name' => 'meter_readings.delete', 'label' => 'حذف قراءة عداد', 'group' => 'meter_readings', 'group_label' => 'قراءات العدادات', 'description' => 'القدرة على حذف قراءة العداد', 'order' => 79],
+
+            // قضايا التفتيش والتعدي
+            ['name' => 'inspection_violation_cases.view', 'label' => 'عرض قضايا التفتيش والتعدي', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على عرض قضايا التفتيش والتعدي', 'order' => 80],
+            ['name' => 'inspection_violation_cases.create', 'label' => 'إنشاء قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على إنشاء قضية جديدة', 'order' => 81],
+            ['name' => 'inspection_violation_cases.update', 'label' => 'تحديث قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على تحديث القضية', 'order' => 82],
+            ['name' => 'inspection_violation_cases.delete', 'label' => 'حذف قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على حذف القضية', 'order' => 83],
         ];
 
         foreach ($permissions as $permission) {

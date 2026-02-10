@@ -14,7 +14,9 @@ use App\Models\MeterReading;
 use App\Models\Subscriber;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\InspectionViolationCase;
 use App\Policies\ComplianceSafetyPolicy;
+use App\Policies\InspectionViolationCasePolicy;
 use App\Policies\FuelEfficiencyPolicy;
 use App\Policies\GenerationUnitPolicy;
 use App\Policies\GeneratorPolicy;
@@ -49,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         FuelEfficiency::class => FuelEfficiencyPolicy::class,
         MaintenanceRecord::class => MaintenanceRecordPolicy::class,
         ComplianceSafety::class => ComplianceSafetyPolicy::class,
+        InspectionViolationCase::class => InspectionViolationCasePolicy::class,
         Task::class => TaskPolicy::class,
         Subscriber::class => SubscriberPolicy::class,
         MeterReading::class => MeterReadingPolicy::class,
