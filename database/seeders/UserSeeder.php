@@ -93,10 +93,76 @@ class UserSeeder extends Seeder
             ]
         );
 
+        // 5. Energy Authority users (سلطة الطاقة)
+        $energyAuthorityRole = RoleModel::where('name', 'energy_authority')->first();
+        $eaPassword = '12345678';
+        if ($energyAuthorityRole) {
+            // محمد مهدي - ea_mmahdi
+            $eaUser1 = User::updateOrCreate(
+                ['username' => 'ea_mmahdi'],
+                [
+                    'name' => 'محمد مهدي',
+                    'name_en' => 'Mohammad Mahdi',
+                    'email' => 'ea_mmahdi@gazarased.com',
+                    'username' => 'ea_mmahdi',
+                    'password' => Hash::make($eaPassword),
+                    'role' => Role::EnergyAuthority,
+                    'role_id' => $energyAuthorityRole->id,
+                    'status' => 'active',
+                    'phone' => null,
+                ]
+            );
+            $eaUser1->assignDefaultPermissions();
+
+            // أحمد ابو العمرين - ea_ahamreen
+            $eaUser2 = User::updateOrCreate(
+                ['username' => 'ea_ahamreen'],
+                [
+                    'name' => 'أحمد ابو العمرين',
+                    'name_en' => 'Ahmad Abu Alamreen',
+                    'email' => 'ea_ahamreen@gazarased.com',
+                    'username' => 'ea_ahamreen',
+                    'password' => Hash::make($eaPassword),
+                    'role' => Role::EnergyAuthority,
+                    'role_id' => $energyAuthorityRole->id,
+                    'status' => 'active',
+                    'phone' => null,
+                ]
+            );
+            $eaUser2->assignDefaultPermissions();
+        }
+
+        // 6. Company Owner (مشغل) - نعمر - op_naamer
+        $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
+        if ($companyOwnerRole) {
+            $coUser = User::updateOrCreate(
+                ['username' => 'op_naamer'],
+                [
+                    'name' => 'نعمر',
+                    'name_en' => 'Naamer',
+                    'email' => 'op_naamer@gazarased.com',
+                    'username' => 'op_naamer',
+                    'password' => Hash::make('12345678'),
+                    'role' => Role::CompanyOwner,
+                    'role_id' => $companyOwnerRole->id,
+                    'status' => 'active',
+                    'phone' => null,
+                ]
+            );
+            $coUser->assignDefaultPermissions();
+        }
+
         $this->command->info('تم إنشاء المستخدمين بنجاح!');
         $this->command->info("Super Admin 1 ({$superAdmin1->name}): {$superAdmin1->username} / {$defaultPassword}");
         $this->command->info("Super Admin 2 ({$superAdmin2->name}): {$superAdmin2->username} / {$defaultPassword}");
         $this->command->info("Super Admin 3 ({$superAdmin3->name}): {$superAdmin3->username} / {$defaultPassword}");
         $this->command->info("System User ({$systemUser->name}): {$systemUser->username} (Cannot login - for system messages only)");
+        if (isset($energyAuthorityRole)) {
+            $this->command->info("Energy Authority (محمد مهدي): ea_mmahdi / " . $eaPassword);
+            $this->command->info("Energy Authority (أحمد ابو العمرين): ea_ahamreen / " . $eaPassword);
+        }
+        if (isset($companyOwnerRole)) {
+            $this->command->info("Company Owner (مشغل - نعمر): op_naamer / 12345678");
+        }
     }
 }
