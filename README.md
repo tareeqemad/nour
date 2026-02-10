@@ -1,8 +1,8 @@
-# Nour - Energy Market Management System
+# Nour — Energy Market Management System
 
-A comprehensive digital platform for managing electrical generators and operators in Palestine. The system provides complete management of operator data, generators, operation logs, maintenance, environmental compliance, and complaints & suggestions.
+A digital platform for managing electrical generators and operators in Palestine: operator data, generators, operation logs, maintenance, compliance & safety, and complaints & suggestions.
 
-**Repository**: [https://github.com/tareeqemad/nour](https://github.com/tareeqemad/nour)
+**Repository:** [github.com/tareeqemad/nour](https://github.com/tareeqemad/nour)
 
 ---
 
@@ -243,8 +243,13 @@ nour/
 - User ↔ Operator (many-to-many for employees/technicians)
 - User → Role (custom role assignment)
 - Role → Permission (many-to-many)
-- Operator → Generator (hasMany)
-- Generator → FuelTank, OperationLog, MaintenanceRecord (hasMany)
+- Operator → GenerationUnit → Generator
+- Generator → FuelTank, OperationLog, MaintenanceRecord, ComplianceSafety (hasMany)
+
+### Migrations
+
+- Migrations run in filename order. For rollback without foreign key errors, any table that depends on another must have a later migration filename.
+- Remove orphan migration records (when migration files were deleted/merged): `php artisan migrations:remove-orphans` (use `--dry-run` to preview).
 
 ---
 
@@ -445,4 +450,4 @@ For questions or issues, please open an issue in the repository: [https://github
 
 ---
 
-**Built with Laravel 12**
+Built with Laravel 12 · PHP 8.2+
