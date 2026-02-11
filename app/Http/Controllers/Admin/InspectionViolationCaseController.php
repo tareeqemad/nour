@@ -42,7 +42,14 @@ class InspectionViolationCaseController extends Controller
             $query->where('generation_unit_id', (int) $request->generation_unit_id);
         }
         if ($request->filled('governorate_id')) {
-            $query->where('governorate_id', (int) $request->governorate_id);
+            // Convert governorate value to id for querying
+            $govValue = $request->governorate_id;
+            $gov = \App\Models\ConstantDetail::where('value', $govValue)
+                ->where('constant_master_id', 1)
+                ->first();
+            if ($gov) {
+                $query->where('governorate_id', $gov->id);
+            }
         }
         if ($request->filled('case_date_from')) {
             $query->whereDate('case_date', '>=', $request->case_date_from);
@@ -109,6 +116,7 @@ class InspectionViolationCaseController extends Controller
                 ->get();
         }
 
+        // جلب المحافظات من نظام الثوابت (رقم الثابت 1)
         $governorates = ConstantsHelper::get(1);
 
         return view('admin.inspection-violation-cases.index', compact('cases', 'operators', 'generationUnits', 'governorates', 'generationUnitsByOperator'));
@@ -135,6 +143,7 @@ class InspectionViolationCaseController extends Controller
             }
         }
 
+        // جلب المحافظات من نظام الثوابت (رقم الثابت 1)
         $governorates = ConstantsHelper::get(1);
 
         return view('admin.inspection-violation-cases.create', compact('operators', 'generationUnits', 'governorates'));
@@ -152,6 +161,15 @@ class InspectionViolationCaseController extends Controller
             return response()->json(['success' => true, 'message' => 'تم إضافة القضية بنجاح.']);
         }
         return redirect()->route('admin.inspection-violation-cases.index')->with('success', 'تم إضافة القضية بنجاح.');
+    }
+
+    public function show(InspectionViolationCase $inspection_violation_case): View
+    {
+        $this->authorize('view', $inspection_violation_case);
+
+        $inspection_violation_case->load(['governorateDetail', 'operator', 'generationUnit', 'creator', 'updater']);
+
+        return view('admin.inspection-violation-cases.show', compact('inspection_violation_case'));
     }
 
     public function edit(InspectionViolationCase $inspection_violation_case): View|RedirectResponse
@@ -175,6 +193,7 @@ class InspectionViolationCaseController extends Controller
             }
         }
 
+        // جلب المحافظات من نظام الثوابت (رقم الثابت 1)
         $governorates = ConstantsHelper::get(1);
 
         return view('admin.inspection-violation-cases.edit', compact('inspection_violation_case', 'operators', 'generationUnits', 'governorates'));
@@ -184,7 +203,9 @@ class InspectionViolationCaseController extends Controller
     {
         $this->authorize('update', $inspection_violation_case);
 
-        $inspection_violation_case->update($request->validated());
+        $data = $request->validated();
+        $data['updated_by'] = Auth::id();
+        $inspection_violation_case->update($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'تم تحديث القضية بنجاح.']);
@@ -224,7 +245,14 @@ class InspectionViolationCaseController extends Controller
             $query->where('generation_unit_id', (int) $request->generation_unit_id);
         }
         if ($request->filled('governorate_id')) {
-            $query->where('governorate_id', (int) $request->governorate_id);
+            // Convert governorate value to id for querying
+            $govValue = $request->governorate_id;
+            $gov = \App\Models\ConstantDetail::where('value', $govValue)
+                ->where('constant_master_id', 1)
+                ->first();
+            if ($gov) {
+                $query->where('governorate_id', $gov->id);
+            }
         }
         if ($request->filled('case_date_from')) {
             $query->whereDate('case_date', '>=', $request->case_date_from);

@@ -25,4 +25,17 @@ class StoreInspectionViolationCaseRequest extends FormRequest
             'generation_unit_id' => ['nullable', 'exists:generation_units,id'],
         ];
     }
+
+    protected function prepareForValidation()
+    {
+        // Convert governorate value to id for storage
+        if ($this->governorate_id) {
+            $gov = \App\Models\ConstantDetail::where('constant_master_id', 1)
+                ->where('value', $this->governorate_id)
+                ->first();
+            if ($gov) {
+                $this->merge(['governorate_id' => $gov->id]);
+            }
+        }
+    }
 }

@@ -40,8 +40,13 @@
                         <td class="small text-muted">{{ Str::limit($case->statement, 40) ?: '—' }}</td>
                         <td class="text-end">
                             <div class="d-flex gap-1 justify-content-end">
+                                @can('view', $case)
+                                    <a href="{{ route('admin.inspection-violation-cases.show', $case) }}" class="btn btn-sm btn-outline-info d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;" title="عرض">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                @endcan
                                 @can('update', $case)
-                                    <a href="{{ route('admin.inspection-violation-cases.edit', $case) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                    <a href="{{ route('admin.inspection-violation-cases.edit', $case) }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;" title="تعديل">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                 @endcan
@@ -49,7 +54,7 @@
                                     <form action="{{ route('admin.inspection-violation-cases.destroy', $case) }}" method="POST" class="d-inline delete-case-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف" onclick="return confirm('هل أنت متأكد من حذف هذه القضية؟');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;" title="حذف" onclick="return confirm('هل أنت متأكد من حذف هذه القضية؟');">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

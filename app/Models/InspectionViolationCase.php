@@ -24,6 +24,7 @@ class InspectionViolationCase extends Model
         'operator_id',
         'generation_unit_id',
         'created_by',
+        'updated_by',
     ];
 
     protected function casts(): array
@@ -71,5 +72,10 @@ class InspectionViolationCase extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

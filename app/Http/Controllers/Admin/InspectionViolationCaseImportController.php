@@ -17,10 +17,14 @@ class InspectionViolationCaseImportController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+            'operator_id' => 'required|exists:operators,id',
+            'generation_unit_id' => 'nullable|exists:generation_units,id',
         ], [
             'file.required' => 'يرجى اختيار ملف للاستيراد',
             'file.mimes' => 'يجب أن يكون الملف بصيغة Excel أو CSV',
             'file.max' => 'حجم الملف يجب أن لا يتجاوز 5 ميجابايت',
+            'operator_id.required' => 'يرجى اختيار المشغل',
+            'operator_id.exists' => 'المشغل غير موجود',
         ]);
 
         try {
@@ -37,7 +41,11 @@ class InspectionViolationCaseImportController extends Controller
             $import->import($fullPath);
             $results = $import->getResults();
 
-            session(['inspection_import_file_path' => $fullPath]);
+            session([
+                'inspection_import_file_path' => $fullPath,
+                'inspection_import_operator_id' => (int) $request->operator_id,
+                'inspection_import_generation_unit_id' => $request->generation_unit_id ? (int) $request->generation_unit_id : null,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -67,12 +75,15 @@ class InspectionViolationCaseImportController extends Controller
                 ], 400);
             }
 
-            $import = new InspectionViolationCasesImport(auth()->id(), false);
+            $operatorId = session('inspection_import_operator_id');
+            $generationUnitId = session('inspection_import_generation_unit_id');
+
+            $import = new InspectionViolationCasesImport(auth()->id(), false, $operatorId, $generationUnitId);
             $import->import($filePath);
             $results = $import->getResults();
 
             @unlink($filePath);
-            session()->forget('inspection_import_file_path');
+            session()->forget(['inspection_import_file_path', 'inspection_import_operator_id', 'inspection_import_generation_unit_id']);
 
             return response()->json([
                 'success' => true,

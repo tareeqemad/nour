@@ -12,11 +12,15 @@ class InspectionViolationCasesImport
     protected $validRows = [];
     protected $previewMode = false;
     protected $userId;
+    protected $operatorId;
+    protected $generationUnitId;
 
-    public function __construct($userId = null, $previewMode = false)
+    public function __construct($userId = null, $previewMode = false, $operatorId = null, $generationUnitId = null)
     {
         $this->userId = $userId;
         $this->previewMode = $previewMode;
+        $this->operatorId = $operatorId;
+        $this->generationUnitId = $generationUnitId;
     }
 
     public function import(string $filePath): self
@@ -138,6 +142,8 @@ class InspectionViolationCasesImport
             'case_date' => $data['case_date'],
             'status' => $data['status'],
             'statement' => $data['statement'] ?: null,
+            'operator_id' => $this->operatorId,
+            'generation_unit_id' => $this->generationUnitId,
             'created_by' => $this->userId,
         ]);
     }

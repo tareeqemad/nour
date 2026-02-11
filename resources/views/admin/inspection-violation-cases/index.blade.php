@@ -92,7 +92,7 @@
                                         <select id="governorateFilter" class="form-select">
                                             <option value="">كل المحافظات</option>
                                             @foreach($governorates ?? [] as $g)
-                                                <option value="{{ $g->id }}" {{ request('governorate_id') == $g->id ? 'selected' : '' }}>{{ $g->label ?? $g->name ?? $g->id }}</option>
+                                                <option value="{{ $g->value }}" {{ request('governorate_id') == $g->value ? 'selected' : '' }}>{{ $g->label ?? $g->name ?? $g->id }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -121,9 +121,9 @@
                                 <div class="row g-3 mt-2">
                                     <div class="col-12 d-flex flex-wrap justify-content-center gap-2 align-items-center">
                                         <button class="btn btn-primary" type="button" id="searchBtn"><i class="bi bi-search me-1"></i>بحث</button>
-                                        <a href="{{ route('admin.inspection-violation-cases.export') }}" class="btn btn-outline-success" id="exportBtn">
+                                        <button type="button" class="btn btn-outline-success" id="exportBtn">
                                             <i class="bi bi-download me-1"></i>تصدير Excel
-                                        </a>
+                                        </button>
                                         <button type="button" class="btn btn-outline-secondary {{ request('operator_id') || request('generation_unit_id') || request('governorate_id') || request('case_date_from') || request('case_date_to') || request('status') || request('search') ? '' : 'd-none' }}" id="clearBtn"><i class="bi bi-x me-1"></i>تفريغ</button>
                                     </div>
                                 </div>
@@ -153,11 +153,28 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header text-white bg-primary">
-                <h5 class="modal-title"><i class="bi bi-file-earmark-excel me-2"></i>استيراد قضايا التفتيش والتعدي من Excel</h5>
+                <h5 class="modal-title text-white"><i class="bi bi-file-earmark-excel me-2 text-white"></i>استيراد قضايا التفتيش والتعدي من Excel</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="importStep1">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bi bi-building me-1"></i>المشغل <span class="text-danger">*</span></label>
+                            <select id="importOperatorId" class="form-select" required>
+                                <option value="">-- اختر المشغل --</option>
+                                @foreach($operators ?? [] as $op)
+                                    <option value="{{ $op->id }}">{{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold"><i class="bi bi-lightning-charge me-1"></i>وحدة التوليد</label>
+                            <select id="importGenerationUnitId" class="form-select" disabled>
+                                <option value="">اختر المشغل أولاً</option>
+                            </select>
+                        </div>
+                    </div>
                     <label class="form-label fw-bold">ملف Excel <span class="text-danger">*</span></label>
                     <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv">
                     <div class="form-text">الأعمدة: المحافظة، رقم_الاشتراك، اسم_المشترك، اسم_المنتفع، تاريخ_القضية، حالة_القضية (1=ادخال 2=محكومة 3=منتهية)، بيان_القضية</div>
@@ -247,7 +264,8 @@
     $searchBtn.on('click', loadCases);
     $operatorFilter.on('change', function() {
         var opId = $(this).val();
-        if ($generationUnitFilter.prop('disabled') === false || !opId) {
+        // للسوبر أدمن والأدمن: تحديث وحدات التوليد بناءً على المشغل المختار
+        if (!$operatorFilter.prop('disabled')) {
             if (opId && window.casesGenerationUnits && window.casesGenerationUnits[opId]) {
                 var opts = window.casesGenerationUnits[opId].map(function(u) {
                     return '<option value="' + u.id + '">' + u.name + ' (' + (u.unit_code || '') + ')</option>';
@@ -296,11 +314,13 @@
     });
 
     $exportBtn.on('click', function(e) {
+        e.preventDefault();
         var q = params();
         var parts = [];
         $.each(q, function(k, v) { if (v) parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); });
-        var href = $exportBtn.attr('href');
-        $exportBtn.attr('href', href + (parts.length ? '?' + parts.join('&') : ''));
+        var baseHref = @json(route('admin.inspection-violation-cases.export'));
+        var finalHref = baseHref + (parts.length ? '?' + parts.join('&') : '');
+        window.location.href = finalHref;
     });
 
     window.loadInspectionCases = loadCases;
@@ -318,7 +338,29 @@
     const $backBtn = $('#backToStep1Btn');
     const $executeBtn = $('#executeImportBtn');
     const $previewContent = $('#importPreviewContent');
+    const $importOperator = $('#importOperatorId');
+    const $importGenUnit = $('#importGenerationUnitId');
+    const importGenUnits = @json($generationUnitsByOperator ?? []);
     let currentFilePath = null;
+
+    // Cascade generation units when operator changes (register handler FIRST)
+    $importOperator.on('change', function() {
+        var opId = $(this).val();
+        if (opId && importGenUnits[opId]) {
+            var opts = importGenUnits[opId].map(function(u) {
+                return '<option value="' + u.id + '">' + u.name + ' (' + (u.unit_code || '') + ')</option>';
+            }).join('');
+            $importGenUnit.html('<option value="">-- كل الوحدات --</option>' + opts).prop('disabled', false);
+        } else {
+            $importGenUnit.html('<option value="">اختر المشغل أولاً</option>').prop('disabled', true);
+        }
+    });
+
+    // Auto-select operator if only one option (AFTER registering handler)
+    var importOpOptions = $importOperator.find('option[value!=""]');
+    if (importOpOptions.length === 1) {
+        $importOperator.val(importOpOptions.first().val()).trigger('change');
+    }
 
     function step1() {
         $step2.addClass('d-none');
@@ -337,8 +379,16 @@
     $fileInput.on('change', function() {
         var file = this.files[0];
         if (!file) return;
+        var operatorId = $importOperator.val();
+        if (!operatorId) {
+            alert('يرجى اختيار المشغل أولاً');
+            $fileInput.val('');
+            return;
+        }
         var fd = new FormData();
         fd.append('file', file);
+        fd.append('operator_id', operatorId);
+        fd.append('generation_unit_id', $importGenUnit.val() || '');
         fd.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         $.ajax({
             url: previewUrl,
@@ -363,7 +413,10 @@
         $.ajax({
             url: executeUrl,
             method: 'POST',
-            data: { _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'), file_path: currentFilePath },
+            data: {
+                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                file_path: currentFilePath
+            },
             success: function(r) {
                 if (r.success) {
                     $modal.modal('hide');
