@@ -148,6 +148,18 @@ class DashboardController extends Controller
 
         $this->createNotifications($user, $operatorIds, $generatorIds, $generatorsNeedingMaintenance, $expiringCompliance);
 
+        // توضيح لسلطة الطاقة: عند وجود مشغلين/وحدات/مولدات دون بيانات تشغيل أو صيانة أو شهادات
+        $showEmptyDataHint = false;
+        if ($user->isEnergyAuthority() && !empty($stats)) {
+            $hasStructure = ($stats['operators']['total'] ?? 0) > 0
+                || ($stats['generation_units']['total'] ?? 0) > 0
+                || ($stats['generators']['total'] ?? 0) > 0;
+            $noProduction = (($stats['production']['total_energy'] ?? 0) == 0)
+                && (($stats['production']['total_fuel'] ?? 0) == 0);
+            $noCompliance = ($stats['compliance']['total'] ?? 0) == 0;
+            $showEmptyDataHint = $hasStructure && $noProduction && $noCompliance;
+        }
+
         return view('admin.dashboard', compact(
             'stats',
             'operationStats',
@@ -163,7 +175,8 @@ class DashboardController extends Controller
             'expiringCompliance',
             'tasksData',
             'operatorsComparison',
-            'generationUnitsComparison'
+            'generationUnitsComparison',
+            'showEmptyDataHint'
         ));
     }
 

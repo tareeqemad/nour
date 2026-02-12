@@ -15,6 +15,8 @@
 
     @include('admin.dashboard.partials.quick-actions')
 
+    @include('admin.dashboard.partials.empty-data-hint')
+
     @include('admin.dashboard.partials.statistics-cards')
 
     @include('admin.dashboard.partials.operations-statistics')
