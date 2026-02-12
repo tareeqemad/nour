@@ -14,6 +14,7 @@
             </div>
             <div class="dashboard-card-body">
                 <!-- Tabs Navigation -->
+                {{-- المشغل يملك مشغل واحد فقط: نعرض المولدات والمحافظات فقط --}}
                 <ul class="nav nav-tabs nav-tabs-custom mb-3" id="pieChartsTabOwner" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="generators-pie-tab-owner" data-bs-toggle="tab" data-bs-target="#generators-pie-chart-owner" type="button" role="tab">
@@ -21,18 +22,14 @@
                             حسب المولدات
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="operators-pie-tab-owner" data-bs-toggle="tab" data-bs-target="#operators-pie-chart-owner" type="button" role="tab">
-                            <i class="bi bi-building me-1"></i>
-                            حسب المشغلين
-                        </button>
-                    </li>
+                    @if(!empty($pieChartData['governorates']['data']))
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="governorates-pie-tab-owner" data-bs-toggle="tab" data-bs-target="#governorates-pie-chart-owner" type="button" role="tab">
                             <i class="bi bi-geo-alt me-1"></i>
                             حسب المحافظات
                         </button>
                     </li>
+                    @endif
                 </ul>
 
                 <!-- Tabs Content -->
@@ -44,19 +41,14 @@
                         </div>
                     </div>
 
-                    <!-- Operators Pie Chart -->
-                    <div class="tab-pane fade" id="operators-pie-chart-owner" role="tabpanel">
-                        <div class="chart-container" style="position: relative; height: 400px;">
-                            <canvas id="operatorsPieChartOwner"></canvas>
-                        </div>
-                    </div>
-
+                    @if(!empty($pieChartData['governorates']['data']))
                     <!-- Governorates Pie Chart -->
                     <div class="tab-pane fade" id="governorates-pie-chart-owner" role="tabpanel">
                         <div class="chart-container" style="position: relative; height: 400px;">
                             <canvas id="governoratesPieChartOwner"></canvas>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

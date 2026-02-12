@@ -123,10 +123,10 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // المولدات التي تحتاج صيانة
+        // المولدات التي تحتاج صيانة (مرشحة دائماً حسب نطاق المستخدم ما عدا السوبر أدمن والأدمن)
         $generatorsNeedingMaintenance = Generator::with('generationUnit.operator')
-            ->when($operatorIds, function($q) use ($operatorIds) {
-                $generationUnitIds = GenerationUnit::whereIn('operator_id', $operatorIds)->pluck('id');
+            ->when(!$user->isSuperAdmin() && !$user->isAdmin(), function($q) use ($operatorIds) {
+                $generationUnitIds = GenerationUnit::whereIn('operator_id', $operatorIds ?? [])->pluck('id');
                 $q->whereIn('generation_unit_id', $generationUnitIds);
             })
             ->where(function ($query) {
@@ -138,7 +138,7 @@ class DashboardController extends Controller
 
 
         // الشهادات المنتهية أو قريبة من الانتهاء
-        $expiringCompliance = $this->getExpiringCompliance($operatorIds);
+        $expiringCompliance = $this->getExpiringCompliance($user, $operatorIds);
 
         // بيانات المهام (للفني والدفاع المدني)
         $tasksData = null;
@@ -788,13 +788,13 @@ class DashboardController extends Controller
     }
 
 
-    private function getExpiringCompliance(?array $operatorIds)
+    private function getExpiringCompliance($user, ?array $operatorIds)
     {
-        // الحصول على الشهادات المنتهية أو التي تحتاج متابعة
+        // الحصول على الشهادات المنتهية أو التي تحتاج متابعة (مرشحة حسب نطاق المستخدم ما عدا السوبر أدمن والأدمن)
         $query = ComplianceSafety::with(['operator', 'safetyCertificateStatusDetail']);
         
-        if ($operatorIds) {
-            $query->whereIn('operator_id', $operatorIds);
+        if (!$user->isSuperAdmin() && !$user->isAdmin()) {
+            $query->whereIn('operator_id', $operatorIds ?? []);
         }
         
         // الحصول على IDs الثوابت
@@ -831,10 +831,12 @@ class DashboardController extends Controller
     }
 
     /**
-     * Create notifications based on dashboard data and user role
+     * Create notifications based on dashboard data and user role.
+     * يعتمد على البيانات المرشحة مسبقاً حسب نطاق المستخدم (مولدات تحتاج صيانة / شهادات منتهية).
      */
     private function createNotifications($user, ?array $operatorIds, ?array $generatorIds, $generatorsNeedingMaintenance, $expiringCompliance): void
     {
+        // إشعار الصيانة: يُنشأ فقط عندما توجد مولدات في نطاق المستخدم تحتاج صيانة
         if ($generatorsNeedingMaintenance->count() > 0) {
             $count = $generatorsNeedingMaintenance->count();
             $firstGeneratorId = $generatorsNeedingMaintenance->first()->id;
@@ -847,6 +849,7 @@ class DashboardController extends Controller
             );
         }
 
+        // إشعار الشهادات: يُنشأ فقط عندما توجد شهادات في نطاق المستخدم منتهية أو قريبة
         if ($expiringCompliance->count() > 0) {
             $count = $expiringCompliance->count();
             $this->createOrUpdateNotification(

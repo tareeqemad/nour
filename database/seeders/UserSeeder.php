@@ -132,14 +132,14 @@ class UserSeeder extends Seeder
             $eaUser2->assignDefaultPermissions();
         }
 
-        // 6. Company Owner (مشغل) - نعمر - op_naamer
+        // 6. Company Owner (مشغل) - نداء عامر - op_naamer
         $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
         if ($companyOwnerRole) {
             $coUser = User::updateOrCreate(
                 ['username' => 'op_naamer'],
                 [
-                    'name' => 'نعمر',
-                    'name_en' => 'Naamer',
+                    'name' => 'نداء عامر',
+                    'name_en' => 'Nidaa Amer',
                     'email' => 'op_naamer@gazarased.com',
                     'username' => 'op_naamer',
                     'password' => Hash::make('12345678'),
@@ -162,7 +162,7 @@ class UserSeeder extends Seeder
             $this->command->info("Energy Authority (أحمد ابو العمرين): ea_ahamreen / " . $eaPassword);
         }
         if (isset($companyOwnerRole)) {
-            $this->command->info("Company Owner (مشغل - نعمر): op_naamer / 12345678");
+            $this->command->info("Company Owner (مشغل - نداء عامر): op_naamer / 12345678");
         }
     }
 }

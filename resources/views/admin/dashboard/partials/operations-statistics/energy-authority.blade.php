@@ -16,8 +16,9 @@
                 </a>
             </div>
             <div class="dashboard-card-body">
+                {{-- إحصائيات إضافية فقط: إجمالي الطاقة والوقود والكفاءة تظهر في البطاقات العليا --}}
                 <div class="row g-3">
-                    <div class="col-6 col-md-2">
+                    <div class="col-6 col-md-4">
                         <div class="dashboard-stat-mini dashboard-stat-mini-info">
                             <div class="dashboard-stat-mini-icon">
                                 <i class="bi bi-journal-text"></i>
@@ -29,42 +30,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-6 col-md-2">
-                        <div class="dashboard-stat-mini dashboard-stat-mini-success">
-                            <div class="dashboard-stat-mini-icon">
-                                <i class="bi bi-lightning-charge-fill"></i>
-                            </div>
-                            <div class="dashboard-stat-mini-label">الطاقة المنتجة</div>
-                            <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_energy'], 0) }}</div>
-                            <div class="dashboard-stat-mini-unit">kWh</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-2">
-                        <div class="dashboard-stat-mini dashboard-stat-mini-warning">
-                            <div class="dashboard-stat-mini-icon">
-                                <i class="bi bi-fuel-pump-fill"></i>
-                            </div>
-                            <div class="dashboard-stat-mini-label">الوقود المستهلك</div>
-                            <div class="dashboard-stat-mini-value">{{ number_format($operationStats['total_fuel'], 0) }}</div>
-                            <div class="dashboard-stat-mini-unit">لتر</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-2">
-                        <div class="dashboard-stat-mini dashboard-stat-mini-primary">
-                            <div class="dashboard-stat-mini-icon">
-                                <i class="bi bi-speedometer2"></i>
-                            </div>
-                            <div class="dashboard-stat-mini-label">الكفاءة</div>
-                            @php
-                                $efficiency = $operationStats['total_fuel'] > 0 
-                                    ? round($operationStats['total_energy'] / $operationStats['total_fuel'], 2) 
-                                    : 0;
-                            @endphp
-                            <div class="dashboard-stat-mini-value">{{ $efficiency }}</div>
-                            <div class="dashboard-stat-mini-unit">kWh/لتر</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-2">
+                    <div class="col-6 col-md-4">
                         <div class="dashboard-stat-mini dashboard-stat-mini-secondary">
                             <div class="dashboard-stat-mini-icon">
                                 <i class="bi bi-percent"></i>
@@ -73,7 +39,7 @@
                             <div class="dashboard-stat-mini-value">{{ number_format($operationStats['avg_load'], 1) }}%</div>
                         </div>
                     </div>
-                    <div class="col-6 col-md-2">
+                    <div class="col-6 col-md-4">
                         <div class="dashboard-stat-mini dashboard-stat-mini-danger">
                             <div class="dashboard-stat-mini-icon">
                                 <i class="bi bi-arrow-down-circle"></i>

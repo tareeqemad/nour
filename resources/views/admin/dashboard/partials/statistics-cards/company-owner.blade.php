@@ -72,29 +72,7 @@
 </div>
 @endif
 
-<!-- Operators -->
-<div class="col-12 col-sm-6 col-lg-3">
-    <div class="dashboard-stat-card dashboard-stat-info">
-        <div class="dashboard-stat-icon">
-            <i class="bi bi-building"></i>
-        </div>
-        <div class="dashboard-stat-content">
-            <div class="dashboard-stat-label">المشغل</div>
-            <div class="dashboard-stat-value">{{ number_format($stats['operators']['total'] ?? 0) }}</div>
-            @if(isset($stats['operators']['active']))
-                <div class="dashboard-stat-badges">
-                    <span class="badge badge-success">
-                        <i class="bi bi-check-circle me-1"></i>
-                        {{ $stats['operators']['active'] }} نشط
-                    </span>
-                </div>
-            @endif
-        </div>
-        <a href="{{ route('admin.operators.profile') }}" class="dashboard-stat-link">
-            <i class="bi bi-arrow-left"></i>
-        </a>
-    </div>
-</div>
+{{-- المشغل يملك مشغل واحد فقط، لا نعرض البطاقة --}}
 
 
 
