@@ -322,10 +322,16 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('meter-readings/subscriber/last-reading', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getLastReading'])->name('meter-readings.last-reading');
 
     /**
-     * قضايا التفتيش والتعدي
+     * قضايا التفتيش والتعدي (معرّفة صراحة لتفادي 404 من القائمة)
      */
     Route::get('inspection-violation-cases/export', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'export'])->name('inspection-violation-cases.export');
-    Route::resource('inspection-violation-cases', \App\Http\Controllers\Admin\InspectionViolationCaseController::class);
+    Route::get('inspection-violation-cases', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'index'])->name('inspection-violation-cases.index');
+    Route::get('inspection-violation-cases/create', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'create'])->name('inspection-violation-cases.create');
+    Route::post('inspection-violation-cases', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'store'])->name('inspection-violation-cases.store');
+    Route::get('inspection-violation-cases/{inspection_violation_case}', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'show'])->name('inspection-violation-cases.show');
+    Route::get('inspection-violation-cases/{inspection_violation_case}/edit', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'edit'])->name('inspection-violation-cases.edit');
+    Route::put('inspection-violation-cases/{inspection_violation_case}', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'update'])->name('inspection-violation-cases.update');
+    Route::delete('inspection-violation-cases/{inspection_violation_case}', [\App\Http\Controllers\Admin\InspectionViolationCaseController::class, 'destroy'])->name('inspection-violation-cases.destroy');
     Route::post('inspection-violation-cases/import/preview', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'preview'])->name('inspection-violation-cases.import.preview');
     Route::post('inspection-violation-cases/import/execute', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'import'])->name('inspection-violation-cases.import.execute');
     Route::get('inspection-violation-cases/import/template', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'downloadTemplate'])->name('inspection-violation-cases.import.template');

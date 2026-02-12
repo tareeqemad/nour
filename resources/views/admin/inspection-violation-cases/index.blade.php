@@ -121,9 +121,11 @@
                                 <div class="row g-3 mt-2">
                                     <div class="col-12 d-flex flex-wrap justify-content-center gap-2 align-items-center">
                                         <button class="btn btn-primary" type="button" id="searchBtn"><i class="bi bi-search me-1"></i>بحث</button>
-                                        <button type="button" class="btn btn-outline-success" id="exportBtn">
-                                            <i class="bi bi-download me-1"></i>تصدير Excel
-                                        </button>
+                                        @can('viewAny', App\Models\InspectionViolationCase::class)
+                                            <button type="button" class="btn btn-outline-success" id="exportBtn">
+                                                <i class="bi bi-download me-1"></i>تصدير Excel
+                                            </button>
+                                        @endcan
                                         <button type="button" class="btn btn-outline-secondary {{ request('operator_id') || request('generation_unit_id') || request('governorate_id') || request('case_date_from') || request('case_date_to') || request('status') || request('search') ? '' : 'd-none' }}" id="clearBtn"><i class="bi bi-x me-1"></i>تفريغ</button>
                                     </div>
                                 </div>

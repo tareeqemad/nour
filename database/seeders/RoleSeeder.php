@@ -187,8 +187,11 @@ class RoleSeeder extends Seeder
                     'subscribers.view',
                     // Meter readings management (view only for Admin)
                     'meter_readings.view',
-                    // قضايا التفتيش والتعدي (عرض فقط)
+                    // قضايا التفتيش والتعدي (كامل للأدمن)
                     'inspection_violation_cases.view',
+                    'inspection_violation_cases.create',
+                    'inspection_violation_cases.update',
+                    'inspection_violation_cases.delete',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'company_owner') {
@@ -247,6 +250,11 @@ class RoleSeeder extends Seeder
                     'meter_readings.view',
                     'meter_readings.create',
                     'meter_readings.update',
+                    // قضايا التفتيش والتعدي (للمشغل)
+                    'inspection_violation_cases.view',
+                    'inspection_violation_cases.create',
+                    'inspection_violation_cases.update',
+                    'inspection_violation_cases.delete',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'employee') {

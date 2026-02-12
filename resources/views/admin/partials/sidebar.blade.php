@@ -96,6 +96,16 @@
                     </a>
                 </li>
 
+                {{-- قضايا التفتيش والتعدي (لجميع من لديهم الصلاحية) --}}
+                @can('viewAny', App\Models\InspectionViolationCase::class)
+                    <li class="slide {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.inspection-violation-cases.index') }}" class="side-menu__item {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            <span class="side-menu__label">قضايا التفتيش والتعدي</span>
+                        </a>
+                    </li>
+                @endcan
+
             </ul>
 
             <div class="slide-right" id="slide-right">
