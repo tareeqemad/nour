@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('operator_id')->nullable()->constrained('operators')->nullOnDelete();
             $table->foreignId('generation_unit_id')->nullable()->constrained('generation_units')->nullOnDelete();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->index(['operator_id', 'status']);
             $table->index(['subscription_number', 'subscriber_name'], 'ivc_sub_subscriber_idx');
