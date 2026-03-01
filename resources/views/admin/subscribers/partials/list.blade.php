@@ -91,22 +91,22 @@
                             </span>
                         </td>
                         <td class="text-end">
-                            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                            <div class="d-flex gap-1 justify-content-end align-items-center">
                                 @can('view', $subscriber)
-                                    <a href="{{ route('admin.subscribers.show', $subscriber) }}" class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
+                                    <a href="{{ route('admin.subscribers.show', $subscriber) }}" class="btn btn-sm btn-outline-info" style="width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;" title="عرض التفاصيل">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 @endcan
                                 @can('update', $subscriber)
-                                    <a href="{{ route('admin.subscribers.edit', $subscriber) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                    <a href="{{ route('admin.subscribers.edit', $subscriber) }}" class="btn btn-sm btn-outline-primary" style="width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;" title="تعديل">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                 @endcan
                                 @if(auth()->user()->isSuperAdmin())
-                                    <form action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST" class="d-inline delete-subscriber-form">
+                                    <form action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST" class="delete-subscriber-form" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" style="width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;" title="حذف">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

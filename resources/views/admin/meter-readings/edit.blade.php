@@ -132,10 +132,11 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">فترة الاستهلاك (عدد الأيام) <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">فترة الاستهلاك (عدد الأيام)</label>
                                     <input type="number" name="consumption_period_days" id="consumption_period_days" 
                                            class="form-control @error('consumption_period_days') is-invalid @enderror" 
-                                           value="{{ old('consumption_period_days', $meterReading->consumption_period_days) }}" min="1" required>
+                                           value="{{ old('consumption_period_days', $meterReading->consumption_period_days) }}" min="1" readonly style="background-color: #f8f9fa;">
+                                    <small class="form-text text-muted">يتم حسابها تلقائياً</small>
                                     @error('consumption_period_days')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -203,6 +204,31 @@
                     $('#consumption_kwh').val('');
                 }
             }
+
+            // حساب فترة الاستهلاك عند تغيير التاريخ
+            $('#reading_date').on('change', function() {
+                const readingDate = $(this).val();
+                const subscriberId = $('#subscriber_id').val();
+                const currentReadingId = {{ $meterReading->id }};
+                if (readingDate && subscriberId) {
+                    $.ajax({
+                        url: '{{ route("admin.meter-readings.last-reading") }}',
+                        method: 'GET',
+                        data: { subscriber_id: subscriberId },
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        success: function(response) {
+                            if (response.success && response.last_reading.reading_date) {
+                                const lastDate = new Date(response.last_reading.reading_date);
+                                const curDate = new Date(readingDate);
+                                const diffDays = Math.round((curDate - lastDate) / (1000 * 60 * 60 * 24));
+                                $('#consumption_period_days').val(diffDays > 0 ? diffDays : 1);
+                            } else {
+                                $('#consumption_period_days').val(30);
+                            }
+                        }
+                    });
+                }
+            });
 
             $('#current_reading').on('input', calculateConsumption);
             $('#previous_reading').on('input', calculateConsumption);

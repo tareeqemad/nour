@@ -157,10 +157,28 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">رقم العداد <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">رقم العداد</label>
                                     <input type="text" name="meter_number" class="form-control @error('meter_number') is-invalid @enderror" 
-                                           value="{{ old('meter_number') }}" required>
+                                           value="{{ old('meter_number') }}">
                                     @error('meter_number')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">قيمة أمبير الاشتراك</label>
+                                    <input type="number" name="ampere" class="form-control @error('ampere') is-invalid @enderror" 
+                                           value="{{ old('ampere') }}" min="0" step="0.01" placeholder="اختياري">
+                                    @error('ampere')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">قراءة العداد الافتتاحية</label>
+                                    <input type="number" name="opening_reading" class="form-control @error('opening_reading') is-invalid @enderror" 
+                                           value="{{ old('opening_reading') }}" min="0" step="0.01" placeholder="اختياري">
+                                    @error('opening_reading')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -241,73 +259,8 @@
     </div>
 
 <script>
-// التحقق من تكرار البيانات في الوقت الفعلي
+// التحقق من صحة البيانات في الوقت الفعلي
 document.addEventListener('DOMContentLoaded', function() {
-    const subscriberIdInput = document.querySelector('input[name="subscriber_id_number"]');
-    const phoneInput = document.querySelector('input[name="phone"]');
-    const meterNumberInput = document.querySelector('input[name="meter_number"]');
-
-    // التحقق من رقم الهوية
-    if (subscriberIdInput) {
-        subscriberIdInput.addEventListener('blur', function() {
-            checkUniqueness('subscriber_id_number', this.value, this);
-        });
-    }
-
-    // التحقق من رقم الهاتف
-    if (phoneInput) {
-        phoneInput.addEventListener('blur', function() {
-            if (this.value.match(/^05[69]\d{7}$/)) {
-                checkUniqueness('phone', this.value, this);
-            }
-        });
-    }
-
-    // التحقق من رقم العداد
-    if (meterNumberInput) {
-        meterNumberInput.addEventListener('blur', function() {
-            if (this.value.trim()) {
-                checkUniqueness('meter_number', this.value, this);
-            }
-        });
-    }
-
-    function checkUniqueness(field, value, input) {
-        if (!value.trim()) return;
-
-        fetch('{{ route("admin.subscribers.check-unique") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({ field: field, value: value })
-        })
-        .then(response => response.json())
-        .then(data => {
-            const feedback = input.parentElement.querySelector('.unique-feedback');
-            
-            if (feedback) {
-                feedback.remove();
-            }
-
-            input.classList.remove('is-invalid', 'is-valid');
-
-            if (data.exists) {
-                input.classList.add('is-invalid');
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'invalid-feedback unique-feedback';
-                errorDiv.textContent = data.message;
-                input.parentElement.appendChild(errorDiv);
-            } else {
-                input.classList.add('is-valid');
-            }
-        })
-        .catch(error => {
-            console.error('خطأ في التحقق من البيانات:', error);
-        });
-    }
-
     // تحديث عداد وحدات التوليد المختارة
     const unitCheckboxes = document.querySelectorAll('.generation-unit-checkbox');
     const selectedCountSpan = document.getElementById('selectedUnitsCount');

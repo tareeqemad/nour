@@ -28,6 +28,8 @@ class Subscriber extends Model
         'phase_type',
         'subscription_status',
         'meter_number',
+        'ampere',
+        'opening_reading',
         'service_type',
         'created_by',
         'last_updated_by',
@@ -41,6 +43,8 @@ class Subscriber extends Model
             'phase_type' => 'integer',
             'subscription_status' => 'integer',
             'service_type' => 'integer',
+            'ampere' => 'decimal:2',
+            'opening_reading' => 'decimal:2',
         ];
     }
 

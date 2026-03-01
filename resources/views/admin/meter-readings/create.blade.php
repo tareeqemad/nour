@@ -85,11 +85,13 @@
                                     <label class="form-label fw-semibold">القراءة السابقة <span class="text-danger">*</span></label>
                                     <input type="number" step="0.01" name="previous_reading" id="previous_reading" 
                                            class="form-control @error('previous_reading') is-invalid @enderror" 
-                                           value="{{ old('previous_reading', $lastReading->current_reading ?? 0) }}" 
+                                           value="{{ old('previous_reading', $lastReading->current_reading ?? ($selectedSubscriber->opening_reading ?? 0)) }}" 
                                            required readonly style="background-color: #f8f9fa;">
                                     <small class="form-text text-muted" id="previous_reading_note">
                                         @if($lastReading)
                                             آخر قراءة: {{ number_format($lastReading->current_reading, 2) }} بتاريخ {{ $lastReading->reading_date->format('Y-m-d') }}
+                                        @elseif(isset($selectedSubscriber) && $selectedSubscriber?->opening_reading !== null)
+                                            قراءة افتتاحية: {{ number_format($selectedSubscriber->opening_reading, 2) }}
                                         @else
                                             لا توجد قراءة سابقة
                                         @endif
@@ -132,10 +134,11 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">فترة الاستهلاك (عدد الأيام) <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">فترة الاستهلاك (عدد الأيام)</label>
                                     <input type="number" name="consumption_period_days" id="consumption_period_days" 
                                            class="form-control @error('consumption_period_days') is-invalid @enderror" 
-                                           value="{{ old('consumption_period_days') }}" min="1" required>
+                                           value="{{ old('consumption_period_days') }}" min="1" readonly style="background-color: #f8f9fa;">
+                                    <small class="form-text text-muted">يتم حسابها تلقائياً</small>
                                     @error('consumption_period_days')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -144,9 +147,9 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">حالة القراءة <span class="text-danger">*</span></label>
                                     <select name="reading_status" class="form-select @error('reading_status') is-invalid @enderror" required>
-                                        <option value="">اختر الحالة</option>
-                                        <option value="1" {{ old('reading_status') == '1' ? 'selected' : '' }}>طبيعية</option>
-                                        <option value="2" {{ old('reading_status') == '2' ? 'selected' : '' }}>تقديرية</option>
+                                        <option value=""></option>
+                                        <option value="1" {{ old('reading_status', '1') == '1' ? 'selected' : '' }}>طبيعية</option>
+                                        <option value="2" {{ old('reading_status', '1') == '2' ? 'selected' : '' }}>تقديرية</option>
                                     </select>
                                     @error('reading_status')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -210,9 +213,14 @@
                             if (response.success) {
                                 if (response.last_reading.previous_reading !== undefined) {
                                     $('#previous_reading').val(response.last_reading.previous_reading);
-                                    const note = response.last_reading.reading_date 
-                                        ? `آخر قراءة: ${parseFloat(response.last_reading.previous_reading).toFixed(2)} بتاريخ ${response.last_reading.reading_date}`
-                                        : 'لا توجد قراءة سابقة';
+                                    let note;
+                                    if (response.last_reading.reading_date) {
+                                        note = `آخر قراءة: ${parseFloat(response.last_reading.previous_reading).toFixed(2)} بتاريخ ${response.last_reading.reading_date}`;
+                                    } else if (parseFloat(response.last_reading.previous_reading) > 0) {
+                                        note = `قراءة افتتاحية: ${parseFloat(response.last_reading.previous_reading).toFixed(2)}`;
+                                    } else {
+                                        note = 'لا توجد قراءة سابقة';
+                                    }
                                     $('#previous_reading_note').text(note);
                                     
                                     // تحديث تاريخ القراءة الأدنى

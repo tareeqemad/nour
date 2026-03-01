@@ -345,12 +345,13 @@ class MeterReadingController extends Controller
                 'reading_date' => $lastReading->reading_date->format('Y-m-d'),
                 'meter_number' => $lastReading->meter_number,
             ] : [
-                'previous_reading' => 0,
+                'previous_reading' => $subscriber->opening_reading ?? 0,
                 'reading_date' => null,
                 'meter_number' => $subscriber->meter_number ?? '',
             ],
             'subscriber' => [
                 'meter_number' => $subscriber->meter_number ?? '',
+                'opening_reading' => $subscriber->opening_reading ?? 0,
             ]
         ]);
     }

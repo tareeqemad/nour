@@ -18,13 +18,15 @@ class UpdateSubscriberRequest extends FormRequest
         $user = $this->user();
         
         $rules = [
-            'phone' => ['required', 'string', 'regex:/^05[69]\\d{7}$/', 'unique:subscribers,phone,' . $subscriberId],
+            'phone' => ['required', 'string', 'regex:/^05[69]\\d{7}$/'],
             'governorate_name' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string'],
             'subscription_category' => ['required', 'integer', 'in:1,2,3,4'],
             'phase_type' => ['required', 'integer', 'in:1,2'],
             'subscription_status' => ['required', 'integer', 'in:1,2,3'],
-            'meter_number' => ['required', 'string', 'max:255', 'unique:subscribers,meter_number,' . $subscriberId],
+            'meter_number' => ['nullable', 'string', 'max:255'],
+            'ampere' => ['nullable', 'numeric', 'min:0'],
+            'opening_reading' => ['nullable', 'numeric', 'min:0'],
             'service_type' => ['required', 'integer', 'in:1,2,3'],
             'generation_unit_ids' => ['required', 'array', 'min:1'],
             'generation_unit_ids.*' => ['exists:generation_units,id'],
@@ -48,7 +50,6 @@ class UpdateSubscriberRequest extends FormRequest
         $messages = [
             'phone.required' => 'رقم الموبايل مطلوب.',
             'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 059 أو 056.',
-            'phone.unique' => 'رقم الموبايل مسجل مسبقاً، يرجى استخدام رقم موبايل مختلف.',
             'address.required' => 'عنوان المشترك مطلوب.',
             'subscription_category.required' => 'تصنيف الاشتراك مطلوب.',
             'subscription_category.in' => 'تصنيف الاشتراك غير صحيح.',
@@ -56,8 +57,10 @@ class UpdateSubscriberRequest extends FormRequest
             'phase_type.in' => 'نوع الفاز غير صحيح.',
             'subscription_status.required' => 'حالة الاشتراك مطلوبة.',
             'subscription_status.in' => 'حالة الاشتراك غير صحيحة.',
-            'meter_number.required' => 'رقم العداد مطلوب.',
-            'meter_number.unique' => 'رقم العداد مسجل مسبقاً، يرجى استخدام رقم عداد مختلف.',
+            'ampere.numeric' => 'قيمة الأمبير يجب أن تكون رقماً.',
+            'ampere.min' => 'قيمة الأمبير يجب أن تكون أكبر من أو تساوي صفر.',
+            'opening_reading.numeric' => 'قراءة العداد الافتتاحية يجب أن تكون رقماً.',
+            'opening_reading.min' => 'قراءة العداد الافتتاحية يجب أن تكون أكبر من أو تساوي صفر.',
             'service_type.required' => 'نوع الخدمة مطلوب.',
             'service_type.in' => 'نوع الخدمة غير صحيح.',
             'generation_unit_ids.required' => 'يجب اختيار وحدة توليد واحدة على الأقل.',

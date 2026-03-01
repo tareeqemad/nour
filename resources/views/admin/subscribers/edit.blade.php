@@ -175,6 +175,24 @@
                                     @enderror
                                 </div>
 
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">قيمة أمبير الاشتراك</label>
+                                    <input type="number" name="ampere" class="form-control @error('ampere') is-invalid @enderror" 
+                                           value="{{ old('ampere', $subscriber->ampere) }}" min="0" step="0.01" placeholder="اختياري">
+                                    @error('ampere')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">قراءة العداد الافتتاحية</label>
+                                    <input type="number" name="opening_reading" class="form-control @error('opening_reading') is-invalid @enderror" 
+                                           value="{{ old('opening_reading', $subscriber->opening_reading) }}" min="0" step="0.01" placeholder="اختياري">
+                                    @error('opening_reading')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
                                 {{-- وحدات التوليد --}}
                                 <div class="col-12 mt-4">
                                     <h6 class="fw-semibold mb-3">
@@ -254,66 +272,9 @@
     </div>
 
 <script>
-// التحقق من تكرار البيانات في الوقت الفعلي للتعديل
+// تحديث عداد وحدات التوليد المختارة
 document.addEventListener('DOMContentLoaded', function() {
-    const phoneInput = document.querySelector('input[name="phone"]');
-    const meterNumberInput = document.querySelector('input[name="meter_number"]');
     const subscriberId = {{ $subscriber->id }};
-
-    // التحقق من رقم الهاتف
-    if (phoneInput) {
-        phoneInput.addEventListener('blur', function() {
-            if (this.value.match(/^05[69]\d{7}$/)) {
-                checkUniqueness('phone', this.value, this, subscriberId);
-            }
-        });
-    }
-
-    // التحقق من رقم العداد
-    if (meterNumberInput) {
-        meterNumberInput.addEventListener('blur', function() {
-            if (this.value.trim()) {
-                checkUniqueness('meter_number', this.value, this, subscriberId);
-            }
-        });
-    }
-
-    function checkUniqueness(field, value, input, excludeId) {
-        if (!value.trim()) return;
-
-        fetch('{{ route("admin.subscribers.check-unique") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({ field: field, value: value, exclude_id: excludeId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            const feedback = input.parentElement.querySelector('.unique-feedback');
-            
-            if (feedback) {
-                feedback.remove();
-            }
-
-            input.classList.remove('is-invalid', 'is-valid');
-
-            if (data.exists) {
-                input.classList.add('is-invalid');
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'invalid-feedback unique-feedback';
-                errorDiv.textContent = data.message;
-                input.parentElement.appendChild(errorDiv);
-            } else {
-                input.classList.add('is-valid');
-            }
-        })
-        .catch(error => {
-            console.error('خطأ في التحقق من البيانات:', error);
-        });
-    }
-
     // تحديث عداد وحدات التوليد المختارة
     const unitCheckboxes = document.querySelectorAll('.generation-unit-checkbox');
     const selectedCountSpan = document.getElementById('selectedUnitsCount');

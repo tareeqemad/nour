@@ -235,19 +235,6 @@ class SubscriberController extends Controller
             return redirect()->route('admin.subscribers.index')
                 ->with('success', "تم إضافة المشترك بنجاح. رقم الاشتراك: {$subscriber->subscription_number}");
         } catch (\Exception $e) {
-            // معالجة خاصة لأخطاء تكرار البيانات
-            if (str_contains($e->getMessage(), 'unique_subscriber_id_number')) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['subscriber_id_number' => 'رقم الهوية مسجل مسبقاً، يرجى استخدام رقم هوية مختلف.']);
-            }
-            
-            if (str_contains($e->getMessage(), 'unique_subscriber_phone')) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['phone' => 'رقم الموبايل مسجل مسبقاً، يرجى استخدام رقم موبايل مختلف.']);
-            }
-            
             if (str_contains($e->getMessage(), '23000') && str_contains($e->getMessage(), 'Duplicate entry')) {
                 return redirect()->back()
                     ->withInput()

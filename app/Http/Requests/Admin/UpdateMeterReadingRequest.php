@@ -120,8 +120,8 @@ class UpdateMeterReadingRequest extends FormRequest
             }
         }
         
-        // حساب فترة الاستهلاك تلقائياً إذا لم يتم إدخالها
-        if ($this->has('reading_date') && $subscriberId && !$this->has('consumption_period_days')) {
+        // حساب فترة الاستهلاك تلقائياً دائماً
+        if ($this->has('reading_date') && $subscriberId) {
             $readingDate = $this->input('reading_date');
             $lastReading = MeterReading::where('subscriber_id', $subscriberId)
                 ->where('id', '!=', $meterReading->id)

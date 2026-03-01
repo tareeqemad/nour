@@ -139,6 +139,20 @@
                                 </div>
                             </div>
 
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted">قيمة أمبير الاشتراك</label>
+                                <div class="form-control-plaintext">
+                                    {{ $subscriber->ampere !== null ? $subscriber->ampere . ' A' : '-' }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted">قراءة العداد الافتتاحية</label>
+                                <div class="form-control-plaintext">
+                                    {{ $subscriber->opening_reading !== null ? number_format($subscriber->opening_reading, 2) : '-' }}
+                                </div>
+                            </div>
+
                             {{-- وحدات التوليد --}}
                             <div class="col-12 mt-4">
                                 <h6 class="fw-semibold mb-3">
