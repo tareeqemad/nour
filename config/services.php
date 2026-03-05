@@ -41,4 +41,9 @@ return [
         'sender' => env('HOTSMS_SENDER', 'E-SER-GEDCO'),
     ],
 
+    'portal' => [
+        'token'    => env('PORTAL_API_TOKEN', ''),
+        'base_url' => env('PORTAL_API_URL', 'https://e.services.gov.ps/api/ministry/'),
+    ],
+
 ];

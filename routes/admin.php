@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\OperatorUnitNumberController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuthorizedPhoneController;
 use App\Http\Controllers\Admin\LogController;
+use App\Http\Controllers\Admin\PortalRequestController;
 use App\Http\Controllers\Admin\PermissionAuditLogController;
 use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RoleController;
@@ -249,6 +250,13 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('authorized-phones/import', [AuthorizedPhoneController::class, 'import'])->name('authorized-phones.import');
     Route::delete('authorized-phones/delete-all', [AuthorizedPhoneController::class, 'deleteAll'])->name('authorized-phones.delete-all');
     Route::resource('authorized-phones', AuthorizedPhoneController::class);
+
+    /**
+     * Submitted Portal Requests (via Palestinian Digital Portal)
+     */
+    Route::get('portal-requests', [PortalRequestController::class, 'index'])->name('portal-requests.index');
+    Route::get('portal-requests/{appId}', [PortalRequestController::class, 'show'])->name('portal-requests.show');
+    Route::get('portal-requests/{appId}/change-status', [PortalRequestController::class, 'changeStatus'])->name('portal-requests.change-status');
 
     /**
      * System Logs (Super Admin only)
