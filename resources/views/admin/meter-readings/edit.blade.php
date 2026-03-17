@@ -6,6 +6,7 @@
     $breadcrumbTitle = 'تعديل قراءة العداد';
     $breadcrumbParent = 'قراءات العدادات';
     $breadcrumbParentUrl = route('admin.meter-readings.index');
+    $readingStatuses = \App\Helpers\ConstantsHelper::get(28);
 @endphp
 
 @push('styles')
@@ -67,7 +68,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">رقم العداد <span class="text-danger">*</span></label>
                                     <input type="text" name="meter_number" id="meter_number" class="form-control @error('meter_number') is-invalid @enderror" 
-                                           value="{{ old('meter_number', $meterReading->meter_number) }}" required readonly style="background-color: #f8f9fa;">
+                                           value="{{ old('meter_number', $meterReading->meter_number) }}" readonly style="background-color: #f8f9fa;">
                                     <small class="form-text text-muted">يتم تعبئته تلقائياً من بيانات المشترك</small>
                                     @error('meter_number')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -120,6 +121,23 @@
                                     @enderror
                                 </div>
 
+                                {{-- تنبيه القراءة غير الطبيعية --}}
+                                @php
+                                    $currentConsumption = old('consumption_kwh', $meterReading->consumption_kwh);
+                                    $maxKwh = (float) \App\Models\Setting::get('abnormal_max_kwh', 9999);
+                                    $showAbnormal = $currentConsumption <= 0 || ($maxKwh > 0 && $currentConsumption > $maxKwh);
+                                @endphp
+                                <div class="col-12 {{ $showAbnormal ? '' : 'd-none' }}" id="abnormalAlert">
+                                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-0">
+                                        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
+                                        <div>
+                                            <strong>تنبيه: قراءة غير طبيعية</strong><br>
+                                            هذه القراءة صُنِّفت تلقائياً كغير طبيعية بسبب استهلاك صفري أو سالب أو يتجاوز الحد الأقصى المسموح به.
+                                            ستظل موقوفة عن الاعتماد الجماعي وتحتاج إلى مراجعة واعتماد منفرد مع ذكر السبب.
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">تاريخ القراءة <span class="text-danger">*</span></label>
                                     <input type="date" name="reading_date" id="reading_date" 
@@ -146,8 +164,9 @@
                                     <label class="form-label fw-semibold">حالة القراءة <span class="text-danger">*</span></label>
                                     <select name="reading_status" class="form-select @error('reading_status') is-invalid @enderror" required>
                                         <option value="">اختر الحالة</option>
-                                        <option value="1" {{ old('reading_status', $meterReading->reading_status) == '1' ? 'selected' : '' }}>طبيعية</option>
-                                        <option value="2" {{ old('reading_status', $meterReading->reading_status) == '2' ? 'selected' : '' }}>تقديرية</option>
+                                        @foreach($readingStatuses as $item)
+                                            <option value="{{ $item->value }}" {{ old('reading_status', $meterReading->reading_status) == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                        @endforeach
                                     </select>
                                     @error('reading_status')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -193,6 +212,8 @@
             });
 
             // حساب الاستهلاك تلقائياً
+            const abnormalMaxKwh = {{ (float) \App\Models\Setting::get('abnormal_max_kwh', 9999) }};
+
             function calculateConsumption() {
                 const previous = parseFloat($('#previous_reading').val()) || 0;
                 const current = parseFloat($('#current_reading').val()) || 0;
@@ -200,8 +221,11 @@
                 if (current >= previous) {
                     const consumption = current - previous;
                     $('#consumption_kwh').val(consumption.toFixed(2));
+                    const isAbnormal = consumption <= 0 || (abnormalMaxKwh > 0 && consumption > abnormalMaxKwh);
+                    $('#abnormalAlert').toggleClass('d-none', !isAbnormal);
                 } else {
                     $('#consumption_kwh').val('');
+                    $('#abnormalAlert').addClass('d-none');
                 }
             }
 
@@ -223,7 +247,7 @@
                                 const diffDays = Math.round((curDate - lastDate) / (1000 * 60 * 60 * 24));
                                 $('#consumption_period_days').val(diffDays > 0 ? diffDays : 1);
                             } else {
-                                $('#consumption_period_days').val(30);
+                                $('#consumption_period_days').val(7);
                             }
                         }
                     });

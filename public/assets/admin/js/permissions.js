@@ -188,6 +188,36 @@
         const hasChanges = dirtyCount > 0;
         $saveBtn.prop('disabled', !currentUserId || !hasChanges);
         $resetBtn.prop('disabled', !currentUserId || !hasChanges);
+
+        // تحديث عدادات التقدم للمجموعات والأقسام
+        updateProgressCounters();
+    }
+
+    function updateProgressCounters() {
+        // تحديث العدد الإجمالي في الهيدر
+        $treeCount.text($('.perm-row').length);
+
+        // تحديث عداد كل مجموعة
+        $('.perm-group-enabled-count').each(function () {
+            const group = $(this).data('group');
+            let enabled = 0;
+            $(`.perm-row[data-group="${group}"]`).each(function () {
+                const id = Number($(this).data('permission-id'));
+                if (effectiveFor(id)) enabled++;
+            });
+            $(this).text(enabled);
+        });
+
+        // تحديث عداد كل قسم
+        $('.perm-cat-enabled-count').each(function () {
+            const cat = $(this).data('category');
+            let enabled = 0;
+            $(`.perm-row[data-category="${cat}"]`).each(function () {
+                const id = Number($(this).data('permission-id'));
+                if (effectiveFor(id)) enabled++;
+            });
+            $(this).text(enabled);
+        });
     }
 
     /**
@@ -823,15 +853,62 @@
         }
     });
 
+    // ===== Category enable/disable =====
+    $(document).on('click', '.perm-cat-enable', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!currentUserId) {
+            flash('warning', 'يرجى اختيار مستخدم أولاً');
+            return;
+        }
+
+        const cat = $(this).data('category');
+        let count = 0;
+        $(`.perm-row[data-category="${cat}"]`).each(function () {
+            const id = Number($(this).data('permission-id'));
+            applyEffective(id, true);
+            count++;
+        });
+
+        renderAllRows();
+        if (count > 0) {
+            flash('success', `تم تفعيل ${count} صلاحية في هذا القسم`);
+        }
+    });
+
+    $(document).on('click', '.perm-cat-disable', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!currentUserId) {
+            flash('warning', 'يرجى اختيار مستخدم أولاً');
+            return;
+        }
+
+        const cat = $(this).data('category');
+        let count = 0;
+        $(`.perm-row[data-category="${cat}"]`).each(function () {
+            const id = Number($(this).data('permission-id'));
+            applyEffective(id, false);
+            count++;
+        });
+
+        renderAllRows();
+        if (count > 0) {
+            flash('warning', `تم تعطيل ${count} صلاحية في هذا القسم`);
+        }
+    });
+
     // ===== Expand/Collapse All (Bootstrap 5 API) =====
     $('#expandAllBtn').on('click', function () {
-        document.querySelectorAll('.perm-group-collapse').forEach(el => {
+        document.querySelectorAll('.perm-category-collapse, .perm-group-collapse').forEach(el => {
             bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).show();
         });
     });
 
     $('#collapseAllBtn').on('click', function () {
-        document.querySelectorAll('.perm-group-collapse').forEach(el => {
+        document.querySelectorAll('.perm-category-collapse, .perm-group-collapse').forEach(el => {
             bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).hide();
         });
     });

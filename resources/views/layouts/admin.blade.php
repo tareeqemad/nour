@@ -356,6 +356,59 @@
     <!-- Admin CRUD JS -->
     <script src="{{ asset('assets/admin/js/admin-crud.js') }}"></script>
 
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    // ===== دوال SweetAlert العامة للفوترة =====
+    function swalIssue(btn) {
+        Swal.fire({
+            title: 'إصدار الفاتورة',
+            html: 'هل تريد إصدار هذه الفاتورة نهائياً؟<br><small class="text-muted">سيتم إنشاء رقم فاتورة معتمد ولن يمكن التعديل بعده.</small>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-send me-1"></i>نعم، إصدار',
+            cancelButtonText: 'إلغاء',
+            reverseButtons: true,
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = btn.dataset.action;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = btn.dataset.csrf;
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
+    function swalCancel(btn) {
+        Swal.fire({
+            title: 'إلغاء الفاتورة',
+            html: 'هل أنت متأكد من إلغاء هذه الفاتورة؟<br><small class="text-muted">سيتم إعادة حالة القراءة إلى معتمدة.</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-x-circle me-1"></i>نعم، إلغاء الفاتورة',
+            cancelButtonText: 'تراجع',
+            reverseButtons: true,
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = btn.dataset.action;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = btn.dataset.csrf;
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+    </script>
+
     @stack('scripts')
 </body>
 </html>

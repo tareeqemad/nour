@@ -66,7 +66,9 @@
 /* Sidebar sticky */
 .permissions-page .perm-sidebar{
     position: sticky;
-    top: 90px; /* عدّلها حسب الهيدر */
+    top: 90px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
 }
 
 /* mini info */
@@ -294,36 +296,138 @@
     font-size: 0.9em;
 }
 
+/* ===========================
+   Categories (أقسام رئيسية)
+   =========================== */
+.permissions-page .perm-category{
+    border: 1.5px solid var(--perm-border);
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    background: var(--perm-surface);
+    overflow: hidden;
+}
+.permissions-page .perm-category-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: var(--perm-subtle);
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--perm-border-2);
+    transition: background 0.2s ease;
+}
+.permissions-page .perm-category-header:hover{
+    background: #f1f5f9;
+}
+.permissions-page .perm-category-icon{
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+.permissions-page .perm-category-title{
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--perm-text);
+}
+.permissions-page .perm-category-subtitle{
+    font-size: .78rem;
+    color: var(--perm-muted);
+    margin-top: 2px;
+}
+.permissions-page .perm-category-progress{
+    background: var(--perm-surface);
+    border: 1.5px solid var(--perm-border);
+    border-radius: 20px;
+    padding: .3rem .75rem;
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--perm-muted);
+    white-space: nowrap;
+}
+.permissions-page .perm-category-actions{
+    display: flex;
+    gap: .4rem;
+}
+.permissions-page .perm-cat-enable,
+.permissions-page .perm-cat-disable{
+    font-weight: 600;
+    font-size: .78rem;
+    padding: .3rem .6rem;
+    border-radius: 8px;
+}
+.permissions-page .perm-category-body{
+    padding: .75rem;
+}
+
+/* Category chevron */
+.permissions-page .perm-cat-chevron{
+    transition: transform .2s ease;
+    font-size: 1.1rem;
+}
+.permissions-page .perm-category-header[aria-expanded="false"] .perm-cat-chevron{
+    transform: rotate(-90deg);
+}
+
 /* Groups */
 .permissions-page .perm-group{
     border: 1px solid var(--perm-border-2);
-    border-radius: 14px;
-    margin-bottom: .75rem;
+    border-radius: 12px;
+    margin-bottom: .5rem;
     background: var(--perm-surface);
 }
 .permissions-page .perm-group-header{
     display:flex;
     align-items:center;
     justify-content: space-between;
-    padding: .75rem 1rem;
+    padding: .65rem .85rem;
     background: var(--perm-subtle);
     cursor:pointer;
     user-select:none;
+    border-radius: 12px 12px 0 0;
 }
 .permissions-page .perm-group-header:hover{
     background:#f1f5f9;
+}
+.permissions-page .perm-group-icon{
+    font-size: 1.05rem;
 }
 .permissions-page .perm-group-actions{
     display:flex;
     gap:.5rem;
 }
+.permissions-page .perm-group-progress-badge{
+    background: var(--perm-surface);
+    border: 1px solid var(--perm-border);
+    border-radius: 20px;
+    padding: .15rem .55rem;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--perm-muted);
+}
 
-/* Chevron rotation (صح) */
+/* Chevron rotation */
 .permissions-page .perm-group-header[aria-expanded="false"] .perm-group-chevron{
     transform: rotate(-90deg);
 }
 .permissions-page .perm-group-chevron{
     transition: transform .2s ease;
+}
+
+/* موبايل: إخفاء أزرار القسم */
+@media (max-width: 768px){
+    .permissions-page .perm-category-actions{
+        display: none;
+    }
+    .permissions-page .perm-category-header{
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
 }
 
 /* Rows */

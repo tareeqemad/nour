@@ -22,70 +22,56 @@
                             <h5 class="general-title">
                                 <i class="bi bi-activity me-2"></i>
                                 المستخدمين النشطين
+                                <span class="badge bg-primary fw-normal ms-2">{{ $activeUsers->count() }}</span>
                             </h5>
-                            <div class="general-subtitle">
-                                المستخدمين الذين فتحوا النظام في آخر 15 دقيقة
-                                <span class="badge bg-primary ms-2">{{ $activeUsers->count() }}</span>
-                            </div>
                         </div>
                     </div>
 
-                    <div class="card-body">
+                    <div class="card-body pt-3">
                         @if($activeUsers->isEmpty())
                             <div class="text-center py-5">
-                                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                                <p class="text-muted mt-3">لا يوجد مستخدمين نشطين حالياً</p>
+                                <i class="bi bi-people text-muted" style="font-size: 2.5rem;"></i>
+                                <p class="text-muted mt-2 mb-0">لا يوجد مستخدمين نشطين حالياً</p>
                             </div>
                         @else
                             <div class="table-responsive">
-                                <table class="table table-hover">
+                                <table class="table table-hover align-middle mb-0 general-table">
                                     <thead>
                                         <tr>
                                             <th>المستخدم</th>
-                                            <th>الدور</th>
-                                            <th>البريد الإلكتروني</th>
-                                            <th>رقم الجوال</th>
-                                            <th>آخر نشاط</th>
-                                            <th>الحالة</th>
+                                            <th class="text-center">الدور</th>
+                                            <th class="text-center">آخر نشاط</th>
+                                            <th class="text-center">الحالة</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($activeUsers as $user)
                                             <tr>
                                                 <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <div class="avatar-title bg-primary text-white rounded-circle">
-                                                                {{ mb_substr($user->name, 0, 1) }}
-                                                            </div>
-                                                        </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div class="avatar-pill flex-shrink-0">{{ mb_substr($user->name, 0, 1) }}</div>
                                                         <div>
-                                                            <div class="fw-semibold">{{ $user->name }}</div>
-                                                            <small class="text-muted">{{ $user->username }}</small>
+                                                            <div class="fw-bold">{{ $user->name }}</div>
+                                                            <div class="text-muted small">{{ $user->username }}{{ $user->phone ? ' · ' . $user->phone : '' }}</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td>
+                                                <td class="text-center">
                                                     <span class="badge bg-{{ $user->isSuperAdmin() ? 'danger' : ($user->isAdmin() ? 'info' : ($user->isEnergyAuthority() ? 'warning' : ($user->isCompanyOwner() ? 'primary' : 'success'))) }}">
                                                         {{ $user->getRoleLabel() }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $user->email }}</td>
-                                                <td>{{ $user->phone ?? '-' }}</td>
-                                                <td>
+                                                <td class="text-center">
                                                     @if($user->last_activity)
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
-                                                            <span>{{ $user->last_activity->diffForHumans() }}</span>
-                                                        </div>
-                                                        <small class="text-muted">{{ $user->last_activity->format('Y-m-d H:i:s') }}</small>
+                                                        <div>{{ $user->last_activity->diffForHumans() }}</div>
+                                                        <small class="text-muted">{{ $user->last_activity->format('H:i:s') }}</small>
                                                     @else
                                                         <span class="text-muted">-</span>
                                                     @endif
                                                 </td>
-                                                <td>
+                                                <td class="text-center">
                                                     @if($user->last_activity && $user->last_activity->diffInMinutes(now()) <= 5)
-                                                        <span class="badge bg-success">نشط الآن</span>
+                                                        <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>نشط الآن</span>
                                                     @elseif($user->last_activity && $user->last_activity->diffInMinutes(now()) <= 15)
                                                         <span class="badge bg-info">نشط</span>
                                                     @else
@@ -98,24 +84,14 @@
                                 </table>
                             </div>
 
-                            @if($stats['by_role']->isNotEmpty())
-                                <div class="mt-4 pt-4 border-top">
-                                    <h6 class="fw-bold mb-3">الإحصائيات حسب الدور:</h6>
-                                    <div class="row g-3">
-                                        @foreach($stats['by_role'] as $roleValue => $count)
-                                            @php
-                                                $roleLabel = \App\Models\User::getRoleLabelFromValue($roleValue);
-                                            @endphp
-                                            <div class="col-md-3">
-                                                <div class="card border">
-                                                    <div class="card-body text-center">
-                                                        <div class="h4 mb-0">{{ $count }}</div>
-                                                        <small class="text-muted">{{ $roleLabel }}</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
+                            @if($stats['by_role']->count() > 1)
+                                <div class="general-stats mt-3 pt-3 border-top">
+                                    @foreach($stats['by_role'] as $roleValue => $count)
+                                        <div class="general-stat">
+                                            <div class="label">{{ \App\Models\User::getRoleLabelFromValue($roleValue) }}</div>
+                                            <div class="value">{{ $count }}</div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             @endif
                         @endif
@@ -128,9 +104,6 @@
 
 @push('scripts')
     <script>
-        // تحديث الصفحة كل 30 ثانية
-        setInterval(function() {
-            location.reload();
-        }, 30000);
+        setInterval(function() { location.reload(); }, 30000);
     </script>
 @endpush

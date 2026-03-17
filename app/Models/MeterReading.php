@@ -7,12 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\TracksUser;
+use App\Models\Setting;
+use App\Helpers\ConstantsHelper;
+
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MeterReading extends Model
 {
     use HasFactory, SoftDeletes, TracksUser;
 
     protected $table = 'meter_readings';
+
+    // ثوابت حالة الإجراء
+    const ACTION_STATUS_PENDING  = 0; // غير معتمدة
+    const ACTION_STATUS_APPROVED = 1; // معتمدة
+    const ACTION_STATUS_BILLED   = 2; // مفوترة
+
+    // ثوابت حالة القراءة
+    const READING_STATUS_NORMAL   = 1; // طبيعية
+    const READING_STATUS_ABNORMAL = 2; // غير طبيعية
 
     protected $fillable = [
         'reading_number',
@@ -24,6 +37,10 @@ class MeterReading extends Model
         'reading_date',
         'consumption_period_days',
         'reading_status',
+        'action_status',
+        'abnormal_reason',
+        'approved_by',
+        'approved_at',
         'created_by',
         'last_updated_by',
     ];
@@ -37,6 +54,8 @@ class MeterReading extends Model
             'reading_date' => 'date',
             'consumption_period_days' => 'integer',
             'reading_status' => 'integer',
+            'action_status' => 'integer',
+            'approved_at' => 'datetime',
         ];
     }
 
@@ -46,6 +65,14 @@ class MeterReading extends Model
     public function subscriber(): BelongsTo
     {
         return $this->belongsTo(Subscriber::class);
+    }
+
+    /**
+     * الفاتورة المرتبطة بهذه القراءة
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
     }
 
     /**
@@ -65,15 +92,85 @@ class MeterReading extends Model
     }
 
     /**
-     * Accessor للحصول على اسم حالة القراءة
+     * العلاقة مع المستخدم الذي اعتمد القراءة
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Accessor للحصول على اسم حالة القراءة (يقرأ من الثوابت - ثابت رقم 28)
      */
     public function getReadingStatusNameAttribute(): string
     {
-        return match($this->reading_status) {
-            1 => 'طبيعية',
-            2 => 'تقديرية',
+        $details = ConstantsHelper::get(28);
+        $match   = $details->firstWhere('value', (string) $this->reading_status);
+        if ($match) {
+            return $match->label;
+        }
+        return match((int) $this->reading_status) {
+            1 => 'طبيعية', 2 => 'غير طبيعية',
             default => 'غير محدد',
         };
+    }
+
+    /**
+     * Accessor للحصول على اسم إجراء القراءة (يقرأ من الثوابت - ثابت رقم 29)
+     */
+    public function getActionStatusNameAttribute(): string
+    {
+        $details = ConstantsHelper::get(29);
+        $match   = $details->firstWhere('value', (string) $this->action_status);
+        if ($match) {
+            return $match->label;
+        }
+        return match((int) $this->action_status) {
+            0 => 'غير معتمدة', 1 => 'معتمدة', 2 => 'مفوترة',
+            default => 'غير محدد',
+        };
+    }
+
+    /**
+     * التحقق من إمكانية التعديل أو الحذف (غير معتمدة فقط)
+     */
+    public function isEditable(): bool
+    {
+        return $this->action_status === self::ACTION_STATUS_PENDING;
+    }
+
+    /**
+     * التحقق من إمكانية الاعتماد (غير معتمدة فقط)
+     */
+    public function isApprovable(): bool
+    {
+        return $this->action_status === self::ACTION_STATUS_PENDING;
+    }
+
+    /**
+     * هل هذه القراءة غير طبيعية؟
+     */
+    public function isAbnormal(): bool
+    {
+        return $this->reading_status === self::READING_STATUS_ABNORMAL;
+    }
+
+    /**
+     * تحديد حالة القراءة تلقائياً بناءً على قيمة الاستهلاك.
+     * تُعدّ غير طبيعية إذا كانت الاستهلاك <= 0 أو تجاوز الحد الأقصى المضبوط في الإعدادات.
+     */
+    public static function determineReadingStatus(float $consumptionKwh): int
+    {
+        if ($consumptionKwh <= 0) {
+            return self::READING_STATUS_ABNORMAL;
+        }
+
+        $maxKwh = (float) Setting::get('abnormal_max_kwh', 9999);
+        if ($maxKwh > 0 && $consumptionKwh > $maxKwh) {
+            return self::READING_STATUS_ABNORMAL;
+        }
+
+        return self::READING_STATUS_NORMAL;
     }
 
     /**
@@ -92,30 +189,23 @@ class MeterReading extends Model
      */
     public static function generateReadingNumber(int $subscriberId): string
     {
-        // استخدام التاريخ + رقم تسلسلي فقط
-        $date = date('Ymd');
+        $date   = date('Ymd');
         $prefix = $date . '-';
-        
-        $lastReading = static::where('reading_number', 'like', $prefix . '%')
-            ->get()
-            ->map(function ($reading) use ($prefix) {
-                $code = $reading->reading_number;
-                if (str_starts_with($code, $prefix)) {
-                    $numberPart = substr($code, strlen($prefix));
-                    return (int) $numberPart;
-                }
-                return 0;
-            })
-            ->filter(fn($num) => $num > 0)
-            ->sortDesc()
-            ->first();
 
-        if ($lastReading) {
-            $nextNumber = $lastReading + 1;
-        } else {
-            $nextNumber = 1;
+        // نستخدم withTrashed حتى لا تُعاد الأرقام المستخدمة في سجلات محذوفة
+        // ونقفل الصف للقراءة لتجنب التكرار عند الإدراج المتزامن
+        $last = static::withTrashed()
+            ->where('reading_number', 'like', $prefix . '%')
+            ->orderByDesc('id')
+            ->lockForUpdate()
+            ->value('reading_number');
+
+        $seq = 1;
+        if ($last) {
+            $parts = explode('-', $last);
+            $seq   = ((int) end($parts)) + 1;
         }
 
-        return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        return $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
     }
 }

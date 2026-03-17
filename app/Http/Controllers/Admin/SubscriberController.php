@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSubscriberRequest;
 use App\Http\Requests\Admin\UpdateSubscriberRequest;
+use App\Models\MeterReading;
 use App\Models\Subscriber;
 use App\Models\GenerationUnit;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SubscriberController extends Controller
@@ -61,6 +63,12 @@ class SubscriberController extends Controller
         $subscriptionStatus = $request->input('subscription_status', '');
         if ($subscriptionStatus !== '' && in_array($subscriptionStatus, ['1', '2', '3'])) {
             $query->where('subscription_status', $subscriptionStatus);
+        }
+
+        // فلترة حسب نوع المشترك (موظف شركة / مشترك عادي)
+        $isEmployee = $request->input('is_employee', '');
+        if ($isEmployee !== '' && in_array($isEmployee, ['0', '1'])) {
+            $query->where('is_employee_subscription', (bool) $isEmployee);
         }
 
         // البحث
@@ -232,6 +240,24 @@ class SubscriberController extends Controller
                 $subscriber->generationUnits()->sync($request->generation_unit_ids);
             }
 
+            // إنشاء قراءة افتتاحية تلقائياً عند إضافة مشترك جديد
+            $openingReading = (float) ($data['opening_reading'] ?? 0);
+            DB::transaction(function () use ($subscriber, $openingReading) {
+                MeterReading::create([
+                    'reading_number'         => MeterReading::generateReadingNumber($subscriber->id),
+                    'subscriber_id'          => $subscriber->id,
+                    'meter_number'           => $subscriber->meter_number ?? '',
+                    'previous_reading'       => $openingReading,
+                    'current_reading'        => $openingReading,
+                    'consumption_kwh'        => 0,
+                    'reading_date'           => $subscriber->subscription_date,
+                    'consumption_period_days'=> 1,
+                    'reading_status'         => MeterReading::determineReadingStatus(0),
+                    'action_status'          => MeterReading::ACTION_STATUS_PENDING,
+                    'created_by'             => auth()->id(),
+                ]);
+            });
+
             return redirect()->route('admin.subscribers.index')
                 ->with('success', "تم إضافة المشترك بنجاح. رقم الاشتراك: {$subscriber->subscription_number}");
         } catch (\Exception $e) {
@@ -320,6 +346,9 @@ class SubscriberController extends Controller
             if (!$user->isSuperAdmin()) {
                 unset($data['subscription_number']);
             }
+
+            // تسجيل من قام بالتحديث
+            $data['last_updated_by'] = $user->id;
 
             $subscriber->update($data);
 

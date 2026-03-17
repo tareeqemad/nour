@@ -28,6 +28,10 @@ use App\Policies\TaskPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\SubscriberPolicy;
 use App\Policies\MeterReadingPolicy;
+use App\Policies\InvoicePolicy;
+use App\Policies\PaymentPolicy;
+use App\Policies\MinimumChargeRulePolicy;
+use App\Policies\EmployeeDiscountRatePolicy;
 use Carbon\Carbon;
 use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Pagination\Paginator;
@@ -55,9 +59,13 @@ class AppServiceProvider extends ServiceProvider
         Task::class => TaskPolicy::class,
         Subscriber::class => SubscriberPolicy::class,
         MeterReading::class => MeterReadingPolicy::class,
+        \App\Models\Invoice::class => InvoicePolicy::class,
+        \App\Models\Payment::class => PaymentPolicy::class,
         \App\Models\AuditLog::class => \App\Policies\AuditLogPolicy::class,
         \App\Models\Message::class => \App\Policies\MessagePolicy::class,
         PermissionAuditLog::class => PermissionAuditLogPolicy::class,
+        \App\Models\MinimumChargeRule::class => MinimumChargeRulePolicy::class,
+        \App\Models\EmployeeDiscountRate::class => EmployeeDiscountRatePolicy::class,
     ];
 
     /**

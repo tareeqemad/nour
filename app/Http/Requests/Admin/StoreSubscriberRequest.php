@@ -17,7 +17,7 @@ class StoreSubscriberRequest extends FormRequest
         return [
             'subscriber_id_number' => ['required', 'string', 'max:255'],
             'subscriber_name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'regex:/^05[69]\d{7}$/'],
+            'phone' => ['required', 'string', 'regex:/^05\d{8}$/'],
             'governorate_name' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string'],
             'subscription_date' => ['required', 'date', 'before_or_equal:today'],
@@ -28,6 +28,7 @@ class StoreSubscriberRequest extends FormRequest
             'ampere' => ['nullable', 'numeric', 'min:0'],
             'opening_reading' => ['nullable', 'numeric', 'min:0'],
             'service_type' => ['required', 'integer', 'in:1,2,3'],
+            'is_employee_subscription' => ['nullable', 'boolean'],
             'generation_unit_ids' => ['required', 'array', 'min:1'],
             'generation_unit_ids.*' => ['exists:generation_units,id'],
         ];
@@ -39,7 +40,7 @@ class StoreSubscriberRequest extends FormRequest
             'subscriber_id_number.required' => 'رقم هوية المشترك مطلوب.',
             'subscriber_name.required' => 'اسم المشترك مطلوب.',
             'phone.required' => 'رقم الموبايل مطلوب.',
-            'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 059 أو 056.',
+            'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
             'address.required' => 'عنوان المشترك مطلوب.',
             'subscription_date.required' => 'تاريخ الاشتراك مطلوب.',
             'subscription_date.before_or_equal' => 'تاريخ الاشتراك لا يمكن أن يكون في المستقبل.',

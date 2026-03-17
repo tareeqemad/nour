@@ -251,6 +251,26 @@
                     قراءات العدادات
                 </a>
             </li>
+            <li class="slide">
+                <a href="{{ route('admin.invoices.index') }}" class="side-menu__item {{ $isActive('admin.invoices.*') }}">
+                    الفوترة والتحصيل
+                </a>
+            </li>
+            <li class="slide">
+                <a href="{{ route('admin.subscriber-account.index') }}" class="side-menu__item {{ $isActive('admin.subscriber-account.*') }}">
+                    حساب المشترك
+                </a>
+            </li>
+            <li class="slide">
+                <a href="{{ route('admin.invoice-reports.index') }}" class="side-menu__item {{ $isActive('admin.invoice-reports.*') }}">
+                    تقارير الفوترة
+                </a>
+            </li>
+            <li class="slide">
+                <a href="{{ route('admin.minimum-charge-rules.index') }}" class="side-menu__item {{ $isActive('admin.minimum-charge-rules.*') }}">
+                    قواعد الحد الأدنى
+                </a>
+            </li>
         </ul>
     </li>
 @endcan
@@ -310,6 +330,16 @@
     </li>
 @endcan
 
+{{-- نسب خصم الموظفين (سوبر أدمن فقط) --}}
+@if($u->isSuperAdmin() || $u->hasPermission('employee_discount_rates.view'))
+    <li class="slide {{ $isActive('admin.employee-discount-rates.*') }}">
+        <a href="{{ route('admin.employee-discount-rates.index') }}" class="side-menu__item">
+            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/><path d="M19 11h-2v2h-2v2h2v2h2v-2h2v-2h-2z" opacity=".5"/></svg>
+            <span class="side-menu__label">خصم الموظفين</span>
+        </a>
+    </li>
+@endif
+
 {{-- السجلات --}}
 @php
     $canViewOperationLogs = auth()->user()->can('viewAny', App\Models\OperationLog::class);
@@ -360,12 +390,4 @@
     </li>
 @endif
 
-{{-- قضايا التفتيش والتعدي (بعد السجلات) --}}
-@can('viewAny', App\Models\InspectionViolationCase::class)
-    <li class="slide {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
-        <a href="{{ route('admin.inspection-violation-cases.index') }}" class="side-menu__item {{ $isActive('admin.inspection-violation-cases.*') ? 'active' : '' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            <span class="side-menu__label">قضايا التفتيش والتعدي</span>
-        </a>
-    </li>
-@endcan
+

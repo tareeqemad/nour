@@ -20,28 +20,21 @@ class UpdateMeterReadingRequest extends FormRequest
         
         return [
             'subscriber_id' => ['required', 'exists:subscribers,id'],
-            'meter_number' => ['required', 'string', 'max:255'],
+            'meter_number' => ['nullable', 'string', 'max:255'],
             'previous_reading' => ['required', 'numeric', 'min:0'],
             'current_reading' => [
                 'required', 
                 'numeric', 
                 'min:0',
-                function ($attribute, $value, $fail) {
-                    $previousReading = $this->input('previous_reading');
-                    if ($previousReading !== null && $value < $previousReading) {
-                        $fail('القراءة الحالية يجب أن تكون أكبر من أو تساوي القراءة السابقة.');
-                    }
-                },
             ],
             'consumption_kwh' => [
                 'required',
                 'numeric',
-                'min:0',
                 function ($attribute, $value, $fail) {
                     $previousReading = $this->input('previous_reading');
                     $currentReading = $this->input('current_reading');
                     if ($previousReading !== null && $currentReading !== null) {
-                        $expectedConsumption = $currentReading - $previousReading;
+                        $expectedConsumption = (float)$currentReading - (float)$previousReading;
                         if (abs($value - $expectedConsumption) > 0.01) {
                             $fail('قيمة الاستهلاك يجب أن تساوي الفرق بين القراءة الحالية والسابقة.');
                         }
@@ -109,15 +102,18 @@ class UpdateMeterReadingRequest extends FormRequest
         $meterReading = $this->route('meter_reading');
         $subscriberId = $this->input('subscriber_id', $meterReading->subscriber_id ?? null);
         
-        // حساب قيمة الاستهلاك تلقائياً إذا لم يتم إدخالها
+        // حساب قيمة الاستهلاك تلقائياً (يمكن أن تكون سالبة أو صفر)
         if ($this->has('previous_reading') && $this->has('current_reading')) {
             $previous = (float) $this->input('previous_reading');
             $current = (float) $this->input('current_reading');
-            if ($current >= $previous) {
-                $this->merge([
-                    'consumption_kwh' => $current - $previous,
-                ]);
-            }
+            $consumption = $current - $previous;
+            $this->merge([
+                'consumption_kwh' => $consumption,
+            ]);
+            // تحديد حالة القراءة تلقائياً: غير طبيعية إذا كان الاستهلاك <= 0
+            $this->merge([
+                'reading_status' => \App\Models\MeterReading::determineReadingStatus($consumption),
+            ]);
         }
         
         // حساب فترة الاستهلاك تلقائياً دائماً
@@ -137,9 +133,9 @@ class UpdateMeterReadingRequest extends FormRequest
                     'consumption_period_days' => max(1, $days),
                 ]);
             } else {
-                // إذا لم توجد قراءة سابقة، استخدم 30 يوم كافتراضي
+                // إذا لم توجد قراءة سابقة، استخدم 7 أيام كافتراضي
                 $this->merge([
-                    'consumption_period_days' => 30,
+                    'consumption_period_days' => 7,
                 ]);
             }
         }

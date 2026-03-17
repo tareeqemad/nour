@@ -156,6 +156,29 @@ class PermissionSeeder extends Seeder
             ['name' => 'inspection_violation_cases.create', 'label' => 'إنشاء قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على إنشاء قضية جديدة', 'order' => 81],
             ['name' => 'inspection_violation_cases.update', 'label' => 'تحديث قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على تحديث القضية', 'order' => 82],
             ['name' => 'inspection_violation_cases.delete', 'label' => 'حذف قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على حذف القضية', 'order' => 83],
+
+            // الفوترة والتحصيل
+            ['name' => 'invoices.view', 'label' => 'عرض الفواتير', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على عرض قائمة الفواتير والتحصيل', 'order' => 83],
+            ['name' => 'invoices.create', 'label' => 'إنشاء فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على إنشاء فاتورة جديدة', 'order' => 83],
+            ['name' => 'invoices.update', 'label' => 'تحديث فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على تحديث بيانات الفاتورة', 'order' => 83],
+            ['name' => 'invoices.delete', 'label' => 'حذف فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على حذف الفاتورة', 'order' => 83],
+            ['name' => 'invoices.issue', 'label' => 'إصدار فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على إصدار الفواتير', 'order' => 83],
+
+            // تقارير الفوترة والتحصيل
+            ['name' => 'invoice_reports.view', 'label' => 'عرض تقارير الفاتورة', 'group' => 'invoice_reports', 'group_label' => 'تقارير الفوترة', 'description' => 'القدرة على عرض تقارير وإحصائيات الفوترة والتحصيل', 'order' => 84],
+
+            // قواعد الحد الأدنى
+            ['name' => 'minimum_charge_rules.view', 'label' => 'عرض قواعد الحد الأدنى', 'group' => 'minimum_charge_rules', 'group_label' => 'قواعد الحد الأدنى للفاتورة', 'description' => 'القدرة على عرض جدول الحد الأدنى للفاتورة', 'order' => 85],
+            ['name' => 'minimum_charge_rules.update', 'label' => 'تعديل قواعد الحد الأدنى', 'group' => 'minimum_charge_rules', 'group_label' => 'قواعد الحد الأدنى للفاتورة', 'description' => 'القدرة على تعديل قيم الحد الأدنى للفاتورة', 'order' => 86],
+
+            // نسب خصم الموظفين
+            ['name' => 'employee_discount_rates.view', 'label' => 'عرض نسب خصم الموظفين', 'group' => 'employee_discount_rates', 'group_label' => 'نسب خصم الموظفين', 'description' => 'القدرة على عرض نسب خصم موظفي الشركة', 'order' => 87],
+            ['name' => 'employee_discount_rates.create', 'label' => 'إنشاء نسبة خصم', 'group' => 'employee_discount_rates', 'group_label' => 'نسب خصم الموظفين', 'description' => 'القدرة على إنشاء نسبة خصم جديدة', 'order' => 88],
+            ['name' => 'employee_discount_rates.update', 'label' => 'تحديث نسبة خصم', 'group' => 'employee_discount_rates', 'group_label' => 'نسب خصم الموظفين', 'description' => 'القدرة على تحديث نسبة الخصم', 'order' => 89],
+            ['name' => 'employee_discount_rates.delete', 'label' => 'حذف نسبة خصم', 'group' => 'employee_discount_rates', 'group_label' => 'نسب خصم الموظفين', 'description' => 'القدرة على حذف نسبة الخصم', 'order' => 90],
+
+            // حساب المشترك (كشف الحساب)
+            ['name' => 'subscriber_accounts.view', 'label' => 'عرض حساب المشترك', 'group' => 'subscriber_accounts', 'group_label' => 'حساب المشترك', 'description' => 'القدرة على عرض كشف حساب المشترك والتفاصيل المالية', 'order' => 91],
         ];
 
         foreach ($permissions as $permission) {

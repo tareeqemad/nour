@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreMeterReadingRequest;
 use App\Http\Requests\Admin\UpdateMeterReadingRequest;
+use App\Models\AuditLog;
+use App\Models\Invoice;
 use App\Models\MeterReading;
 use App\Models\Subscriber;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class MeterReadingController extends Controller
@@ -67,6 +70,22 @@ class MeterReadingController extends Controller
         $readingStatus = $request->input('reading_status', '');
         if ($readingStatus !== '' && in_array($readingStatus, ['1', '2'])) {
             $query->where('reading_status', $readingStatus);
+        }
+
+        // فلترة حسب حالة الإجراء
+        $actionStatus = $request->input('action_status', '');
+        if ($actionStatus !== '' && in_array($actionStatus, ['0', '1', '2'])) {
+            $query->where('action_status', $actionStatus);
+        }
+
+        // فلترة حسب التاريخ
+        $dateFrom = $request->input('date_from', '');
+        $dateTo   = $request->input('date_to', '');
+        if ($dateFrom) {
+            $query->whereDate('reading_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('reading_date', '<=', $dateTo);
         }
 
         // البحث
@@ -195,11 +214,23 @@ class MeterReadingController extends Controller
 
         try {
             $data = $request->validated();
-            
-            // توليد رقم القراءة
-            $data['reading_number'] = MeterReading::generateReadingNumber($data['subscriber_id']);
-            
-            $meterReading = MeterReading::create($data);
+            $data['meter_number'] = $data['meter_number'] ?? '';
+
+            $meterReading = DB::transaction(function () use ($data) {
+                // توليد رقم القراءة داخل Transaction مع قفل lockForUpdate
+                $data['reading_number'] = MeterReading::generateReadingNumber($data['subscriber_id']);
+                return MeterReading::create($data);
+            });
+
+            // سجل التدقيق
+            AuditLog::log(
+                'create',
+                $meterReading,
+                auth()->user(),
+                null,
+                $meterReading->toArray(),
+                'إضافة قراءة عداد جديدة: ' . $meterReading->reading_number
+            );
 
             return redirect()->route('admin.meter-readings.index')
                 ->with('success', 'تم إضافة قراءة العداد بنجاح.');
@@ -283,8 +314,27 @@ class MeterReadingController extends Controller
     {
         $this->authorize('update', $meterReading);
 
+        // لا يُسمح بتعديل قراءة معتمدة أو مفوترة
+        if (!$meterReading->isEditable()) {
+            return redirect()->back()
+                ->with('error', 'لا يمكن تعديل قراءة معتمدة أو مفوترة.');
+        }
+
         try {
-            $meterReading->update($request->validated());
+            $oldValues = $meterReading->toArray();
+            $data = $request->validated();
+            $data['meter_number'] = $data['meter_number'] ?? '';
+            $meterReading->update($data);
+
+            // سجل التدقيق
+            AuditLog::log(
+                'update',
+                $meterReading,
+                auth()->user(),
+                $oldValues,
+                $meterReading->fresh()->toArray(),
+                'تعديل قراءة العداد: ' . $meterReading->reading_number
+            );
 
             return redirect()->route('admin.meter-readings.index')
                 ->with('success', 'تم تحديث قراءة العداد بنجاح.');
@@ -302,7 +352,23 @@ class MeterReadingController extends Controller
     {
         $this->authorize('delete', $meterReading);
 
+        // لا يُسمح بحذف قراءة معتمدة أو مفوترة
+        if (!$meterReading->isEditable()) {
+            return redirect()->back()
+                ->with('error', 'لا يمكن حذف قراءة معتمدة أو مفوترة.');
+        }
+
         try {
+            // سجل التدقيق قبل الحذف
+            AuditLog::log(
+                'delete',
+                $meterReading,
+                auth()->user(),
+                $meterReading->toArray(),
+                null,
+                'حذف قراءة العداد: ' . $meterReading->reading_number
+            );
+
             $meterReading->delete();
 
             return redirect()->route('admin.meter-readings.index')
@@ -311,6 +377,178 @@ class MeterReadingController extends Controller
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء حذف قراءة العداد: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Bulk approve selected meter readings.
+     */
+    public function bulkApprove(Request $request): JsonResponse|RedirectResponse
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $ids = $request->input('ids', []);
+        if (empty($ids) || !is_array($ids)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'لم يتم تحديد أي قراءات.']);
+            }
+            return redirect()->back()->with('error', 'لم يتم تحديد أي قراءات.');
+        }
+
+        $user = auth()->user();
+        $approvedCount = 0;
+        $skippedCount  = 0;
+        $billedCount   = 0;
+        $abnormalCount = 0;
+
+        $readings = MeterReading::with('subscriber')->whereIn('id', $ids)->get();
+
+        foreach ($readings as $reading) {
+            if (!$reading->isApprovable()) {
+                $skippedCount++;
+                continue;
+            }
+
+            // القراءات غير الطبيعية يجب اعتمادها بشكل منفرد مع ذكر السبب
+            if ($reading->isAbnormal()) {
+                $abnormalCount++;
+                continue;
+            }
+
+            DB::transaction(function () use ($reading, $user, &$approvedCount, &$billedCount) {
+                $oldValues = ['action_status' => $reading->action_status];
+
+                // اعتماد القراءة أولاً
+                $reading->update(['action_status' => MeterReading::ACTION_STATUS_APPROVED]);
+
+                AuditLog::log(
+                    'approve',
+                    $reading,
+                    $user,
+                    $oldValues,
+                    ['action_status' => MeterReading::ACTION_STATUS_APPROVED],
+                    'اعتماد قراءة العداد: ' . $reading->reading_number
+                );
+
+                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة
+                if (!$reading->invoice()->exists()) {
+                    Invoice::createFromReading($reading, $user->id);
+
+                    AuditLog::log(
+                        'create',
+                        $reading,
+                        $user,
+                        [],
+                        [],
+                        'ترحيل قراءة للفوترة تلقائياً: ' . $reading->reading_number
+                    );
+
+                    $billedCount++;
+                }
+
+                $approvedCount++;
+            });
+        }
+
+        $message = "تم اعتماد {$approvedCount} قراءة وترحيل {$billedCount} منها إلى شاشة الفوترة.";
+        if ($abnormalCount > 0) {
+            $message .= " تم تخطي {$abnormalCount} قراءة غير طبيعية (تحتاج اعتماداً منفرداً مع ذكر السبب).";
+        }
+        if ($skippedCount > 0) {
+            $message .= " تم تخطي {$skippedCount} قراءة (معتمدة أو مفوترة مسبقاً).";
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $message, 'approved' => $approvedCount, 'skipped' => $skippedCount, 'abnormal' => $abnormalCount]);
+        }
+
+        return redirect()->route('admin.meter-readings.index')->with('success', $message);
+    }
+
+    /**
+     * Approve a single abnormal meter reading with a mandatory reason.
+     */
+    public function approveAbnormal(Request $request, MeterReading $meterReading): JsonResponse
+    {
+        $this->authorize('create', MeterReading::class);
+
+        if (!$meterReading->isApprovable()) {
+            return response()->json(['success' => false, 'message' => 'القراءة معتمدة أو مفوترة مسبقاً.']);
+        }
+
+        if (!$meterReading->isAbnormal()) {
+            return response()->json(['success' => false, 'message' => 'هذه القراءة طبيعية، استخدم الاعتماد الجماعي.']);
+        }
+
+        $request->validate([
+            'abnormal_reason' => 'required|string|min:5|max:1000',
+        ], [
+            'abnormal_reason.required' => 'سبب اعتماد القراءة غير الطبيعية إلزامي.',
+            'abnormal_reason.min'      => 'يجب أن لا يقل السبب عن 5 أحرف.',
+        ]);
+
+        $user = auth()->user();
+
+        DB::transaction(function () use ($meterReading, $request, $user) {
+            $oldValues = ['action_status' => $meterReading->action_status];
+
+            $meterReading->update([
+                'action_status'   => MeterReading::ACTION_STATUS_APPROVED,
+                'abnormal_reason' => $request->input('abnormal_reason'),
+                'approved_by'     => $user->id,
+                'approved_at'     => now(),
+            ]);
+
+            AuditLog::log(
+                'approve',
+                $meterReading,
+                $user,
+                $oldValues,
+                ['action_status' => MeterReading::ACTION_STATUS_APPROVED, 'abnormal_reason' => $request->input('abnormal_reason')],
+                'اعتماد قراءة غير طبيعية: ' . $meterReading->reading_number
+            );
+
+            // ترحيل تلقائي للفوترة
+            if (!$meterReading->invoice()->exists()) {
+                Invoice::createFromReading($meterReading, $user->id);
+
+                AuditLog::log(
+                    'create',
+                    $meterReading,
+                    $user,
+                    [],
+                    [],
+                    'ترحيل قراءة غير طبيعية للفوترة: ' . $meterReading->reading_number
+                );
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم اعتماد القراءة غير الطبيعية وترحيلها إلى شاشة الفوترة.',
+        ]);
+    }
+
+    /**
+     * Get subscribers by operator (AJAX for filter Select2)
+     */
+    public function getSubscribersByOperator(Request $request): JsonResponse
+    {
+        $operatorId = (int) $request->input('operator_id', 0);
+
+        $query = Subscriber::select('id', 'subscription_number', 'subscriber_name');
+
+        if ($operatorId > 0) {
+            $query->whereHas('generationUnits', function($q) use ($operatorId) {
+                $q->where('operator_id', $operatorId);
+            });
+        }
+
+        $subscribers = $query->orderBy('subscription_number')->limit(200)->get();
+
+        return response()->json([
+            'success' => true,
+            'subscribers' => $subscribers,
+        ]);
     }
 
     /**

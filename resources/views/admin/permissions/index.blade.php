@@ -20,32 +20,22 @@
             <div class="col-lg-4">
                 <div class="card perm-card perm-sidebar">
                     <div class="perm-card-header">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="perm-title">
-                                    <i class="bi bi-crosshair2 me-2"></i>
-                                    تحديد الهدف
-                                </div>
-                                <div class="perm-subtitle">اختار المشغل/المستخدم، وبعدها عدّل الصلاحيات من الشجرة.</div>
-                            </div>
+                        <div class="perm-title">
+                            <i class="bi bi-crosshair2 me-2"></i>
+                            تحديد الهدف
                         </div>
                     </div>
 
                     <div class="card-body">
-                        {{-- يتم عرض الرسائل عبر Bootstrap Toast من toast.blade.php --}}
                         <div id="permAlerts" style="display:none;"></div>
 
                         @if(auth()->user()->isSuperAdmin())
-                            {{-- السوبر أدمن: يعرض كل الأدوار النظامية --}}
                             @include('admin.permissions.partials.super-admin-tree', ['systemRoles' => $systemRoles])
                         @elseif(auth()->user()->isAdmin())
-                            {{-- الأدمن: يعرض الأدوار النظامية ما عدا السوبر أدمن --}}
                             @include('admin.permissions.partials.admin-tree', ['systemRoles' => $systemRoles])
                         @elseif(auth()->user()->isEnergyAuthority())
-                            {{-- سلطة الطاقة: يعرض سلطة الطاقة، مشغل، وباقي الأدوار --}}
                             @include('admin.permissions.partials.energy-authority-tree', ['systemRoles' => $systemRoles])
                         @elseif(auth()->user()->isCompanyOwner())
-                            {{-- المشغل: الدور مثبت على "مشغل" + الأدوار المخصصة --}}
                             @if($operator)
                                 <div class="perm-mini-note mb-3">
                                     <i class="bi bi-info-circle me-2"></i>
@@ -64,7 +54,6 @@
                                         <option value="{{ $customRole->id }}">{{ $customRole->label }}</option>
                                     @endforeach
                                 </select>
-                                <div class="form-text">الدور مختار على "مشغل" - يمكنك منح صلاحيات للموظفين فقط.</div>
                             </div>
 
                             <div class="mb-3" id="userSelectWrapper">
@@ -73,7 +62,6 @@
                                     موظف / فني
                                 </label>
                                 <select id="userSelect" class="form-select"></select>
-                                <div class="form-text">ستشاهد فقط أعضاء فريق العمل التابعين لمشغلك (لا يمكنك منح نفسك صلاحيات).</div>
                             </div>
                         @else
                             <div class="alert alert-warning mb-0">
@@ -123,15 +111,6 @@
                                 </div>
                             </div>
 
-                            <div class="perm-legend mt-3">
-                                <div class="fw-semibold mb-2">كيف نقرأ الشجرة؟</div>
-                                <ul class="mb-0">
-                                    <li><span class="badge bg-info">من الدور</span> صلاحية جاية من Role.</li>
-                                    <li><span class="badge bg-success">مباشرة</span> صلاحية انضافت Direct.</li>
-                                    <li><span class="badge bg-danger">ممنوعة</span> منع (Override) حتى لو كانت من الدور.</li>
-                                    <li>زر التفعيل يغيّر <strong>النتيجة النهائية</strong> (Effective) بطريقة ذكية.</li>
-                                </ul>
-                            </div>
                         </div>
 
                         <div class="d-grid gap-2 mt-3">
@@ -157,9 +136,7 @@
                                 <div class="perm-title">
                                     <i class="bi bi-diagram-3 me-2"></i>
                                     شجرة الصلاحيات
-                                </div>
-                                <div class="perm-subtitle">
-                                    ابحث + فلتر + فعّل/عطّل الصلاحيات. العدد: <span id="treeCount">{{ $permissions->flatten()->count() }}</span>
+                                    <span class="badge text-bg-secondary fw-normal ms-2" id="treeCount">{{ $permissions->flatten()->count() }}</span>
                                 </div>
                             </div>
 
@@ -178,10 +155,6 @@
                         <div class="perm-toolbar mt-3">
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-7">
-                                    <label class="form-label fw-semibold mb-2">
-                                        <i class="bi bi-search me-1"></i>
-                                        البحث في الصلاحيات
-                                    </label>
                                     <div class="perm-searchbar">
                                         <div class="perm-searchfield">
                                             <i class="bi bi-search perm-search-icon"></i>
@@ -218,10 +191,6 @@
                                 </div>
 
                                 <div class="col-md-5">
-                                    <label class="form-label fw-semibold mb-2">
-                                        <i class="bi bi-funnel me-1"></i>
-                                        الفلاتر
-                                    </label>
                                     <div class="perm-filters">
                                         <button type="button" class="perm-filter active" data-filter="all">
                                             <i class="bi bi-list-ul me-1"></i>

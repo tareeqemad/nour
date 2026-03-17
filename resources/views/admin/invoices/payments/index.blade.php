@@ -1,0 +1,167 @@
+@extends('layouts.admin')
+
+@section('title', 'دفعات الفاتورة: ' . ($invoice->invoice_number ?? 'مسودة'))
+
+@php $breadcrumbTitle = 'سجل الدفعات'; @endphp
+
+@section('content')
+<div class="general-page">
+    <div class="row g-3 justify-content-center">
+        <div class="col-lg-10">
+
+            {{-- رأس الصفحة --}}
+            <div class="general-card">
+                <div class="general-card-header">
+                    <div>
+                        <h5 class="general-title">
+                            <i class="bi bi-cash-stack me-2"></i>
+                            سجل الدفعات
+                            <span class="text-muted fs-6">{{ $invoice->invoice_number ?? 'مسودة' }}</span>
+                        </h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        @can('createForInvoice', [App\Models\Payment::class, $invoice])
+                            <a href="{{ route('admin.invoices.payments.create', $invoice) }}"
+                               class="btn btn-success btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>تسجيل دفعة
+                            </a>
+                        @endcan
+                        <a href="{{ route('admin.invoices.show', $invoice) }}"
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-right me-1"></i>الفاتورة
+                        </a>
+                    </div>
+                </div>
+
+                {{-- ملخص الفاتورة --}}
+                <div class="card-body border-bottom pb-3 mb-3">
+                    <div class="row text-center g-2">
+                        <div class="col-sm-3">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">المبلغ الإجمالي</div>
+                                <div class="fw-bold">{{ number_format($invoice->total_amount, 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">إجمالي المسدد</div>
+                                <div class="fw-bold text-success">{{ number_format($invoice->paidAmount(), 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">المتبقي</div>
+                                <div class="fw-bold text-danger">{{ number_format($invoice->remainingAmount(), 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">الحالة</div>
+                                <div>
+                                    <span class="badge bg-{{ $invoice->status_badge_class }}">
+                                        {{ $invoice->status_name }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if($payments->isEmpty())
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            لا توجد دفعات مسجلة بعد
+                        </div>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>تاريخ السداد</th>
+                                        <th>المبلغ المسدد</th>
+                                        <th>طريقة الدفع</th>
+                                        <th>رقم الإيصال</th>
+                                        <th>سجّله</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($payments as $payment)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $payment->payment_date->format('Y-m-d') }}</td>
+                                        <td class="fw-bold text-success">
+                                            {{ number_format($payment->amount_paid, 2) }}
+                                            @if($payment->overpayment > 0)
+                                                <br><small class="text-info">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    زيادة: {{ number_format($payment->overpayment, 2) }}
+                                                </small>
+                                            @endif
+                                        </td>
+                                        <td>{{ $payment->method_label }}</td>
+                                        <td>{{ $payment->receipt_number ?? '—' }}</td>
+                                        <td>{{ $payment->creator?->name ?? '—' }}</td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <a href="{{ route('admin.invoices.payments.show', [$invoice, $payment]) }}"
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                @can('delete', $payment)
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger btn-sm"
+                                                            data-action="{{ route('admin.invoices.payments.destroy', [$invoice, $payment]) }}"
+                                                            data-csrf="{{ csrf_token() }}"
+                                                            onclick="swalDeletePayment(this)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                @endcan
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        {{ $payments->links() }}
+                    @endif
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+function swalDeletePayment(btn) {
+    Swal.fire({
+        title: 'حذف الدفعة',
+        text: 'هل أنت متأكد من حذف هذه الدفعة؟ سيتم إعادة حالة الفاتورة تلقائياً.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء',
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = btn.dataset.action;
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = btn.dataset.csrf;
+        const method = document.createElement('input');
+        method.type = 'hidden'; method.name = '_method'; method.value = 'DELETE';
+        form.appendChild(csrf);
+        form.appendChild(method);
+        document.body.appendChild(form);
+        form.submit();
+    });
+}
+</script>
+@endpush

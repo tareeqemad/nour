@@ -79,19 +79,65 @@ class PortalRequestController extends Controller
                     return $this->errorResponse('لم يتم إيجاد بيانات الطلب');
                 }
 
-                // نبني صف واحد من بيانات getApp
+                $data       = $appData['data']     ?? [];
+                $statusInfo = $appData['status']    ?? [];
+                $pureData   = $appData['pureData']  ?? [];
+
+                // استخراج رقم الهوية من pureData (قسم "بيانات مقدم الطلب")
+                $applicantIdVal = $this->extractFromPureData($pureData, [
+                    'رقم الهوية',
+                    'رقم الهويه',
+                    'رقم هوية مقدم الطلب',
+                ]);
+
+                // استخراج تاريخ التقديم من pureData (قسم "الإقرار بصحة البيانات")
+                $insertedAt = $this->extractFromPureData($pureData, [
+                    'تاريخ تقديم الطلب',
+                    'تاريخ التقديم',
+                    'تاريخ الطلب',
+                ]);
+
                 $row = [
                     'app_no'          => $appNo,
-                    'ser_no'          => $appData['data']['serv_no'] ?? '',
-                    'applicant_id'    => '',
-                    'app_status'      => $appData['status']['status'] ?? '',
-                    'desc_app_status' => $appData['status']['desc'] ?? '',
+                    'ser_no'          => $data['serv_no'] ?? $data['ser_no'] ?? '',
+                    'applicant_id'    => $applicantIdVal ?? '',
+                    'app_status'      => $statusInfo['status'] ?? '',
+                    'desc_app_status' => $statusInfo['desc']   ?? '',
                     'status_note'     => null,
-                    'inserted_at'     => null,
+                    'inserted_at'     => $this->normalizeDate($insertedAt),
                     'changed_at'      => null,
-                    'pure_data'       => json_encode($appData['pureData'] ?? []),
-                    '_from_single'    => true,
+                    'pure_data'       => json_encode($pureData),
                 ];
+
+                // ── استدعاء تكميلي لجلب changed_at و status_note ──
+                // getApp لا يحتوي عليهما، لكن getAppsByServiceIDAndIdNo يحتوي
+                if (!empty($applicantIdVal)) {
+                    try {
+                        $supplementRes = Http::withHeaders($this->headers())
+                            ->timeout(15)
+                            ->get($this->baseUrl . 'getAppsByServiceIDAndIdNo/' . urlencode($applicantIdVal));
+
+                        if ($supplementRes->successful()) {
+                            $supplementBody = $supplementRes->json();
+                            $supplementApps = $supplementBody['apps']['data'] ?? [];
+
+                            foreach ($supplementApps as $sApp) {
+                                if (($sApp['app_no'] ?? '') == $appNo) {
+                                    $row['changed_at']  = $this->normalizeDate($sApp['changed_at'] ?? null);
+                                    $row['status_note'] = $sApp['status_note'] ?? null;
+                                    // تحديث inserted_at من المصدر الأدق إذا كان موجوداً
+                                    if (!empty($sApp['inserted_at'])) {
+                                        $row['inserted_at'] = $this->normalizeDate($sApp['inserted_at']);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // لا نفشل الطلب الأصلي إذا فشل الاستدعاء التكميلي
+                        Log::warning('Supplementary API call failed: ' . $e->getMessage());
+                    }
+                }
 
                 return response()->json([
                     'ok'         => true,
@@ -173,6 +219,66 @@ class PortalRequestController extends Controller
         $apps       = $body['apps'] ?? [];
         $items      = $apps['data'] ?? [];
         $pagination = $apps['pagination'] ?? ['allPages' => 1, 'currentPage' => $page];
+
+        // سجّل أسماء الحقول الحقيقية من أول عنصر
+        if (!empty($items)) {
+            $firstKeys = implode(', ', array_keys((array)$items[0]));
+            $firstItem = $items[0];
+            Log::info("parseListResponse raw keys: {$firstKeys}");
+            Log::info('parseListResponse raw changed_at=' . json_encode($firstItem['changed_at'] ?? 'MISSING') .
+                       ', status_note=' . json_encode($firstItem['status_note'] ?? 'MISSING'));
+        }
+
+        // تطبيع أسماء الحقول مع استخراج البيانات المفقودة من pureData
+        $items = array_map(function (array $item): array {
+            $pureDataRaw = $item['pure_data'] ?? $item['pureData'] ?? $item['PURE_DATA'] ?? null;
+
+            // رقم الهوية: أولاً نبحث في الحقول المباشرة، وإن لم نجد نستخرج من pureData
+            $applicantId = $this->findField($item, ['applicant_id', 'applicantId', 'APPLICANT_ID', 'id_no', 'ID_NO']);
+            if (empty($applicantId) && !empty($pureDataRaw)) {
+                $applicantId = $this->extractFromPureData($pureDataRaw, [
+                    'رقم الهوية',
+                    'رقم الهويه',
+                    'رقم هوية مقدم الطلب',
+                ]);
+            }
+
+            // تاريخ التقديم: نبحث في الحقول المباشرة (inserted_at أو app_date)
+            $insertedAt = $this->findField($item, ['inserted_at', 'insertedAt', 'app_date', 'INSERT_DATE', 'insert_date', 'created_at']);
+            if (empty($insertedAt) && !empty($pureDataRaw)) {
+                $insertedAt = $this->extractFromPureData($pureDataRaw, [
+                    'تاريخ تقديم الطلب',
+                    'تاريخ التقديم',
+                    'تاريخ الطلب',
+                ]);
+            }
+
+            // آخر تعديل
+            $changedAt = $this->findField($item, ['changed_at', 'changedAt', 'CHANGE_DATE', 'change_date', 'updated_at', 'last_update']);
+
+            // ملاحظة الحالة
+            $statusNote = $this->findField($item, ['status_note', 'statusNote', 'STATUS_NOTE', 'note', 'notes']);
+
+            return [
+                'app_no'          => $this->findField($item, ['app_no', 'appNo', 'APP_NO']) ?? '',
+                'ser_no'          => $this->findField($item, ['ser_no', 'serNo', 'SER_NO', 'serv_no']) ?? '',
+                'applicant_id'    => $applicantId ?? '',
+                'app_status'      => $this->findField($item, ['app_status', 'appStatus', 'APP_STATUS', 'status']) ?? '',
+                'desc_app_status' => $this->findField($item, ['desc_app_status', 'descAppStatus', 'DESC_APP_STATUS', 'status_desc', 'app_status_desc']) ?? '',
+                'status_note'     => $statusNote,
+                'inserted_at'     => $this->normalizeDate($insertedAt),
+                'changed_at'      => $this->normalizeDate($changedAt),
+                'pure_data'       => $pureDataRaw,
+            ];
+        }, array_values($items));
+
+        // سجّل البيانات المطبقة بعد التطبيع
+        if (!empty($items)) {
+            $first = $items[0];
+            Log::info('parseListResponse OUTPUT: changed_at=' . json_encode($first['changed_at'] ?? null) .
+                       ', status_note=' . json_encode($first['status_note'] ?? null) .
+                       ', inserted_at=' . json_encode($first['inserted_at'] ?? null));
+        }
 
         return response()->json([
             'ok'         => true,
@@ -262,6 +368,102 @@ class PortalRequestController extends Controller
             Log::error('PortalRequestController@changeStatus: ' . $e->getMessage());
             return $this->errorResponse('حدث خطأ أثناء الاتصال');
         }
+    }
+
+    /**
+     * البحث عن حقل في مصفوفة باستخدام قائمة أسماء محتملة
+     */
+    private function findField(array $data, array $keys): mixed
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
+                return $data[$key];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * استخراج قيمة حقل من بيانات pureData حسب اسم الحقل بالعربي
+     *
+     * pureData هو مصفوفة من الأقسام:
+     * [{ "dt_name": "...", "dt_data": [[ { "fn": "اسم الحقل", "fv": ["القيمة"], "fp": [] }, ... ]] }]
+     *
+     * @param mixed  $pureData   JSON string أو مصفوفة أو null
+     * @param array  $fieldNames أسماء الحقول المراد البحث عنها (بالعربي)
+     * @return string|null
+     */
+    private function extractFromPureData(mixed $pureData, array $fieldNames): ?string
+    {
+        if (empty($pureData)) {
+            return null;
+        }
+
+        // فك JSON إذا كان نصًا
+        if (is_string($pureData)) {
+            $pureData = json_decode($pureData, true);
+        }
+
+        if (!is_array($pureData)) {
+            return null;
+        }
+
+        // البحث في كل الأقسام (sections) → صفوف (rows) → حقول (fields)
+        foreach ($pureData as $section) {
+            $dtData = $section['dt_data'] ?? [];
+            foreach ($dtData as $row) {
+                if (!is_array($row)) continue;
+                foreach ($row as $field) {
+                    if (!is_array($field)) continue;
+                    $fn = $field['fn'] ?? '';
+                    if (in_array($fn, $fieldNames, true)) {
+                        $fv = $field['fv'] ?? [];
+                        if (is_array($fv) && !empty($fv)) {
+                            return $fv[0];
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * توحيد صيغة التاريخ إلى YYYY-MM-DD HH:mm:ss
+     *
+     * الـ API يرجع التواريخ بصيغ مختلفة:
+     * - "2026-03-02 21:24:03" (YYYY-MM-DD HH:mm:ss) من getAppsByServiceIDAndIdNo
+     * - "02/03/2026" (DD/MM/YYYY) من getApps و pureData
+     * - "02-03-2026" (DD-MM-YYYY) احتمال
+     *
+     * JavaScript new Date("02/03/2026") يفسرها كـ MM/DD/YYYY (أمريكي)
+     * لذلك نحول الكل لصيغة YYYY-MM-DD في PHP
+     */
+    private function normalizeDate(?string $date): ?string
+    {
+        if (empty($date)) {
+            return null;
+        }
+
+        $date = trim($date);
+
+        // صيغة YYYY-MM-DD (مع أو بدون وقت) - صحيحة مباشرة
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $date)) {
+            return $date;
+        }
+
+        // صيغة DD/MM/YYYY → تحويل لـ YYYY-MM-DD
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $date, $m)) {
+            return sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
+        }
+
+        // صيغة DD-MM-YYYY → تحويل لـ YYYY-MM-DD
+        if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $date, $m)) {
+            return sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
+        }
+
+        return $date;
     }
 
     /**

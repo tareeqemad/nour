@@ -394,10 +394,13 @@ class UserController extends Controller
             $q->where('is_system', false);
         })->count();
 
+        $employeesTotal = (int) ($counts[\App\Enums\Role::Employee->value] ?? 0)
+            + (int) ($counts[\App\Enums\Role::Technician->value] ?? 0);
+
         $stats = [
             'total' => array_sum($counts),
             'company_owners' => (int) ($counts[\App\Enums\Role::CompanyOwner->value] ?? 0),
-            'admins' => (int) ($counts[\App\Enums\Role::Admin->value] ?? 0) + (int) ($counts[\App\Enums\Role::SuperAdmin->value] ?? 0),
+            'employees' => $employeesTotal,
             'custom_roles' => $customRolesCount,
         ];
 

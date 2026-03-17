@@ -23,17 +23,20 @@
                                 {{ $meterReading->reading_number }}
                             </div>
                         </div>
+                        {{-- أزرار التعديل في الرأس تخضع لحالة الإجراء --}}
                         <div class="d-flex gap-2">
                             <a href="{{ route('admin.meter-readings.index') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-right me-2"></i>
                                 العودة للقائمة
                             </a>
-                            @can('update', $meterReading)
-                                <a href="{{ route('admin.meter-readings.edit', $meterReading) }}" class="btn btn-primary">
-                                    <i class="bi bi-pencil me-2"></i>
-                                    تعديل
-                                </a>
-                            @endcan
+                            @if($meterReading->isEditable())
+                                @can('update', $meterReading)
+                                    <a href="{{ route('admin.meter-readings.edit', $meterReading) }}" class="btn btn-primary">
+                                        <i class="bi bi-pencil me-2"></i>
+                                        تعديل
+                                    </a>
+                                @endcan
+                            @endif
                         </div>
                     </div>
 
@@ -122,11 +125,26 @@
                                     @php
                                         $statusClass = match($meterReading->reading_status) {
                                             1 => 'bg-success',
-                                            2 => 'bg-warning',
+                                            2 => 'bg-warning text-dark',
                                             default => 'bg-secondary',
                                         };
                                     @endphp
                                     <span class="badge {{ $statusClass }}">{{ $meterReading->reading_status_name }}</span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted">الإجراء</label>
+                                <div class="form-control-plaintext">
+                                    @php
+                                        $actionClass = match($meterReading->action_status) {
+                                            0 => 'bg-secondary',
+                                            1 => 'bg-success',
+                                            2 => 'bg-info',
+                                            default => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $actionClass }}">{{ $meterReading->action_status_name }}</span>
                                 </div>
                             </div>
 

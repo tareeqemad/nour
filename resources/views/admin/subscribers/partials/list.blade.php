@@ -79,7 +79,7 @@
                         </td>
                         <td class="text-center">
                             @php
-                                $statusClass = match($subscriber->subscription_status) {
+                                $statusClass = match((int)$subscriber->subscription_status) {
                                     1 => 'bg-success',
                                     2 => 'bg-warning',
                                     3 => 'bg-danger',

@@ -10,6 +10,8 @@ class AuditLog extends Model
 {
     protected $table = 'audit_logs';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'user_id',
         'action',
@@ -32,6 +34,15 @@ class AuditLog extends Model
             'request_data' => 'array',
             'created_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $model) {
+            if (empty($model->created_at)) {
+                $model->created_at = now();
+            }
+        });
     }
 
     public function user(): BelongsTo

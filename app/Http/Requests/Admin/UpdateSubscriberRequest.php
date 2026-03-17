@@ -18,7 +18,7 @@ class UpdateSubscriberRequest extends FormRequest
         $user = $this->user();
         
         $rules = [
-            'phone' => ['required', 'string', 'regex:/^05[69]\\d{7}$/'],
+            'phone' => ['required', 'string', 'regex:/^05\d{8}$/'],
             'governorate_name' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string'],
             'subscription_category' => ['required', 'integer', 'in:1,2,3,4'],
@@ -28,6 +28,7 @@ class UpdateSubscriberRequest extends FormRequest
             'ampere' => ['nullable', 'numeric', 'min:0'],
             'opening_reading' => ['nullable', 'numeric', 'min:0'],
             'service_type' => ['required', 'integer', 'in:1,2,3'],
+            'is_employee_subscription' => ['nullable', 'boolean'],
             'generation_unit_ids' => ['required', 'array', 'min:1'],
             'generation_unit_ids.*' => ['exists:generation_units,id'],
         ];
@@ -49,7 +50,7 @@ class UpdateSubscriberRequest extends FormRequest
     {
         $messages = [
             'phone.required' => 'رقم الموبايل مطلوب.',
-            'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 059 أو 056.',
+            'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
             'address.required' => 'عنوان المشترك مطلوب.',
             'subscription_category.required' => 'تصنيف الاشتراك مطلوب.',
             'subscription_category.in' => 'تصنيف الاشتراك غير صحيح.',
@@ -76,5 +77,12 @@ class UpdateSubscriberRequest extends FormRequest
         }
         
         return $messages;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'meter_number' => $this->meter_number !== '' ? $this->meter_number : null,
+        ]);
     }
 }

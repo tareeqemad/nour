@@ -50,8 +50,17 @@ class PermissionsController extends Controller
                     ->orWhere('name', 'like', 'maintenance_records.%')
                     ->orWhere('name', 'like', 'compliance_safeties.%')
                     ->orWhere('name', 'like', 'electricity_tariff_prices.%')
-                    ->orWhere('name', 'like', 'inspection_violation_cases.%');
-                    
+                    ->orWhere('name', 'like', 'inspection_violation_cases.%')
+
+                    // إدارة المشتركين والفوترة
+                    ->orWhere('name', 'like', 'subscribers.%')
+                    ->orWhere('name', 'like', 'meter_readings.%')
+                    ->orWhere('name', 'like', 'invoices.%')
+                    ->orWhere('name', 'like', 'invoice_reports.%')
+                    ->orWhere('name', 'like', 'minimum_charge_rules.%')
+                    ->orWhere('name', 'like', 'employee_discount_rates.%')
+                    ->orWhere('name', 'like', 'subscriber_accounts.%');
+
                     // ملاحظة: welcome_messages.* و sms_templates.* غير موجودة هنا عمداً
                     // لأنها مخصصة فقط للـ Admin و SuperAdmin
             })
@@ -413,13 +422,20 @@ class PermissionsController extends Controller
     }
 
     /**
-     * جلب صلاحيات الموظفين والفنيين (operation_logs و maintenance_records فقط)
+     * جلب صلاحيات الموظفين والفنيين
      */
     private function getEmployeeTechnicianPermissionIds(): array
     {
         return Permission::where(function ($q) {
             $q->where('name', 'like', 'operation_logs.%')
-              ->orWhere('name', 'like', 'maintenance_records.%');
+              ->orWhere('name', 'like', 'maintenance_records.%')
+              ->orWhere('name', 'like', 'subscribers.%')
+              ->orWhere('name', 'like', 'meter_readings.%')
+              ->orWhere('name', 'like', 'invoices.%')
+              ->orWhere('name', 'like', 'invoice_reports.%')
+              ->orWhere('name', 'like', 'subscriber_accounts.%')
+              ->orWhere('name', 'like', 'minimum_charge_rules.%')
+              ->orWhere('name', 'like', 'employee_discount_rates.%');
         })->pluck('id')->toArray();
     }
 

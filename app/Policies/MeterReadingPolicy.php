@@ -94,9 +94,15 @@ class MeterReadingPolicy
 
     /**
      * Determine whether the user can update the model.
+     * قراءة معتمدة أو مفوترة لا يمكن تعديلها
      */
     public function update(User $user, MeterReading $meterReading): bool
     {
+        // لا يُسمح بتعديل قراءة معتمدة أو مفوترة
+        if (!$meterReading->isEditable()) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return false;
         }
@@ -134,10 +140,14 @@ class MeterReadingPolicy
 
     /**
      * Determine whether the user can delete the model.
+     * فقط SuperAdmin يمكنه الحذف وفقط للقراءات غير المعتمدة
      */
     public function delete(User $user, MeterReading $meterReading): bool
     {
-        // فقط SuperAdmin يمكنه الحذف
+        // لا يُسمح بحذف قراءة معتمدة أو مفوترة
+        if (!$meterReading->isEditable()) {
+            return false;
+        }
         return $user->isSuperAdmin();
     }
 

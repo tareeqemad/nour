@@ -6,6 +6,11 @@
     $breadcrumbTitle = 'تعديل بيانات المشترك';
     $breadcrumbParent = 'إدارة بيانات المشتركين';
     $breadcrumbParentUrl = route('admin.subscribers.index');
+    $subscriptionCategories = \App\Helpers\ConstantsHelper::get(23);
+    $phaseTypes             = \App\Helpers\ConstantsHelper::get(24);
+    $subscriptionStatuses   = \App\Helpers\ConstantsHelper::get(25);
+    $serviceTypes           = \App\Helpers\ConstantsHelper::get(26);
+    $ampereOptions          = \App\Helpers\ConstantsHelper::get(31);
 @endphp
 
 @section('content')
@@ -30,6 +35,25 @@
                     </div>
 
                     <div class="card-body">
+                        @if(session('error'))
+                            <div class="alert alert-danger mb-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
+                        @if($errors->any())
+                            <div class="alert alert-danger mb-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>يرجى تصحيح الأخطاء التالية:</strong>
+                                <ul class="mb-0 mt-1">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <form action="{{ route('admin.subscribers.update', $subscriber) }}" method="POST" id="subscriberForm">
                             @csrf
                             @method('PUT')
@@ -50,6 +74,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">رقم الاشتراك</label>
                                     <input type="text" class="form-control" value="{{ $subscriber->subscription_number }}" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                    <input type="hidden" name="subscription_number" value="{{ $subscriber->subscription_number }}">
                                     <div class="form-text text-muted">هذا الحقل غير قابل للتعديل</div>
                                 </div>
 
@@ -82,7 +107,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">رقم الموبايل <span class="text-danger">*</span></label>
                                     <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" 
-                                           value="{{ old('phone', $subscriber->phone) }}" pattern="^05[69]\d{7}$" maxlength="10" 
+                                           value="{{ old('phone', $subscriber->phone) }}" maxlength="10" 
                                            placeholder="0591234567 أو 0561234567" required>
                                     @error('phone')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -118,10 +143,9 @@
                                     <label class="form-label fw-semibold">تصنيف الاشتراك <span class="text-danger">*</span></label>
                                     <select name="subscription_category" class="form-select @error('subscription_category') is-invalid @enderror" required>
                                         <option value="">اختر التصنيف</option>
-                                        <option value="1" {{ old('subscription_category', $subscriber->subscription_category) == '1' ? 'selected' : '' }}>منزلي</option>
-                                        <option value="2" {{ old('subscription_category', $subscriber->subscription_category) == '2' ? 'selected' : '' }}>تجاري</option>
-                                        <option value="3" {{ old('subscription_category', $subscriber->subscription_category) == '3' ? 'selected' : '' }}>خدماتي</option>
-                                        <option value="4" {{ old('subscription_category', $subscriber->subscription_category) == '4' ? 'selected' : '' }}>صناعي</option>
+                                        @foreach($subscriptionCategories as $item)
+                                            <option value="{{ $item->value }}" {{ old('subscription_category', $subscriber->subscription_category) == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                        @endforeach
                                     </select>
                                     @error('subscription_category')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -132,8 +156,9 @@
                                     <label class="form-label fw-semibold">نوع الفاز <span class="text-danger">*</span></label>
                                     <select name="phase_type" class="form-select @error('phase_type') is-invalid @enderror" required>
                                         <option value="">اختر النوع</option>
-                                        <option value="1" {{ old('phase_type', $subscriber->phase_type) == '1' ? 'selected' : '' }}>1 فاز</option>
-                                        <option value="2" {{ old('phase_type', $subscriber->phase_type) == '2' ? 'selected' : '' }}>3 فاز</option>
+                                        @foreach($phaseTypes as $item)
+                                            <option value="{{ $item->value }}" {{ old('phase_type', $subscriber->phase_type) == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                        @endforeach
                                     </select>
                                     @error('phase_type')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -144,9 +169,9 @@
                                     <label class="form-label fw-semibold">حالة الاشتراك <span class="text-danger">*</span></label>
                                     <select name="subscription_status" class="form-select @error('subscription_status') is-invalid @enderror" required>
                                         <option value="">اختر الحالة</option>
-                                        <option value="1" {{ old('subscription_status', $subscriber->subscription_status) == '1' ? 'selected' : '' }}>نشط</option>
-                                        <option value="2" {{ old('subscription_status', $subscriber->subscription_status) == '2' ? 'selected' : '' }}>موقوف</option>
-                                        <option value="3" {{ old('subscription_status', $subscriber->subscription_status) == '3' ? 'selected' : '' }}>مغلق</option>
+                                        @foreach($subscriptionStatuses as $item)
+                                            <option value="{{ $item->value }}" {{ old('subscription_status', $subscriber->subscription_status) == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                        @endforeach
                                     </select>
                                     @error('subscription_status')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -157,9 +182,9 @@
                                     <label class="form-label fw-semibold">نوع الخدمة <span class="text-danger">*</span></label>
                                     <select name="service_type" class="form-select @error('service_type') is-invalid @enderror" required>
                                         <option value="">اختر النوع</option>
-                                        <option value="1" {{ old('service_type', $subscriber->service_type) == '1' ? 'selected' : '' }}>مولد</option>
-                                        <option value="2" {{ old('service_type', $subscriber->service_type) == '2' ? 'selected' : '' }}>شمسي</option>
-                                        <option value="3" {{ old('service_type', $subscriber->service_type) == '3' ? 'selected' : '' }}>هجين</option>
+                                        @foreach($serviceTypes as $item)
+                                            <option value="{{ $item->value }}" {{ old('service_type', $subscriber->service_type) == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                        @endforeach
                                     </select>
                                     @error('service_type')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -177,8 +202,12 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">قيمة أمبير الاشتراك</label>
-                                    <input type="number" name="ampere" class="form-control @error('ampere') is-invalid @enderror" 
-                                           value="{{ old('ampere', $subscriber->ampere) }}" min="0" step="0.01" placeholder="اختياري">
+                                    <select name="ampere" class="form-select @error('ampere') is-invalid @enderror">
+                                        <option value="">-- اختر القيمة --</option>
+                                        @foreach($ampereOptions as $item)
+                                            <option value="{{ $item->value }}" {{ old('ampere', $subscriber->ampere) == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                        @endforeach
+                                    </select>
                                     @error('ampere')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -191,6 +220,17 @@
                                     @error('opening_reading')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
+                                </div>
+
+                                <div class="col-md-6 d-flex align-items-center">
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="checkbox" name="is_employee_subscription" id="is_employee_subscription" value="1" {{ old('is_employee_subscription', $subscriber->is_employee_subscription) ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-semibold" for="is_employee_subscription">
+                                            <i class="bi bi-person-badge me-1"></i>
+                                            اشتراك موظف الشركة
+                                        </label>
+                                        <div class="form-text text-muted">تحديد هذا الخيار يُطبّق نسبة الخصم المستحقة عند الفوترة</div>
+                                    </div>
                                 </div>
 
                                 {{-- وحدات التوليد --}}

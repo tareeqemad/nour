@@ -61,10 +61,10 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
         Route::get('/user/{user}', [PermissionsController::class, 'getUserPermissions'])->name('user');
         Route::get('/user/{user}/permissions', [PermissionsController::class, 'getUserPermissions'])->name('user.permissions');
 
-        Route::get('/select2/operators', [PermissionsController::class, 'select2Operators'])->name('select2.operators');
-        Route::get('/select2/users', [PermissionsController::class, 'select2Users'])->name('select2.users');
-        Route::get('/select2/roles', [PermissionsController::class, 'select2Roles'])->name('select2.roles');
-        Route::get('/select2/custom-roles/{operator}', [PermissionsController::class, 'select2CustomRoles'])->name('select2.custom-roles');
+        Route::get('/lookup/operators', [PermissionsController::class, 'select2Operators'])->name('select2.operators');
+        Route::get('/lookup/users', [PermissionsController::class, 'select2Users'])->name('select2.users');
+        Route::get('/lookup/roles', [PermissionsController::class, 'select2Roles'])->name('select2.roles');
+        Route::get('/lookup/custom-roles/{operator}', [PermissionsController::class, 'select2CustomRoles'])->name('select2.custom-roles');
         Route::get('/role/{role}/permissions', [PermissionsController::class, 'getRolePermissions'])->name('role.permissions');
         Route::post('/role/{role}/assign', [PermissionsController::class, 'assignRolePermissions'])
             ->middleware('throttle:10,1') // Rate limit: 10 requests per minute
@@ -162,6 +162,15 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     
     // API route for getting tariff price
     Route::get('api/tariff-price', [\App\Http\Controllers\Admin\ElectricityTariffPriceController::class, 'getTariffPrice'])->name('api.tariff-price');
+
+    // Employee Discount Rates (نسب خصم الموظفين)
+    Route::get('employee-discount-rates', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'index'])->name('employee-discount-rates.index');
+    Route::get('employee-discount-rates/create', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'create'])->name('employee-discount-rates.create');
+    Route::post('employee-discount-rates', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'store'])->name('employee-discount-rates.store');
+    Route::get('employee-discount-rates/{employeeDiscountRate}/edit', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'edit'])->name('employee-discount-rates.edit');
+    Route::put('employee-discount-rates/{employeeDiscountRate}', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'update'])->name('employee-discount-rates.update');
+    Route::delete('employee-discount-rates/{employeeDiscountRate}', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'destroy'])->name('employee-discount-rates.destroy');
+    Route::get('api/employee-discount-rate', [\App\Http\Controllers\Admin\EmployeeDiscountRateController::class, 'getDiscountRate'])->name('api.employee-discount-rate');
     
     // Electricity Tariff Prices (nested under operators - للعرض فقط، الأسعار العامة فقط)
     Route::prefix('operators/{operator}')->name('operators.')->group(function () {
@@ -326,8 +335,53 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     /**
      * Meter Readings (قراءات العدادات)
      */
-    Route::resource('meter-readings', \App\Http\Controllers\Admin\MeterReadingController::class);
+    Route::post('meter-readings/bulk-approve', [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkApprove'])->name('meter-readings.bulk-approve');
+    Route::post('meter-readings/{meterReading}/approve-abnormal', [\App\Http\Controllers\Admin\MeterReadingController::class, 'approveAbnormal'])->name('meter-readings.approve-abnormal');
+    Route::get('meter-readings/subscribers-by-operator', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getSubscribersByOperator'])->name('meter-readings.subscribers-by-operator');
     Route::get('meter-readings/subscriber/last-reading', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getLastReading'])->name('meter-readings.last-reading');
+    Route::resource('meter-readings', \App\Http\Controllers\Admin\MeterReadingController::class);
+
+    /**
+     * الفوترة والتحصيل (Invoices)
+     */
+    Route::post('invoices/{invoice}/issue',  [\App\Http\Controllers\Admin\InvoiceController::class, 'issue'])->name('invoices.issue');
+    Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Admin\InvoiceController::class, 'cancel'])->name('invoices.cancel');
+    Route::get('invoices/{invoice}/print',   [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
+    Route::get('invoices/reading-data',      [\App\Http\Controllers\Admin\InvoiceController::class, 'getReadingData'])->name('invoices.reading-data');
+    Route::get('invoices/subscribers-by-operator', [\App\Http\Controllers\Admin\InvoiceController::class, 'getSubscribersByOperator'])->name('invoices.subscribers-by-operator');
+    Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
+
+    /**
+     * المدفوعات (Payments) - مشتقة تحت الفواتير
+     */
+    Route::get('invoices/{invoice}/payments',          [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('invoices.payments.index');
+    Route::get('invoices/{invoice}/payments/create',   [\App\Http\Controllers\Admin\PaymentController::class, 'create'])->name('invoices.payments.create');
+    Route::post('invoices/{invoice}/payments',         [\App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('invoices.payments.store');
+    Route::get('invoices/{invoice}/payments/{payment}',[\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('invoices.payments.show');
+    Route::delete('invoices/{invoice}/payments/{payment}',[\App\Http\Controllers\Admin\PaymentController::class, 'destroy'])->name('invoices.payments.destroy');
+
+    /**
+     * حساب المشترك (Subscriber Account)
+     */
+    Route::get('subscriber-account', [\App\Http\Controllers\Admin\SubscriberAccountController::class, 'index'])->name('subscriber-account.index');
+    Route::get('subscriber-account/{subscriber}', [\App\Http\Controllers\Admin\SubscriberAccountController::class, 'show'])->name('subscriber-account.show');
+
+    /**
+     * حساب المشترك (Subscriber Account)
+     */
+    Route::get('subscriber-account', [\App\Http\Controllers\Admin\SubscriberAccountController::class, 'index'])->name('subscriber-account.index');
+    Route::get('subscriber-account/{subscriber}', [\App\Http\Controllers\Admin\SubscriberAccountController::class, 'show'])->name('subscriber-account.show');
+
+    /**
+     * تقارير الفوترة والتحصيل
+     */
+    Route::get('invoice-reports', [\App\Http\Controllers\Admin\InvoiceReportController::class, 'index'])->name('invoice-reports.index');
+
+    /**
+     * قواعد الحد الأدنى للفاتورة
+     */
+    Route::get('minimum-charge-rules', [\App\Http\Controllers\Admin\MinimumChargeRuleController::class, 'index'])->name('minimum-charge-rules.index');
+    Route::put('minimum-charge-rules/{minimumChargeRule}', [\App\Http\Controllers\Admin\MinimumChargeRuleController::class, 'update'])->name('minimum-charge-rules.update');
 
     /**
      * قضايا التفتيش والتعدي (معرّفة صراحة لتفادي 404 من القائمة)

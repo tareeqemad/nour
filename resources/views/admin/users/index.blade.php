@@ -58,10 +58,8 @@
                         <h5 class="general-title">
                             <i class="bi bi-people me-2"></i>
                             إدارة المستخدمين
+                            <span class="text-muted fw-normal fs-6 ms-2" id="usersSubtitle"></span>
                         </h5>
-                        <div class="general-subtitle">
-                            إدارة الحسابات حسب الصلاحيات والارتباط بالمشغل.
-                        </div>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -74,55 +72,25 @@
                     </div>
                 </div>
 
-                <div class="card-body pb-4">
-                    @if($isCompanyOwner)
-                        <div class="users-note mb-3">
-                            <i class="bi bi-shield-lock me-1"></i>
-                            يمكنك إضافة مستخدمين جدد بأدوار مخصصة (<strong>فني مشغل</strong> و <strong>محاسب</strong>) وإدارة المستخدمين التابعين لمشغّلك.
-                        </div>
-                    @endif
+                <div class="card-body pt-3 pb-4">
 
-
-                    {{-- كارد واحد للفلاتر --}}
+                    {{-- فلاتر البحث --}}
                     <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
-                        </div>
                         <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-lg-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person me-1"></i>
-                                        الاسم
-                                    </label>
-                                    <input type="text" class="form-control" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4 col-lg-3">
+                                    <label class="form-label small fw-semibold mb-1">الاسم</label>
+                                    <input type="text" class="form-control form-control-sm" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
                                 </div>
 
-                                <div class="col-lg-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person-badge me-1"></i>
-                                        اسم المستخدم
-                                    </label>
-                                    <input type="text" class="form-control" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
+                                <div class="col-md-4 col-lg-3">
+                                    <label class="form-label small fw-semibold mb-1">اسم المستخدم</label>
+                                    <input type="text" class="form-control form-control-sm" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
                                 </div>
 
-                                <div class="col-lg-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-envelope me-1"></i>
-                                        البريد الإلكتروني
-                                    </label>
-                                    <input type="text" class="form-control" id="emailFilter" placeholder="ابحث بالبريد الإلكتروني..." autocomplete="off">
-                                </div>
-
-                                <div class="col-lg-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-shield-check me-1"></i>
-                                        الدور
-                                    </label>
-                                    <select class="form-select" id="roleFilter">
+                                <div class="col-md-4 col-lg-3">
+                                    <label class="form-label small fw-semibold mb-1">الدور</label>
+                                    <select class="form-select form-select-sm" id="roleFilter">
                                         <option value="">الكل</option>
                                         @if(!empty($sortedSystemRoles))
                                             <optgroup label="الأدوار النظامية">
@@ -142,37 +110,27 @@
                                 </div>
 
                                 @if($isSuperAdmin)
-                                    <div class="col-lg-4" id="operatorFilterWrap" style="display: none;">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building me-1"></i>
-                                            المشغل
-                                        </label>
-                                        <select class="form-select" id="operatorFilter">
+                                    <div class="col-md-4 col-lg-3 d-none" id="operatorFilterWrap">
+                                        <label class="form-label small fw-semibold mb-1">المشغل</label>
+                                        <select class="form-select form-select-sm" id="operatorFilter">
                                             <option value="">اختر المشغل</option>
                                         </select>
-                                        <div class="form-text small">عند اختيار مشغل، سيتم عرض المشغل + موظفيه وفنييه.</div>
                                     </div>
                                 @endif
                             </div>
-                            
-                            <div class="row g-3 mt-2">
-                                <div class="col-12">
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-primary" id="btnSearch">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                        <button class="btn btn-outline-secondary" id="btnResetFilters" title="تفريغ الحقول">
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                            تفريغ الحقول
-                                        </button>
-                                    </div>
-                                </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-primary" id="btnSearch">
+                                    <i class="bi bi-search me-1"></i>
+                                    بحث
+                                </button>
+                                <button class="btn btn-outline-secondary" id="btnResetFilters" title="تفريغ">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                    تفريغ
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <hr class="my-3">
 
                     <div class="position-relative" id="usersTableContainer">
                         {{-- Loading overlay --}}
@@ -184,26 +142,22 @@
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 users-table">
-                                <thead class="table-primary">
+                            <table class="table table-hover align-middle mb-0 general-table">
+                                <thead>
                                 <tr>
-                                    <th style="min-width:60px;" class="text-center text-nowrap">#</th>
-                                    <th style="min-width:220px;" class="text-nowrap">الاسم</th>
-                                    <th style="min-width:120px;" class="text-nowrap">رقم الجوال</th>
-                                    <th class="text-center text-nowrap" style="min-width:120px;">الدور</th>
-                                    <th class="text-center text-nowrap" style="min-width:150px;">المشغل</th>
-                                    <th class="text-center text-nowrap" style="min-width:100px;">عدد الموظفين</th>
-                                    <th class="text-center text-nowrap" style="min-width:100px;">الصلاحيات</th>
-                                    <th class="text-center text-nowrap" style="min-width:100px;">الحالة</th>
-                                    <th style="min-width:80px;" class="text-center text-nowrap">الإجراءات</th>
+                                    <th style="width:50px;" class="text-center">#</th>
+                                    <th>المستخدم</th>
+                                    <th class="text-center">الدور</th>
+                                    <th class="text-center">المشغل</th>
+                                    <th class="text-center">الصلاحيات</th>
+                                    <th class="text-center">الحالة</th>
+                                    <th style="width:70px;" class="text-center">إجراءات</th>
                                 </tr>
                                 </thead>
                                 <tbody id="usersTbody">
                                     <tr>
-                                        <td colspan="9">
-                                            <div class="empty-state text-center py-4">
-                                                <div class="text-muted">لا توجد بيانات</div>
-                                            </div>
+                                        <td colspan="7">
+                                            <div class="text-center py-4 text-muted">جاري التحميل...</div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -214,7 +168,7 @@
                     <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
                         <div class="small text-muted" id="usersMeta">—</div>
                         <nav>
-                            <ul class="pagination mb-0" id="usersPagination"></ul>
+                            <ul class="pagination pagination-sm mb-0" id="usersPagination"></ul>
                         </nav>
                     </div>
                 </div>
@@ -390,9 +344,8 @@
 
             const $statTotal = $('#statTotal');
             const $statOwners = $('#statOwners');
-            const $statAdmins = $('#statAdmins');
             const $statEmployees = $('#statEmployees');
-            const $statTechnicians = $('#statTechnicians');
+            const $statCustomRoles = $('#statCustomRoles');
 
             function setLoading(on){
                 const $loading = $('#usersLoading');
@@ -413,8 +366,8 @@
             function renderEmpty(text){
                 $tbody.html(`
                     <tr>
-                        <td colspan="9">
-                            <div class="empty-state text-center py-5">
+                        <td colspan="7">
+                            <div class="text-center py-5">
                                 <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
                                 <p class="text-muted mb-0">${escapeHtml(text || 'لا يوجد نتائج')}</p>
                             </div>
@@ -636,28 +589,23 @@
 
                     return `
                         <tr>
-                            <td class="text-center text-nowrap">
-                                <span class="text-muted fw-semibold">${rowNumber}</span>
+                            <td class="text-center">
+                                <span class="text-muted">${rowNumber}</span>
                             </td>
-                            <td class="text-nowrap">
+                            <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="avatar-pill flex-shrink-0">${escapeHtml(initials)}</div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold">${escapeHtml(name)}</div>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <div class="fw-bold text-truncate">${escapeHtml(name)}</div>
+                                        <div class="text-muted small">${escapeHtml(username)}${phone ? ' · ' + escapeHtml(phone) : ''}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-nowrap">${phoneCell}</td>
-                            <td class="text-center text-nowrap">${roleBadge(roleKey, roleLabel)}</td>
-                            <td class="text-center text-nowrap">${operatorCell}</td>
-                            <td class="text-center text-nowrap">${employeesCell}</td>
-                            <td class="text-center text-nowrap">${permissionsCell}</td>
-                            <td class="text-center text-nowrap">${statusCell}</td>
-                            <td class="text-nowrap">
-                                <div class="d-flex justify-content-center">
-                                    ${actionsMenu}
-                                </div>
-                            </td>
+                            <td class="text-center">${roleBadge(roleKey, roleLabel)}</td>
+                            <td class="text-center">${operatorCell}</td>
+                            <td class="text-center">${permissionsCell}</td>
+                            <td class="text-center">${statusCell}</td>
+                            <td class="text-center">${actionsMenu}</td>
                         </tr>
                     `;
                 }).join('');
@@ -678,6 +626,7 @@
                     return;
                 }
                 $meta.text(`عرض ${meta.from || 0} - ${meta.to || 0} من ${meta.total || 0}`);
+                $('#usersSubtitle').text(`${meta.total || 0} مستخدم`);
             }
 
             function renderPagination(meta){
@@ -721,11 +670,9 @@
                 if(!stats) return;
 
                 if($statTotal.length) $statTotal.text(stats.total ?? '—');
-                if($statEmployees.length) $statEmployees.text(stats.employees ?? '—');
-                if($statTechnicians.length) $statTechnicians.text(stats.technicians ?? '—');
-
                 if($statOwners.length) $statOwners.text(stats.company_owners ?? '—');
-                if($statAdmins.length) $statAdmins.text(stats.admins ?? '—');
+                if($statEmployees.length) $statEmployees.text(stats.employees ?? '—');
+                if($statCustomRoles.length) $statCustomRoles.text(stats.custom_roles ?? '—');
             }
 
             function loadUsers(page=1){
@@ -774,13 +721,12 @@
             // ===== Filters
             const $nameFilter = $('#nameFilter');
             const $usernameFilter = $('#usernameFilter');
-            const $emailFilter = $('#emailFilter');
             const $roleFilter = $('#roleFilter');
 
             const doSearch = function(){
                 state.name = $nameFilter.val().trim();
                 state.username = $usernameFilter.val().trim();
-                state.email = $emailFilter.val().trim();
+                state.email = '';
                 state.role = $roleFilter.val() || '';
                 
                 if(IS_SUPER_ADMIN){
@@ -796,7 +742,7 @@
             $('#btnSearch').on('click', doSearch);
             
             // Search on Enter key in any filter field
-            $nameFilter.add($usernameFilter).add($emailFilter).on('keypress', function(e) {
+            $nameFilter.add($usernameFilter).on('keypress', function(e) {
                 if (e.which === 13) {
                     e.preventDefault();
                     doSearch();
@@ -809,7 +755,7 @@
                 // SuperAdmin: إظهار فلتر المشغل فقط عند اختيار دور "مشغل"
                 if(IS_SUPER_ADMIN){
                     const shouldShowOperator = (role === 'company_owner');
-                    $('#operatorFilterWrap').toggle(shouldShowOperator);
+                    $('#operatorFilterWrap').toggleClass('d-none', !shouldShowOperator);
 
                     if(!shouldShowOperator){
                         try { 
@@ -832,7 +778,6 @@
             $('#btnResetFilters').on('click', function(){
                 $nameFilter.val('');
                 $usernameFilter.val('');
-                $emailFilter.val('');
                 $roleFilter.val('').trigger('change');
 
                 state.name = '';
@@ -848,7 +793,7 @@
                             $('#operatorFilter').select2('destroy');
                         }
                     } catch(e){}
-                    $('#operatorFilterWrap').hide();
+                    $('#operatorFilterWrap').addClass('d-none');
                 }
 
                 // تفريغ الحقول فقط - لا تحميل تلقائي

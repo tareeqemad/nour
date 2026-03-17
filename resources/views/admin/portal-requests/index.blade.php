@@ -406,7 +406,20 @@
     function fmtDate(d) {
         if (!d) return '—';
         try {
-            return new Date(d).toLocaleDateString('ar-EG', {
+            let parsed;
+            const s = String(d).trim();
+
+            // صيغة DD/MM/YYYY - نحولها يدوياً لأن JS يفسر / كـ MM/DD/YYYY
+            const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (slashMatch) {
+                parsed = new Date(+slashMatch[3], +slashMatch[2] - 1, +slashMatch[1]);
+            } else {
+                // استبدال المسافة بـ T لضمان تحليل ISO صحيح
+                parsed = new Date(s.includes('T') ? s : s.replace(' ', 'T'));
+            }
+
+            if (isNaN(parsed.getTime())) return s;
+            return parsed.toLocaleDateString('ar-EG', {
                 year: 'numeric', month: 'short', day: 'numeric'
             });
         } catch { return d; }
@@ -477,14 +490,16 @@
                          * parseInt(document.getElementById('filterPerPage').value || 15, 10) + 1;
 
         tbody.innerHTML = items.map((item, i) => {
-            const appNo    = item.app_no || '—';
-            const appId    = item.applicant_id || '';
+            const appNo    = item.app_no          || '—';
+            const appId    = item.applicant_id     || '';
             const color    = statusColor(item.app_status);
-            const statusTxt= item.desc_app_status || item.app_status || '—';
-            const note     = item.status_note
-                             ? `<span class="text-muted small" title="${escHtml(item.status_note)}">${escHtml(item.status_note.substring(0,50))}${item.status_note.length>50?'...':''}</span>`
+            const statusTxt= item.desc_app_status  || item.app_status || '—';
+            const rawNote  = item.status_note       || null;
+            const note     = rawNote
+                             ? `<span class="text-muted small" title="${escHtml(rawNote)}">${escHtml(String(rawNote).substring(0,50))}${String(rawNote).length>50?'...':''}</span>`
                              : '<span class="text-muted">—</span>';
-            const name     = escHtml(extractName(item.pure_data));
+            const pureDataSrc = item.pure_data      || null;
+            const name     = escHtml(extractName(pureDataSrc));
             const insAt    = fmtDate(item.inserted_at);
             const chgAt    = fmtDate(item.changed_at);
 

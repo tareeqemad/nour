@@ -117,6 +117,8 @@
                                         $isCompanyOwner = $user->isCompanyOwner();
                                         $isEmployeeOrTechnician = $user->isEmployee() || $user->isTechnician();
                                         $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                                        $subscriptionStatuses = \App\Helpers\ConstantsHelper::get(25);
+                                        $subscriberTypes      = \App\Helpers\ConstantsHelper::get(27);
                                     @endphp
 
                                     {{-- فلتر المشغل --}}
@@ -150,9 +152,23 @@
                                         </label>
                                         <select id="subscriptionStatusFilter" class="form-select">
                                             <option value="">الكل</option>
-                                            <option value="1" {{ request('subscription_status') == '1' ? 'selected' : '' }}>نشط</option>
-                                            <option value="2" {{ request('subscription_status') == '2' ? 'selected' : '' }}>موقوف</option>
-                                            <option value="3" {{ request('subscription_status') == '3' ? 'selected' : '' }}>مغلق</option>
+                                            @foreach($subscriptionStatuses as $item)
+                                                <option value="{{ $item->value }}" {{ request('subscription_status') == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- فلتر نوع المشترك --}}
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-person-badge me-1"></i>
+                                            نوع المشترك
+                                        </label>
+                                        <select id="isEmployeeFilter" class="form-select">
+                                            <option value="">الكل</option>
+                                            @foreach($subscriberTypes as $item)
+                                                <option value="{{ $item->value }}" {{ request('is_employee') === $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
 
@@ -174,7 +190,7 @@
                                             بحث
                                         </button>
                                         <button
-                                            class="btn btn-outline-secondary {{ request('operator_id') || request('subscription_status') || request('search') ? '' : 'd-none' }}"
+                                            class="btn btn-outline-secondary {{ request('operator_id') || request('subscription_status') || request('is_employee') !== null && request('is_employee') !== '' || request('search') ? '' : 'd-none' }}"
                                             type="button"
                                             id="clearBtn"
                                             title="تفريغ الحقول"
@@ -441,9 +457,11 @@
                     operatorId = $('input[name="operator_id"]').val() || '';
                 }
                 
+                const isEmployee = $('#isEmployeeFilter').val();
                 return Object.assign({
                     operator_id: operatorId,
                     subscription_status: $subscriptionStatusFilter.val() || '',
+                    is_employee: (isEmployee !== null && isEmployee !== undefined) ? isEmployee : '',
                     search: $searchInput.val() || '',
                 }, extra);
             }
@@ -466,7 +484,7 @@
                             $('#subscribersCount').text(response.count);
                             
                             // إظهار/إخفاء زر التفريغ
-                            if (params.operator_id || params.subscription_status || params.search) {
+                            if (params.operator_id || params.subscription_status || params.is_employee !== '' || params.search) {
                                 $clearBtn.removeClass('d-none');
                             } else {
                                 $clearBtn.addClass('d-none');
@@ -486,6 +504,7 @@
             $searchBtn.on('click', loadSubscribers);
             $operatorFilter.on('change', loadSubscribers);
             $subscriptionStatusFilter.on('change', loadSubscribers);
+            $('#isEmployeeFilter').on('change', loadSubscribers);
             $searchInput.on('keypress', function(e) {
                 if (e.which === 13) {
                     loadSubscribers();
@@ -495,6 +514,7 @@
             $clearBtn.on('click', function() {
                 $operatorFilter.val('').trigger('change');
                 $subscriptionStatusFilter.val('').trigger('change');
+                $('#isEmployeeFilter').val('');
                 $searchInput.val('');
                 loadSubscribers();
             });
