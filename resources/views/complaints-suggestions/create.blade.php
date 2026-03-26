@@ -7,652 +7,343 @@
 
 @push('styles')
 <style>
-    .complaints-create-page {
-        padding: 3rem 0 5rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-        min-height: calc(100vh - 70px);
-        margin: 0;
-        width: 100%;
-    }
+/* ===== Complaints Create — Nour Design System ===== */
 
-    .complaints-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 0 2rem;
-    }
+.cc-hero {
+    background: linear-gradient(155deg, #1a2478 0%, #11186B 40%, #0c1050 100%);
+    padding: 2.5rem 0 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
 
-    .complaints-header {
-        text-align: center;
-        margin-bottom: 3rem;
-        padding: 0;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        position: relative;
-    }
+.cc-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(circle at 25% 35%, rgba(255,255,255,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 75% 65%, rgba(255,255,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+}
 
-    .complaints-header h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        position: relative;
-        display: inline-block;
-        padding-bottom: 1.5rem;
-    }
-    
-    .complaints-header h1::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120px;
-        height: 4px;
-        background: linear-gradient(90deg, transparent 0%, #3b82f6 20%, #10b981 50%, #3b82f6 80%, transparent 100%);
-        border-radius: 2px;
-    }
+.cc-hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
 
-    .complaints-header p {
-        font-size: 1.1rem;
-        color: #64748b;
-        font-weight: 500;
-        position: relative;
-        padding-bottom: 2rem;
-        margin-top: 1rem;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .complaints-header p::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        max-width: 600px;
-        height: 1px;
-        background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.2) 20%, rgba(16, 185, 129, 0.3) 50%, rgba(59, 130, 246, 0.2) 80%, transparent 100%);
-    }
+.cc-hero-inner { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 2rem; }
+.cc-hero h1 { font-size: 2rem; font-weight: 900; color: #fff; margin-bottom: 0.4rem; }
+.cc-hero h1 i { color: #FBBF24; margin-left: 0.4rem; }
+.cc-hero p { font-size: 1rem; color: rgba(255,255,255,0.7); font-weight: 500; margin: 0; }
 
-    .form-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 24px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        padding: 3rem;
-    }
+/* Form wrap */
+.cc-wrap { max-width: 720px; margin: -1.5rem auto 3rem; padding: 0 1.5rem; position: relative; z-index: 2; }
 
+.cc-card {
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid #E5E7EB;
+    border-top: 2.5px solid #24308F;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    padding: 2rem;
+}
 
-    .form-group {
-        margin-bottom: 1.5rem;
-    }
+/* Alerts */
+.cc-success {
+    background: #D1FAE5; border: 1px solid #A7F3D0; border-radius: 0.5rem;
+    padding: 0.85rem 1rem; margin-bottom: 1.5rem; color: #065F46;
+    font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;
+}
 
-    .form-label {
-        display: block;
-        margin-bottom: 0.5rem;
-        color: #1e293b;
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
+.cc-error {
+    background: #FEF2F2; border: 1px solid #FECACA; border-radius: 0.5rem;
+    padding: 0.85rem 1rem; margin-bottom: 1.5rem; color: #EF4444;
+    font-size: 0.88rem; font-weight: 600; display: flex; align-items: flex-start; gap: 0.5rem;
+}
 
-    .form-label .required {
-        color: #ef4444;
-    }
+.cc-error i { margin-top: 2px; flex-shrink: 0; }
+.cc-error ul { list-style: none; margin: 0; padding: 0; }
+.cc-error li { margin-bottom: 0.2rem; }
 
-    .type-section {
-        margin-bottom: 2.5rem;
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-        border-radius: 16px;
-        border: 2px dashed #cbd5e1;
-    }
-    
-    .type-section-title {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-        color: #1e293b;
-        font-weight: 700;
-        font-size: 1.1rem;
-    }
-    
-    .type-section-title .required {
-        color: #ef4444;
-        font-size: 1.2rem;
-    }
-    
-    .type-section-hint {
-        font-size: 0.9rem;
-        color: #64748b;
-        margin-bottom: 1.25rem;
-        padding-right: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .type-section-hint svg {
-        width: 18px;
-        height: 18px;
-        color: #3b82f6;
-        flex-shrink: 0;
-    }
+/* Type selector */
+.cc-type-section {
+    margin-bottom: 1.75rem;
+    padding: 1.25rem;
+    background: #F8FAFC;
+    border-radius: 0.6rem;
+    border: 1px solid #E5E7EB;
+}
 
-    .type-selector {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-    }
+.cc-type-title {
+    font-size: 0.95rem; font-weight: 800; color: #1F2937;
+    margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;
+}
 
-    .type-option {
-        position: relative;
-    }
+.cc-type-title .req { color: #EF4444; }
 
-    .type-option input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-    }
+.cc-type-hint {
+    font-size: 0.78rem; color: #98A2B3; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.3rem;
+}
 
-    .type-option label {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 1.75rem 1.5rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 16px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: white;
-        font-weight: 600;
-        color: #64748b;
-        position: relative;
-    }
-    
-    .type-option-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-    
-    .type-option:nth-child(1) .type-option-icon {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    }
-    
-    .type-option:nth-child(1) .type-option-icon svg {
-        color: #ef4444;
-    }
-    
-    .type-option:nth-child(2) .type-option-icon {
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    }
-    
-    .type-option:nth-child(2) .type-option-icon svg {
-        color: #3b82f6;
-    }
+.cc-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
-    .type-option input[type="radio"]:checked + label {
-        border-color: #3b82f6;
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        color: #3b82f6;
-        font-weight: 700;
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
-        transform: translateY(-2px);
-    }
-    
-    .type-option:nth-child(1) input[type="radio"]:checked + label {
-        border-color: #ef4444;
-        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        color: #ef4444;
-        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
-    }
-    
-    .type-option:nth-child(1) input[type="radio"]:checked + label .type-option-icon {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        transform: scale(1.1);
-    }
-    
-    .type-option:nth-child(1) input[type="radio"]:checked + label .type-option-icon svg {
-        color: white;
-    }
-    
-    .type-option:nth-child(2) input[type="radio"]:checked + label .type-option-icon {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        transform: scale(1.1);
-    }
-    
-    .type-option:nth-child(2) input[type="radio"]:checked + label .type-option-icon svg {
-        color: white;
-    }
-    
-    .type-option-text {
-        font-size: 1.1rem;
-    }
+.cc-type-opt { position: relative; }
+.cc-type-opt input { position: absolute; opacity: 0; }
 
-    .form-input,
-    .form-textarea,
-    .form-select {
-        width: 100%;
-        padding: 0.875rem 1rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        font-family: 'Tajawal', sans-serif;
-        background: white;
-        color: #1e293b;
-    }
+.cc-type-opt label {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    padding: 1.25rem 1rem; border: 1.5px solid #D9E0EA; border-radius: 0.6rem;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: #fff; font-weight: 700; color: #5B6780; font-size: 0.95rem;
+}
 
-    .form-select {
-        cursor: pointer;
-    }
+.cc-type-opt label:hover { border-color: #24308F; }
 
-    .form-textarea {
-        min-height: 120px;
-        resize: vertical;
-    }
+.cc-type-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; font-size: 1.2rem;
+}
 
-    .form-input:focus,
-    .form-textarea:focus,
-    .form-select:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
+.cc-type-opt:first-child .cc-type-icon { background: #FEE2E2; color: #EF4444; }
+.cc-type-opt:last-child .cc-type-icon { background: #EEF2FF; color: #24308F; }
 
-    .form-input[type="file"] {
-        cursor: pointer;
-    }
+.cc-type-opt input:checked + label {
+    border-color: #24308F; background: #EEF2FF; color: #24308F;
+    box-shadow: 0 2px 8px rgba(36,48,143,0.1);
+}
 
-    .form-input[type="file"]::-webkit-file-upload-button {
-        padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        margin-left: 10px;
-        transition: all 0.3s ease;
-    }
+.cc-type-opt:first-child input:checked + label {
+    border-color: #EF4444; background: #FEF2F2; color: #EF4444;
+}
 
-    .form-input[type="file"]::-webkit-file-upload-button:hover {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    }
+.cc-type-opt:first-child input:checked + label .cc-type-icon { background: #EF4444; color: #fff; }
+.cc-type-opt:last-child input:checked + label .cc-type-icon { background: #24308F; color: #fff; }
 
-    .submit-btn {
-        width: 100%;
-        padding: 1rem;
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin-top: 0.5rem;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-    }
+/* Section title */
+.cc-section { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 800; color: #1F2937; margin: 1.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #E5E7EB; }
+.cc-section i { color: #24308F; }
 
-    .submit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    }
+/* Fields */
+.cc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.cc-field { margin-bottom: 1rem; }
 
-    .alert {
-        padding: 1rem;
-        border-radius: 10px;
-        margin-bottom: 1.5rem;
-        font-size: 0.9rem;
-    }
+.cc-label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.88rem; font-weight: 700; color: #3B4863; margin-bottom: 0.35rem; }
+.cc-label i { color: #98A2B3; font-size: 0.85rem; }
+.cc-label .req { color: #EF4444; }
 
-    .alert-success {
-        background: #d1fae5;
-        color: #065f46;
-        border-right: 4px solid #10b981;
-    }
+.cc-input, .cc-select, .cc-textarea {
+    width: 100%; height: 42px; padding: 0 0.75rem;
+    border: 1.5px solid #D9E0EA; border-radius: 0.5rem;
+    font-family: 'Tajawal', sans-serif; font-size: 0.92rem; font-weight: 500;
+    color: #1F2937; background: #fff; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
 
-    .alert-error {
-        background: #fee2e2;
-        color: #991b1b;
-        border-right: 4px solid #ef4444;
-    }
+.cc-input::placeholder, .cc-textarea::placeholder { color: #98A2B3; font-weight: 400; }
+.cc-input:focus, .cc-select:focus, .cc-textarea:focus { border-color: #24308F; box-shadow: 0 0 0 3px rgba(36,48,143,0.08); }
+.cc-select { cursor: pointer; }
+.cc-textarea { height: auto; min-height: 110px; padding: 0.65rem 0.75rem; resize: vertical; }
 
-    .error-message {
-        color: #ef4444;
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-    }
+.cc-input[type="file"] { padding: 6px 0.75rem; cursor: pointer; }
+.cc-input[type="file"]::-webkit-file-upload-button {
+    padding: 0.3rem 0.75rem; background: #24308F; color: #fff;
+    border: none; border-radius: 0.4rem; cursor: pointer; font-weight: 600;
+    margin-left: 8px; font-family: 'Tajawal', sans-serif; font-size: 0.82rem;
+}
 
-    #image-preview {
-        margin-top: 1rem;
-    }
+.cc-field-error { color: #EF4444; font-size: 0.78rem; font-weight: 600; margin-top: 0.25rem; }
 
-    #preview-img {
-        max-width: 200px;
-        max-height: 200px;
-        border-radius: 8px;
-        border: 2px solid #e2e8f0;
-    }
+#image-preview { margin-top: 0.5rem; }
+#preview-img { max-width: 180px; max-height: 180px; border-radius: 0.5rem; border: 1px solid #E5E7EB; }
 
-    @media (max-width: 768px) {
-        .complaints-create-page {
-            padding: 2rem 0 4rem;
-        }
+/* Submit */
+.cc-submit {
+    width: 100%; height: 48px; background: #24308F; color: #fff;
+    border: none; border-radius: 0.5rem; font-family: 'Tajawal', sans-serif;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.2s; box-shadow: 0 2px 8px rgba(36,48,143,0.2); margin-top: 0.5rem;
+}
 
-        .form-card {
-            padding: 2rem 1.5rem;
-        }
+.cc-submit:hover { background: #2330B3; box-shadow: 0 4px 14px rgba(36,48,143,0.3); }
 
-        .type-selector {
-            grid-template-columns: 1fr;
-        }
-        
-        .type-section {
-            padding: 1.25rem;
-        }
-        
-        .type-section-title {
-            font-size: 1rem;
-        }
-        
-        .type-section-hint {
-            font-size: 0.85rem;
-        }
-        
-        .type-option label {
-            padding: 1.5rem 1.25rem;
-        }
-        
-        .type-option-icon {
-            width: 45px;
-            height: 45px;
-        }
-        
-        .complaints-header {
-            margin-bottom: 2rem;
-        }
-        
-        .complaints-header h1 {
-            font-size: 2rem;
-        }
-        
-        .complaints-header p {
-            font-size: 1rem;
-        }
-    }
+@keyframes ccShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@media (max-width: 640px) {
+    .cc-hero h1 { font-size: 1.5rem; }
+    .cc-card { padding: 1.5rem 1.25rem; }
+    .cc-row, .cc-type-grid { grid-template-columns: 1fr; }
+}
 </style>
 @endpush
 
 @section('content')
-<div class="complaints-create-page">
-    <div class="complaints-container">
-        <div class="complaints-header">
-            <h1>تقديم شكوى أو مقترح</h1>
-            <p>نقدر ملاحظاتك ونسعى لتحسين خدماتنا</p>
-        </div>
 
-        <div class="form-card">
+    <section class="cc-hero">
+        <div class="cc-hero-inner">
+            <h1><i class="bi bi-chat-left-text-fill"></i> تقديم شكوى أو مقترح</h1>
+            <p>نقدّر ملاحظاتك ونسعى لتحسين خدماتنا</p>
+        </div>
+    </section>
+
+    <div class="cc-wrap">
+        <div class="cc-card">
+
             @if(session('success'))
-                <div class="alert alert-success">
-                    {{ session('success') }}
-                </div>
+                <div class="cc-success"><i class="bi bi-check-circle-fill"></i> {{ session('success') }}</div>
             @endif
 
             @if($errors->any())
-                <div class="alert alert-error">
-                    <strong>⚠️ خطأ!</strong>
-                    <ul style="margin-top: 8px; padding-right: 20px;">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                <div class="cc-error">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('complaints-suggestions.store') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('complaints-suggestions.store') }}" enctype="multipart/form-data" id="ccForm">
                 @csrf
 
-                <div class="type-section">
-                    <div class="type-section-title">
-                        <span>نوع الطلب</span>
-                        <span class="required">*</span>
-                    </div>
-                    <div class="type-section-hint">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
-                        <span>يرجى اختيار نوع الطلب قبل المتابعة</span>
-                    </div>
-                    <div class="type-selector">
-                        <div class="type-option">
+                {{-- نوع الطلب --}}
+                <div class="cc-type-section" id="typeSection">
+                    <div class="cc-type-title">نوع الطلب <span class="req">*</span></div>
+                    <div class="cc-type-hint"><i class="bi bi-info-circle"></i> اختر نوع الطلب قبل المتابعة</div>
+                    <div class="cc-type-grid">
+                        <div class="cc-type-opt">
                             <input type="radio" id="complaint" name="type" value="complaint" {{ old('type') === 'complaint' ? 'checked' : '' }} required>
                             <label for="complaint">
-                                <div class="type-option-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                        <path d="M13 8H7"></path>
-                                        <path d="M17 12H7"></path>
-                                    </svg>
-                                </div>
-                                <span class="type-option-text">شكوى</span>
+                                <div class="cc-type-icon"><i class="bi bi-chat-left-dots"></i></div>
+                                شكوى
                             </label>
                         </div>
-                        <div class="type-option">
+                        <div class="cc-type-opt">
                             <input type="radio" id="suggestion" name="type" value="suggestion" {{ old('type') === 'suggestion' ? 'checked' : '' }} required>
                             <label for="suggestion">
-                                <div class="type-option-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                        <path d="M12 20h9"></path>
-                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                    </svg>
-                                </div>
-                                <span class="type-option-text">مقترح</span>
+                                <div class="cc-type-icon"><i class="bi bi-pencil-square"></i></div>
+                                مقترح
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="name" class="form-label">
-                        الاسم <span class="required">*</span>
-                    </label>
-                    <input type="text" id="name" name="name" class="form-input" value="{{ old('name') }}" required>
-                    @error('name')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
+                {{-- بيانات مقدم الطلب --}}
+                <div class="cc-section"><i class="bi bi-person"></i> بيانات مقدم الطلب</div>
 
-                <div class="form-group">
-                    <label for="phone" class="form-label">
-                        رقم الهاتف <span class="required">*</span>
-                    </label>
-                    <input type="text" id="phone" name="phone" class="form-input" value="{{ old('phone') }}" required>
-                    @error('phone')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="email" class="form-label">البريد الإلكتروني (اختياري)</label>
-                    <input type="email" id="email" name="email" class="form-input" value="{{ old('email') }}">
-                    @error('email')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="governorate" class="form-label">
-                        المحافظة <span class="required">*</span>
-                    </label>
-                    <select id="governorate" name="governorate" class="form-select" required>
-                        <option value="">اختر المحافظة</option>
-                        @foreach($governorates as $gov)
-                            <option value="{{ $gov->value }}" {{ old('governorate') == $gov->value ? 'selected' : '' }}>
-                                {{ $gov->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('governorate')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group" id="operator-group" style="display: none;">
-                    <label for="operator_id" class="form-label">
-                        المشغل <span class="required">*</span>
-                    </label>
-                    <select id="operator_id" name="operator_id" class="form-select">
-                        <option value="">اختر المشغل</option>
-                    </select>
-                    @error('operator_id')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group" id="generator-group" style="display: none;">
-                    <label for="generator_id" class="form-label">
-                        المولد <span class="required">*</span>
-                    </label>
-                    <select id="generator_id" name="generator_id" class="form-select">
-                        <option value="">اختر المولد</option>
-                    </select>
-                    @error('generator_id')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="message" class="form-label">
-                        الرسالة <span class="required">*</span>
-                    </label>
-                    <textarea id="message" name="message" class="form-textarea" required>{{ old('message') }}</textarea>
-                    @error('message')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="image" class="form-label">
-                        إرفاق صورة (اختياري)
-                    </label>
-                    <input type="file" id="image" name="image" class="form-input" accept="image/*">
-                    @error('image')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                    <div id="image-preview" style="display: none;">
-                        <img id="preview-img" src="" alt="معاينة الصورة">
+                <div class="cc-row">
+                    <div class="cc-field">
+                        <label class="cc-label"><i class="bi bi-person"></i> الاسم <span class="req">*</span></label>
+                        <input type="text" name="name" class="cc-input" value="{{ old('name') }}" required>
+                        @error('name')<div class="cc-field-error">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="cc-field">
+                        <label class="cc-label"><i class="bi bi-phone"></i> رقم الهاتف <span class="req">*</span></label>
+                        <input type="text" name="phone" class="cc-input" value="{{ old('phone') }}" required>
+                        @error('phone')<div class="cc-field-error">{{ $message }}</div>@enderror
                     </div>
                 </div>
 
-                <button type="submit" class="submit-btn">إرسال</button>
+                <div class="cc-field">
+                    <label class="cc-label"><i class="bi bi-envelope"></i> البريد الإلكتروني (اختياري)</label>
+                    <input type="email" name="email" class="cc-input" value="{{ old('email') }}">
+                    @error('email')<div class="cc-field-error">{{ $message }}</div>@enderror
+                </div>
+
+                {{-- تفاصيل الشكوى --}}
+                <div class="cc-section"><i class="bi bi-building"></i> تفاصيل</div>
+
+                <div class="cc-field">
+                    <label class="cc-label"><i class="bi bi-geo-alt"></i> المحافظة <span class="req">*</span></label>
+                    <select id="governorate" name="governorate" class="cc-select" required>
+                        <option value="">اختر المحافظة</option>
+                        @foreach($governorates as $gov)
+                            <option value="{{ $gov->value }}" {{ old('governorate') == $gov->value ? 'selected' : '' }}>{{ $gov->label }}</option>
+                        @endforeach
+                    </select>
+                    @error('governorate')<div class="cc-field-error">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="cc-field" id="operator-group" style="display:none;">
+                    <label class="cc-label"><i class="bi bi-buildings"></i> المشغل <span class="req">*</span></label>
+                    <select id="operator_id" name="operator_id" class="cc-select">
+                        <option value="">اختر المشغل</option>
+                    </select>
+                    @error('operator_id')<div class="cc-field-error">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="cc-field" id="generator-group" style="display:none;">
+                    <label class="cc-label"><i class="bi bi-lightning-charge"></i> المولد <span class="req">*</span></label>
+                    <select id="generator_id" name="generator_id" class="cc-select">
+                        <option value="">اختر المولد</option>
+                    </select>
+                    @error('generator_id')<div class="cc-field-error">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="cc-field">
+                    <label class="cc-label"><i class="bi bi-chat-text"></i> الرسالة <span class="req">*</span></label>
+                    <textarea name="message" class="cc-textarea" required>{{ old('message') }}</textarea>
+                    @error('message')<div class="cc-field-error">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="cc-field">
+                    <label class="cc-label"><i class="bi bi-image"></i> إرفاق صورة (اختياري)</label>
+                    <input type="file" id="image" name="image" class="cc-input" accept="image/*">
+                    @error('image')<div class="cc-field-error">{{ $message }}</div>@enderror
+                    <div id="image-preview" style="display:none;">
+                        <img id="preview-img" src="" alt="معاينة">
+                    </div>
+                </div>
+
+                <button type="submit" class="cc-submit" id="submitBtn">
+                    <i class="bi bi-send"></i> إرسال
+                </button>
             </form>
         </div>
     </div>
-</div>
 
-<!-- General Helpers JS -->
-<script src="{{ asset('assets/admin/js/general-helpers.js') }}"></script>
+@endsection
 
+@push('scripts')
 <script>
-    // التحقق من اختيار نوع الطلب قبل الإرسال
-    const form = document.querySelector('form');
-    const typeInputs = document.querySelectorAll('input[name="type"]');
-    const typeSection = document.querySelector('.type-section');
-    
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('ccForm');
+    var typeSection = document.getElementById('typeSection');
+    var typeInputs = document.querySelectorAll('input[name="type"]');
+    var governorateSelect = document.getElementById('governorate');
+    var operatorGroup = document.getElementById('operator-group');
+    var operatorSelect = document.getElementById('operator_id');
+    var generatorGroup = document.getElementById('generator-group');
+    var generatorSelect = document.getElementById('generator_id');
+
+    // Type validation
     form.addEventListener('submit', function(e) {
-        let typeSelected = false;
-        typeInputs.forEach(input => {
-            if (input.checked) {
-                typeSelected = true;
-            }
-        });
-        
-        if (!typeSelected) {
+        var checked = false;
+        typeInputs.forEach(function(i) { if (i.checked) checked = true; });
+        if (!checked) {
             e.preventDefault();
-            
-            // إضافة تأثير اهتزاز للقسم
-            typeSection.style.animation = 'shake 0.5s';
-            typeSection.style.borderColor = '#ef4444';
-            typeSection.style.borderStyle = 'solid';
-            
-            // إضافة رسالة تحذير
-            let alertDiv = typeSection.querySelector('.type-alert');
-            if (!alertDiv) {
-                alertDiv = document.createElement('div');
-                alertDiv.className = 'type-alert';
-                alertDiv.style.cssText = 'background: #fee2e2; color: #991b1b; padding: 0.75rem 1rem; border-radius: 8px; margin-top: 1rem; border-right: 4px solid #ef4444; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
-                alertDiv.innerHTML = '<svg style="width: 18px; height: 18px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>يرجى اختيار نوع الطلب (شكوى أو مقترح) قبل المتابعة</span>';
-                typeSection.appendChild(alertDiv);
-            }
-            
-            // إزالة التأثير بعد ثانية
-            setTimeout(() => {
-                typeSection.style.animation = '';
-            }, 500);
-            
-            // إزالة الرسالة بعد 5 ثوان
-            setTimeout(() => {
-                if (alertDiv) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-            
-            // التمرير إلى قسم النوع
+            typeSection.style.animation = 'ccShake 0.5s';
+            typeSection.style.borderColor = '#EF4444';
+            setTimeout(function() { typeSection.style.animation = ''; }, 500);
             typeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
-    
-    // إزالة التحذير عند اختيار نوع
-    typeInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const alertDiv = typeSection.querySelector('.type-alert');
-            if (alertDiv) {
-                alertDiv.remove();
-            }
-            typeSection.style.borderColor = '';
-            typeSection.style.borderStyle = 'dashed';
-        });
+
+    typeInputs.forEach(function(i) {
+        i.addEventListener('change', function() { typeSection.style.borderColor = '#E5E7EB'; });
     });
-    
-    // إضافة CSS للاهتزاز
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-    `;
-    document.head.appendChild(style);
 
-    const governorateSelect = document.getElementById('governorate');
-    const operatorGroup = document.getElementById('operator-group');
-    const operatorSelect = document.getElementById('operator_id');
-    const generatorGroup = document.getElementById('generator-group');
-    const generatorSelect = document.getElementById('generator_id');
-
-    // عند تغيير المحافظة
+    // Governorate → Operator cascade
     governorateSelect.addEventListener('change', function() {
-        const governorate = parseInt(this.value);
-
-        // إخفاء حقول المشغل والمولد
+        var gov = parseInt(this.value);
         operatorGroup.style.display = 'none';
         operatorSelect.required = false;
         operatorSelect.innerHTML = '<option value="">اختر المشغل</option>';
@@ -660,171 +351,97 @@
         generatorSelect.required = false;
         generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
 
-        if (governorate) {
-            // إظهار حقل المشغل وملؤه بالمشغلين
+        if (gov) {
             operatorGroup.style.display = 'block';
             operatorSelect.required = true;
-
-            // مسح الخيارات السابقة
             operatorSelect.innerHTML = '<option value="">جاري التحميل...</option>';
             operatorSelect.disabled = true;
 
-            // جلب المشغلين من السيرفر
-            const operatorsUrl = `{{ route('complaints-suggestions.operators-by-governorate', ':governorate') }}`.replace(':governorate', governorate);
-
-            fetch(operatorsUrl, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-                credentials: 'same-origin',
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                operatorSelect.innerHTML = '<option value="">اختر المشغل</option>';
-                operatorSelect.disabled = false;
-
-                if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-                    data.data.forEach(operator => {
-                        const option = document.createElement('option');
-                        option.value = operator.id;
-                        option.textContent = operator.name + (operator.city ? ` - ${operator.city}` : '');
+            var url = '{{ route("complaints-suggestions.operators-by-governorate", ":gov") }}'.replace(':gov', gov);
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    operatorSelect.innerHTML = '<option value="">اختر المشغل</option>';
+                    operatorSelect.disabled = false;
+                    if (data.success && data.data && data.data.length > 0) {
+                        data.data.forEach(function(op) {
+                            var opt = document.createElement('option');
+                            opt.value = op.id;
+                            opt.textContent = op.name + (op.city ? ' - ' + op.city : '');
+                            @if(old('operator_id'))
+                                if (op.id == {{ old('operator_id') }}) opt.selected = true;
+                            @endif
+                            operatorSelect.appendChild(opt);
+                        });
                         @if(old('operator_id'))
-                            if (operator.id == {{ old('operator_id') }}) {
-                                option.selected = true;
-                            }
-                        @endif
-                        operatorSelect.appendChild(option);
-                    });
-
-                    // trigger change event إذا كان هناك مشغل محدد مسبقاً
-                    @if(old('operator_id'))
-                        const oldOperatorId = {{ old('operator_id') }};
-                        if (oldOperatorId) {
-                            operatorSelect.value = oldOperatorId;
                             operatorSelect.dispatchEvent(new Event('change'));
-                        }
-                    @endif
-                } else {
-                    operatorSelect.innerHTML = '<option value="">لا توجد مشغلين في هذه المحافظة</option>';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching operators:', error);
-                operatorSelect.innerHTML = '<option value="">حدث خطأ في تحميل المشغلين</option>';
-                operatorSelect.disabled = false;
-            });
+                        @endif
+                    } else {
+                        operatorSelect.innerHTML = '<option value="">لا توجد مشغلين</option>';
+                    }
+                })
+                .catch(function() {
+                    operatorSelect.innerHTML = '<option value="">حدث خطأ</option>';
+                    operatorSelect.disabled = false;
+                });
         }
     });
 
-    // عند تغيير المشغل
+    // Operator → Generator cascade
     operatorSelect.addEventListener('change', function() {
-        const operatorId = parseInt(this.value);
-
-        // إخفاء حقل المولد
+        var opId = parseInt(this.value);
         generatorGroup.style.display = 'none';
         generatorSelect.required = false;
         generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
 
-        if (operatorId) {
-            // إظهار حقل المولد
+        if (opId) {
             generatorGroup.style.display = 'block';
             generatorSelect.required = true;
-
-            // مسح الخيارات السابقة
             generatorSelect.innerHTML = '<option value="">جاري التحميل...</option>';
 
-            // جلب المولدات من السيرفر حسب المشغل
-            const url = `{{ route('complaints-suggestions.generators-by-operator') }}?operator_id=${encodeURIComponent(operatorId)}`;
-
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-                credentials: 'same-origin',
+            fetch('{{ route("complaints-suggestions.generators-by-operator") }}?operator_id=' + opId, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 generatorSelect.innerHTML = '<option value="">اختر المولد</option>';
-
-                if (data && Array.isArray(data) && data.length > 0) {
-                    data.forEach(generator => {
-                        const option = document.createElement('option');
-                        option.value = generator.id;
-                        option.textContent = generator.name;
+                if (data && data.length > 0) {
+                    data.forEach(function(g) {
+                        var opt = document.createElement('option');
+                        opt.value = g.id;
+                        opt.textContent = g.name;
                         @if(old('generator_id'))
-                            if (generator.id == {{ old('generator_id') }}) {
-                                option.selected = true;
-                            }
+                            if (g.id == {{ old('generator_id') }}) opt.selected = true;
                         @endif
-                        generatorSelect.appendChild(option);
+                        generatorSelect.appendChild(opt);
                     });
                 } else {
-                    generatorSelect.innerHTML = '<option value="">لا توجد مولدات لهذا المشغل</option>';
+                    generatorSelect.innerHTML = '<option value="">لا توجد مولدات</option>';
                 }
             })
-            .catch(error => {
-                console.error('Error fetching generators:', error);
-                generatorSelect.innerHTML = '<option value="">حدث خطأ في تحميل المولدات</option>';
-            });
+            .catch(function() { generatorSelect.innerHTML = '<option value="">حدث خطأ</option>'; });
         }
     });
 
-    // إذا كانت المحافظة محددة مسبقاً (عند وجود أخطاء في النموذج)
+    // Restore old values
     @if(old('governorate'))
-        // انتظر تحميل GeneralHelpers ثم قم بملء المشغلين
-        if (typeof GeneralHelpers !== 'undefined') {
-            governorateSelect.dispatchEvent(new Event('change'));
-        } else {
-            // انتظر تحميل GeneralHelpers
-            const checkGeneralHelpers = setInterval(function() {
-                if (typeof GeneralHelpers !== 'undefined') {
-                    clearInterval(checkGeneralHelpers);
-                    governorateSelect.dispatchEvent(new Event('change'));
-                }
-            }, 100);
-
-            // timeout بعد 5 ثوان
-            setTimeout(function() {
-                clearInterval(checkGeneralHelpers);
-            }, 5000);
-        }
+        governorateSelect.dispatchEvent(new Event('change'));
     @endif
 
-    // معاينة الصورة
-    const imageInput = document.getElementById('image');
-    const imagePreview = document.getElementById('image-preview');
-    const previewImg = document.getElementById('preview-img');
-
-    if (imageInput && imagePreview && previewImg) {
+    // Image preview
+    var imageInput = document.getElementById('image');
+    var imagePreview = document.getElementById('image-preview');
+    var previewImg = document.getElementById('preview-img');
+    if (imageInput) {
         imageInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
+            var file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                };
+                var reader = new FileReader();
+                reader.onload = function(ev) { previewImg.src = ev.target.result; imagePreview.style.display = 'block'; };
                 reader.readAsDataURL(file);
-            } else {
-                imagePreview.style.display = 'none';
-            }
+            } else { imagePreview.style.display = 'none'; }
         });
     }
+});
 </script>
-@endsection
+@endpush

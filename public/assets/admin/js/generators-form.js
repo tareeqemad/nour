@@ -417,7 +417,7 @@
                 var operatorId = $(this).val();
                 generationUnitSelect.innerHTML = '<option value="">\u0627\u062E\u062A\u0631 \u0648\u062D\u062F\u0629 \u0627\u0644\u062A\u0648\u0644\u064A\u062F</option>';
                 generationUnitSelect.disabled = !operatorId;
-                generatorNumberInput.value = '';
+                if (!config.isEdit) generatorNumberInput.value = '';
 
                 if (!operatorId) {
                     if (generationUnitHelp) generationUnitHelp.textContent = '\u064A\u062C\u0628 \u0627\u062E\u062A\u064A\u0627\u0631 \u0627\u0644\u0645\u0634\u063A\u0644 \u0623\u0648\u0644\u0627\u064B \u0644\u0639\u0631\u0636 \u0648\u062D\u062F\u0627\u062A \u0627\u0644\u062A\u0648\u0644\u064A\u062F';
@@ -486,17 +486,20 @@
                 }
             });
 
-            if ($(operatorSelect).val()) $(operatorSelect).trigger('change');
+            if ($(operatorSelect).val() && !config.isEdit) $(operatorSelect).trigger('change');
         }
 
         // ─── Auto-generate generator number on unit selection ─────
         if (generationUnitSelect && generatorNumberInput && config.generateNumberUrl) {
             $(generationUnitSelect).on('change', async function () {
+                // في وضع التعديل لا نعيد توليد الرقم تلقائياً
+                if (config.isEdit && generatorNumberInput.value) return;
+
                 var generationUnitId = $(this).val();
-                if (!generationUnitId) { generatorNumberInput.value = ''; return; }
+                if (!generationUnitId) { if (!config.isEdit) generatorNumberInput.value = ''; return; }
 
                 var selectedOption = this.options[this.selectedIndex];
-                if (selectedOption && selectedOption.dataset.available === 'false') {
+                if (selectedOption && selectedOption.dataset.available === 'false' && !config.isEdit) {
                     generatorNumberInput.value = '';
                     alert('\u0647\u0630\u0647 \u0627\u0644\u0648\u062D\u062F\u0629 \u0645\u0645\u062A\u0644\u0626\u0629. \u064A\u0631\u062C\u0649 \u0627\u062E\u062A\u064A\u0627\u0631 \u0648\u062D\u062F\u0629 \u0623\u062E\u0631\u0649.');
                     return;

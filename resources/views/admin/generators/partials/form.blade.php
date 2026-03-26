@@ -62,14 +62,14 @@
                 :selectedGenerationUnitId="$isEdit
                     ? old('generation_unit_id', $generator->generation_unit_id)
                     : (request()->query('generation_unit_id') ?? old('generation_unit_id'))"
-                colClass="col-md-3"
+                colClass="col-md-6"
                 :routes="[
                     'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units',
                     'generators' => url('/admin/generation-units') . '/__UNIT__/generators-list',
                 ]"
             />
 
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <label class="form-label fw-semibold">رقم المولد</label>
                 <input type="text" name="generator_number" id="generator_number" class="form-control @error('generator_number') is-invalid @enderror"
                        value="{{ $val('generator_number') }}" readonly placeholder="مثال: GU-MD-DR-001-G01">
@@ -79,7 +79,7 @@
                 @enderror
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <label class="form-label fw-semibold">اسم المولد <span class="text-danger">*</span></label>
                 <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
                        value="{{ $val('name') }}">
@@ -88,7 +88,7 @@
                 @enderror
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <label class="form-label fw-semibold">حالة المولد <span class="text-danger">*</span></label>
                 <select name="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
                     <option value="">اختر الحالة</option>

@@ -73,7 +73,7 @@
                 }
             }
 
-            const t = bootstrap.Toast.getOrCreateInstance(toastEl, { delay });
+            const t = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: parseInt(delay, 10) || 3500 });
             t.show();
         };
     })();

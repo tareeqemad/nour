@@ -73,11 +73,11 @@
                             </div>
                             @include('admin.operators.partials.list', ['operators' => $operators])
                         </div>
+                        </div>
                     </x-admin.card>
                 </div>
             </div>
         </div>
-    </div>
 
         {{-- Modal: Create/Edit --}}
         <div class="modal fade" id="operatorModal" tabindex="-1" aria-hidden="true">
@@ -185,7 +185,7 @@
                             </div>
                         @endif
                         </div>
-                    </div>
+                    </x-admin.card>
                 </div>
 
                 <div class="col-12 col-lg-8">

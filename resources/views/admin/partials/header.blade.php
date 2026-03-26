@@ -118,22 +118,19 @@
                 </a>
                 <!-- End::header-link|dropdown-toggle -->
                 <!-- Start::main-header-dropdown -->
-                <div class="main-header-dropdown dropdown-menu dropdown-menu-end notification-dropdown-menu" data-popper-placement="none" style="width: 350px;">
-                    <div class="p-3 border-bottom">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0 fs-17 fw-semibold">الإشعارات</p>
-                            <span class="badge bg-primary-transparent" id="notification-count">0 غير مقروء</span>
-                        </div>
+                <div class="main-header-dropdown dropdown-menu dropdown-menu-end nour-dropdown-panel" data-popper-placement="none">
+                    <div class="nour-dropdown-head">
+                        <span class="nour-dropdown-title"><i class="bi bi-bell me-1"></i> الإشعارات</span>
+                        <span class="nour-dropdown-badge" id="notification-count">0 غير مقروء</span>
                     </div>
-                    <div class="dropdown-divider mb-0"></div>
-                    <ul class="list-unstyled mb-0" id="notification-list" style="max-height: 400px; overflow-y: auto;">
-                        <li class="p-4 text-center text-muted">
-                            <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
-                            <p class="mb-0">لا توجد إشعارات</p>
+                    <ul class="list-unstyled mb-0 nour-dropdown-list" id="notification-list">
+                        <li class="nour-dropdown-empty">
+                            <i class="bi bi-bell-slash"></i>
+                            <p>لا توجد إشعارات</p>
                         </li>
                     </ul>
-                    <div class="p-2 border-top text-center">
-                        <a href="javascript:void(0);" class="text-primary small" id="mark-all-read" style="display: none;">
+                    <div class="nour-dropdown-foot">
+                        <a href="javascript:void(0);" class="nour-dropdown-link" id="mark-all-read" style="display: none;">
                             تعليم الكل كمقروء
                         </a>
                     </div>

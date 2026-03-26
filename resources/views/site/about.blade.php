@@ -7,204 +7,497 @@
 @section('description', 'تعرف على منصة ' . $siteName . ' ورسالتنا وأهدافنا')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/front/css/about.css') }}">
+<style>
+/* ===== About Page — Nour Design System ===== */
+
+/* Hero */
+.ab-hero {
+    background: linear-gradient(155deg, #1a2478 0%, #11186B 40%, #0c1050 100%);
+    padding: 3.5rem 0 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.ab-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 30% 40%, rgba(255,255,255,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(255,255,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.ab-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
+
+.ab-hero-inner {
+    position: relative; z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.ab-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 0.75rem;
+}
+
+.ab-hero h1 i { color: #FBBF24; margin-left: 0.4rem; }
+
+.ab-hero p {
+    font-size: 1.15rem;
+    color: rgba(255,255,255,0.75);
+    font-weight: 500;
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* Sections */
+.ab-section { padding: 3.5rem 0; }
+.ab-section-alt { background: #F8FAFC; }
+
+.ab-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.ab-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1F2937;
+    text-align: center;
+    margin-bottom: 0.3rem;
+}
+
+.ab-subtitle {
+    font-size: 0.95rem;
+    color: #5B6780;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    font-weight: 500;
+}
+
+/* Who we are - text block */
+.ab-text-block {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.ab-text-block p {
+    font-size: 1.05rem;
+    color: #3B4863;
+    line-height: 1.9;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.ab-text-block p:last-child { margin-bottom: 0; }
+
+/* Mission list */
+.ab-mission-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 800px;
+    margin: 2rem auto 0;
+}
+
+.ab-mission-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid #E5E7EB;
+    border-right: 2.5px solid #24308F;
+    transition: box-shadow 0.2s;
+}
+
+.ab-mission-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.05); }
+
+.ab-mission-item i {
+    color: #24308F;
+    font-size: 1.1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.ab-mission-item span {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1F2937;
+    line-height: 1.5;
+}
+
+/* Goals grid */
+.ab-goals-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+}
+
+.ab-goal {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-top: 2.5px solid #24308F;
+    border-radius: 0.75rem;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.ab-goal:hover {
+    box-shadow: 0 4px 16px rgba(36,48,143,0.08);
+    transform: translateY(-2px);
+}
+
+.ab-goal-icon {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    background: #EEF2FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.85rem;
+}
+
+.ab-goal-icon i { font-size: 1.3rem; color: #24308F; }
+
+.ab-goal h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1F2937;
+    margin-bottom: 0.3rem;
+}
+
+.ab-goal p {
+    font-size: 0.82rem;
+    color: #5B6780;
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Services */
+.ab-services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+.ab-service {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #F8FAFC;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+}
+
+.ab-service:hover {
+    border-color: #24308F;
+    box-shadow: 0 4px 16px rgba(36,48,143,0.06);
+}
+
+.ab-service-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #EEF2FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ab-service-icon i { font-size: 1.15rem; color: #24308F; }
+
+.ab-service-text h4 {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1F2937;
+    margin-bottom: 0.2rem;
+}
+
+.ab-service-text p {
+    font-size: 0.82rem;
+    color: #5B6780;
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* CTA */
+.ab-cta {
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #24308F 0%, #11186B 100%);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.ab-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+}
+
+.ab-cta h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.4rem;
+    position: relative; z-index: 1;
+}
+
+.ab-cta p {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+    position: relative; z-index: 1;
+}
+
+.ab-cta-btns {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative; z-index: 1;
+}
+
+.ab-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.5rem;
+    border-radius: 0.6rem;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.ab-cta-btn-primary {
+    background: #fff;
+    color: #24308F;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.ab-cta-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    color: #24308F;
+}
+
+.ab-cta-btn-ghost {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.25);
+}
+
+.ab-cta-btn-ghost:hover {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+}
+
+/* Animations */
+.anim {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s, transform 0.5s;
+}
+
+.anim.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .ab-goals-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .ab-hero h1 { font-size: 1.8rem; }
+    .ab-hero p { font-size: 1rem; }
+    .ab-mission-grid { grid-template-columns: 1fr; }
+    .ab-goals-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .ab-services-grid { grid-template-columns: 1fr; }
+    .ab-cta h2 { font-size: 1.3rem; }
+}
+</style>
 @endpush
 
 @section('content')
-<div class="about-page">
-    <div class="container">
-        <div class="about-header">
-            <h1>من نحن</h1>
-            <p>منصة رقمية متكاملة لتنظيم وإدارة سوق الطاقة في محافظات غزة</p>
-        </div>
 
-        <!-- About Section -->
-        <div class="about-section animate-on-scroll">
-            <h2>
-                <div class="about-section-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                </div>
-                من نحن
-            </h2>
+    {{-- ===== Hero ===== --}}
+    <section class="ab-hero">
+        <div class="ab-hero-inner">
+            <h1><i class="bi bi-info-circle-fill"></i> من نحن</h1>
             <p>
-                {{ $siteName ?? 'نور' }} هي منصة رقمية متطورة تهدف إلى تنظيم وإدارة سوق الطاقة في محافظات غزة بشكل احترافي وشامل. 
-                نقدم خدمات متكاملة تربط بين المواطنين والمشغلين لتسهيل الوصول إلى أفضل الخدمات.
-            </p>
-            <p>
-                نسعى جاهدين لتوفير بيئة رقمية متقدمة تسهل عملية إدارة وتنظيم سوق الطاقة، مع ضمان الشفافية 
-                والموثوقية في جميع البيانات المقدمة.
+                {{ $siteName }} منصة رقمية متكاملة لتنظيم ومراقبة سوق الطاقة في محافظات غزة —
+                تربط المشغلين والمشتركين والجهات الرقابية في مكان واحد
             </p>
         </div>
+    </section>
 
-        <!-- Mission Section -->
-        <div class="about-section animate-on-scroll">
-            <h2>
-                <div class="about-section-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                    </svg>
-                </div>
-                رسالتنا
-            </h2>
-            <p>
-                رسالتنا هي توفير منصة رقمية شاملة وموثوقة تسهل التواصل بين المواطنين والمشغلين، 
-                وتعزز الشفافية والكفاءة في إدارة سوق الطاقة.
-            </p>
-            <ul class="features-list">
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text">تسهيل الوصول إلى المعلومات والخدمات</div>
-                </li>
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text">ضمان دقة وموثوقية البيانات</div>
-                </li>
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text">تعزيز التواصل والشفافية</div>
-                </li>
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text">تطوير وتحسين الخدمات باستمرار</div>
-                </li>
-            </ul>
-        </div>
+    {{-- ===== About + Mission ===== --}}
+    <section class="ab-section">
+        <div class="ab-container">
+            <h2 class="ab-title">رؤيتنا ورسالتنا</h2>
+            <p class="ab-subtitle">نعمل على تطوير بيئة رقمية متقدمة لإدارة قطاع الطاقة</p>
 
-        <!-- Goals Section -->
-        <div class="about-section animate-on-scroll">
-            <h2>
-                <div class="about-section-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                </div>
-                أهدافنا
-            </h2>
-            <div class="goals-grid">
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                    </div>
-                    <h3 class="goal-title">الشمولية</h3>
-                    <p class="goal-text">تغطية جميع محافظات غزة والمشغلين النشطين</p>
-                </div>
+            <div class="ab-text-block anim">
+                <p>
+                    نسعى لتوفير منصة رقمية شاملة وموثوقة تسهّل التواصل بين جميع الأطراف —
+                    المشغلين، المشتركين، والجهات الرقابية — مع ضمان الشفافية والكفاءة في إدارة سوق الطاقة.
+                </p>
+            </div>
 
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="goal-title">الموثوقية</h3>
-                    <p class="goal-text">ضمان دقة وموثوقية جميع البيانات المقدمة</p>
+            <div class="ab-mission-grid">
+                <div class="ab-mission-item anim">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>تسهيل الوصول إلى المعلومات والخدمات لجميع المستخدمين</span>
                 </div>
-
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
-                    </div>
-                    <h3 class="goal-title">سهولة الاستخدام</h3>
-                    <p class="goal-text">واجهة بسيطة وسهلة الاستخدام لجميع المستخدمين</p>
+                <div class="ab-mission-item anim">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>ضمان دقة وموثوقية البيانات المقدمة</span>
                 </div>
-
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="goal-title">التواصل</h3>
-                    <p class="goal-text">تسهيل التواصل بين المواطنين والمشغلين</p>
+                <div class="ab-mission-item anim">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>تعزيز الشفافية والتواصل بين الأطراف</span>
+                </div>
+                <div class="ab-mission-item anim">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>تطوير وتحسين الخدمات بشكل مستمر</span>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Services Section -->
-        <div class="about-section animate-on-scroll">
-            <h2>
-                <div class="about-section-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
+    {{-- ===== Goals ===== --}}
+    <section class="ab-section ab-section-alt">
+        <div class="ab-container">
+            <h2 class="ab-title">أهدافنا</h2>
+            <p class="ab-subtitle">نعمل لتحقيق أهداف واضحة تخدم المجتمع</p>
+
+            <div class="ab-goals-grid">
+                <div class="ab-goal anim">
+                    <div class="ab-goal-icon"><i class="bi bi-globe2"></i></div>
+                    <h3>الشمولية</h3>
+                    <p>تغطية جميع محافظات غزة والمشغلين النشطين</p>
                 </div>
-                خدماتنا
-            </h2>
-            <p>نوفر مجموعة واسعة من الخدمات الرقمية التي تسهل إدارة وتنظيم سوق الطاقة:</p>
-            <ul class="features-list">
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text"><strong>خريطة تفاعلية:</strong> استكشف مواقع المشغلين على خريطة تفاعلية سهلة الاستخدام</div>
-                </li>
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text"><strong>إحصائيات شاملة:</strong> احصل على إحصائيات مفصلة عن المشغلين والمولدات</div>
-                </li>
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text"><strong>الشكاوي والمقترحات:</strong> أرسل شكاويك ومقترحاتك بسهولة واطلع على متابعة شكاواك</div>
-                </li>
-                <li>
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="feature-text"><strong>معلومات الاتصال:</strong> احصل على معلومات الاتصال الكاملة لكل مشغل</div>
-                </li>
-            </ul>
+                <div class="ab-goal anim">
+                    <div class="ab-goal-icon"><i class="bi bi-shield-check"></i></div>
+                    <h3>الموثوقية</h3>
+                    <p>ضمان دقة وموثوقية جميع البيانات المقدمة</p>
+                </div>
+                <div class="ab-goal anim">
+                    <div class="ab-goal-icon"><i class="bi bi-phone"></i></div>
+                    <h3>سهولة الاستخدام</h3>
+                    <p>واجهة بسيطة تعمل على جميع الأجهزة</p>
+                </div>
+                <div class="ab-goal anim">
+                    <div class="ab-goal-icon"><i class="bi bi-chat-dots"></i></div>
+                    <h3>التواصل</h3>
+                    <p>تسهيل التواصل بين المشتركين والمشغلين</p>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <!-- CTA -->
-        <div class="text-center" style="margin-top: 3rem;">
-            <a href="{{ route('front.map') }}" class="btn btn-primary btn-lg" style="font-size: 1.1rem; padding: 1rem 2.5rem;">
-                <svg style="width: 20px; height: 20px; display: inline-block; margin-left: 8px; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                ابدأ الاستكشاف
+    {{-- ===== Services ===== --}}
+    <section class="ab-section">
+        <div class="ab-container">
+            <h2 class="ab-title">خدماتنا</h2>
+            <p class="ab-subtitle">مجموعة متكاملة من الأدوات الرقمية</p>
+
+            <div class="ab-services-grid">
+                <div class="ab-service anim">
+                    <div class="ab-service-icon"><i class="bi bi-geo-alt"></i></div>
+                    <div class="ab-service-text">
+                        <h4>خريطة تفاعلية</h4>
+                        <p>استكشف مواقع وحدات التوليد والمشغلين على خريطة تفاعلية شاملة</p>
+                    </div>
+                </div>
+                <div class="ab-service anim">
+                    <div class="ab-service-icon"><i class="bi bi-bar-chart"></i></div>
+                    <div class="ab-service-text">
+                        <h4>إحصائيات شاملة</h4>
+                        <p>بيانات وأرقام مفصلة عن المشغلين والمولدات والقدرات</p>
+                    </div>
+                </div>
+                <div class="ab-service anim">
+                    <div class="ab-service-icon"><i class="bi bi-chat-left-text"></i></div>
+                    <div class="ab-service-text">
+                        <h4>شكاوي ومقترحات</h4>
+                        <p>أرسل شكاويك وتابع حالتها بسهولة وشفافية</p>
+                    </div>
+                </div>
+                <div class="ab-service anim">
+                    <div class="ab-service-icon"><i class="bi bi-telephone"></i></div>
+                    <div class="ab-service-text">
+                        <h4>معلومات الاتصال</h4>
+                        <p>بيانات التواصل الكاملة لكل مشغل ووحدة توليد</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ===== CTA ===== --}}
+    <section class="ab-cta">
+        <h2>ابدأ الاستكشاف الآن</h2>
+        <p>تعرف على المشغلين وتصفح البيانات بكل سهولة</p>
+        <div class="ab-cta-btns">
+            <a href="{{ route('front.map') }}" class="ab-cta-btn ab-cta-btn-primary">
+                <i class="bi bi-geo-alt-fill"></i> استكشف الخريطة
+            </a>
+            <a href="{{ route('front.stats') }}" class="ab-cta-btn ab-cta-btn-ghost">
+                <i class="bi bi-bar-chart-fill"></i> الإحصائيات
             </a>
         </div>
-    </div>
-</div>
+    </section>
+
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var els = document.querySelectorAll('.anim');
+    if (!els.length) return;
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    els.forEach(function(el) { observer.observe(el); });
+});
+</script>
+@endpush

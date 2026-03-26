@@ -23,7 +23,10 @@ class PublicHomeController extends Controller
             'total_capacity' => \App\Models\GenerationUnit::whereHas('operator', function($q) {
                 $q->where('status', 'active');
             })->sum('total_capacity') ?? 0,
-            'governorates' => ConstantsHelper::get(1), // رقم ثابت المحافظات
+            'total_generation_units' => \App\Models\GenerationUnit::whereHas('operator', function($q) {
+                $q->where('status', 'active');
+            })->count(),
+            'governorates' => ConstantsHelper::get(1),
         ];
 
         return view('site.index', compact('stats'));
@@ -233,6 +236,43 @@ class PublicHomeController extends Controller
     public function join(): View
     {
         return view('site.join');
+    }
+
+    /**
+     * API wrapper for join request — returns JSON for Next.js frontend
+     */
+    public function apiJoinRequest(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // Force JSON response by setting Accept header
+        $request->headers->set('Accept', 'application/json');
+        $request->headers->set('X-Requested-With', 'XMLHttpRequest');
+
+        $response = $this->storeJoinRequest($request);
+
+        // If it's already a JsonResponse, return it
+        if ($response instanceof \Illuminate\Http\JsonResponse) {
+            return $response;
+        }
+
+        // If redirect with errors
+        if ($response instanceof \Illuminate\Http\RedirectResponse) {
+            $errors = session()->get('errors');
+            if ($errors) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $errors->getBag('default')->toArray(),
+                ], 422);
+            }
+
+            // Success redirect
+            $successMsg = session()->get('success', 'تم إرسال طلب الانضمام بنجاح');
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'تم الإرسال بنجاح']);
     }
 
     /**

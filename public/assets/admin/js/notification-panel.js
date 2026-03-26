@@ -68,9 +68,9 @@ class NotificationPanel {
 
         if (notifications.length === 0) {
             this.notificationList.innerHTML = `
-                <li class="p-4 text-center text-muted">
-                    <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
-                    <p class="mb-0">لا توجد إشعارات</p>
+                <li class="nour-dropdown-empty">
+                    <i class="bi bi-bell-slash"></i>
+                    <p>لا توجد إشعارات</p>
                 </li>
             `;
             if (this.markAllReadBtn) {
@@ -81,42 +81,39 @@ class NotificationPanel {
 
         let html = '';
         notifications.forEach(notification => {
-            const readClass = notification.read ? '' : 'notification-unread';
-            const iconClass = `bi ${notification.icon} text-${notification.color}`;
-            
+            const unreadBg = notification.read ? '' : 'background:#EEF2FF;border-right:2.5px solid #24308F;';
+            const iconColor = notification.color || 'primary';
+
             html += `
-                <li class="notification-item ${readClass}" data-notification-id="${notification.id}">
-                    <div class="d-flex align-items-start p-3 border-bottom">
-                        <div class="notification-icon me-3">
-                            <i class="${iconClass} fs-4"></i>
+                <li class="notification-item" data-notification-id="${notification.id}" style="${unreadBg}">
+                    <div class="d-flex align-items-start gap-2" style="font-size:0.82rem;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:var(--primary-soft,#EEF2FF);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi ${notification.icon}" style="color:var(--primary,#24308F);font-size:0.95rem;"></i>
                         </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <h6 class="mb-0 fw-semibold">${this.escapeHtml(notification.title)}</h6>
-                                <div class="d-flex gap-2">
+                        <div style="flex:1;min-width:0;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span style="font-weight:700;color:#1F2937;font-size:0.8rem;line-height:1.3;">${this.escapeHtml(notification.title)}</span>
+                                <div class="d-flex gap-1" style="flex-shrink:0;">
                                     ${!notification.read ? `
-                                        <button class="btn btn-sm btn-link p-0 text-primary mark-read-btn" 
-                                                data-notification-id="${notification.id}" 
-                                                title="تعليم كمقروء">
+                                        <button class="mark-read-btn" data-notification-id="${notification.id}" title="تعليم كمقروء"
+                                                style="background:none;border:none;color:#24308F;cursor:pointer;padding:2px;font-size:0.85rem;">
                                             <i class="bi bi-check-circle"></i>
                                         </button>
                                     ` : ''}
-                                    <button class="btn btn-sm btn-link p-0 text-danger delete-notification-btn" 
-                                            data-notification-id="${notification.id}" 
-                                            title="حذف">
+                                    <button class="delete-notification-btn" data-notification-id="${notification.id}" title="حذف"
+                                            style="background:none;border:none;color:#EF4444;cursor:pointer;padding:2px;font-size:0.85rem;">
                                         <i class="bi bi-x-circle"></i>
                                     </button>
                                 </div>
                             </div>
-                            <p class="mb-1 text-muted small">${this.escapeHtml(notification.message)}</p>
-                            <small class="text-muted">
-                                <i class="bi bi-clock me-1"></i>
-                                ${notification.created_at}
-                            </small>
+                            <p style="margin:0.15rem 0 0.25rem;color:#5B6780;font-size:0.76rem;line-height:1.4;">${this.escapeHtml(notification.message)}</p>
+                            <span style="color:#98A2B3;font-size:0.7rem;">
+                                <i class="bi bi-clock me-1"></i>${notification.created_at}
+                            </span>
                             ${notification.link ? `
-                                <div class="mt-2">
-                                    <a href="${notification.link}" class="btn btn-sm btn-outline-primary">
-                                        عرض التفاصيل <i class="bi bi-arrow-left ms-1"></i>
+                                <div style="margin-top:0.35rem;">
+                                    <a href="${notification.link}" style="font-size:0.72rem;color:#24308F;font-weight:600;text-decoration:none;">
+                                        عرض التفاصيل <i class="bi bi-arrow-left"></i>
                                     </a>
                                 </div>
                             ` : ''}

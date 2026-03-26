@@ -57,7 +57,7 @@
     const statsDiv = document.getElementById('stats');
     const mapTypeStreet = document.getElementById('mapTypeStreet');
     const mapTypeSatellite = document.getElementById('mapTypeSatellite');
-    const mainMapLayout = document.getElementById('mainMapLayout');
+    const mainMapLayout = null; // Removed in new layout
     
     /**
      * Change map type
@@ -138,7 +138,7 @@
                 
                 data.territories.forEach(territory => {
                     const radiusMeters = territory.radius_km * 1000;
-                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+                    const colors = ['#24308F', '#10B981', '#F59E0B', '#EF4444', '#0EA5E9', '#8B5CF6', '#06b6d4'];
                     const colorIndex = territory.operator_id % colors.length;
                     const color = colors[colorIndex];
                     
@@ -153,26 +153,32 @@
                     const areaKm2 = Math.PI * territory.radius_km * territory.radius_km;
                     
                     const popupContent = `
-                        <div class="territory-popup">
-                            <div class="territory-popup-header">
-                                <h4>
-                                    <i class="bi bi-geo-alt-fill"></i>
-                                    ${territory.name || 'منطقة جغرافية'}
-                                </h4>
+                        <div class="nour-popup">
+                            <div class="nour-popup-head">
+                                <div class="nour-popup-icon nour-popup-icon-territory"><i class="bi bi-bullseye"></i></div>
+                                <div>
+                                    <div class="nour-popup-title">${territory.name || 'منطقة جغرافية'}</div>
+                                    <div class="nour-popup-code">${areaKm2.toFixed(2)} كم²</div>
+                                </div>
                             </div>
-                            <div class="territory-popup-content">
-                                <div class="territory-info-row">
-                                    <span class="territory-info-label">المشغل:</span>
-                                    <span class="territory-info-value">${territory.operator_name || 'غير محدد'}</span>
+                            <div class="nour-popup-body">
+                                <div class="nour-popup-row">
+                                    <i class="bi bi-buildings"></i>
+                                    <span class="nour-popup-label">المشغل</span>
+                                    <span class="nour-popup-val">${territory.operator_name || 'غير محدد'}</span>
                                 </div>
-                                <div class="territory-info-row">
-                                    <span class="territory-info-label">المالك:</span>
-                                    <span class="territory-info-value">${territory.owner_name || 'غير محدد'}</span>
+                                <div class="nour-popup-row">
+                                    <i class="bi bi-person"></i>
+                                    <span class="nour-popup-label">المالك</span>
+                                    <span class="nour-popup-val">${territory.owner_name || 'غير محدد'}</span>
                                 </div>
-                                <div class="territory-info-row">
-                                    <span class="territory-info-label">المساحة:</span>
-                                    <span class="territory-info-value">${areaKm2.toFixed(2)} كم²</span>
-                                </div>
+                                ${territory.generation_unit ? `
+                                    <div class="nour-popup-row">
+                                        <i class="bi bi-lightning-charge"></i>
+                                        <span class="nour-popup-label">وحدة التوليد</span>
+                                        <span class="nour-popup-val">${territory.generation_unit.name}</span>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     `;
@@ -203,8 +209,8 @@
             }
             markersGroup.clearLayers();
             showNoOperators(false);
-            statsDiv.style.display = 'none';
-            sidebar.style.display = 'none';
+            statsDiv.classList.remove('visible');
+            sidebar.classList.remove('visible');
             currentUnits = [];
             currentMarkers = {};
             map.setView([CONFIG.defaultLat, CONFIG.defaultLng], CONFIG.defaultZoom);
@@ -220,8 +226,8 @@
             
             showLoading(true);
             markersGroup.clearLayers();
-        statsDiv.style.display = 'none';
-            sidebar.style.display = 'none';
+        statsDiv.classList.remove('visible');
+            sidebar.classList.remove('visible');
         currentUnits = [];
             currentMarkers = {};
             
@@ -242,7 +248,7 @@
                     }
                     
                     updateStats(data.data);
-                    sidebar.style.display = 'flex';
+                    sidebar.classList.add('visible');
                     updateSidebar(data.data);
                     
                     const bounds = [];
@@ -275,37 +281,59 @@
                     currentMarkers[unit.id] = marker;
                     
                     const popupContent = `
-                        <div class="unit-popup">
-                            <div class="unit-popup-header">
-                                <h3>${unit.name}</h3>
+                        <div class="nour-popup">
+                            <div class="nour-popup-head">
+                                <div class="nour-popup-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+                                <div>
+                                    <div class="nour-popup-title">${unit.name}</div>
+                                    ${unit.unit_code ? `<div class="nour-popup-code">${unit.unit_code}</div>` : ''}
+                                </div>
                             </div>
-                            <div class="unit-popup-content">
+                            <div class="nour-popup-body">
+                                ${unit.operator_name ? `
+                                    <div class="nour-popup-row">
+                                        <i class="bi bi-buildings"></i>
+                                        <span class="nour-popup-label">المشغل</span>
+                                        <span class="nour-popup-val">${unit.operator_name}</span>
+                                    </div>
+                                ` : ''}
                                 ${unit.governorate ? `
-                                    <div class="unit-info-row">
-                                        <span class="unit-info-label">المحافظة:</span>
-                                        <span class="unit-info-value">${unit.governorate}</span>
+                                    <div class="nour-popup-row">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <span class="nour-popup-label">المحافظة</span>
+                                        <span class="nour-popup-val">${unit.governorate}</span>
                                     </div>
                                 ` : ''}
                                 ${unit.city ? `
-                                    <div class="unit-info-row">
-                                        <span class="unit-info-label">المدينة:</span>
-                                        <span class="unit-info-value">${unit.city}</span>
+                                    <div class="nour-popup-row">
+                                        <i class="bi bi-pin-map"></i>
+                                        <span class="nour-popup-label">المدينة</span>
+                                        <span class="nour-popup-val">${unit.city}</span>
                                     </div>
                                 ` : ''}
-                                ${unit.operator_name ? `
-                                    <div class="unit-info-row">
-                                        <span class="unit-info-label">المشغل:</span>
-                                        <span class="unit-info-value">${unit.operator_name}</span>
+                                ${unit.detailed_address ? `
+                                    <div class="nour-popup-row">
+                                        <i class="bi bi-signpost-2"></i>
+                                        <span class="nour-popup-label">العنوان</span>
+                                        <span class="nour-popup-val">${unit.detailed_address}</span>
                                     </div>
                                 ` : ''}
                                 ${unit.phone ? `
-                                    <div class="unit-info-row">
-                                        <span class="unit-info-label">الهاتف:</span>
-                                        <span class="unit-info-value"><a href="tel:${unit.phone}">${unit.phone}</a></span>
+                                    <div class="nour-popup-row nour-popup-phone">
+                                        <i class="bi bi-telephone-fill"></i>
+                                        <span class="nour-popup-label">الهاتف</span>
+                                        <a href="tel:${unit.phone}" class="nour-popup-val">${unit.phone}</a>
+                                    </div>
+                                ` : ''}
+                                ${unit.phone_alt ? `
+                                    <div class="nour-popup-row nour-popup-phone">
+                                        <i class="bi bi-telephone"></i>
+                                        <span class="nour-popup-label">هاتف بديل</span>
+                                        <a href="tel:${unit.phone_alt}" class="nour-popup-val">${unit.phone_alt}</a>
                                     </div>
                                 ` : ''}
                             </div>
-                            </div>
+                        </div>
                         `;
                         
                     marker.bindPopup(popupContent, {
@@ -335,8 +363,8 @@
                         mainMapLayout.classList.add('full-width');
                     }
                     showNoOperators(true);
-                    sidebar.style.display = 'none';
-                    statsDiv.style.display = 'none';
+                    sidebar.classList.remove('visible');
+                    statsDiv.classList.remove('visible');
                     await loadTerritories();
                 }
         } catch (error) {
@@ -357,18 +385,18 @@
                 stats[gov] = (stats[gov] || 0) + 1;
             });
             
-        let statsHTML = '';
+        let statsHTML = `<div class="map-stat"><div class="map-stat-val">${units.length}</div><div class="map-stat-label">إجمالي الوحدات</div></div>`;
             Object.keys(stats).forEach(gov => {
                 statsHTML += `
-                <div class="stat-card">
-                    <div class="stat-card-label">${gov}</div>
-                    <div class="stat-card-value">${stats[gov]}</div>
-                    </div>
+                <div class="map-stat">
+                    <div class="map-stat-val">${stats[gov]}</div>
+                    <div class="map-stat-label">${gov}</div>
+                </div>
                 `;
             });
         
         statsDiv.innerHTML = statsHTML;
-        statsDiv.style.display = 'grid';
+        statsDiv.classList.add('visible');
     }
     
     /**
@@ -505,6 +533,9 @@
         }
     }
     
+    // Ensure map renders correctly in full-screen layout
+    setTimeout(function() { map.invalidateSize(); }, 200);
+
     // Event listeners
     if (mapTypeStreet) {
         mapTypeStreet.addEventListener('click', () => changeMapType('street'));

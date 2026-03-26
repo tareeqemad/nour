@@ -7,526 +7,383 @@
 
 @push('styles')
 <style>
-    .complaints-track-page {
-        padding: 3rem 0 5rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-        min-height: calc(100vh - 70px);
-    }
+/* ===== Track Page — Nour Design System ===== */
 
-    .complaints-container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 0 2rem;
-    }
+.tk-hero {
+    background: linear-gradient(155deg, #1a2478 0%, #11186B 40%, #0c1050 100%);
+    padding: 2.5rem 0 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
 
-    .complaints-header {
-        text-align: center;
-        margin-bottom: 3rem;
-        padding: 0;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        position: relative;
-    }
+.tk-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(circle at 25% 35%, rgba(255,255,255,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 75% 65%, rgba(255,255,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+}
 
-    .complaints-header h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        position: relative;
-        display: inline-block;
-        padding-bottom: 1.5rem;
-    }
-    
-    .complaints-header h1::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120px;
-        height: 4px;
-        background: linear-gradient(90deg, transparent 0%, #3b82f6 20%, #10b981 50%, #3b82f6 80%, transparent 100%);
-        border-radius: 2px;
-    }
-    
-    .complaints-header p {
-        font-size: 1.1rem;
-        color: #64748b;
-        font-weight: 500;
-        position: relative;
-        padding-bottom: 2rem;
-        margin-top: 1rem;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .complaints-header p::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        max-width: 600px;
-        height: 1px;
-        background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.2) 20%, rgba(16, 185, 129, 0.3) 50%, rgba(59, 130, 246, 0.2) 80%, transparent 100%);
-    }
+.tk-hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
 
+.tk-hero-inner { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 2rem; }
+.tk-hero h1 { font-size: 2rem; font-weight: 900; color: #fff; margin-bottom: 0.4rem; }
+.tk-hero h1 i { color: #FBBF24; margin-left: 0.4rem; }
+.tk-hero p { font-size: 1rem; color: rgba(255,255,255,0.7); font-weight: 500; margin: 0; }
 
-    .search-form {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        padding: 2rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-        border: 1px solid #f1f5f9;
-    }
+/* Search */
+.tk-wrap { max-width: 800px; margin: -1.5rem auto 2rem; padding: 0 1.5rem; position: relative; z-index: 2; }
 
-    .form-group {
-        display: flex;
-        gap: 1rem;
-    }
+.tk-search {
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid #E5E7EB;
+    border-top: 2.5px solid #24308F;
+    padding: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
 
-    .form-input {
-        flex: 1;
-        padding: 0.875rem 1rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        font-family: 'Tajawal', sans-serif;
-    }
+.tk-search form {
+    display: flex;
+    gap: 0.75rem;
+}
 
-    .form-input:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
+.tk-search-input {
+    flex: 1;
+    height: 44px;
+    padding: 0 0.85rem;
+    border: 1.5px solid #D9E0EA;
+    border-radius: 0.5rem;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1F2937;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
 
-    .search-btn {
-        padding: 0.875rem 2rem;
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-    }
+.tk-search-input::placeholder { color: #98A2B3; }
+.tk-search-input:focus { border-color: #24308F; box-shadow: 0 0 0 3px rgba(36,48,143,0.08); }
 
-    .search-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    }
+.tk-search-btn {
+    height: 44px;
+    padding: 0 1.5rem;
+    background: #24308F;
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
 
-    .request-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border: 2px solid #f1f5f9;
-        border-radius: 20px;
-        padding: 2.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-        transition: all 0.3s ease;
-    }
+.tk-search-btn:hover { background: #2330B3; }
 
-    .request-card:hover {
-        box-shadow: 0 12px 30px rgba(59, 130, 246, 0.1);
-        border-color: rgba(59, 130, 246, 0.2);
-    }
+/* Alerts */
+.tk-alert {
+    max-width: 800px;
+    margin: 0 auto 1rem;
+    padding: 0 1.5rem;
+}
 
-    .request-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f1f5f9;
-    }
+.tk-alert-box {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 
-    .request-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
-    }
+.tk-alert-success { background: #D1FAE5; color: #065F46; border-right: 3px solid #10B981; }
+.tk-alert-error { background: #FEF2F2; color: #EF4444; border-right: 3px solid #EF4444; }
 
-    .status-badge {
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 700;
-    }
+/* Result card */
+.tk-result { max-width: 800px; margin: 0 auto 3rem; padding: 0 1.5rem; }
 
-    .status-pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
+.tk-card {
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid #E5E7EB;
+    overflow: hidden;
+}
 
-    .status-in_progress {
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        color: #2563eb;
-    }
+/* Tracking code banner */
+.tk-code {
+    background: #EEF2FF;
+    padding: 1.25rem;
+    text-align: center;
+    border-bottom: 1px solid #E5E7EB;
+}
 
-    .status-resolved {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        color: #059669;
-    }
+.tk-code-label { font-size: 0.78rem; color: #5B6780; font-weight: 600; margin-bottom: 0.2rem; }
 
-    .status-rejected {
-        background: #fee2e2;
-        color: #991b1b;
-    }
+.tk-code-val {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #24308F;
+    letter-spacing: 2px;
+}
 
-    .info-row {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
+/* Header row */
+.tk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #E5E7EB;
+    background: #F8FBFD;
+}
 
-    .info-item {
-        flex: 1;
-        min-width: 200px;
-    }
+.tk-header-title { font-size: 1rem; font-weight: 800; color: #1F2937; }
 
-    .info-label {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-    }
+.tk-badge {
+    padding: 0.3rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
 
-    .info-value {
-        font-size: 1rem;
-        color: #1e293b;
-        font-weight: 600;
-    }
+.tk-badge-pending { background: #FEF3C7; color: #92400E; }
+.tk-badge-in_progress { background: #DBEAFE; color: #2563EB; }
+.tk-badge-resolved { background: #D1FAE5; color: #059669; }
+.tk-badge-rejected { background: #FEE2E2; color: #991B1B; }
 
-    .tracking-code {
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        text-align: center;
-        margin-bottom: 2rem;
-        border: 2px solid rgba(59, 130, 246, 0.1);
-    }
+/* Body */
+.tk-body { padding: 1.25rem; }
 
-    .tracking-code-label {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-    }
+.tk-section-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #1F2937;
+    margin: 1.25rem 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
 
-    .tracking-code-value {
-        font-size: 2rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        letter-spacing: 2px;
-    }
+.tk-section-title:first-child { margin-top: 0; }
+.tk-section-title i { color: #24308F; font-size: 0.9rem; }
 
-    .message-box {
-        background: #f8fafc;
-        padding: 1.25rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        border: 1px solid #e2e8f0;
-    }
+.tk-info-row {
+    display: flex;
+    gap: 1.25rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
 
-    .message-label {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin-bottom: 0.75rem;
-        font-weight: 600;
-    }
+.tk-info-item { flex: 1; min-width: 180px; }
+.tk-info-label { font-size: 0.78rem; color: #98A2B3; font-weight: 600; margin-bottom: 0.15rem; }
+.tk-info-val { font-size: 0.92rem; color: #1F2937; font-weight: 700; }
 
-    .message-content {
-        font-size: 0.95rem;
-        color: #1e293b;
-        line-height: 1.7;
-    }
+/* Message box */
+.tk-msg {
+    background: #F8FAFC;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 0.75rem;
+}
 
-    .response-box {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border-right: 4px solid #3b82f6;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin-top: 1.5rem;
-    }
+.tk-msg-label { font-size: 0.78rem; color: #98A2B3; font-weight: 600; margin-bottom: 0.35rem; }
+.tk-msg-text { font-size: 0.92rem; color: #1F2937; line-height: 1.7; font-weight: 500; }
 
-    .response-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #2563eb;
-        margin-bottom: 0.75rem;
-    }
+/* Response */
+.tk-response {
+    background: #EEF2FF;
+    border-right: 3px solid #24308F;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
 
-    .section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid #e2e8f0;
-    }
+.tk-response-label { font-size: 0.88rem; font-weight: 800; color: #24308F; margin-bottom: 0.4rem; }
+.tk-response-text { font-size: 0.92rem; color: #1F2937; line-height: 1.7; font-weight: 500; }
+.tk-response-date { font-size: 0.75rem; color: #98A2B3; margin-top: 0.5rem; }
 
-    .section-title:first-of-type {
-        margin-top: 1rem;
-    }
+/* Pending response */
+.tk-pending {
+    background: #FEF3C7;
+    border-right: 3px solid #F59E0B;
+    border-radius: 0.5rem;
+    padding: 0.85rem 1rem;
+    margin-top: 1rem;
+    font-size: 0.88rem;
+    color: #92400E;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
 
-    .response-content {
-        font-size: 0.95rem;
-        color: #1e293b;
-        line-height: 1.7;
-    }
+/* No result */
+.tk-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: #F8FAFC;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+}
 
-    .alert {
-        padding: 1rem;
-        border-radius: 10px;
-        margin-bottom: 1.5rem;
-        font-size: 0.9rem;
-    }
+.tk-empty i { font-size: 2.5rem; color: #98A2B3; display: block; margin-bottom: 0.5rem; }
+.tk-empty p { font-size: 0.92rem; color: #5B6780; font-weight: 600; margin: 0; }
 
-    .alert-success {
-        background: #d1fae5;
-        color: #065f46;
-        border-right: 4px solid #10b981;
-    }
+/* Image */
+.tk-image img {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #E5E7EB;
+    margin-top: 0.5rem;
+}
 
-    .alert-error {
-        background: #fee2e2;
-        color: #991b1b;
-        border-right: 4px solid #ef4444;
-    }
-
-    .no-result {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: #64748b;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    }
-
-    @media (max-width: 768px) {
-        .complaints-track-page {
-            padding: 2rem 0 4rem;
-        }
-
-        .complaints-header {
-            margin-bottom: 2rem;
-        }
-        
-        .complaints-header h1 {
-            font-size: 2rem;
-        }
-        
-        .complaints-header p {
-            font-size: 1rem;
-        }
-
-        .form-group {
-            flex-direction: column;
-        }
-
-        .request-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .request-card {
-            padding: 1.5rem;
-        }
-    }
+@media (max-width: 640px) {
+    .tk-hero h1 { font-size: 1.5rem; }
+    .tk-search form { flex-direction: column; }
+    .tk-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .tk-code-val { font-size: 1.3rem; }
+}
 </style>
 @endpush
 
 @section('content')
-<div class="complaints-track-page">
-    <div class="complaints-container">
-        <div class="complaints-header">
-            <h1>متابعة الطلب</h1>
-            <p>تابع حالة شكواك أو مقترحك</p>
+
+    <section class="tk-hero">
+        <div class="tk-hero-inner">
+            <h1><i class="bi bi-search"></i> متابعة الطلب</h1>
+            <p>تابع حالة شكواك أو مقترحك برمز التتبع</p>
         </div>
+    </section>
 
-        <div>
-            @if(session('success'))
-                <div class="alert alert-success">
-                    {{ session('success') }}
+    <div class="tk-wrap">
+        <div class="tk-search">
+            <form method="POST" action="{{ route('complaints-suggestions.search') }}">
+                @csrf
+                <input type="text" name="code" id="trackingCodeInput" class="tk-search-input" placeholder="أدخل رمز التتبع..." value="{{ $code ?? '' }}" required>
+                <button type="submit" class="tk-search-btn"><i class="bi bi-search"></i> بحث</button>
+            </form>
+        </div>
+    </div>
+
+    @if(session('success'))
+        <div class="tk-alert"><div class="tk-alert-box tk-alert-success"><i class="bi bi-check-circle"></i> {{ session('success') }}</div></div>
+    @endif
+
+    @if(session('error'))
+        <div class="tk-alert"><div class="tk-alert-box tk-alert-error"><i class="bi bi-exclamation-circle"></i> {{ session('error') }}</div></div>
+    @endif
+
+    <div class="tk-result">
+        @if($complaintSuggestion ?? false)
+            <div class="tk-card">
+                <div class="tk-code">
+                    <div class="tk-code-label">رمز التتبع</div>
+                    <div class="tk-code-val">{{ $complaintSuggestion->tracking_code }}</div>
                 </div>
-            @endif
 
-            @if(session('error'))
-                <div class="alert alert-error" id="errorAlert">
-                    {{ session('error') }}
+                <div class="tk-header">
+                    <div class="tk-header-title">بيانات الطلب</div>
+                    <span class="tk-badge tk-badge-{{ $complaintSuggestion->status }}">{{ $complaintSuggestion->status_label }}</span>
                 </div>
-            @endif
 
-            <div class="search-form">
-                <form method="POST" action="{{ route('complaints-suggestions.search') }}">
-                    @csrf
-                    <div class="form-group">
-                        <input type="text" name="code" id="trackingCodeInput" class="form-input" placeholder="أدخل رمز التتبع" value="{{ $code ?? '' }}" required>
-                        <button type="submit" class="search-btn">بحث</button>
-                    </div>
-                </form>
-            </div>
-
-            @if($complaintSuggestion)
-                <div class="request-card" id="requestCard">
-                    <div class="tracking-code">
-                        <div class="tracking-code-label">رمز التتبع</div>
-                        <div class="tracking-code-value">{{ $complaintSuggestion->tracking_code }}</div>
-                    </div>
-
-                    <div class="request-header">
-                        <div class="request-title">بيانات الطلب</div>
-                        <div class="status-badge status-{{ $complaintSuggestion->status }}">
-                            {{ $complaintSuggestion->status_label }}
+                <div class="tk-body">
+                    <div class="tk-section-title"><i class="bi bi-person"></i> مقدم الطلب</div>
+                    <div class="tk-info-row">
+                        <div class="tk-info-item">
+                            <div class="tk-info-label">الاسم</div>
+                            <div class="tk-info-val">{{ $complaintSuggestion->name }}</div>
                         </div>
-                    </div>
-
-                    <!-- معلومات مقدم الطلب -->
-                    <div class="section-title">معلومات مقدم الطلب</div>
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">الاسم</div>
-                            <div class="info-value">{{ $complaintSuggestion->name }}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">رقم الهاتف</div>
-                            <div class="info-value">{{ $complaintSuggestion->phone }}</div>
+                        <div class="tk-info-item">
+                            <div class="tk-info-label">الهاتف</div>
+                            <div class="tk-info-val">{{ $complaintSuggestion->phone }}</div>
                         </div>
                     </div>
                     @if($complaintSuggestion->email)
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">البريد الإلكتروني</div>
-                            <div class="info-value">{{ $complaintSuggestion->email }}</div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- معلومات الطلب -->
-                    <div class="section-title">معلومات الطلب</div>
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">النوع</div>
-                            <div class="info-value">{{ $complaintSuggestion->type_label }}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">المحافظة</div>
-                            <div class="info-value">{{ $complaintSuggestion->getGovernorateLabel() ?? 'غير محدد' }}</div>
-                        </div>
-                    </div>
-                    @if($complaintSuggestion->generator)
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">المولد</div>
-                            <div class="info-value">{{ $complaintSuggestion->generator->name }}</div>
-                        </div>
-                    </div>
-                    @endif
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">تاريخ الإرسال</div>
-                            <div class="info-value">{{ $complaintSuggestion->created_at->format('Y-m-d H:i') }}</div>
-                        </div>
-                    </div>
-
-                    <!-- الرسالة -->
-                    <div class="message-box">
-                        <div class="message-label">الرسالة</div>
-                        <div class="message-content">{{ $complaintSuggestion->message }}</div>
-                    </div>
-
-                    <!-- الصورة المرفقة -->
-                    @if($complaintSuggestion->image)
-                    <div class="message-box">
-                        <div class="message-label">الصورة المرفقة</div>
-                        <div style="margin-top: 10px;">
-                            <img src="{{ asset('storage/' . $complaintSuggestion->image) }}" alt="صورة مرفقة" style="max-width: 100%; border-radius: 8px; border: 2px solid #e2e8f0;">
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- رد الإدارة -->
-                    @if($complaintSuggestion->response)
-                        <div class="response-box">
-                            <div class="response-label">رد الإدارة</div>
-                            <div class="response-content">{{ $complaintSuggestion->response }}</div>
-                            @if($complaintSuggestion->responded_at)
-                                <div style="margin-top: 10px; font-size: 0.85rem; color: #64748b;">
-                                    بتاريخ: {{ $complaintSuggestion->responded_at->format('Y-m-d H:i') }}
-                                </div>
-                            @endif
-                        </div>
-                    @else
-                        <div class="message-box" style="background: #fef3c7; border-right: 4px solid #f59e0b;">
-                            <div style="font-size: 0.9rem; color: #92400e;">
-                                ⏳ الطلب قيد المراجعة. سيتم الرد عليك قريباً.
+                        <div class="tk-info-row">
+                            <div class="tk-info-item">
+                                <div class="tk-info-label">البريد الإلكتروني</div>
+                                <div class="tk-info-val">{{ $complaintSuggestion->email }}</div>
                             </div>
                         </div>
                     @endif
+
+                    <div class="tk-section-title"><i class="bi bi-file-text"></i> تفاصيل الطلب</div>
+                    <div class="tk-info-row">
+                        <div class="tk-info-item">
+                            <div class="tk-info-label">النوع</div>
+                            <div class="tk-info-val">{{ $complaintSuggestion->type_label }}</div>
+                        </div>
+                        <div class="tk-info-item">
+                            <div class="tk-info-label">المحافظة</div>
+                            <div class="tk-info-val">{{ $complaintSuggestion->getGovernorateLabel() ?? 'غير محدد' }}</div>
+                        </div>
+                    </div>
+                    @if($complaintSuggestion->generator)
+                        <div class="tk-info-row">
+                            <div class="tk-info-item">
+                                <div class="tk-info-label">المولد</div>
+                                <div class="tk-info-val">{{ $complaintSuggestion->generator->name }}</div>
+                            </div>
+                        </div>
+                    @endif
+                    <div class="tk-info-row">
+                        <div class="tk-info-item">
+                            <div class="tk-info-label">تاريخ الإرسال</div>
+                            <div class="tk-info-val">{{ $complaintSuggestion->created_at->format('Y-m-d H:i') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="tk-msg">
+                        <div class="tk-msg-label">الرسالة</div>
+                        <div class="tk-msg-text">{{ $complaintSuggestion->message }}</div>
+                    </div>
+
+                    @if($complaintSuggestion->image)
+                        <div class="tk-msg tk-image">
+                            <div class="tk-msg-label">الصورة المرفقة</div>
+                            <img src="{{ asset('storage/' . $complaintSuggestion->image) }}" alt="صورة مرفقة">
+                        </div>
+                    @endif
+
+                    @if($complaintSuggestion->response)
+                        <div class="tk-response">
+                            <div class="tk-response-label"><i class="bi bi-reply-fill"></i> رد الإدارة</div>
+                            <div class="tk-response-text">{{ $complaintSuggestion->response }}</div>
+                            @if($complaintSuggestion->responded_at)
+                                <div class="tk-response-date">بتاريخ: {{ $complaintSuggestion->responded_at->format('Y-m-d H:i') }}</div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="tk-pending">
+                            <i class="bi bi-hourglass-split"></i> الطلب قيد المراجعة — سيتم الرد عليك قريباً
+                        </div>
+                    @endif
                 </div>
-            @elseif($code)
-                <div class="no-result" id="noResult">
-                    <p>لم يتم العثور على طلب بهذا الرمز. يرجى التحقق من الرمز والمحاولة مرة أخرى.</p>
-                </div>
-            @endif
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchForm = document.querySelector('.search-form form');
-        const requestCard = document.getElementById('requestCard');
-        const noResult = document.getElementById('noResult');
-        const codeInput = document.getElementById('trackingCodeInput');
-        const errorAlert = document.getElementById('errorAlert');
-
-        // حذف النتائج السابقة عند بدء بحث جديد
-        if (searchForm) {
-            searchForm.addEventListener('submit', function(e) {
-                const code = codeInput ? codeInput.value.trim() : '';
-                
-                if (!code) {
-                    e.preventDefault();
-                    return;
-                }
-
-                // إخفاء النتائج السابقة قبل إرسال النموذج
-                if (requestCard) {
-                    requestCard.remove();
-                }
-                if (noResult) {
-                    noResult.remove();
-                }
-                if (errorAlert) {
-                    errorAlert.remove();
-                }
-            });
-        }
-
-        // عند تحميل الصفحة بدون نتائج، تأكد من عدم وجود نتائج سابقة
-        @if($code && !$complaintSuggestion)
-            // إذا كان هناك code ولكن لا توجد نتائج، احذف requestCard إذا كان موجوداً
-            if (requestCard) {
-                requestCard.remove();
-            }
+            </div>
+        @elseif(isset($code) && $code)
+            <div class="tk-empty">
+                <i class="bi bi-search"></i>
+                <p>لم يتم العثور على طلب بهذا الرمز. يرجى التحقق والمحاولة مرة أخرى.</p>
+            </div>
         @endif
-    });
-</script>
+    </div>
+
 @endsection
