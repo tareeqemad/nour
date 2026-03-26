@@ -18,285 +18,176 @@
     <div class="general-page operation-logs-page" id="operationLogsPage">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-journal-text me-2"></i>
-                                سجلات التشغيل
-                            </h5>
-                            <div class="general-subtitle">
-                                البحث والفلترة وإدارة سجلات التشغيل. العدد: <span id="operationLogsCount">{{ isset($operationLogs) ? $operationLogs->total() : 0 }}</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
+                <x-admin.card>
+                    <x-admin.card-header title="سجلات التشغيل" icon="bi-journal-text">
+                        <x-slot:actions>
                             @can('create', App\Models\OperationLog::class)
                                 <a href="{{ route('admin.operation-logs.create') }}" class="btn btn-primary">
                                     <i class="bi bi-plus-lg me-1"></i>
                                     إضافة سجل جديد
                                 </a>
                             @endcan
-                        </div>
-                    </div>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body pb-4">
-                        {{-- كارد واحد للفلاتر --}}
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title">
-                                    <i class="bi bi-funnel me-2"></i>
-                                    فلاتر البحث
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    {{-- المشغل --}}
-                                    @if((auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority()) && isset($operators) && $operators->count() > 0)
-                                        {{-- للسوبر أدمن، الأدمن، وسلطة الطاقة: select قابل للاختيار --}}
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-building me-1"></i>
-                                                المشغل *
-                                            </label>
-                                            <select id="operatorFilter" class="form-select select2" required>
-                                                <option value="0">-- اختر المشغل --</option>
-                                                @foreach($operators as $op)
-                                                    <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
-                                                        {{ $op->name }}
-                                                        @if($op->unit_number)
-                                                            - {{ $op->unit_number }}
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    @elseif((auth()->user()->isCompanyOwner() || auth()->user()->isEmployee() || auth()->user()->isTechnician()) && isset($operators) && $operators->count() > 0)
-                                        {{-- للمشغل/الموظف: select معطل مع hidden input --}}
-                                        @php
-                                            $operator = $operators->first();
-                                        @endphp
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-building me-1"></i>
-                                                المشغل
-                                            </label>
-                                            <select id="operatorFilter" class="form-select select2" disabled>
-                                                <option value="{{ $operator->id }}" selected>
-                                                    {{ $operator->name }}
-                                                    @if($operator->unit_number)
-                                                        - {{ $operator->unit_number }}
-                                                    @endif
-                                                </option>
-                                            </select>
-                                            <input type="hidden" id="operatorFilterHidden" value="{{ $operator->id }}">
-                                        </div>
-                                    @endif
-
-                                    {{-- وحدة التوليد --}}
-                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
-                                        {{-- للسوبر أدمن، الأدمن، وسلطة الطاقة: تبدأ فارغة وتُملأ عند اختيار المشغل --}}
-                                        {{-- إذا كان المشغل محدداً في الـ request، نعرض وحدات التوليد مباشرة --}}
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-grid-3x3 me-1"></i>
-                                                وحدة التوليد *
-                                            </label>
-                                            <select id="generationUnitFilter" class="form-select select2" required>
-                                                <option value="0">-- اختر وحدة التوليد --</option>
-                                                @if(isset($generationUnits) && $generationUnits->count() > 0)
-                                                    @foreach($generationUnits as $unit)
-                                                        <option value="{{ $unit->id }}" {{ request('generation_unit_id') == $unit->id ? 'selected' : '' }}>
-                                                            {{ $unit->name }} ({{ $unit->unit_code }})
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                        </div>
-                                    @elseif(isset($generationUnits) && $generationUnits->count() > 0)
-                                        {{-- للمشغل/الموظف: تظهر مباشرة مع الخيارات --}}
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-grid-3x3 me-1"></i>
-                                                وحدة التوليد *
-                                            </label>
-                                            <select id="generationUnitFilter" class="form-select select2" required>
-                                                <option value="0">-- اختر وحدة التوليد --</option>
-                                                @foreach($generationUnits as $unit)
-                                                    <option value="{{ $unit->id }}" {{ request('generation_unit_id') == $unit->id ? 'selected' : '' }}>
-                                                        {{ $unit->name }} ({{ $unit->unit_code }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    @endif
-
-                                    {{-- المولد --}}
-                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
-                                        {{-- للسوبر أدمن، الأدمن، وسلطة الطاقة: تبدأ فارغة وتُملأ عند اختيار وحدة التوليد --}}
-                                        {{-- إذا كانت وحدة التوليد محددة في الـ request، نعرض المولدات مباشرة --}}
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-lightning-charge me-1"></i>
-                                                المولد
-                                            </label>
-                                            <select id="generatorFilter" class="form-select select2">
-                                                <option value="0">-- اختر المولد --</option>
-                                                @if(isset($generators) && $generators->count() > 0)
-                                                    @foreach($generators as $gen)
-                                                        <option value="{{ $gen->id }}" 
-                                                                data-generation-unit-id="{{ $gen->generation_unit_id }}"
-                                                                {{ request('generator_id') == $gen->id ? 'selected' : '' }}>
-                                                            {{ $gen->generator_number }} - {{ $gen->name }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                        </div>
-                                    @elseif(isset($generators) && $generators->count() > 0)
-                                        {{-- للمشغل/الموظف: تظهر مباشرة مع الخيارات --}}
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-lightning-charge me-1"></i>
-                                                المولد
-                                            </label>
-                                            <select id="generatorFilter" class="form-select select2">
-                                                <option value="0">-- اختر المولد --</option>
-                                                @foreach($generators as $gen)
-                                                    <option value="{{ $gen->id }}" 
-                                                            data-generation-unit-id="{{ $gen->generation_unit_id }}"
-                                                            {{ request('generator_id') == $gen->id ? 'selected' : '' }}>
-                                                        {{ $gen->generator_number }} - {{ $gen->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    @endif
-
-                                    {{-- نوع العملية --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-funnel me-1"></i>
-                                            نوع العملية
-                                        </label>
-                                        <select class="form-select" id="commonOperator">
-                                            <option value="equals" {{ request('load_percentage_operator') == 'equals' || request('fuel_consumed_operator') == 'equals' || request('energy_produced_operator') == 'equals' ? 'selected' : '' }}>= يساوي</option>
-                                            <option value="greater_than" {{ request('load_percentage_operator') == 'greater_than' || request('fuel_consumed_operator') == 'greater_than' || request('energy_produced_operator') == 'greater_than' ? 'selected' : '' }}>&gt; أكبر من</option>
-                                            <option value="less_than" {{ request('load_percentage_operator') == 'less_than' || request('fuel_consumed_operator') == 'less_than' || request('energy_produced_operator') == 'less_than' ? 'selected' : '' }}>&lt; أصغر من</option>
-                                            <option value="greater_equal" {{ request('load_percentage_operator') == 'greater_equal' || request('fuel_consumed_operator') == 'greater_equal' || request('energy_produced_operator') == 'greater_equal' ? 'selected' : '' }}>&gt;= أكبر أو يساوي</option>
-                                            <option value="less_equal" {{ request('load_percentage_operator') == 'less_equal' || request('fuel_consumed_operator') == 'less_equal' || request('energy_produced_operator') == 'less_equal' ? 'selected' : '' }}>&lt;= أصغر أو يساوي</option>
-                                        </select>
-                                    </div>
-
-                                    {{-- نسبة التحميل --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-percent me-1"></i>
-                                            نسبة التحميل (%)
-                                        </label>
-                                        <input type="number" id="loadPercentageValue" class="form-control" 
-                                               placeholder="النسبة" 
-                                               value="{{ request('load_percentage_value', '') }}" 
-                                               step="0.01" min="0" max="100">
-                                    </div>
-
-                                    {{-- الوقود المستهلك --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-fuel-pump me-1"></i>
-                                            الوقود المستهلك (لتر)
-                                        </label>
-                                        <input type="number" id="fuelConsumedValue" class="form-control" 
-                                               placeholder="الكمية" 
-                                               value="{{ request('fuel_consumed_value', '') }}" 
-                                               step="0.01" min="0">
-                                    </div>
-
-                                    {{-- الطاقة المنتجة --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-lightning me-1"></i>
-                                            الطاقة المنتجة (kWh)
-                                        </label>
-                                        <input type="number" id="energyProducedValue" class="form-control" 
-                                               placeholder="الطاقة" 
-                                               value="{{ request('energy_produced_value', '') }}" 
-                                               step="0.01" min="0">
-                                    </div>
-
-                                    {{-- تاريخ من --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-event me-1"></i>
-                                            من تاريخ
-                                        </label>
-                                        <input type="date" id="dateFromFilter" class="form-control" 
-                                               value="{{ request('date_from', '') }}">
-                                    </div>
-
-                                    {{-- تاريخ إلى --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-check me-1"></i>
-                                            إلى تاريخ
-                                        </label>
-                                        <input type="date" id="dateToFilter" class="form-control" 
-                                               value="{{ request('date_to', '') }}">
-                                    </div>
+                        {{-- فلاتر البحث --}}
+                        <div class="row g-3 align-items-end">
+                            {{-- المشغل --}}
+                            @if((auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority()) && isset($operators) && $operators->count() > 0)
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold">المشغل <span class="text-danger">*</span></label>
+                                    <select id="operatorFilter" class="form-select select2" required>
+                                        <option value="0">اختر المشغل</option>
+                                        @foreach($operators as $op)
+                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                                {{ $op->name }}@if($op->unit_number) - {{ $op->unit_number }}@endif
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
-
-                                    {{-- أزرار البحث والتجميع --}}
-                                    <div class="col-12 mt-3">
-                                        <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="groupByGeneratorToggle" {{ request('group_by_generator') ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="groupByGeneratorToggle">
-                                                    <i class="bi bi-grid-3x3-gap me-1"></i>
-                                                    تجميع حسب المولد
-                                                </label>
-                                            </div>
-                                            <button
-                                                class="btn btn-outline-secondary {{ request('operator_id') || request('generator_id') || request('generation_unit_id') || request('date_from') || request('date_to') || request('load_percentage_value') || request('fuel_consumed_value') || request('energy_produced_value') ? '' : 'd-none' }}"
-                                                type="button"
-                                                id="clearSearchBtn"
-                                            >
-                                                <i class="bi bi-x me-2"></i>
-                                                مسح
-                                            </button>
-                                            <button class="btn btn-primary" type="button" id="searchBtn">
-                                                <i class="bi bi-search me-2"></i>
-                                                بحث
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-3">
-
-                        <div class="data-table-container">
-                        <div id="operationLogsListContainer">
-                            @if(request()->filled('operator_id') && request()->filled('generation_unit_id'))
-                                @if(isset($groupedLogs) && $groupedLogs->isNotEmpty())
-                                    @include('admin.operation-logs.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'operationLogs' => $operationLogs])
-                                @elseif(isset($operationLogs) && $operationLogs->count() > 0)
-                                    @include('admin.operation-logs.partials.list', ['operationLogs' => $operationLogs])
-                                @else
-                                    <div class="text-center py-5">
-                                        <i class="bi bi-inbox fs-1 text-muted"></i>
-                                        <p class="text-muted mt-3">لا توجد نتائج للبحث</p>
-                                    </div>
-                                @endif
-                            @else
-                                <div class="text-center py-5">
-                                    <i class="bi bi-search fs-1 text-muted"></i>
-                                    <p class="text-muted mt-3">يرجى استخدام الفلاتر أعلاه للبحث عن سجلات التشغيل</p>
+                            @elseif((auth()->user()->isCompanyOwner() || auth()->user()->isEmployee() || auth()->user()->isTechnician()) && isset($operators) && $operators->count() > 0)
+                                @php $operator = $operators->first(); @endphp
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold">المشغل</label>
+                                    <select id="operatorFilter" class="form-select select2" disabled>
+                                        <option value="{{ $operator->id }}" selected>{{ $operator->name }}@if($operator->unit_number) - {{ $operator->unit_number }}@endif</option>
+                                    </select>
+                                    <input type="hidden" id="operatorFilterHidden" value="{{ $operator->id }}">
                                 </div>
                             @endif
+
+                            {{-- وحدة التوليد --}}
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold">وحدة التوليد <span class="text-danger">*</span></label>
+                                    <select id="generationUnitFilter" class="form-select select2" required>
+                                        <option value="0">اختر وحدة التوليد</option>
+                                        @if(isset($generationUnits) && $generationUnits->count() > 0)
+                                            @foreach($generationUnits as $unit)
+                                                <option value="{{ $unit->id }}" {{ request('generation_unit_id') == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            @elseif(isset($generationUnits) && $generationUnits->count() > 0)
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold">وحدة التوليد <span class="text-danger">*</span></label>
+                                    <select id="generationUnitFilter" class="form-select select2" required>
+                                        <option value="0">اختر وحدة التوليد</option>
+                                        @foreach($generationUnits as $unit)
+                                            <option value="{{ $unit->id }}" {{ request('generation_unit_id') == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- المولد --}}
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold">المولد</label>
+                                    <select id="generatorFilter" class="form-select select2">
+                                        <option value="0">اختر المولد</option>
+                                        @if(isset($generators) && $generators->count() > 0)
+                                            @foreach($generators as $gen)
+                                                <option value="{{ $gen->id }}" data-generation-unit-id="{{ $gen->generation_unit_id }}" {{ request('generator_id') == $gen->id ? 'selected' : '' }}>{{ $gen->generator_number }} - {{ $gen->name }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            @elseif(isset($generators) && $generators->count() > 0)
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold">المولد</label>
+                                    <select id="generatorFilter" class="form-select select2">
+                                        <option value="0">اختر المولد</option>
+                                        @foreach($generators as $gen)
+                                            <option value="{{ $gen->id }}" data-generation-unit-id="{{ $gen->generation_unit_id }}" {{ request('generator_id') == $gen->id ? 'selected' : '' }}>{{ $gen->generator_number }} - {{ $gen->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- تاريخ من --}}
+                            <div class="col-6 col-md-4 col-lg-3">
+                                <label class="form-label fw-semibold">من تاريخ</label>
+                                <input type="date" id="dateFromFilter" class="form-control" value="{{ request('date_from', '') }}">
+                            </div>
+
+                            {{-- تاريخ إلى --}}
+                            <div class="col-6 col-md-4 col-lg-3">
+                                <label class="form-label fw-semibold">إلى تاريخ</label>
+                                <input type="date" id="dateToFilter" class="form-control" value="{{ request('date_to', '') }}">
+                            </div>
+
+                            {{-- أزرار البحث --}}
+                            <div class="col-12 col-lg-auto order-last order-lg-0 mt-2 mt-lg-0">
+                                <label class="form-label fw-semibold d-none d-lg-block">&nbsp;</label>
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <button class="btn btn-primary" type="button" id="searchBtn">
+                                        <i class="bi bi-search me-2"></i>بحث
+                                    </button>
+                                    <button class="btn btn-outline-secondary {{ request('operator_id') || request('generator_id') || request('generation_unit_id') || request('date_from') || request('date_to') || request('load_percentage_value') || request('fuel_consumed_value') || request('energy_produced_value') ? '' : 'd-none' }}" type="button" id="clearSearchBtn">
+                                        <i class="bi bi-x me-2"></i>تفريغ
+                                    </button>
+                                    @php
+                                        $hasAdvancedFilters = request('load_percentage_value') || request('fuel_consumed_value') || request('energy_produced_value');
+                                    @endphp
+                                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="{{ $hasAdvancedFilters ? 'true' : 'false' }}">
+                                        <i class="bi bi-sliders me-1"></i>فلاتر متقدمة
+                                    </button>
+                                    <div class="form-check form-switch ms-2 mb-0">
+                                        <input class="form-check-input" type="checkbox" id="groupByGeneratorToggle" {{ request('group_by_generator') ? 'checked' : '' }}>
+                                        <label class="form-check-label small" for="groupByGeneratorToggle">تجميع حسب المولد</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+
+                        {{-- فلاتر متقدمة (مخفية بالعادة) --}}
+                        <div class="collapse {{ $hasAdvancedFilters ? 'show' : '' }} mt-3" id="advancedFilters">
+                            <div class="row g-3 align-items-end" style="background: var(--color-bg-secondary, #F9FAFB); border-radius: 8px; padding: 1rem;">
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label fw-semibold">نوع المقارنة</label>
+                                    <select class="form-select" id="commonOperator">
+                                        <option value="equals" {{ request('load_percentage_operator') == 'equals' ? 'selected' : '' }}>= يساوي</option>
+                                        <option value="greater_than" {{ request('load_percentage_operator') == 'greater_than' ? 'selected' : '' }}>&gt; أكبر من</option>
+                                        <option value="less_than" {{ request('load_percentage_operator') == 'less_than' ? 'selected' : '' }}>&lt; أصغر من</option>
+                                        <option value="greater_equal" {{ request('load_percentage_operator') == 'greater_equal' ? 'selected' : '' }}>&gt;= أكبر أو يساوي</option>
+                                        <option value="less_equal" {{ request('load_percentage_operator') == 'less_equal' ? 'selected' : '' }}>&lt;= أصغر أو يساوي</option>
+                                    </select>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label fw-semibold">نسبة التحميل (%)</label>
+                                    <input type="number" id="loadPercentageValue" class="form-control" placeholder="النسبة" value="{{ request('load_percentage_value', '') }}" step="0.01" min="0" max="100">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label fw-semibold">الوقود المستهلك (لتر)</label>
+                                    <input type="number" id="fuelConsumedValue" class="form-control" placeholder="الكمية" value="{{ request('fuel_consumed_value', '') }}" step="0.01" min="0">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label fw-semibold">الطاقة المنتجة (kWh)</label>
+                                    <input type="number" id="energyProducedValue" class="form-control" placeholder="الطاقة" value="{{ request('energy_produced_value', '') }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- النتائج --}}
+                        <div class="data-table-container mt-4">
+                            <div id="operationLogsListContainer">
+                                @if(request()->filled('operator_id') && request()->filled('generation_unit_id'))
+                                    @if(isset($groupedLogs) && $groupedLogs->isNotEmpty())
+                                        @include('admin.operation-logs.partials.grouped-list', ['groupedLogs' => $groupedLogs, 'operationLogs' => $operationLogs])
+                                    @elseif(isset($operationLogs) && $operationLogs->count() > 0)
+                                        @include('admin.operation-logs.partials.list', ['operationLogs' => $operationLogs])
+                                    @else
+                                        <x-admin.empty-state icon="bi-inbox" message="لا توجد نتائج للبحث" />
+                                    @endif
+                                @else
+                                    <x-admin.empty-state icon="bi-search" message="يرجى استخدام الفلاتر أعلاه للبحث عن سجلات التشغيل" />
+                                @endif
+                            </div>
+                        </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

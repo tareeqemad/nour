@@ -8,36 +8,22 @@
 
 @push('styles')
 <style>
-    /* ── Loading Overlay ── */
-    .loading-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(255,255,255,0.92);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        border-radius: .5rem;
-    }
-
-    /* ── Status Badge ── */
     .status-badge {
         font-size: .78rem;
         padding: .3rem .65rem;
         border-radius: 30px;
         font-weight: 600;
-        letter-spacing: .3px;
         white-space: nowrap;
     }
-
-    /* ── Details Modal Sections ── */
-    .section-header {
-        background: var(--primary-color, #19228f);
-        color: #fff;
+    .portal-section-header {
+        background: var(--color-bg-card-header, #F8FBFD);
+        border: 1px solid var(--color-border-soft, #EDF1F5);
+        border-inline-end: 3px solid var(--color-primary, #24308F);
+        color: var(--color-primary, #24308F);
         padding: .55rem 1rem;
         border-radius: .4rem;
         font-weight: 700;
-        font-size: .9rem;
+        font-size: .88rem;
         margin-bottom: .75rem;
     }
     .detail-field {
@@ -45,35 +31,29 @@
         gap: .5rem;
         padding: .35rem .6rem;
         border-radius: .3rem;
-        border: 1px solid #eef0f7;
-        background: #f9fafc;
+        border: 1px solid var(--color-border-soft, #EDF1F5);
+        background: #FAFCFF;
         margin-bottom: .4rem;
         font-size: .85rem;
         flex-wrap: wrap;
     }
     .detail-field .fn {
         font-weight: 700;
-        color: #3b4863;
+        color: var(--color-text-secondary, #3B4863);
         min-width: 160px;
         flex-shrink: 0;
     }
     .detail-field .fv {
-        color: #555;
+        color: var(--color-text-main, #1F2937);
     }
     .dt-row-separator {
         border: 0;
-        border-top: 1px dashed #d0d5e8;
+        border-top: 1px dashed var(--color-border-soft, #EDF1F5);
         margin: .5rem 0;
     }
-
-    /* ── Responsive table ── */
     @media (max-width: 768px) {
         .detail-field .fn { min-width: 100%; margin-bottom: .15rem; }
     }
-
-    /* ── Stat card hover ── */
-    .stat-card { transition: transform .15s, box-shadow .15s; cursor: default; }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1) !important; }
 </style>
 @endpush
 
@@ -85,150 +65,125 @@
             {{-- ── إحصائيات ── --}}
             <div class="row g-3 mb-3" id="statsRow">
                 <div class="col-6 col-md-3">
-                    <div class="card border-0 shadow-sm stat-card">
-                        <div class="card-body text-center py-3">
-                            <div class="text-muted small mb-1">
-                                <i class="bi bi-collection me-1"></i> إجمالي (هذه الصفحة)
-                            </div>
-                            <h3 class="mb-0 fw-bold text-primary" id="statTotal">—</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-primary"><i class="bi bi-collection"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="statTotal">—</div>
+                            <div class="dash-kpi-label">إجمالي</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="card border-0 shadow-sm stat-card">
-                        <div class="card-body text-center py-3">
-                            <div class="text-muted small mb-1">
-                                <i class="bi bi-check-circle me-1"></i> تم التنفيذ
-                            </div>
-                            <h3 class="mb-0 fw-bold text-success" id="statDone">—</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-success"><i class="bi bi-check-circle"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="statDone">—</div>
+                            <div class="dash-kpi-label">تم التنفيذ</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="card border-0 shadow-sm stat-card">
-                        <div class="card-body text-center py-3">
-                            <div class="text-muted small mb-1">
-                                <i class="bi bi-hourglass-split me-1"></i> قيد الطلب
-                            </div>
-                            <h3 class="mb-0 fw-bold text-info" id="statPending">—</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-info"><i class="bi bi-hourglass-split"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="statPending">—</div>
+                            <div class="dash-kpi-label">قيد الطلب</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="card border-0 shadow-sm stat-card">
-                        <div class="card-body text-center py-3">
-                            <div class="text-muted small mb-1">
-                                <i class="bi bi-x-circle me-1"></i> مرفوضة
-                            </div>
-                            <h3 class="mb-0 fw-bold text-danger" id="statReturned">—</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-danger"><i class="bi bi-x-circle"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="statReturned">—</div>
+                            <div class="dash-kpi-label">مرفوضة</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {{-- ── البطاقة الرئيسية ── --}}
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-inbox me-2"></i>
-                            الطلبات المقدمة
-                        </h5>
-                        <div class="general-subtitle">
-                            الطلبات المقدمة عبر البوابة الرقمية الفلسطينية
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
+            <x-admin.card>
+                <x-admin.card-header title="الطلبات المقدمة" icon="bi-inbox">
+                    <x-slot:actions>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btnRefresh" title="تحديث">
                             <i class="bi bi-arrow-clockwise me-1"></i> تحديث
                         </button>
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4 position-relative">
 
                     {{-- ── فلاتر البحث ── --}}
-                    <div class="filter-card mb-3">
-                        <div class="card-header d-flex align-items-center justify-content-between">
-                            <h6 class="card-title mb-0">
-                                <i class="bi bi-funnel me-2"></i> فلاتر البحث
-                            </h6>
-                            <button type="button" class="btn btn-sm btn-link text-danger p-0" id="btnClearFilters">
-                                <i class="bi bi-x-circle me-1"></i>مسح الفلاتر
-                            </button>
+                    <div class="row g-3">
+
+                        {{-- بحث برقم الطلب --}}
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-hash me-1 text-muted"></i>رقم الطلب
+                            </label>
+                            <input type="text" id="filterAppNo" class="form-control"
+                                   placeholder="مثال: 785765" autocomplete="off">
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
 
-                                {{-- بحث برقم الطلب --}}
-                                <div class="col-md-3 col-sm-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-hash me-1 text-muted"></i>رقم الطلب
-                                    </label>
-                                    <input type="text" id="filterAppNo" class="form-control"
-                                           placeholder="مثال: 785765" autocomplete="off">
-                                </div>
-
-                                {{-- بحث برقم الهوية --}}
-                                <div class="col-md-3 col-sm-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person-badge me-1 text-muted"></i>رقم هوية مقدم الطلب
-                                    </label>
-                                    <input type="text" id="filterApplicantId" class="form-control"
-                                           placeholder="مثال: 802490599" autocomplete="off">
-                                </div>
-
-                                {{-- فلتر الحالة --}}
-                                <div class="col-md-2 col-sm-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-flag me-1 text-muted"></i>حالة الطلب
-                                    </label>
-                                    <select id="filterStatus" class="form-select">
-                                        <option value="">الكل</option>
-                                        <option value="0">مرفوض</option>
-                                        <option value="1">قيد الطلب</option>
-                                        <option value="90">مرجع للتعديل</option>
-                                        <option value="100">تم تنفيذ الطلب بنجاح</option>
-                                    </select>
-                                </div>
-
-                                {{-- فلتر التاريخ --}}
-                                <div class="col-md-2 col-sm-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-calendar3 me-1 text-muted"></i>مقدمة منذ تاريخ
-                                    </label>
-                                    <input type="date" id="filterDate" class="form-control">
-                                </div>
-
-                                {{-- عدد النتائج --}}
-                                <div class="col-md-1 col-sm-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-list-ol me-1 text-muted"></i>لكل صفحة
-                                    </label>
-                                    <select id="filterPerPage" class="form-select">
-                                        <option value="10">10</option>
-                                        <option value="15" selected>15</option>
-                                        <option value="25">25</option>
-                                        <option value="50">50</option>
-                                        <option value="99">99</option>
-                                    </select>
-                                </div>
-
-                                {{-- زر البحث --}}
-                                <div class="col-md-1 col-sm-6 d-flex align-items-end">
-                                    <button type="button" class="btn btn-primary w-100" id="btnSearch">
-                                        <i class="bi bi-search me-1"></i>بحث
-                                    </button>
-                                </div>
-
-                            </div>
+                        {{-- بحث برقم الهوية --}}
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-1 text-muted"></i>رقم هوية مقدم الطلب
+                            </label>
+                            <input type="text" id="filterApplicantId" class="form-control"
+                                   placeholder="مثال: 802490599" autocomplete="off">
                         </div>
+
+                        {{-- فلتر الحالة --}}
+                        <div class="col-md-2 col-sm-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-flag me-1 text-muted"></i>حالة الطلب
+                            </label>
+                            <select id="filterStatus" class="form-select">
+                                <option value="">الكل</option>
+                                <option value="0">مرفوض</option>
+                                <option value="1">قيد الطلب</option>
+                                <option value="90">مرجع للتعديل</option>
+                                <option value="100">تم تنفيذ الطلب بنجاح</option>
+                            </select>
+                        </div>
+
+                        {{-- فلتر التاريخ --}}
+                        <div class="col-md-2 col-sm-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar3 me-1 text-muted"></i>مقدمة منذ تاريخ
+                            </label>
+                            <input type="date" id="filterDate" class="form-control">
+                        </div>
+
+                        {{-- عدد النتائج --}}
+                        <div class="col-md-1 col-sm-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-list-ol me-1 text-muted"></i>لكل صفحة
+                            </label>
+                            <select id="filterPerPage" class="form-select">
+                                <option value="10">10</option>
+                                <option value="15" selected>15</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="99">99</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    {{-- زر البحث --}}
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn btn-primary" id="btnSearch">
+                            <i class="bi bi-search me-1"></i>بحث
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btnClearFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ
+                        </button>
                     </div>
 
-                    <hr class="my-3">
-
                     {{-- ── Loading Overlay ── --}}
-                    <div class="loading-overlay d-none" id="loadingOverlay">
+                    <div class="d-none" id="loadingOverlay" style="position:absolute;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:10;"
                         <div class="text-center">
                             <div class="spinner-border text-primary mb-2" role="status"
                                  style="width:2.5rem;height:2.5rem;"></div>
@@ -267,7 +222,7 @@
                     <div id="paginationContainer" class="mt-3"></div>
 
                 </div>{{-- end card-body --}}
-            </div>{{-- end general-card --}}
+            </x-admin.card>{{-- end general-card --}}
         </div>
     </div>
 </div>
@@ -293,7 +248,7 @@
             </div>
             <div class="modal-footer justify-content-between">
                 <div id="detailsStatusInfo" class="small text-muted"></div>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إغلاق</button>
             </div>
         </div>
     </div>
@@ -341,7 +296,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
                 <button type="button" class="btn btn-warning" id="btnConfirmStatus">
                     <span class="spinner-border spinner-border-sm me-2 d-none" id="csSpinner"></span>
                     <i class="bi bi-check2 me-1"></i>
@@ -667,7 +622,7 @@
                 const dtData = section.dt_data || [];
 
                 html += `<div class="mb-4">
-                  <div class="section-header">
+                  <div class="portal-section-header">
                     <i class="bi bi-folder2-open me-2"></i>${escHtml(dtName)}
                   </div>`;
 

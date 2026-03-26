@@ -77,43 +77,31 @@
                 </a>
                 <!-- End::header-link|dropdown-toggle -->
                 <!-- Start::main-header-dropdown -->
-                <div class="main-header-dropdown dropdown-menu dropdown-menu-end messages-dropdown-menu" data-popper-placement="none" style="width: 380px;">
-                    <div class="p-3 border-bottom bg-light">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <p class="mb-0 fs-17 fw-semibold">
-                                    <i class="bi bi-envelope me-2"></i>
-                                    الرسائل
-                                </p>
-                                <small class="text-muted" id="messages-summary">جاري التحميل...</small>
-                            </div>
-                            <a href="{{ route('admin.messages.index') }}" class="text-primary small fw-semibold">
-                                عرض الكل
-                                <i class="bi bi-arrow-left me-1"></i>
-                            </a>
-                        </div>
+                <div class="main-header-dropdown dropdown-menu dropdown-menu-end nour-dropdown-panel" data-popper-placement="none">
+                    {{-- Header --}}
+                    <div class="nour-dropdown-head">
+                        <span class="nour-dropdown-title"><i class="bi bi-envelope me-1"></i> الرسائل</span>
+                        <span class="nour-dropdown-badge" id="messages-summary"></span>
                     </div>
-                    <div class="dropdown-divider mb-0"></div>
-                    <div id="messages-loading" class="p-4 text-center" style="display: none;">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                            <span class="visually-hidden">جاري التحميل...</span>
-                        </div>
-                        <p class="text-muted small mt-2 mb-0">جاري تحميل الرسائل...</p>
+                    {{-- Loading --}}
+                    <div id="messages-loading" class="nour-dropdown-empty" style="display:none;">
+                        <div class="spinner-border spinner-border-sm" style="color:#24308F;" role="status"></div>
+                        <p>جاري التحميل...</p>
                     </div>
-                    <ul class="list-unstyled mb-0" id="messages-list" style="max-height: 400px; overflow-y: auto;">
-                        <li class="p-4 text-center text-muted">
-                            <i class="bi bi-envelope-slash fs-1 d-block mb-2"></i>
-                            <p class="mb-0">لا توجد رسائل</p>
+                    {{-- List --}}
+                    <ul class="list-unstyled mb-0 nour-dropdown-list" id="messages-list">
+                        <li class="nour-dropdown-empty">
+                            <i class="bi bi-envelope-open"></i>
+                            <p>لا توجد رسائل</p>
                         </li>
                     </ul>
-                    <div class="p-2 border-top bg-light text-center">
-                        <a href="{{ route('admin.messages.create') }}" class="btn btn-primary btn-sm w-100 mb-2">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            رسالة جديدة
+                    {{-- Footer --}}
+                    <div class="nour-dropdown-foot">
+                        <a href="{{ route('admin.messages.create') }}" class="nour-dropdown-btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> رسالة جديدة
                         </a>
-                        <a href="{{ route('admin.messages.index') }}" class="text-primary small d-block">
-                            <i class="bi bi-list-ul me-1"></i>
-                            عرض جميع الرسائل
+                        <a href="{{ route('admin.messages.index') }}" class="nour-dropdown-link">
+                            عرض الكل <i class="bi bi-arrow-left ms-1"></i>
                         </a>
                     </div>
                 </div>

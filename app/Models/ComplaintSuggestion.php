@@ -5,9 +5,12 @@ namespace App\Models;
 use App\Governorate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ComplaintSuggestion extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'complaints_suggestions';
 
     protected $fillable = [
@@ -16,8 +19,8 @@ class ComplaintSuggestion extends Model
         'phone',
         'email',
         'governorate',
-        'operator_id', // المشغل المرتبط بالشكوى
-        'generator_id', // المولد المرتبط (اختياري - لتحديد المولد المحدد)
+        'operator_id',
+        'generator_id',
         'subject',
         'message',
         'image',
@@ -26,8 +29,8 @@ class ComplaintSuggestion extends Model
         'responded_by',
         'responded_at',
         'tracking_code',
-        'closed_by_operator', // هل تم إغلاقها من قبل المشغل
-        'closed_at', // تاريخ الإغلاق من قبل المشغل
+        'closed_by_operator',
+        'closed_at',
     ];
 
     protected function casts(): array
@@ -40,46 +43,40 @@ class ComplaintSuggestion extends Model
         ];
     }
 
-    /**
-     * المستخدم الذي رد على الطلب
-     */
+    // ── العلاقات ──
+
     public function responder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'responded_by');
     }
 
-    /**
-     * المشغل المرتبط بالطلب
-     */
     public function operator(): BelongsTo
     {
         return $this->belongsTo(Operator::class);
     }
 
     /**
-     * المولد المرتبط بالطلب (اختياري - لتحديد المولد المحدد)
-     * بما في ذلك المحذوفة soft delete للاستخدام في السجلات التاريخية
+     * المولد المرتبط — بدون withTrashed بالـ default
+     * استخدم ->generator()->withTrashed()->first() لما بتحتاج المحذوفة
      */
     public function generator(): BelongsTo
     {
-        return $this->belongsTo(Generator::class)->withTrashed();
+        return $this->belongsTo(Generator::class);
     }
 
-    /**
-     * إنشاء رمز تتبع فريد
-     */
+    // ── Helpers ──
+
     public static function generateTrackingCode(): string
     {
         do {
-            $code = 'CS-'.strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+            $code = 'CS-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
         } while (self::where('tracking_code', $code)->exists());
 
         return $code;
     }
 
-    /**
-     * الحصول على حالة الطلب بالعربية
-     */
+    // ── Accessors ──
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
@@ -91,17 +88,27 @@ class ComplaintSuggestion extends Model
         };
     }
 
-    /**
-     * الحصول على نوع الطلب بالعربية
-     */
+    public function getStatusColorAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'warning',
+            'in_progress' => 'info',
+            'resolved' => 'success',
+            'rejected' => 'danger',
+            default => 'secondary',
+        };
+    }
+
     public function getTypeLabelAttribute(): string
     {
         return $this->type === 'complaint' ? 'شكوى' : 'مقترح';
     }
 
-    /**
-     * الحصول على اسم المحافظة
-     */
+    public function getTypeColorAttribute(): string
+    {
+        return $this->type === 'complaint' ? 'danger' : 'info';
+    }
+
     public function getGovernorateLabel(): ?string
     {
         return $this->governorate?->label();

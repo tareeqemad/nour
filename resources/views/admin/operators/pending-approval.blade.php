@@ -10,40 +10,22 @@
 @endpush
 
 @section('content')
-<div class="operators-page">
+<div class="general-page">
     <div class="general-page" id="operatorsPendingApprovalPage">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-hourglass-split me-2 text-warning"></i>
-                                المشغلين الذين يحتاجون إلى اعتماد
-                            </h5>
-                            <div class="general-subtitle">
-                                قائمة المشغلين الذين ينتظرون اعتماد من سلطة الطاقة.
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
+                <x-admin.card>
+                    <x-admin.card-header title="المشغلين الذين يحتاجون إلى اعتماد" icon="bi-hourglass-split">
+                        <x-slot:actions>
                             <a href="{{ route('admin.operators.index') }}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-arrow-left me-1"></i>
                                 جميع المشغلين
                             </a>
-                        </div>
-                    </div>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title">
-                                    <i class="bi bi-funnel me-2"></i>
-                                    فلاتر البحث
-                                </h6>
-                            </div>
-                            <div class="card-body">
                                 <div class="row g-3">
                                     <div class="col-lg-4">
                                         <label class="form-label fw-semibold">
@@ -70,26 +52,25 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-lg-5 d-flex align-items-end gap-2">
-                                        <button type="button" class="btn btn-primary" id="applyFilters">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary" id="resetFilters">
-                                            <i class="bi bi-arrow-clockwise me-1"></i>
-                                            إعادة تعيين
-                                        </button>
-                                    </div>
                                 </div>
-                            </div>
-                        </div>
+
+                                <div class="d-flex gap-2 mt-3">
+                                    <button type="button" class="btn btn-primary" id="applyFilters">
+                                        <i class="bi bi-search me-1"></i>
+                                        بحث
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="resetFilters">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                        إعادة تعيين
+                                    </button>
+                                </div>
 
                         {{-- قائمة المشغلين --}}
                         <div id="operatorsListContainer">
                             @include('admin.operators.partials.pending-list')
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

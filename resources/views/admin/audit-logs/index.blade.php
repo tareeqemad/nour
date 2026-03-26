@@ -13,133 +13,113 @@
 @endpush
 
 @section('content')
-<div class="audit-logs-page">
+<div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="card log-card">
-                <div class="log-card-header log-toolbar-header">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                        <div>
-                            <div class="log-title">
-                                <i class="bi bi-clock-history me-2"></i>
-                                سجل النشاطات
-                            </div>
-                            <div class="log-subtitle">
-                                {{ $isSuperAdmin ? 'متابعة جميع النشاطات على مستوى النظام' : 'متابعة نشاطات المستخدمين التابعين لمشغلك' }}
-                            </div>
+            <x-admin.card>
+                <x-admin.card-header title="سجل النشاطات" icon="bi-clock-history" />
+                <div class="log-toolbar-header px-3 pt-3">
+
+                    {{-- فلاتر البحث --}}
+                    <div class="row g-3">
+                        {{-- البحث --}}
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-search me-1"></i>
+                                البحث
+                            </label>
+                            <input
+                                type="text"
+                                id="searchInput"
+                                class="form-control"
+                                placeholder="ابحث في النشاطات..."
+                                value="{{ request('search', '') }}"
+                            >
                         </div>
-                    </div>
 
-                    {{-- كارد واحد للفلاتر --}}
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
+                        {{-- المستخدم (للسوبر أدمن والمشغل) --}}
+                        @if($users->isNotEmpty())
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>
+                                    المستخدم
+                                </label>
+                                <select id="userFilter" class="form-select">
+                                    <option value="">كل المستخدمين</option>
+                                    @foreach($users as $u)
+                                        <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>
+                                            {{ $u->name }} ({{ $u->username }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        {{-- نوع الإجراء --}}
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-activity me-1"></i>
+                                نوع الإجراء
+                            </label>
+                            <select id="actionFilter" class="form-select">
+                                <option value="">كل الإجراءات</option>
+                                @foreach($actions as $action)
+                                    <option value="{{ $action }}" {{ request('action') == $action ? 'selected' : '' }}>
+                                        {{ ucfirst($action) }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                {{-- البحث --}}
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        البحث
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="searchInput"
-                                        class="form-control"
-                                        placeholder="ابحث في النشاطات..."
-                                        value="{{ request('search', '') }}"
-                                    >
-                                </div>
 
-                                {{-- المستخدم (للسوبر أدمن والمشغل) --}}
-                                @if($users->isNotEmpty())
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-person me-1"></i>
-                                            المستخدم
-                                        </label>
-                                        <select id="userFilter" class="form-select">
-                                            <option value="">كل المستخدمين</option>
-                                            @foreach($users as $u)
-                                                <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>
-                                                    {{ $u->name }} ({{ $u->username }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @endif
+                        {{-- نوع الموديل (للسوبر أدمن فقط) --}}
+                        @if($isSuperAdmin && $modelTypes->isNotEmpty())
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-file-earmark me-1"></i>
+                                    نوع الموديل
+                                </label>
+                                <select id="modelTypeFilter" class="form-select">
+                                    <option value="">كل الأنواع</option>
+                                    @foreach($modelTypes as $modelType)
+                                        <option value="{{ $modelType }}" {{ request('model_type') == $modelType ? 'selected' : '' }}>
+                                            {{ class_basename($modelType) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
 
-                                {{-- نوع الإجراء --}}
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-activity me-1"></i>
-                                        نوع الإجراء
-                                    </label>
-                                    <select id="actionFilter" class="form-select">
-                                        <option value="">كل الإجراءات</option>
-                                        @foreach($actions as $action)
-                                            <option value="{{ $action }}" {{ request('action') == $action ? 'selected' : '' }}>
-                                                {{ ucfirst($action) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                        {{-- تاريخ من --}}
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                من تاريخ
+                            </label>
+                            <input type="date" id="dateFromFilter" class="form-control"
+                                   value="{{ request('date_from', '') }}">
+                        </div>
 
-                                {{-- نوع الموديل (للسوبر أدمن فقط) --}}
-                                @if($isSuperAdmin && $modelTypes->isNotEmpty())
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-file-earmark me-1"></i>
-                                            نوع الموديل
-                                        </label>
-                                        <select id="modelTypeFilter" class="form-select">
-                                            <option value="">كل الأنواع</option>
-                                            @foreach($modelTypes as $modelType)
-                                                <option value="{{ $modelType }}" {{ request('model_type') == $modelType ? 'selected' : '' }}>
-                                                    {{ class_basename($modelType) }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @endif
+                        {{-- تاريخ إلى --}}
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar-check me-1"></i>
+                                إلى تاريخ
+                            </label>
+                            <input type="date" id="dateToFilter" class="form-control"
+                                   value="{{ request('date_to', '') }}">
+                        </div>
 
-                                {{-- تاريخ من --}}
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-calendar-event me-1"></i>
-                                        من تاريخ
-                                    </label>
-                                    <input type="date" id="dateFromFilter" class="form-control" 
-                                           value="{{ request('date_from', '') }}">
-                                </div>
-
-                                {{-- تاريخ إلى --}}
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-calendar-check me-1"></i>
-                                        إلى تاريخ
-                                    </label>
-                                    <input type="date" id="dateToFilter" class="form-control" 
-                                           value="{{ request('date_to', '') }}">
-                                </div>
-
-                                {{-- أزرار البحث --}}
-                                <div class="col-md-12">
-                                    <div class="d-flex justify-content-center gap-2 align-items-center flex-wrap">
-                                        <button class="btn btn-primary" id="btnSearch">
-                                            <i class="bi bi-search me-2"></i>
-                                            بحث
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary {{ request('search') || request('user_id') || request('action') || request('model_type') || request('date_from') || request('date_to') ? '' : 'd-none' }}" id="btnResetFilters">
-                                            <i class="bi bi-x me-2"></i>
-                                            تفريغ
-                                        </button>
-                                    </div>
-                                </div>
+                        {{-- أزرار البحث --}}
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-center gap-2 align-items-center flex-wrap">
+                                <button class="btn btn-primary" id="btnSearch">
+                                    <i class="bi bi-search me-2"></i>
+                                    بحث
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary {{ request('search') || request('user_id') || request('action') || request('model_type') || request('date_from') || request('date_to') ? '' : 'd-none' }}" id="btnResetFilters">
+                                    <i class="bi bi-x me-2"></i>
+                                    تفريغ
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -187,7 +167,7 @@
                         @endif
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

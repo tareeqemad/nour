@@ -116,7 +116,7 @@
 
         initSelect2: function($element, options) {
             if (!$element.length) return;
-            
+
             // تدمير Select2 إذا كان موجوداً
             if ($element.hasClass('select2-hidden-accessible')) {
                 $element.select2('destroy');
@@ -127,6 +127,12 @@
             const mergedOptions = $.extend({}, options, {
                 placeholder: placeholder
             });
+
+            // إذا العنصر داخل modal → نفتح الـ dropdown داخل الـ modal (z-index fix)
+            const $modal = $element.closest('.modal');
+            if ($modal.length) {
+                mergedOptions.dropdownParent = $modal;
+            }
 
             $element.select2(mergedOptions);
         },

@@ -17,31 +17,17 @@
 <div class="general-page" id="rolesPage" data-index-url="{{ route('admin.roles.index') }}">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-shield-check me-2"></i>
-                            {{ $isCompanyOwner ? 'أدوار المستخدمين' : 'إدارة الأدوار' }}
-                        </h5>
-                        <div class="general-subtitle">
-                            @if($isCompanyOwner)
-                                إدارة الأدوار والصلاحيات لمستخدمي مشغلك
-                            @else
-                                إدارة وتنظيم أدوار المستخدمين والصلاحيات
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
+            <x-admin.card>
+                <x-admin.card-header :title="$isCompanyOwner ? 'أدوار المستخدمين' : 'إدارة الأدوار'" icon="bi-shield-check">
+                    <x-slot:actions>
                         @can('create', App\Models\Role::class)
                             <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-lg me-1"></i>
                                 إضافة دور جديد
                             </a>
                         @endcan
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
                     @if($isCompanyOwner && $operator)
@@ -61,70 +47,59 @@
                     @endif
 
 
-                    {{-- كارد واحد للفلاتر --}}
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
+                    {{-- فلاتر البحث --}}
+                    <form id="searchForm" method="POST" action="{{ route('admin.roles.filter') }}">
+                        @csrf
+                        <div class="row g-3">
+                            <div class="col-lg-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-tag me-1"></i>
+                                    اسم الدور
+                                </label>
+                                <input type="text" name="name" id="nameFilter" class="form-control"
+                                       placeholder="اسم الدور..."
+                                       value="{{ session('roles_filter.name', '') }}" autocomplete="off">
+                            </div>
+
+                            <div class="col-lg-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-bookmark me-1"></i>
+                                    التسمية
+                                </label>
+                                <input type="text" name="label" id="labelFilter" class="form-control"
+                                       placeholder="التسمية..."
+                                       value="{{ session('roles_filter.label', '') }}" autocomplete="off">
+                            </div>
+
+                            <div class="col-lg-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-file-text me-1"></i>
+                                    الوصف
+                                </label>
+                                <input type="text" name="description" id="descriptionFilter" class="form-control"
+                                       placeholder="الوصف..."
+                                       value="{{ session('roles_filter.description', '') }}" autocomplete="off">
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <form id="searchForm" method="POST" action="{{ route('admin.roles.filter') }}">
-                                @csrf
-                                <div class="row g-3">
-                                    <div class="col-lg-4">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-tag me-1"></i>
-                                            اسم الدور
-                                        </label>
-                                        <input type="text" name="name" id="nameFilter" class="form-control" 
-                                               placeholder="اسم الدور..." 
-                                               value="{{ session('roles_filter.name', '') }}" autocomplete="off">
-                                    </div>
 
-                                    <div class="col-lg-4">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-bookmark me-1"></i>
-                                            التسمية
-                                        </label>
-                                        <input type="text" name="label" id="labelFilter" class="form-control" 
-                                               placeholder="التسمية..." 
-                                               value="{{ session('roles_filter.label', '') }}" autocomplete="off">
-                                    </div>
-
-                                    <div class="col-lg-4">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-file-text me-1"></i>
-                                            الوصف
-                                        </label>
-                                        <input type="text" name="description" id="descriptionFilter" class="form-control" 
-                                               placeholder="الوصف..." 
-                                               value="{{ session('roles_filter.description', '') }}" autocomplete="off">
-                                    </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-12">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary" id="btnSearch">
+                                        <i class="bi bi-search me-1"></i>
+                                        بحث
+                                    </button>
+                                    @if(session('roles_filter.name') || session('roles_filter.label') || session('roles_filter.description'))
+                                        <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                            تفريغ الحقول
+                                        </button>
+                                    @endif
                                 </div>
-
-                                <div class="row g-3 mt-2">
-                                    <div class="col-12">
-                                        <div class="d-flex gap-2">
-                                            <button type="submit" class="btn btn-primary" id="btnSearch">
-                                                <i class="bi bi-search me-1"></i>
-                                                بحث
-                                            </button>
-                                            @if(session('roles_filter.name') || session('roles_filter.label') || session('roles_filter.description'))
-                                                <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
-                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                                    تفريغ الحقول
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
+                    </form>
 
-                    <hr class="my-3">
 
                     <div class="position-relative" id="rolesTableContainer">
                         <div class="table-responsive">
@@ -167,7 +142,7 @@
                         @endif
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

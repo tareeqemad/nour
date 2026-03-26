@@ -2,112 +2,73 @@
 
 @section('title', 'قوالب رسائل الجوال')
 
-@push('styles')
-<style>
-.sms-template-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.sms-template-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.template-preview {
-    background: var(--tblr-bg-surface-secondary);
-    border: 1px solid var(--tblr-border-color);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    font-family: monospace;
-    font-size: 0.875rem;
-    white-space: pre-wrap;
-    max-height: 200px;
-    overflow-y: auto;
-}
-</style>
-@endpush
-
 @section('content')
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-chat-dots me-2"></i>
-                            قوالب رسائل الجوال
-                        </h5>
-                        <div class="general-subtitle">
-                            إدارة قوالب رسائل SMS التي يتم إرسالها للمستخدمين
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="قوالب رسائل الجوال" icon="bi-chat-dots" />
 
-                <div class="card-body pb-4">
-                    <div class="row g-3">
-                        @foreach($templates as $template)
-                            <div class="col-md-6">
-                                <div class="card sms-template-card h-100 {{ !$template->is_active ? 'border-secondary opacity-75' : '' }}">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="card-title mb-0">{{ $template->name }}</h6>
-                                        <div>
+                <div class="card-body">
+                    @if($templates->isEmpty())
+                        <div class="text-center py-5" style="color: var(--color-text-muted, #5B6780);">
+                            <i class="bi bi-chat-dots" style="font-size: 2.5rem; opacity: .4;"></i>
+                            <p class="mt-2 mb-0">لا توجد قوالب SMS</p>
+                        </div>
+                    @else
+                        <div class="row g-3">
+                            @foreach($templates as $template)
+                                <div class="col-md-6">
+                                    <div style="border: 1px solid var(--color-border, #E5E7EB); border-radius: 10px; height: 100%; display: flex; flex-direction: column; {{ !$template->is_active ? 'opacity: .6;' : '' }}">
+                                        {{-- Header --}}
+                                        <div style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.75rem 1rem; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--color-text-main, #1F2937);">
+                                                {{ $template->name }}
+                                            </span>
                                             @if($template->is_active)
-                                                <span class="badge bg-success">نشط</span>
+                                                <span class="badge-status-active">نشط</span>
                                             @else
-                                                <span class="badge bg-secondary">غير نشط</span>
+                                                <span class="badge-neutral">غير نشط</span>
                                             @endif
                                         </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <small class="text-muted">
-                                                <i class="bi bi-key me-1"></i>
-                                                المفتاح: <code>{{ $template->key }}</code>
-                                            </small>
-                                        </div>
-                                        <div class="mb-3">
-                                            <small class="text-muted">
-                                                <i class="bi bi-rulers me-1"></i>
-                                                الحد الأقصى: {{ $template->max_length }} حرف
-                                            </small>
-                                        </div>
-                                        <div class="mb-2">
-                                            <small class="text-muted d-block mb-1">معاينة القالب:</small>
-                                            <div class="template-preview">
-                                                {{ Str::limit($template->template, 200) }}
+                                        {{-- Body --}}
+                                        <div style="padding: 1rem; flex: 1;">
+                                            <div class="d-flex flex-wrap gap-3 mb-3" style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780);">
+                                                <span>
+                                                    <i class="bi bi-key me-1"></i>
+                                                    <code style="background: var(--badge-primary-bg, #EEF2FF); color: var(--badge-primary-text, #24308F); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.75rem;">{{ $template->key }}</code>
+                                                </span>
+                                                <span>
+                                                    <i class="bi bi-rulers me-1"></i>
+                                                    {{ $template->max_length }} حرف
+                                                </span>
+                                            </div>
+
+                                            <div style="background: var(--color-bg-card-header, #F8FBFD); border: 1px solid var(--color-border-soft, #EDF1F5); border-radius: 8px; padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; max-height: 120px; overflow-y: auto; color: var(--color-text-secondary, #3B4863); line-height: 1.6; margin-bottom: 0.75rem;">{{ Str::limit($template->template, 200) }}</div>
+
+                                            <div style="font-size: 0.75rem; color: var(--color-text-light, #98A2B3);">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                المتغيرات:
+                                                @foreach(['{name}', '{username}', '{password}', '{role}', '{login_url}'] as $var)
+                                                    <code style="background: var(--badge-neutral-bg, #F3F4F6); color: var(--badge-neutral-text, #3B4863); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.7rem;">{{ $var }}</code>
+                                                @endforeach
                                             </div>
                                         </div>
-                                        <div class="mt-3">
-                                            <small class="text-muted">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                المتغيرات المتاحة: <code>{name}</code>, <code>{username}</code>, <code>{password}</code>, <code>{role}</code>, <code>{login_url}</code>
-                                            </small>
+                                        {{-- Footer --}}
+                                        <div style="padding: 0.65rem 1rem; border-top: 1px solid var(--color-border-soft, #EDF1F5);">
+                                            <a href="{{ route('admin.sms-templates.edit', $template) }}" class="btn btn-sm btn-primary w-100">
+                                                <i class="bi bi-pencil me-1"></i>
+                                                تعديل
+                                            </a>
                                         </div>
                                     </div>
-                                    <div class="card-footer bg-transparent">
-                                        <a href="{{ route('admin.sms-templates.edit', $template) }}" class="btn btn-sm btn-primary w-100">
-                                            <i class="bi bi-pencil me-1"></i>
-                                            تعديل
-                                        </a>
-                                    </div>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    @if($templates->isEmpty())
-                        <div class="text-center py-5">
-                            <i class="bi bi-inbox fs-1 text-muted"></i>
-                            <p class="text-muted mt-3">لا توجد قوالب SMS</p>
+                            @endforeach
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>
 @endsection
-
-
-

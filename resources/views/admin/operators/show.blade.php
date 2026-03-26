@@ -98,56 +98,30 @@
         <div class="row g-3">
             {{-- Header Card with Summary --}}
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-person-badge me-2"></i>
-                                {{ $operator->name }}
-                            </h5>
-                            <div class="general-subtitle d-flex align-items-center gap-2 flex-wrap">
-                                <span>{{ $operator->unit_number ? $operator->unit_number . ' - ' : '' }}{{ $operator->unit_name ?? '—' }}</span>
-                                @if($operator->getGovernorateLabel())
-                                    <span>|</span>
-                                    <span>{{ $operator->getGovernorateLabel() }}</span>
-                                @endif
-                                @if($operator->is_approved !== null)
-                                    <span>|</span>
-                                    <span class="badge {{ $operator->is_approved ? 'bg-success' : 'bg-warning' }}">
-                                        <i class="bi bi-{{ $operator->is_approved ? 'check-circle' : 'clock' }} me-1"></i>
-                                        {{ $operator->is_approved ? 'معتمد' : 'في انتظار الاعتماد' }}
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            @can('approve', $operator)
-                                <form action="{{ route('admin.operators.toggle-approval', $operator) }}" method="POST" class="d-inline" id="approvalForm">
-                                    @csrf
-                                    <button type="submit" class="btn {{ $operator->is_approved ? 'btn-warning' : 'btn-success' }}" id="approvalBtn">
-                                        <i class="bi bi-{{ $operator->is_approved ? 'x-circle' : 'check-circle' }} me-2"></i>
-                                        {{ $operator->is_approved ? 'إلغاء الاعتماد' : 'اعتماد المشغل' }}
-                                    </button>
-                                </form>
-                            @endcan
-                            @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
-                                <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">
-                                    <i class="bi bi-currency-exchange me-2"></i>
-                                    أسعار التعرفة
-                                </a>
-                            @endcan
-                            @can('update', $operator)
-                                <a href="{{ route('admin.operators.edit', $operator) }}" class="btn btn-primary">
-                                    <i class="bi bi-pencil me-2"></i>
-                                    تعديل
-                                </a>
-                            @endcan
-                            <a href="{{ route('admin.operators.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-2"></i>
-                                رجوع
+                <x-admin.card>
+                    <x-admin.card-header-form :title="$operator->name" icon="bi-person-badge" :backRoute="route('admin.operators.index')">
+                        @can('approve', $operator)
+                            <form action="{{ route('admin.operators.toggle-approval', $operator) }}" method="POST" class="d-inline" id="approvalForm">
+                                @csrf
+                                <button type="submit" class="btn {{ $operator->is_approved ? 'btn-warning' : 'btn-success' }}" id="approvalBtn">
+                                    <i class="bi bi-{{ $operator->is_approved ? 'x-circle' : 'check-circle' }} me-2"></i>
+                                    {{ $operator->is_approved ? 'إلغاء الاعتماد' : 'اعتماد المشغل' }}
+                                </button>
+                            </form>
+                        @endcan
+                        @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
+                            <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">
+                                <i class="bi bi-currency-exchange me-2"></i>
+                                أسعار التعرفة
                             </a>
-                        </div>
-                    </div>
+                        @endcan
+                        @can('update', $operator)
+                            <a href="{{ route('admin.operators.edit', $operator) }}" class="btn btn-primary">
+                                <i class="bi bi-pencil me-2"></i>
+                                تعديل
+                            </a>
+                        @endcan
+                    </x-admin.card-header-form>
 
                     {{-- Statistics Cards --}}
                     <div class="card-body">
@@ -212,19 +186,13 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
 
             {{-- Main Information --}}
             <div class="col-12 col-lg-8">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-info-circle me-2"></i>
-                                معلومات المشغل
-                            </h5>
-                        </div>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="معلومات المشغل" icon="bi-info-circle">
+                    </x-admin.card-header-form>
                     <div class="card-body">
                         <div class="row g-3">
                             {{-- Basic Information --}}
@@ -450,33 +418,23 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
 
             {{-- Sidebar: Generation Units List --}}
             <div class="col-12 col-lg-4">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div class="d-flex align-items-center justify-content-between w-100">
-                            <div>
-                                <h5 class="general-title">
-                                    <i class="bi bi-lightning-charge me-2"></i>
-                                    وحدات التوليد
-                                </h5>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                @if($operator->generation_units_count > 0)
-                                    <span class="badge bg-primary">{{ $operator->generation_units_count }}</span>
-                                @endif
-                                @can('create', App\Models\GenerationUnit::class)
-                                    <a href="{{ route('admin.generation-units.create', ['operator_id' => $operator->id]) }}" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-plus-lg me-1"></i>
-                                        إضافة وحدة توليد
-                                    </a>
-                                @endcan
-                            </div>
-                        </div>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="وحدات التوليد" icon="bi-lightning-charge">
+                        @if($operator->generation_units_count > 0)
+                            <span class="badge bg-primary">{{ $operator->generation_units_count }}</span>
+                        @endif
+                        @can('create', App\Models\GenerationUnit::class)
+                            <a href="{{ route('admin.generation-units.create', ['operator_id' => $operator->id]) }}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                إضافة وحدة توليد
+                            </a>
+                        @endcan
+                    </x-admin.card-header-form>
                     <div class="card-body">
                         @if($operator->generationUnits->count() > 0)
                             <div class="generation-units-list">
@@ -554,18 +512,12 @@
                             </div>
                         @endif
                     </div>
-                </div>
+                </x-admin.card>
 
                 {{-- Profile Completion Status --}}
-                <div class="general-card mt-3">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-check-circle me-2"></i>
-                                حالة الملف
-                            </h5>
-                        </div>
-                    </div>
+                <x-admin.card class="mt-3">
+                    <x-admin.card-header-form title="حالة الملف" icon="bi-check-circle">
+                    </x-admin.card-header-form>
                     <div class="card-body">
                         @if($operator->isProfileComplete())
                             <div class="alert alert-success mb-0">
@@ -592,7 +544,7 @@
                             @endif
                         @endif
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

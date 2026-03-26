@@ -104,11 +104,9 @@
     @enderror
 </div>
 
-<hr class="my-4">
-
 {{-- سجل التغييرات --}}
 <h6 class="fw-bold mb-3">
-    <i class="bi bi-list-check text-primary me-2"></i>
+    <i class="bi bi-list-check me-2"></i>
     سجل التغييرات
 </h6>
 
@@ -152,14 +150,12 @@
     'items' => $changes['security']
 ])
 
-<hr class="my-4">
-
-<div class="d-flex justify-content-end gap-2">
+<div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--color-border-soft, #EDF1F5);">
     <a href="{{ route('admin.versions.index') }}" class="btn btn-outline-secondary">
         <i class="bi bi-x-circle me-1"></i>
         إلغاء
     </a>
-    <button type="submit" class="btn btn-primary">
+    <button type="submit" class="btn btn-success">
         <i class="bi bi-check-lg me-1"></i>
         {{ $isEdit ? 'حفظ التعديلات' : 'حفظ الإصدار' }}
     </button>

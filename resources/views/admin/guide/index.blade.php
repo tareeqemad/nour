@@ -16,18 +16,9 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-book me-2"></i>
-                            الدليل الإرشادي
-                        </h5>
-                        <div class="general-subtitle">
-                            دليل استخدام منصة {{ $siteName }} - شرح شامل للنظام وآلية عمل كل دور
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="الدليل الإرشادي" icon="bi-book">
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
                     {{-- نظرة عامة على النظام --}}
@@ -35,7 +26,7 @@
 
                     {{-- دليل الدور الحالي للمستخدم --}}
                     <div class="guide-section">
-                        <div class="general-card">
+                        <x-admin.card>
                             <div class="section-header">
                                 <h5>
                                     <i class="bi bi-person-badge"></i>
@@ -57,7 +48,7 @@
                             @elseif($user->isTechnician())
                                 @include('admin.guide.partials.technician')
                             @endif
-                        </div>
+                        </x-admin.card>
                     </div>
 
                     {{-- خطوات العمل للمشغل --}}
@@ -73,7 +64,7 @@
                     {{-- روابط مفيدة --}}
                     @include('admin.guide.partials.useful-links')
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

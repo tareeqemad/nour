@@ -113,8 +113,8 @@
     @endif
 
     <div class="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-        <button type="submit" class="btn btn-primary" data-submit-btn>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="submit" class="btn btn-success" data-submit-btn>
             <i class="bi bi-check-lg me-1"></i>
             حفظ
         </button>

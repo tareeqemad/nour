@@ -17,39 +17,21 @@
     <div class="general-page" id="generatorsPage">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-lightning-charge me-2"></i>
-                                إدارة المولدات
-                            </h5>
-                            <div class="general-subtitle">
-                                البحث والفلترة وإدارة المولدات. العدد: <span id="generatorsCount">{{ $generators->total() }}</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
+                <x-admin.card>
+                    <x-admin.card-header title="إدارة المولدات" icon="bi-lightning-charge">
+                        <x-slot:actions>
                             @can('create', App\Models\Generator::class)
                                 <a href="{{ route('admin.generators.create') }}" class="btn btn-primary">
                                     <i class="bi bi-plus-lg me-1"></i>
                                     إضافة مولد جديد
                                 </a>
                             @endcan
-                        </div>
-                    </div>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title">
-                                    <i class="bi bi-funnel me-2"></i>
-                                    فلاتر البحث
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
+                        <div class="row g-3">
                                     @php
                                         $user = auth()->user();
                                         $isCompanyOwner = $user->isCompanyOwner();
@@ -74,7 +56,7 @@
                                             </select>
                                         @elseif(($isCompanyOwner || $isEmployeeOrTechnician) && isset($currentOperator))
                                             {{-- للمشغل والموظفين: المشغل معطل --}}
-                                            <select id="operatorFilter" class="form-select" disabled style="background-color: #f8f9fa; cursor: not-allowed;">
+                                            <select id="operatorFilter" class="form-select" disabled>
                                                 <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
                                             </select>
                                             <input type="hidden" name="operator_id" value="{{ $currentOperator->id }}">
@@ -149,28 +131,17 @@
                                     </div>
                                     </div>
 
-                                {{-- صف جديد لزر البحث --}}
-                                <div class="row g-3 mt-2">
-                                    <div class="col-12 d-flex justify-content-center gap-2">
-                                        <button class="btn btn-primary" type="button" id="searchBtn">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                            </button>
-                                            <button
-                                            class="btn btn-outline-secondary {{ request('operator_id') || request('generation_unit_id') || request('status') ? '' : 'd-none' }}"
-                                                type="button"
-                                            id="clearBtn"
-                                            title="تفريغ الحقول"
-                                            >
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                            تفريغ الحقول
-                                            </button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-primary" type="button" id="searchBtn">
+                                <i class="bi bi-search me-1"></i>
+                                بحث
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" id="clearBtn">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                تفريغ
+                            </button>
                         </div>
 
-                        <hr class="my-3">
 
                         <div id="generatorsListWrap" class="position-relative">
                             {{-- Loading overlay --}}
@@ -184,7 +155,7 @@
                                 @include('admin.generators.partials.list', ['generators' => $generators])
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

@@ -12,30 +12,15 @@
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-person me-2"></i>
-                                تفاصيل المشترك
-                            </h5>
-                            <div class="general-subtitle">
-                                {{ $subscriber->subscriber_name }}
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.subscribers.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
-                                العودة للقائمة
+                <x-admin.card>
+                    <x-admin.card-header-form title="تفاصيل المشترك" icon="bi-person" :backRoute="route('admin.subscribers.index')">
+                        @can('update', $subscriber)
+                            <a href="{{ route('admin.subscribers.edit', $subscriber) }}" class="btn btn-primary">
+                                <i class="bi bi-pencil me-2"></i>
+                                تعديل
                             </a>
-                            @can('update', $subscriber)
-                                <a href="{{ route('admin.subscribers.edit', $subscriber) }}" class="btn btn-primary">
-                                    <i class="bi bi-pencil me-2"></i>
-                                    تعديل
-                                </a>
-                            @endcan
-                        </div>
-                    </div>
+                        @endcan
+                    </x-admin.card-header-form>
 
                     <div class="card-body">
                         <div class="row g-3">
@@ -227,7 +212,7 @@
                             @endif
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

@@ -10,18 +10,8 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            إنشاء إصدار جديد
-                        </h5>
-                        <div class="general-subtitle">
-                            أضف إصداراً جديداً للمنصة مع سجل التغييرات
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="إنشاء إصدار جديد" icon="bi-plus-circle" :backRoute="route('admin.versions.index')" />
 
                 <form action="{{ route('admin.versions.store') }}" method="POST">
                     @csrf
@@ -29,7 +19,7 @@
                         @include('admin.version.partials.form', ['nextVersions' => $nextVersions])
                     </div>
                 </form>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

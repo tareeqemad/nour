@@ -17,22 +17,8 @@
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-person-plus me-2"></i>
-                                إضافة مشترك جديد
-                            </h5>
-                            <div class="general-subtitle">
-                                قم بإدخال جميع بيانات المشترك
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.subscribers.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            العودة للقائمة
-                        </a>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="إضافة مشترك جديد" icon="bi-person-plus" :backRoute="route('admin.subscribers.index')" />
 
                     <div class="card-body">
                         <form action="{{ route('admin.subscribers.store') }}" method="POST" id="subscriberForm">
@@ -213,13 +199,13 @@
 
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold">وحدات التوليد المرتبطة <span class="text-danger">*</span></label>
-                                    <div class="alert alert-info py-2 mb-2">
+                                    <div style="background: var(--color-info-bg, #F0F9FF); border: 1px solid var(--color-info-border, #BAE6FD); border-radius: 8px; padding: 0.5rem 0.85rem; margin-bottom: 0.75rem; font-size: 0.82rem; color: var(--color-info-text, #0369A1);">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        اختر وحدة توليد واحدة على الأقل من الوحدات المسجلة باسمك
+                                        اختر وحدة توليد واحدة على الأقل
                                     </div>
-                                    <div class="border rounded p-3 @error('generation_unit_ids') border-danger @enderror" style="max-height: 250px; overflow-y: auto; background-color: #f8f9fa;">
+                                    <div class="@error('generation_unit_ids') border-danger @enderror" style="max-height: 250px; overflow-y: auto; background: #FAFCFF; border: 1px solid var(--color-border, #E5E7EB); border-radius: 10px; padding: 0.75rem;">
                                         @forelse($generationUnits as $unit)
-                                            <div class="d-flex align-items-center mb-2 p-2 rounded {{ in_array($unit->id, old('generation_unit_ids', [])) ? 'bg-primary bg-opacity-10' : 'bg-white' }}" style="border: 1px solid #dee2e6;">
+                                            <div class="d-flex align-items-center mb-2 p-2 rounded" style="border: 1px solid var(--color-border-soft, #EDF1F5); background: {{ in_array($unit->id, old('generation_unit_ids', [])) ? 'var(--color-primary-soft, #EEF2FF)' : '#fff' }};">
                                                 <input class="form-check-input generation-unit-checkbox m-0 me-3" 
                                                        type="checkbox" 
                                                        name="generation_unit_ids[]" 
@@ -233,7 +219,7 @@
                                                         <strong>{{ $unit->name }}</strong>
                                                     </span>
                                                     <span>
-                                                        <span class="badge bg-secondary">{{ $unit->unit_code }}</span>
+                                                        <span class="badge-neutral">{{ $unit->unit_code }}</span>
                                                         @if($unit->operator)
                                                             <small class="text-muted me-2">
                                                                 <i class="bi bi-building me-1"></i>{{ $unit->operator->name }}
@@ -258,14 +244,14 @@
                                     @enderror
                                 </div>
 
-                                <div class="col-12 mt-4">
-                                    <div class="d-flex gap-2 justify-content-end">
+                                <div class="col-12">
+                                    <div class="d-flex gap-2 justify-content-end mt-3 pt-3" style="border-top: 1px solid var(--color-border-soft, #EDF1F5);">
                                         <a href="{{ route('admin.subscribers.index') }}" class="btn btn-outline-secondary">
                                             <i class="bi bi-x-circle me-1"></i>
                                             إلغاء
                                         </a>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="bi bi-check-circle me-1"></i>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-check-lg me-1"></i>
                                             حفظ
                                         </button>
                                     </div>
@@ -273,7 +259,7 @@
                             </div>
                         </form>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

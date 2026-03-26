@@ -20,26 +20,8 @@
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-person-plus me-2"></i>
-                                {{ $breadcrumbTitle }}
-                            </h5>
-                            <div class="general-subtitle">
-                                @if($authUser->isCompanyOwner())
-                                    سيتم ربط المستخدم تلقائيًا بالمشغل الخاص بك.
-                                @else
-                                    أنشئ مستخدمًا جديدًا وحدّد الدور وربطه بالمشغل عند الحاجة.
-                                @endif
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            رجوع
-                        </a>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form :title="$breadcrumbTitle" icon="bi-person-plus" :backRoute="route('admin.users.index')" />
 
                     <form action="{{ route('admin.users.store') }}" method="POST">
                         @csrf
@@ -56,13 +38,13 @@
 
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">إلغاء</a>
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-success">
                                     <i class="bi bi-check-lg me-1"></i> حفظ
                                 </button>
                             </div>
                         </div>
                     </form>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

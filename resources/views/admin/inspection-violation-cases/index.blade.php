@@ -15,20 +15,11 @@
     <div class="general-page" id="inspectionCasesPage">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-shield-exclamation me-2"></i>
-                                قضايا التفتيش والتعدي
-                            </h5>
-                            <div class="general-subtitle">
-                                الاستعلام باسم مالك الوحدة أو المشغل أو وحدة التوليد والتحقق من حالة القضية. العدد: <span id="casesCount">{{ $cases->total() }}</span>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
+                <x-admin.card>
+                    <x-admin.card-header title="قضايا التفتيش والتعدي" icon="bi-shield-exclamation">
+                        <x-slot:actions>
                             @can('create', App\Models\InspectionViolationCase::class)
-                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
                                     <i class="bi bi-file-earmark-excel me-1"></i>
                                     استيراد من Excel
                                 </button>
@@ -37,102 +28,99 @@
                                     إضافة قضية
                                 </a>
                             @endcan
-                        </div>
-                    </div>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body pb-4">
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title"><i class="bi bi-funnel me-2"></i>فلاتر البحث</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    {{-- المشغل ووحدة التوليد (نفس أسلوب سجلات السلامة: مشغل ثم وحدة التوليد) --}}
-                                    @if(($operators ?? collect())->isNotEmpty())
-                                        <div class="col-6 col-md-4 col-lg-2">
-                                            <label class="form-label fw-semibold" for="operatorFilter"><i class="bi bi-building me-1"></i>المشغل</label>
-                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
-                                                <select id="operatorFilter" class="form-select">
-                                                    <option value="">كل المشغلين</option>
-                                                    @foreach($operators as $op)
-                                                        <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>{{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            @else
-                                                @php $operator = $operators->first(); @endphp
-                                                <select id="operatorFilter" class="form-select" disabled>
-                                                    <option value="{{ $operator->id }}" selected>{{ $operator->unit_number ?? '' }}{{ $operator->unit_number ? ' - ' : '' }}{{ $operator->name }}</option>
-                                                </select>
-                                                <input type="hidden" id="operatorFilterHidden" value="{{ $operator->id }}">
-                                            @endif
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-2">
-                                            <label class="form-label fw-semibold" for="generationUnitFilter"><i class="bi bi-lightning-charge me-1"></i>وحدة التوليد</label>
-                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
-                                                <select id="generationUnitFilter" class="form-select" {{ !request('operator_id') ? 'disabled' : '' }}>
-                                                    <option value="">{{ request('operator_id') ? 'كل الوحدات' : 'اختر المشغل أولاً' }}</option>
-                                                    @if(request('operator_id') && ($generationUnits ?? collect())->isNotEmpty())
-                                                        @foreach($generationUnits as $gu)
-                                                            <option value="{{ $gu->id }}" {{ request('generation_unit_id') == $gu->id ? 'selected' : '' }}>{{ $gu->name }} ({{ $gu->unit_code ?? '' }})</option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                            @else
-                                                <select id="generationUnitFilter" class="form-select">
-                                                    <option value="">كل الوحدات</option>
-                                                    @foreach($generationUnits ?? [] as $gu)
-                                                        <option value="{{ $gu->id }}" {{ request('generation_unit_id') == $gu->id ? 'selected' : '' }}>{{ $gu->name }} ({{ $gu->unit_code ?? '' }})</option>
-                                                    @endforeach
-                                                </select>
-                                            @endif
-                                        </div>
-                                    @endif
-                                    <div class="col-6 col-md-4 col-lg-2">
-                                        <label class="form-label fw-semibold" for="governorateFilter"><i class="bi bi-geo-alt me-1"></i>المحافظة</label>
-                                        <select id="governorateFilter" class="form-select">
-                                            <option value="">كل المحافظات</option>
-                                            @foreach($governorates ?? [] as $g)
-                                                <option value="{{ $g->value }}" {{ request('governorate_id') == $g->value ? 'selected' : '' }}>{{ $g->label ?? $g->name ?? $g->id }}</option>
+                        {{-- فلاتر البحث --}}
+                        <div class="row g-3 align-items-end">
+                            @if(($operators ?? collect())->isNotEmpty())
+                                <div class="col-6 col-md-4 col-lg-2">
+                                    <label class="form-label fw-semibold" for="operatorFilter">المشغل</label>
+                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
+                                        <select id="operatorFilter" class="form-select">
+                                            <option value="">كل المشغلين</option>
+                                            @foreach($operators as $op)
+                                                <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>{{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}</option>
                                             @endforeach
                                         </select>
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-2">
-                                        <label class="form-label fw-semibold" for="caseDateFromFilter"><i class="bi bi-calendar-event me-1"></i>من تاريخ</label>
-                                        <input type="date" id="caseDateFromFilter" class="form-control" value="{{ request('case_date_from', '') }}">
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-2">
-                                        <label class="form-label fw-semibold" for="caseDateToFilter"><i class="bi bi-calendar-check me-1"></i>إلى تاريخ</label>
-                                        <input type="date" id="caseDateToFilter" class="form-control" value="{{ request('case_date_to', '') }}">
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-2">
-                                        <label class="form-label fw-semibold" for="statusFilter">حالة القضية</label>
-                                        <select id="statusFilter" class="form-select">
-                                            <option value="">الكل</option>
-                                            <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>ادخال</option>
-                                            <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>محكومة</option>
-                                            <option value="3" {{ request('status') == '3' ? 'selected' : '' }}>منتهية</option>
+                                    @else
+                                        @php $operator = $operators->first(); @endphp
+                                        <select id="operatorFilter" class="form-select" disabled>
+                                            <option value="{{ $operator->id }}" selected>{{ $operator->unit_number ?? '' }}{{ $operator->unit_number ? ' - ' : '' }}{{ $operator->name }}</option>
                                         </select>
-                                    </div>
-                                    <div class="col-12 col-md-6 col-lg-4">
-                                        <label class="form-label fw-semibold" for="searchInput">البحث</label>
-                                        <input type="text" id="searchInput" class="form-control" placeholder="اسم المشترك، المنتفع، رقم الاشتراك، المشغل، وحدة التوليد..." value="{{ request('search') }}">
-                                    </div>
+                                        <input type="hidden" id="operatorFilterHidden" value="{{ $operator->id }}">
+                                    @endif
                                 </div>
-                                <div class="row g-3 mt-2">
-                                    <div class="col-12 d-flex flex-wrap justify-content-center gap-2 align-items-center">
-                                        <button class="btn btn-primary" type="button" id="searchBtn"><i class="bi bi-search me-1"></i>بحث</button>
-                                        @can('viewAny', App\Models\InspectionViolationCase::class)
-                                            <button type="button" class="btn btn-outline-success" id="exportBtn">
-                                                <i class="bi bi-download me-1"></i>تصدير Excel
-                                            </button>
-                                        @endcan
-                                        <button type="button" class="btn btn-outline-secondary {{ request('operator_id') || request('generation_unit_id') || request('governorate_id') || request('case_date_from') || request('case_date_to') || request('status') || request('search') ? '' : 'd-none' }}" id="clearBtn"><i class="bi bi-x me-1"></i>تفريغ</button>
-                                    </div>
+                                <div class="col-6 col-md-4 col-lg-2">
+                                    <label class="form-label fw-semibold" for="generationUnitFilter">وحدة التوليد</label>
+                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
+                                        <select id="generationUnitFilter" class="form-select" {{ !request('operator_id') ? 'disabled' : '' }}>
+                                            <option value="">{{ request('operator_id') ? 'كل الوحدات' : 'اختر المشغل أولاً' }}</option>
+                                            @if(request('operator_id') && ($generationUnits ?? collect())->isNotEmpty())
+                                                @foreach($generationUnits as $gu)
+                                                    <option value="{{ $gu->id }}" {{ request('generation_unit_id') == $gu->id ? 'selected' : '' }}>{{ $gu->name }} ({{ $gu->unit_code ?? '' }})</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    @else
+                                        <select id="generationUnitFilter" class="form-select">
+                                            <option value="">كل الوحدات</option>
+                                            @foreach($generationUnits ?? [] as $gu)
+                                                <option value="{{ $gu->id }}" {{ request('generation_unit_id') == $gu->id ? 'selected' : '' }}>{{ $gu->name }} ({{ $gu->unit_code ?? '' }})</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                </div>
+                            @endif
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <label class="form-label fw-semibold" for="governorateFilter">المحافظة</label>
+                                <select id="governorateFilter" class="form-select">
+                                    <option value="">كل المحافظات</option>
+                                    @foreach($governorates ?? [] as $g)
+                                        <option value="{{ $g->value }}" {{ request('governorate_id') == $g->value ? 'selected' : '' }}>{{ $g->label ?? $g->name ?? $g->id }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <label class="form-label fw-semibold" for="caseDateFromFilter">من تاريخ</label>
+                                <input type="date" id="caseDateFromFilter" class="form-control" value="{{ request('case_date_from', '') }}">
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <label class="form-label fw-semibold" for="caseDateToFilter">إلى تاريخ</label>
+                                <input type="date" id="caseDateToFilter" class="form-control" value="{{ request('case_date_to', '') }}">
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <label class="form-label fw-semibold" for="statusFilter">حالة القضية</label>
+                                <select id="statusFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>ادخال</option>
+                                    <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>محكومة</option>
+                                    <option value="3" {{ request('status') == '3' ? 'selected' : '' }}>منتهية</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <label class="form-label fw-semibold" for="searchInput">البحث</label>
+                                <input type="text" id="searchInput" class="form-control" placeholder="اسم المشترك، المنتفع، رقم الاشتراك..." value="{{ request('search') }}">
+                            </div>
+                            <div class="col-12 col-lg-auto order-last order-lg-0 mt-2 mt-lg-0">
+                                <label class="form-label fw-semibold d-none d-lg-block">&nbsp;</label>
+                                <div class="d-flex flex-wrap gap-2 align-items-end">
+                                    <button class="btn btn-primary" type="button" id="searchBtn">
+                                        <i class="bi bi-search me-2"></i>بحث
+                                    </button>
+                                    @can('viewAny', App\Models\InspectionViolationCase::class)
+                                        <button type="button" class="btn btn-outline-success" id="exportBtn">
+                                            <i class="bi bi-download me-1"></i>تصدير
+                                        </button>
+                                    @endcan
+                                    <button type="button" class="btn btn-outline-secondary {{ request('operator_id') || request('generation_unit_id') || request('governorate_id') || request('case_date_from') || request('case_date_to') || request('status') || request('search') ? '' : 'd-none' }}" id="clearBtn">
+                                        <i class="bi bi-x me-2"></i>تفريغ
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-3">
 
                         <div id="casesListWrap" class="position-relative">
                             <div id="casesLoading" class="data-table-loading d-none">
@@ -144,56 +132,51 @@
                             @include('admin.inspection-violation-cases.partials.list', ['cases' => $cases])
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>
-@endsection
 
-@can('create', App\Models\InspectionViolationCase::class)
-<div class="modal fade" id="importModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header text-white bg-primary">
-                <h5 class="modal-title text-white"><i class="bi bi-file-earmark-excel me-2 text-white"></i>استيراد قضايا التفتيش والتعدي من Excel</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="importStep1">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold"><i class="bi bi-building me-1"></i>المشغل <span class="text-danger">*</span></label>
-                            <select id="importOperatorId" class="form-select" required>
-                                <option value="">-- اختر المشغل --</option>
-                                @foreach($operators ?? [] as $op)
-                                    <option value="{{ $op->id }}">{{ $op->unit_number ? $op->unit_number . ' - ' : '' }}{{ $op->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold"><i class="bi bi-lightning-charge me-1"></i>وحدة التوليد</label>
-                            <select id="importGenerationUnitId" class="form-select" disabled>
-                                <option value="">اختر المشغل أولاً</option>
-                            </select>
-                        </div>
-                    </div>
-                    <label class="form-label fw-bold">ملف Excel <span class="text-danger">*</span></label>
-                    <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv">
-                    <div class="form-text">الأعمدة: المحافظة، رقم_الاشتراك، اسم_المشترك، اسم_المنتفع، تاريخ_القضية، حالة_القضية (1=ادخال 2=محكومة 3=منتهية)، بيان_القضية</div>
-                    <a href="{{ route('admin.inspection-violation-cases.import.template') }}" class="btn btn-outline-success btn-sm mt-2">
-                        <i class="bi bi-download me-1"></i>تحميل نموذج Excel
-                    </a>
+    {{-- Import Modal --}}
+    @can('create', App\Models\InspectionViolationCase::class)
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel me-2"></i>استيراد قضايا التفتيش والتعدي من Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div id="importStep2" class="d-none">
-                    <div id="importPreviewContent"></div>
-                    <button type="button" class="btn btn-outline-secondary mt-2" id="backToStep1Btn">العودة</button>
-                    <button type="button" class="btn btn-success mt-2 d-none" id="executeImportBtn"><i class="bi bi-check-lg me-1"></i>تنفيذ الاستيراد</button>
+                <div class="modal-body">
+                    <div id="importStep1">
+                        <div class="row g-3 mb-3">
+                            <x-admin.operator-cascade
+                                :operators="$operators ?? collect()"
+                                :showGenerator="false"
+                                :showGenerationUnit="true"
+                                :operatorRequired="true"
+                                :generationUnitRequired="false"
+                                colClass="col-md-6"
+                                idPrefix="import_"
+                            />
+                        </div>
+                        <label class="form-label fw-bold">ملف Excel <span class="text-danger">*</span></label>
+                        <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv">
+                        <div class="form-text">الأعمدة: المحافظة، رقم_الاشتراك، اسم_المشترك، اسم_المنتفع، تاريخ_القضية، حالة_القضية (1=ادخال 2=محكومة 3=منتهية)، بيان_القضية</div>
+                        <a href="{{ route('admin.inspection-violation-cases.import.template') }}" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="bi bi-download me-1"></i>تحميل نموذج Excel
+                        </a>
+                    </div>
+                    <div id="importStep2" class="d-none">
+                        <div id="importPreviewContent"></div>
+                        <button type="button" class="btn btn-outline-secondary mt-2" id="backToStep1Btn">رجوع</button>
+                        <button type="button" class="btn btn-primary mt-2 d-none" id="executeImportBtn"><i class="bi bi-check-lg me-1"></i>تنفيذ الاستيراد</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-@endcan
+    @endcan
+@endsection
 
 @push('scripts')
 <script>
@@ -340,29 +323,10 @@
     const $backBtn = $('#backToStep1Btn');
     const $executeBtn = $('#executeImportBtn');
     const $previewContent = $('#importPreviewContent');
-    const $importOperator = $('#importOperatorId');
-    const $importGenUnit = $('#importGenerationUnitId');
-    const importGenUnits = @json($generationUnitsByOperator ?? []);
+    // الكومبوننت operator-cascade يدير الـ Select2 والـ cascade تلقائياً
+    const $importOperator = $('#import_operator_id');
+    const $importGenUnit = $('#import_generation_unit_id');
     let currentFilePath = null;
-
-    // Cascade generation units when operator changes (register handler FIRST)
-    $importOperator.on('change', function() {
-        var opId = $(this).val();
-        if (opId && importGenUnits[opId]) {
-            var opts = importGenUnits[opId].map(function(u) {
-                return '<option value="' + u.id + '">' + u.name + ' (' + (u.unit_code || '') + ')</option>';
-            }).join('');
-            $importGenUnit.html('<option value="">-- كل الوحدات --</option>' + opts).prop('disabled', false);
-        } else {
-            $importGenUnit.html('<option value="">اختر المشغل أولاً</option>').prop('disabled', true);
-        }
-    });
-
-    // Auto-select operator if only one option (AFTER registering handler)
-    var importOpOptions = $importOperator.find('option[value!=""]');
-    if (importOpOptions.length === 1) {
-        $importOperator.val(importOpOptions.first().val()).trigger('change');
-    }
 
     function step1() {
         $step2.addClass('d-none');

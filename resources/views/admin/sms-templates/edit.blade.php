@@ -6,24 +6,8 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-pencil me-2"></i>
-                            تعديل قالب SMS
-                        </h5>
-                        <div class="general-subtitle">
-                            {{ $smsTemplate->name }}
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.sms-templates.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            العودة للقائمة
-                        </a>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تعديل قالب SMS" icon="bi-pencil" :backRoute="route('admin.sms-templates.index')" />
 
                 <div class="card-body pb-4">
                     <form action="{{ route('admin.sms-templates.update', $smsTemplate) }}" method="POST" id="smsTemplateForm">
@@ -97,14 +81,14 @@
                             <a href="{{ route('admin.sms-templates.index') }}" class="btn btn-outline-secondary">
                                 إلغاء
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-success">
                                 <i class="bi bi-check-lg me-1"></i>
                                 حفظ التغييرات
                             </button>
                         </div>
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

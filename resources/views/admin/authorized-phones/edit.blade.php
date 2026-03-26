@@ -15,22 +15,8 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-pencil-square me-2"></i>
-                            تعديل رقم مصرح به
-                        </h5>
-                        <div class="general-subtitle">
-                            تعديل بيانات الرقم المصرح به
-                        </div>
-                    </div>
-                    <a href="{{ route('admin.authorized-phones.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-right me-2"></i>
-                        رجوع
-                    </a>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تعديل رقم مصرح به" icon="bi-pencil-square" :backRoute="route('admin.authorized-phones.index')" />
 
                 <form action="{{ route('admin.authorized-phones.update', $authorizedPhone) }}" method="POST" id="phoneForm">
                     @csrf
@@ -117,14 +103,14 @@
                                 <i class="bi bi-x-circle me-2"></i>
                                 إلغاء
                             </a>
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <button type="submit" class="btn btn-success" id="submitBtn">
                                 <i class="bi bi-check-lg me-2"></i>
                                 حفظ التغييرات
                             </button>
                         </div>
                     </div>
                 </form>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

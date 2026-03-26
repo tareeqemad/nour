@@ -9,49 +9,25 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
 <style>
-    .log-entry {
-        font-family: 'Courier New', monospace;
-        font-size: 0.875rem;
-    }
-    .log-level-error {
-        color: #dc3545;
-        font-weight: bold;
-    }
-    .log-level-warning {
-        color: #ffc107;
-        font-weight: bold;
-    }
-    .log-level-info {
-        color: #0dcaf0;
-    }
-    .log-level-debug {
-        color: #6c757d;
-    }
-    .log-timestamp {
-        color: #6c757d;
-        font-size: 0.8rem;
-    }
+    .log-entry { font-family: 'Courier New', monospace; font-size: 0.85rem; }
+    .log-level-error { color: var(--color-danger, #EF4444); font-weight: 700; }
+    .log-level-warning { color: var(--color-warning, #F59E0B); font-weight: 700; }
+    .log-level-info { color: var(--color-info, #0EA5E9); }
+    .log-level-debug { color: var(--color-text-muted, #5B6780); }
+    .log-timestamp { color: var(--color-text-muted, #5B6780); font-size: 0.78rem; }
     .log-context {
-        background-color: #f8f9fa;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        margin-top: 0.5rem;
-        font-size: 0.8rem;
-        white-space: pre-wrap;
-        word-break: break-all;
-        max-height: 200px;
-        overflow-y: auto;
+        background: var(--color-bg-card-header, #F8FBFD);
+        border: 1px solid var(--color-border-soft, #EDF1F5);
+        padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem;
+        font-size: 0.8rem; white-space: pre-wrap; word-break: break-all;
+        max-height: 200px; overflow-y: auto;
     }
     .log-trace {
-        background-color: #fff3cd;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        margin-top: 0.5rem;
-        font-size: 0.75rem;
-        white-space: pre-wrap;
-        word-break: break-all;
-        max-height: 300px;
-        overflow-y: auto;
+        background: var(--color-warning-bg, #FFFBEB);
+        border: 1px solid var(--color-warning-border, #FCD34D);
+        padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem;
+        font-size: 0.75rem; white-space: pre-wrap; word-break: break-all;
+        max-height: 300px; overflow-y: auto;
     }
 </style>
 @endpush
@@ -60,84 +36,61 @@
 <div class="general-page" id="logsPage" data-index-url="{{ route('admin.logs.index') }}">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-file-text me-2"></i>
-                            سجل الأخطاء
-                        </h5>
-                        <div class="general-subtitle">
-                            عرض أخطاء النظام من ملف الـ logs
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
+            <x-admin.card>
+                <x-admin.card-header title="سجل الأخطاء" icon="bi-file-text">
+                    <x-slot:actions>
                         <button type="button" class="btn btn-outline-danger" id="btnClearLogs" title="حذف جميع الـ logs">
                             <i class="bi bi-trash me-1"></i>
                             حذف الكل
                         </button>
-                        <a href="{{ route('admin.logs.download') }}" class="btn btn-outline-primary" title="تحميل ملف الـ logs">
+                        <a href="{{ route('admin.logs.download') }}" class="btn btn-outline-info" title="تحميل ملف الـ logs">
                             <i class="bi bi-download me-1"></i>
                             تحميل
                         </a>
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
-                    {{-- كارد واحد للفلاتر --}}
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </label>
-                                    <div class="general-search">
-                                        <i class="bi bi-search"></i>
-                                        <input type="text" id="searchInput" class="form-control" 
-                                               placeholder="ابحث في الرسائل أو الأخطاء..." 
-                                               autocomplete="off">
-                                        <button type="button" class="general-clear" id="btnClearSearch" title="إلغاء البحث" style="display: none;">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-funnel me-1"></i>
-                                        مستوى الخطأ
-                                    </label>
-                                    <select id="levelFilter" class="form-select">
-                                        <option value="">الكل</option>
-                                        <option value="ERROR">ERROR</option>
-                                        <option value="WARNING">WARNING</option>
-                                        <option value="INFO">INFO</option>
-                                        <option value="DEBUG">DEBUG</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-lg-3 d-flex align-items-end">
-                                    <div class="d-flex gap-2 w-100">
-                                        <button type="button" class="btn btn-primary flex-fill" id="btnSearch">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                    </div>
-                                </div>
+                    {{-- فلاتر البحث --}}
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-search me-1"></i>
+                                بحث
+                            </label>
+                            <div class="general-search">
+                                <i class="bi bi-search"></i>
+                                <input type="text" id="searchInput" class="form-control"
+                                       placeholder="ابحث في الرسائل أو الأخطاء..."
+                                       autocomplete="off">
+                                <button type="button" class="general-clear" id="btnClearSearch" title="إلغاء البحث" style="display: none;">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
                             </div>
                         </div>
+
+                        <div class="col-lg-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-funnel me-1"></i>
+                                مستوى الخطأ
+                            </label>
+                            <select id="levelFilter" class="form-select">
+                                <option value="">الكل</option>
+                                <option value="ERROR">ERROR</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="INFO">INFO</option>
+                                <option value="DEBUG">DEBUG</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn btn-primary" id="btnSearch">
+                            <i class="bi bi-search me-1"></i>
+                            بحث
+                        </button>
                     </div>
 
-                    <hr class="my-3">
 
                     <div class="table-responsive" id="logsTableContainer">
                         <table class="table table-hover align-middle mb-0 general-table">
@@ -167,7 +120,7 @@
 
                     <div id="paginationContainer" class="mt-3"></div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>
@@ -176,37 +129,39 @@
 <div class="modal fade" id="logDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">
-                    <i class="bi bi-info-circle me-2"></i>
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle me-1"></i>
                     تفاصيل الخطأ
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body pt-2">
-                <div class="mb-3">
-                    <strong>الوقت:</strong>
-                    <span id="detailTimestamp" class="log-timestamp"></span>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600;">الوقت</label>
+                        <div id="detailTimestamp" class="log-timestamp" style="margin-top: 0.2rem;"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600;">المستوى</label>
+                        <div id="detailLevel" class="log-level" style="margin-top: 0.2rem;"></div>
+                    </div>
                 </div>
                 <div class="mb-3">
-                    <strong>المستوى:</strong>
-                    <span id="detailLevel" class="log-level"></span>
-                </div>
-                <div class="mb-3">
-                    <strong>الرسالة:</strong>
-                    <div id="detailMessage" class="log-entry mt-2"></div>
+                    <label style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600;">الرسالة</label>
+                    <div id="detailMessage" class="log-entry mt-1"></div>
                 </div>
                 <div class="mb-3" id="detailContextContainer" style="display: none;">
-                    <strong>السياق:</strong>
-                    <div id="detailContext" class="log-context mt-2"></div>
+                    <label style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600;">السياق</label>
+                    <div id="detailContext" class="log-context mt-1"></div>
                 </div>
                 <div id="detailTraceContainer" style="display: none;">
-                    <strong>Stack Trace:</strong>
-                    <div id="detailTrace" class="log-trace mt-2"></div>
+                    <label style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600;">Stack Trace</label>
+                    <div id="detailTrace" class="log-trace mt-1"></div>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">إغلاق</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إغلاق</button>
             </div>
         </div>
     </div>
@@ -214,29 +169,27 @@
 
 {{-- Modal: تأكيد حذف الـ logs --}}
 <div class="modal fade" id="clearLogsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-danger">
-            <div class="modal-header border-danger bg-danger bg-opacity-10">
-                <h5 class="modal-title fw-bold text-danger">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    تأكيد الحذف
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body pt-3">
-                <div class="alert alert-danger mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>تحذير:</strong> هل أنت متأكد من حذف جميع سجلات الأخطاء؟
-                    <br><br>
-                    هذا الإجراء سيحذف <strong>جميع الـ logs</strong> ولا يمكن التراجع عنه!
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-top: 3px solid var(--color-danger, #EF4444);">
+            <div class="modal-body text-center py-4">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--color-danger-bg, #FEF2F2); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <i class="bi bi-trash3" style="font-size: 1.5rem; color: var(--color-danger, #EF4444);"></i>
                 </div>
+                <h6 class="fw-bold mb-2" style="color: var(--color-text-main, #1F2937);">حذف جميع السجلات</h6>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary, #3B4863); margin-bottom: 0.5rem;">
+                    سيتم حذف <strong>جميع سجلات الأخطاء</strong> نهائياً
+                </p>
+                <p style="font-size: 0.78rem; color: var(--color-danger-text, #B91C1C); margin-bottom: 0;">
+                    هذا الإجراء لا يمكن التراجع عنه
+                </p>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <div class="modal-footer justify-content-center" style="border-top: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.75rem;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>إلغاء
+                </button>
                 <button type="button" class="btn btn-danger" id="btnConfirmClearLogs">
                     <span class="spinner-border spinner-border-sm me-2 d-none" id="clearLogsSpinner"></span>
-                    <i class="bi bi-trash me-1"></i>
-                    حذف الكل
+                    <i class="bi bi-trash3 me-1"></i>حذف الكل
                 </button>
             </div>
         </div>

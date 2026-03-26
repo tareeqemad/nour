@@ -35,28 +35,8 @@
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-person-gear me-2"></i>
-                                تعديل المستخدم
-                            </h5>
-                            <div class="general-subtitle">
-                                تعديل بيانات: <span class="fw-bold">{{ $user->name }}</span>
-                                @if($userTypeLabel)
-                                    <span class="badge bg-primary ms-2">{{ $userTypeLabel }}</span>
-                                @endif
-                                @if($authUser->isEnergyAuthority() && !$user->isCompanyOwner())
-                                    <span class="badge bg-danger ms-2">لا يمكنك تعديل هذا المستخدم</span>
-                                @endif
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            رجوع
-                        </a>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="تعديل المستخدم" icon="bi-person-gear" :backRoute="route('admin.users.index')" />
 
                     <form action="{{ route('admin.users.update', $user) }}" method="POST" id="editUserForm">
                         @csrf
@@ -88,7 +68,7 @@
 
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">إلغاء</a>
-                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <button type="submit" class="btn btn-success" id="submitBtn">
                                     <span class="btn-text">
                                         <i class="bi bi-check-lg me-1"></i> حفظ التغييرات
                                     </span>
@@ -100,7 +80,7 @@
                             </div>
                         </div>
                     </form>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

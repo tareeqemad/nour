@@ -40,6 +40,10 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [DashboardController::class, 'chartData'])->name('dashboard.chart-data');
+    Route::get('/dashboard/pie-chart-data', [DashboardController::class, 'pieChartData'])->name('dashboard.pie-chart-data');
+    Route::get('/dashboard/operators-comparison', [DashboardController::class, 'operatorsComparison'])->name('dashboard.operators-comparison');
+    Route::get('/dashboard/generation-units-comparison', [DashboardController::class, 'generationUnitsComparison'])->name('dashboard.generation-units-comparison');
 
     /**
      * User Profile (for all users)
@@ -359,12 +363,6 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('invoices/{invoice}/payments',         [\App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('invoices.payments.store');
     Route::get('invoices/{invoice}/payments/{payment}',[\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('invoices.payments.show');
     Route::delete('invoices/{invoice}/payments/{payment}',[\App\Http\Controllers\Admin\PaymentController::class, 'destroy'])->name('invoices.payments.destroy');
-
-    /**
-     * حساب المشترك (Subscriber Account)
-     */
-    Route::get('subscriber-account', [\App\Http\Controllers\Admin\SubscriberAccountController::class, 'index'])->name('subscriber-account.index');
-    Route::get('subscriber-account/{subscriber}', [\App\Http\Controllers\Admin\SubscriberAccountController::class, 'show'])->name('subscriber-account.show');
 
     /**
      * حساب المشترك (Subscriber Account)

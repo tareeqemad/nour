@@ -14,17 +14,12 @@
 @section('content')
     <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
 
-    <div class="permissions-page">
+    <div class="general-page permissions-page">
         <div class="row g-3">
             {{-- Sidebar: اختيار الهدف + ملخص --}}
             <div class="col-lg-4">
-                <div class="card perm-card perm-sidebar">
-                    <div class="perm-card-header">
-                        <div class="perm-title">
-                            <i class="bi bi-crosshair2 me-2"></i>
-                            تحديد الهدف
-                        </div>
-                    </div>
+                <x-admin.card class="perm-sidebar">
+                    <x-admin.card-header title="تحديد الهدف" icon="bi-crosshair2" />
 
                     <div class="card-body">
                         <div id="permAlerts" style="display:none;"></div>
@@ -69,7 +64,6 @@
                             </div>
                         @endif
 
-                        <hr class="my-3">
 
                         <div class="perm-summary">
                             <div class="d-flex align-items-center justify-content-between mb-2">
@@ -114,7 +108,7 @@
                         </div>
 
                         <div class="d-grid gap-2 mt-3">
-                            <button type="button" class="btn btn-primary" id="savePermissionsBtn" disabled>
+                            <button type="button" class="btn btn-success" id="savePermissionsBtn" disabled>
                                 <i class="bi bi-save me-2"></i>
                                 حفظ التغييرات
                             </button>
@@ -124,33 +118,24 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
 
             {{-- Main: الشجرة --}}
             <div class="col-lg-8">
-                <div class="card perm-card">
-                    <div class="perm-card-header perm-tree-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            <div>
-                                <div class="perm-title">
-                                    <i class="bi bi-diagram-3 me-2"></i>
-                                    شجرة الصلاحيات
-                                    <span class="badge text-bg-secondary fw-normal ms-2" id="treeCount">{{ $permissions->flatten()->count() }}</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="expandAllBtn">
-                                    <i class="bi bi-arrows-angle-expand me-1"></i>
-                                    توسيع الكل
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="collapseAllBtn">
-                                    <i class="bi bi-arrows-angle-contract me-1"></i>
-                                    طي الكل
-                                </button>
-                            </div>
-                        </div>
+                <x-admin.card>
+                    <x-admin.card-header title="شجرة الصلاحيات" icon="bi-diagram-3" class="perm-tree-header">
+                        <x-slot:actions>
+                            <span class="badge text-bg-secondary fw-normal" id="treeCount">{{ $permissions->flatten()->count() }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="expandAllBtn">
+                                <i class="bi bi-arrows-angle-expand me-1"></i>
+                                توسيع الكل
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="collapseAllBtn">
+                                <i class="bi bi-arrows-angle-contract me-1"></i>
+                                طي الكل
+                            </button>
+                        </x-slot:actions>
 
                         <div class="perm-toolbar mt-3">
                             <div class="row g-3 align-items-end">
@@ -225,7 +210,7 @@
                             </div>
                         </div>
 
-                    </div>
+                    </x-admin.card-header>
 
                     <div class="card-body position-relative perm-tree-body">
                         <div id="permissionsLoadingOverlay" class="perm-loading" style="display:none;">
@@ -239,7 +224,7 @@
                             @include('admin.permissions.partials.permissions-tree', ['permissions' => $permissions, 'search' => $search])
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

@@ -5,64 +5,49 @@
 
 @section('content')
 <div class="general-page">
-    <div class="row g-3 justify-content-center">
-        <div class="col-lg-8">
-
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-table me-2"></i>قواعد الحد الأدنى للفاتورة
-                        </h5>
-                        <p class="text-muted small mb-0">
-                            الحد الأدنى يُحسب تلقائياً بناءً على أمبير الاشتراك ونوع الفاز.
-                            يُطبَّق على كل فاتورة جديدة ومسودة.
-                        </p>
-                    </div>
-                </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <x-admin.card>
+                <x-admin.card-header title="قواعد الحد الأدنى للفاتورة" icon="bi-table" />
 
                 <div class="card-body">
+                    <div style="background: var(--color-info-bg, #F0F9FF); border: 1px solid var(--color-info-border, #BAE6FD); border-radius: 8px; padding: 0.65rem 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--color-info-text, #0369A1);">
+                        <i class="bi bi-info-circle me-1"></i>
+                        الحد الأدنى يُحسب تلقائياً بناءً على أمبير الاشتراك ونوع الفاز. يُطبَّق على الفواتير الجديدة والمسودات فقط.
+                    </div>
 
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show">
-                            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-
-                    {{-- جدول القواعد --}}
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover align-middle text-center">
-                            <thead class="table-primary">
+                        <table class="table table-hover align-middle mb-0 general-table text-center">
+                            <thead>
                                 <tr>
-                                    <th width="20%">الأمبير</th>
-                                    <th width="30%">نوع الفاز</th>
-                                    <th width="30%">الحد الأدنى (₪)</th>
-                                    <th width="20%">إجراء</th>
+                                    <th>الأمبير</th>
+                                    <th>نوع الفاز</th>
+                                    <th>الحد الأدنى (₪)</th>
+                                    <th>إجراء</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($rules as $rule)
                                 <tr>
                                     <td>
-                                        <span class="badge bg-secondary fs-6">{{ $rule->ampere }} A</span>
+                                        <span class="badge-role-system" style="font-size: 0.85rem;">{{ $rule->ampere }} A</span>
                                     </td>
                                     <td>
                                         @if($rule->phase_type === 2)
-                                            <span class="badge bg-warning text-dark">ثلاثي (3 فاز)</span>
+                                            <span class="badge-warning">ثلاثي (3 فاز)</span>
                                         @else
-                                            <span class="badge bg-info text-dark">أحادي (1 فاز)</span>
+                                            <span class="badge-info">أحادي (1 فاز)</span>
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="fw-bold text-primary" id="display-{{ $rule->id }}">
+                                        <span class="fw-bold" style="color: var(--color-primary, #24308F);" id="display-{{ $rule->id }}">
                                             {{ number_format($rule->minimum_charge, 2) }} ₪
                                         </span>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-warning btn-sm"
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
                                                 onclick="openEdit({{ $rule->id }}, {{ $rule->minimum_charge }}, '{{ $rule->ampere }} أمبير / {{ $rule->phase_name }}')">
-                                            <i class="bi bi-pencil me-1"></i>تعديل
+                                            <i class="bi bi-pencil"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -70,27 +55,19 @@
                             </tbody>
                         </table>
                     </div>
-
-                    <div class="alert alert-info mt-3 mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        عند تعديل أي قيمة، ستُطبَّق على <strong>الفواتير الجديدة والمسودات</strong> فقط.
-                        الفواتير المصدَرة لا تتأثر.
-                    </div>
-
                 </div>
-            </div>
-
+            </x-admin.card>
         </div>
     </div>
 </div>
 
 {{-- Modal التعديل --}}
 <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h6 class="modal-title">
-                    <i class="bi bi-pencil me-2"></i>تعديل الحد الأدنى
+                    <i class="bi bi-pencil me-1"></i>تعديل الحد الأدنى
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -98,7 +75,7 @@
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
-                    <p class="text-muted small mb-3" id="editLabel"></p>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted, #5B6780); margin-bottom: 0.75rem;" id="editLabel"></p>
                     <label class="form-label fw-semibold">الحد الأدنى (₪)</label>
                     <div class="input-group">
                         <input type="number" name="minimum_charge" id="editValue"
@@ -108,9 +85,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-save me-1"></i>حفظ
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i>حفظ
                     </button>
                 </div>
             </form>

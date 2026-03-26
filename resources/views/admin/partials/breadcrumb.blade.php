@@ -1,4 +1,5 @@
 <!-- breadcrumb -->
+@unless(isset($hideBreadcrumb) && $hideBreadcrumb)
 <div class="modern-breadcrumb">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb-list">
@@ -38,4 +39,5 @@
         </ol>
     </nav>
 </div>
+@endunless
 <!-- /breadcrumb -->

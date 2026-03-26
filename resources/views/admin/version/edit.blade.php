@@ -10,18 +10,8 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-pencil me-2"></i>
-                            تعديل الإصدار v{{ $version->version }}
-                        </h5>
-                        <div class="general-subtitle">
-                            تعديل بيانات الإصدار وسجل التغييرات
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form :title="'تعديل الإصدار v' . $version->version" icon="bi-pencil" :backRoute="route('admin.versions.index')" />
 
                 <form action="{{ route('admin.versions.update', $version) }}" method="POST">
                     @csrf
@@ -30,7 +20,7 @@
                         @include('admin.version.partials.form', ['version' => $version])
                     </div>
                 </form>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

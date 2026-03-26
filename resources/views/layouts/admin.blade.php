@@ -1,61 +1,28 @@
 @php
     $siteName = \App\Models\Setting::get('site_name', 'نور');
     $favicon = \App\Models\Setting::get('site_favicon', 'assets/admin/images/brand-logos/favicon.ico');
-    $primaryColor = \App\Models\Setting::get('primary_color', '#19228f');
+    $primaryColor = \App\Models\Setting::get('primary_color', '#24308f');
     $darkColor = \App\Models\Setting::get('dark_color', '#3b4863');
-    $headerColor = \App\Models\Setting::get('header_color', '#19228f');
+    $headerColor = \App\Models\Setting::get('header_color', '#24308f');
     $menuColor = \App\Models\Setting::get('menu_color', '#F7F7F7');
-    // استخدام localStorage إذا كان موجوداً، وإلا استخدام الإعدادات
-    // سيتم تطبيق القيمة من localStorage عبر JavaScript
     $menuStyles = \App\Models\Setting::get('menu_styles', 'light');
     $headerStyles = \App\Models\Setting::get('header_styles', 'light');
-    
-    // Convert hex to RGB (format: --primary-rgb: 25, 34, 143;)
-    $hex = ltrim($primaryColor, '#');
-    // Handle 3-digit hex colors (e.g., #fff -> #ffffff)
-    if (strlen($hex) === 3) {
-        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
-    }
-    // Ensure we have a valid 6-digit hex color
-    if (strlen($hex) === 6 && ctype_xdigit($hex)) {
-        $r = hexdec(substr($hex, 0, 2));
-        $g = hexdec(substr($hex, 2, 2));
-        $b = hexdec(substr($hex, 4, 2));
-        $primaryRgb = "{$r}, {$g}, {$b}";
-    } else {
-        // Default fallback: #19228f -> 25, 34, 143
-        $primaryRgb = "25, 34, 143";
-    }
-    
-    // Convert dark color hex to RGB (format: --dark-rgb: 59, 72, 99;)
-    $darkHex = ltrim($darkColor, '#');
-    if (strlen($darkHex) === 3) {
-        $darkHex = $darkHex[0] . $darkHex[0] . $darkHex[1] . $darkHex[1] . $darkHex[2] . $darkHex[2];
-    }
-    if (strlen($darkHex) === 6 && ctype_xdigit($darkHex)) {
-        $dr = hexdec(substr($darkHex, 0, 2));
-        $dg = hexdec(substr($darkHex, 2, 2));
-        $db = hexdec(substr($darkHex, 4, 2));
-        $darkRgb = "{$dr}, {$dg}, {$db}";
-    } else {
-        // Default fallback: #3b4863 -> 59, 72, 99
-        $darkRgb = "59, 72, 99";
-    }
-    
-    // Convert header color hex to RGB (format: --header-rgb: 25, 34, 143;)
-    $headerHex = ltrim($headerColor, '#');
-    if (strlen($headerHex) === 3) {
-        $headerHex = $headerHex[0] . $headerHex[0] . $headerHex[1] . $headerHex[1] . $headerHex[2] . $headerHex[2];
-    }
-    if (strlen($headerHex) === 6 && ctype_xdigit($headerHex)) {
-        $hr = hexdec(substr($headerHex, 0, 2));
-        $hg = hexdec(substr($headerHex, 2, 2));
-        $hb = hexdec(substr($headerHex, 4, 2));
-        $headerRgb = "{$hr}, {$hg}, {$hb}";
-    } else {
-        // Default fallback: #19228f -> 25, 34, 143
-        $headerRgb = "25, 34, 143";
-    }
+
+    // تحويل HEX إلى RGB
+    $hexToRgb = function (string $color, string $fallback): string {
+        $hex = ltrim($color, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+        if (strlen($hex) === 6 && ctype_xdigit($hex)) {
+            return hexdec(substr($hex,0,2)).", ".hexdec(substr($hex,2,2)).", ".hexdec(substr($hex,4,2));
+        }
+        return $fallback;
+    };
+
+    $primaryRgb = $hexToRgb($primaryColor, '36, 48, 143');
+    $darkRgb    = $hexToRgb($darkColor, '59, 72, 99');
+    $headerRgb  = $hexToRgb($headerColor, '36, 48, 143');
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="{{ $headerStyles }}" data-menu-styles="{{ $menuStyles }}" data-toggled="close">
@@ -212,6 +179,9 @@
 
     <!-- General Cards Css -->
     <link rel="stylesheet" href="{{ asset('assets/admin/css/general-cards.css') }}">
+
+    <!-- Select2 (used across multiple pages) -->
+    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
 
     @stack('styles')
 </head>

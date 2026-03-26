@@ -9,28 +9,12 @@
 @endphp
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/admin/css/constants.css') }}">
 <style>
-    .editable-field.is-saving {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
-    }
-    .editable-field.is-saved {
-        border-color: #198754;
-        background-color: #d1e7dd;
-    }
-    .editable-field.is-invalid {
-        border-color: #dc3545;
-        background-color: #f8d7da;
-    }
-    .editable-field:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-    .editable-field {
-        transition: all 0.3s ease;
-    }
+    .editable-field { transition: all 0.2s ease; }
+    .editable-field.is-saving { border-color: var(--color-primary, #24308F) !important; background: var(--color-primary-soft, #EEF2FF) !important; }
+    .editable-field.is-saved { border-color: var(--color-success, #10B981) !important; background: var(--color-success-bg, #ECFDF5) !important; }
+    .editable-field.is-invalid { border-color: var(--color-danger, #EF4444) !important; background: var(--color-danger-bg, #FEF2F2) !important; }
 </style>
 @endpush
 
@@ -39,22 +23,8 @@
     <div class="row g-3">
         <div class="col-12">
             <!-- Card تعديل الثابت الرئيسي -->
-            <div class="general-card mb-4">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-pencil me-2"></i>
-                            تعديل الثابت الرئيسي
-                        </h5>
-                        <div class="general-subtitle">
-                            تعديل بيانات الثابت رقم {{ $constant->constant_number }}
-                        </div>
-                    </div>
-                    <a href="{{ route('admin.constants.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-right me-2"></i>
-                        رجوع
-                    </a>
-                </div>
+            <x-admin.card class="mb-4">
+                <x-admin.card-header-form title="تعديل الثابت الرئيسي" icon="bi-pencil" :backRoute="route('admin.constants.index')" />
                 <div class="card-body">
                     <form action="{{ route('admin.constants.update', $constant) }}" method="POST" id="constantForm">
                         @csrf
@@ -95,29 +65,20 @@
                         </div>
                     </form>
                 </div>
-            </div>
-            
+            </x-admin.card>
+
             <!-- Card تفاصيل الثابت -->
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-list-ul me-2"></i>
-                            تفاصيل الثابت
-                        </h5>
-                        <div class="general-subtitle">
-                            إدارة تفاصيل الثابت (يمكن التعديل مباشرة في الجدول)
-                        </div>
-                    </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تفاصيل الثابت" icon="bi-list-ul">
                     <button type="button" class="btn btn-primary" id="addNewRowBtn">
                         <i class="bi bi-plus-circle me-1"></i>
                         إضافة تفصيل
                     </button>
-                </div>
+                </x-admin.card-header-form>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead class="table-light">
+                            <thead>
                                 <tr>
                                     <th class="text-nowrap">البيان</th>
                                     <th class="text-nowrap d-none d-md-table-cell">الترميز</th>
@@ -205,17 +166,17 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer d-flex justify-content-between align-items-center">
+                <div style="padding: 0.85rem 1.25rem; background: var(--color-bg-card-header, #F8FBFD); border-top: 1px solid var(--color-border-soft, #EDF1F5); display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem;">
                     <a href="{{ route('admin.constants.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle me-2"></i>
+                        <i class="bi bi-x-circle me-1"></i>
                         إلغاء
                     </a>
-                    <button type="submit" form="constantForm" class="btn btn-primary">
-                        <i class="bi bi-check-lg me-2"></i>
-                        حفظ جميع التغييرات
+                    <button type="submit" form="constantForm" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i>
+                        حفظ التغييرات
                     </button>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>
@@ -462,26 +423,30 @@
         // حذف تفصيل
         $(document).on('click', '.delete-detail-btn', function() {
             const id = $(this).data('id');
-            const label = $(this).data('label');
-            
-            if (confirm('هل أنت متأكد من حذف التفصيل "' + label + '"؟')) {
+            const label = $(this).data('label') || 'هذا التفصيل';
+
+            Swal.fire({
+                title: 'تأكيد الحذف',
+                html: `هل أنت متأكد من حذف <strong>${label}</strong>؟<br><small style="color: var(--color-danger-text, #B91C1C);">هذا الإجراء لا يمكن التراجع عنه</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--color-danger, #EF4444)',
+                cancelButtonColor: 'var(--btn-secondary-border, #D1D5DB)',
+                confirmButtonText: '<i class="bi bi-trash3 me-1"></i>حذف',
+                cancelButtonText: 'إلغاء',
+                reverseButtons: true,
+            }).then((result) => {
+                if (!result.isConfirmed) return;
                 $.ajax({
                     url: '{{ route("admin.constant-details.destroy", ":id") }}'.replace(':id', id),
                     type: 'DELETE',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
+                    data: { _token: '{{ csrf_token() }}' },
                     success: function(response) {
-                        if (response.success) {
-                            window.adminNotifications.success(response.message || 'تم حذف التفصيل بنجاح', 'نجح');
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            window.adminNotifications.error(response.message || 'حدث خطأ أثناء الحذف', 'خطأ');
-                        }
+                        window.adminNotifications.success(response.message || 'تم الحذف');
+                        setTimeout(() => location.reload(), 1000);
                     },
                     error: function(xhr) {
-                        const response = xhr.responseJSON;
-                        window.adminNotifications.error(response?.message || 'حدث خطأ أثناء الحذف', 'خطأ');
+                        window.adminNotifications.error(xhr.responseJSON?.message || 'خطأ');
                     }
                 });
             }

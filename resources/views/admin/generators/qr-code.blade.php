@@ -5,122 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code - {{ $generator->name }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .qr-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-        }
-        .qr-header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 20px;
-        }
-        .qr-header h1 {
-            color: #2563eb;
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        .qr-header p {
-            color: #666;
-            font-size: 16px;
-        }
-        .qr-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-        }
-        .qr-code-wrapper {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 2px solid #e0e0e0;
-            display: inline-block;
-        }
-        .qr-code-wrapper svg {
-            display: block;
-            max-width: 400px;
-            height: auto;
-        }
-        .qr-info {
-            width: 100%;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-        }
-        .qr-info h3 {
-            color: #2563eb;
-            margin-bottom: 15px;
-            font-size: 20px;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        .info-label {
-            font-weight: 600;
-            color: #495057;
-        }
-        .info-value {
-            color: #212529;
-            text-align: left;
-        }
-        .print-button {
-            margin-top: 30px;
-            text-align: center;
-        }
-        .btn-print {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn-print:hover {
-            background: #1d4ed8;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #F8FAFC; padding: 20px; color: #1F2937; }
+
+        .qr-container { max-width: 700px; margin: 0 auto; background: #fff; border-radius: 14px; border: 1px solid #E5E7EB; padding: 2.5rem; }
+
+        .qr-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2.5px solid #24308F; }
+        .qr-header h1 { color: #24308F; font-size: 1.5rem; margin-bottom: 0.35rem; }
+        .qr-header p { color: #5B6780; font-size: 0.88rem; }
+
+        .qr-content { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+        .qr-code-wrapper { padding: 1.25rem; border-radius: 10px; border: 1.5px solid #E5E7EB; background: #FAFCFF; display: inline-block; }
+        .qr-code-wrapper svg { display: block; max-width: 350px; height: auto; }
+
+        .qr-info { width: 100%; background: #FAFCFF; border: 1px solid #EDF1F5; border-radius: 10px; padding: 1.25rem; }
+        .qr-info h3 { color: #24308F; margin-bottom: 0.85rem; font-size: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF1F5; }
+
+        .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #EDF1F5; font-size: 0.88rem; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-weight: 600; color: #3B4863; }
+        .info-value { color: #1F2937; text-align: left; }
+        .info-note { font-size: 0.78rem; color: #5B6780; }
+
+        .print-btn-wrap { margin-top: 1.5rem; text-align: center; }
+        .btn-print { background: #24308F; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+        .btn-print:hover { background: #2330B3; }
+
         @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-            .qr-container {
-                box-shadow: none;
-                padding: 20px;
-            }
-            .print-button {
-                display: none;
-            }
+            body { background: #fff; padding: 0; }
+            .qr-container { border: none; padding: 1rem; }
+            .print-btn-wrap { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="qr-container">
         <div class="qr-header">
-            <h1>QR Code - المولد</h1>
-            <p>كود الاستجابة السريعة للتعريف بالمولد</p>
+            <h1>{{ $generator->name ?? 'المولد' }}</h1>
+            <p>{{ $generator->generator_number ?? '' }}</p>
         </div>
 
         <div class="qr-content">
@@ -129,53 +52,30 @@
             </div>
 
             <div class="qr-info">
-                <h3>معلومات المولد</h3>
+                <h3>بيانات المولد</h3>
+                @foreach([
+                    ['label' => 'رقم المولد', 'value' => $generator->generator_number ?? 'GEN-'.$generator->id, 'bold' => true],
+                    ['label' => 'اسم المولد', 'value' => $generator->name],
+                    ['label' => 'المشغل', 'value' => $generator->operator->name ?? null],
+                    ['label' => 'وحدة التوليد', 'value' => $generator->generationUnit ? $generator->generationUnit->name.' ('.$generator->generationUnit->unit_code.')' : null],
+                    ['label' => 'القدرة', 'value' => $generator->capacity_kva ? number_format($generator->capacity_kva, 0).' KVA' : null],
+                ] as $row)
+                    @if($row['value'])
+                    <div class="info-row">
+                        <span class="info-label">{{ $row['label'] }}</span>
+                        <span class="info-value">{!! ($row['bold'] ?? false) ? '<strong>'.$row['value'].'</strong>' : $row['value'] !!}</span>
+                    </div>
+                    @endif
+                @endforeach
                 <div class="info-row">
-                    <span class="info-label">رقم المولد (QR Code):</span>
-                    <span class="info-value"><strong>{{ $generator->generator_number ?? 'GEN-' . $generator->id }}</strong></span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">اسم المولد:</span>
-                    <span class="info-value">{{ $generator->name }}</span>
-                </div>
-                @if($generator->operator)
-                <div class="info-row">
-                    <span class="info-label">المشغل:</span>
-                    <span class="info-value">{{ $generator->operator->name }}</span>
-                </div>
-                @endif
-                @if($generator->generationUnit)
-                <div class="info-row">
-                    <span class="info-label">وحدة التوليد:</span>
-                    <span class="info-value">{{ $generator->generationUnit->name }} ({{ $generator->generationUnit->unit_code }})</span>
-                </div>
-                @endif
-                @if($generator->capacity_kva)
-                <div class="info-row">
-                    <span class="info-label">القدرة:</span>
-                    <span class="info-value">{{ number_format($generator->capacity_kva, 0) }} KVA</span>
-                </div>
-                @endif
-                <div class="info-row">
-                    <span class="info-label">ملاحظة:</span>
-                    <span class="info-value" style="font-size: 12px; color: #666;">عند المسح (Scan) تُعرض بيانات المولد أوفلاين بصيغة JSON دون فتح أي رابط.</span>
+                    <span class="info-note">عند المسح تُعرض البيانات أوفلاين بصيغة JSON</span>
                 </div>
             </div>
         </div>
 
-        <div class="print-button">
-            <button class="btn-print" onclick="window.print()">
-                <i class="bi bi-printer"></i> طباعة QR Code
-            </button>
+        <div class="print-btn-wrap">
+            <button class="btn-print" onclick="window.print()">طباعة QR Code</button>
         </div>
     </div>
-
-    <script>
-        // طباعة تلقائية عند تحميل الصفحة (اختياري)
-        // window.onload = function() {
-        //     window.print();
-        // }
-    </script>
 </body>
 </html>
-

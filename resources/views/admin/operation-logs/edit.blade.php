@@ -10,69 +10,46 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/operation-logs.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/cascading-selects.css') }}">
 @endpush
 
 @section('content')
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-pencil-square me-2"></i>
-                                تعديل سجل التشغيل
-                            </h5>
-                            <div class="general-subtitle">
-                                المولد: {{ $operationLog->generator->name ?? 'مولد محذوف' }}@if($operationLog->generator && $operationLog->generator->trashed()) <span class="badge bg-secondary">محذوف</span>@endif | 
-                                التاريخ: {{ $operationLog->operation_date->format('Y-m-d') }}
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            العودة للقائمة
-                        </a>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="تعديل سجل التشغيل" icon="bi-pencil-square" :backRoute="route('admin.operation-logs.index')" />
 
-                    <div class="card-body">
+                    <div class="card-body p-4">
                         <form action="{{ route('admin.operation-logs.update', $operationLog) }}" method="POST" id="operationLogForm">
                             @csrf
                             @method('PUT')
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <h6 class="fw-bold mb-3">
-                                        <i class="bi bi-info-circle text-primary me-2"></i>
-                                        المعلومات الأساسية
-                                    </h6>
+                                    <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">المعلومات الأساسية</h6>
                                 </div>
 
                                 {{-- Cascading Selects: المشغل → وحدة التوليد → المولد --}}
-                                @php
-                                    $canSelect = !auth()->user()->isAffiliatedWithOperator();
-                                @endphp
-                                @include('admin.partials.cascading-selects', [
-                                    'operators' => $operators ?? collect(),
-                                    'showGenerator' => true,
-                                    'showGenerationUnit' => true,
-                                    'generationUnits' => $generationUnits ?? collect(),
-                                    'generators' => $generators ?? collect(),
-                                    'selectedOperatorId' => old('operator_id', $operationLog->operator_id),
-                                    'selectedGenerationUnitId' => old('generation_unit_id', $operationLog->generator->generation_unit_id ?? ''),
-                                    'selectedGeneratorId' => old('generator_id', $operationLog->generator_id),
-                                    'colClass' => $canSelect ? 'col-md-4' : 'col-md-6',
-                                ])
+                                <x-admin.operator-cascade
+                                    :operators="$operators ?? collect()"
+                                    :showGenerator="true"
+                                    :showGenerationUnit="true"
+                                    :generationUnits="$generationUnits ?? collect()"
+                                    :generators="$generators ?? collect()"
+                                    :selectedOperatorId="old('operator_id', $operationLog->operator_id)"
+                                    :selectedGenerationUnitId="old('generation_unit_id', $operationLog->generator->generation_unit_id ?? '')"
+                                    :selectedGeneratorId="old('generator_id', $operationLog->generator_id)"
+                                    :colClass="!auth()->user()->isAffiliatedWithOperator() ? 'col-md-4' : 'col-md-6'"
+                                    :routes="[
+                                        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-logs',
+                                        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-for-logs',
+                                    ]"
+                                />
                             </div>
 
-                            <hr class="my-4">
-
+                            
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <h6 class="fw-bold mb-3">
-                                        <i class="bi bi-calendar-event text-success me-2"></i>
-                                        التاريخ والوقت
-                                    </h6>
+                                    <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">التاريخ والوقت</h6>
                                 </div>
 
                                 <div class="col-md-4">
@@ -112,14 +89,10 @@
                                 </div>
                             </div>
 
-                            <hr class="my-4">
-
+                            
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <h6 class="fw-bold mb-3">
-                                        <i class="bi bi-speedometer2 text-warning me-2"></i>
-                                        الأداء ونسبة التحميل
-                                    </h6>
+                                    <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">الأداء ونسبة التحميل</h6>
                                 </div>
 
                                 <div class="col-md-6">
@@ -138,14 +111,10 @@
                                 </div>
                             </div>
 
-                            <hr class="my-4">
-
+                            
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <h6 class="fw-bold mb-3">
-                                        <i class="bi bi-fuel-pump text-danger me-2"></i>
-                                        قراءات عداد الوقود
-                                    </h6>
+                                    <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">قراءات عداد الوقود</h6>
                                 </div>
 
                                 <div class="col-md-4">
@@ -195,14 +164,10 @@
                                 </div>
                             </div>
 
-                            <hr class="my-4">
-
+                            
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <h6 class="fw-bold mb-3">
-                                        <i class="bi bi-lightning-charge text-warning me-2"></i>
-                                        قراءات عداد الطاقة
-                                    </h6>
+                                    <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">قراءات عداد الطاقة</h6>
                                 </div>
 
                                 <div class="col-md-4">
@@ -271,14 +236,10 @@
                                 </div>
                             </div>
 
-                            <hr class="my-4">
-
+                            
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <h6 class="fw-bold mb-3">
-                                        <i class="bi bi-journal-text text-primary me-2"></i>
-                                        الملاحظات والأعطال
-                                    </h6>
+                                    <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">الملاحظات والأعطال</h6>
                                 </div>
 
                                 <div class="col-md-6">
@@ -309,11 +270,10 @@
                             </div>
                         </form>
 
-                        <hr class="my-4">
-
+                        
                         <div class="d-flex justify-content-end align-items-center gap-2">
                             <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
+                                <i class="bi bi-arrow-right me-1"></i>
                                 إلغاء
                             </a>
                             <button type="submit" form="operationLogForm" class="btn btn-primary" id="submitOperationLogBtn">
@@ -322,18 +282,13 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
-@if(file_exists(public_path('assets/admin/libs/select2/i18n/ar.js')))
-    <script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
-@endif
-<script src="{{ asset('assets/admin/js/cascading-selects.js') }}"></script>
 <script>
     (function($) {
         $(document).ready(function() {
@@ -343,97 +298,6 @@
                 $submitBtn = $form.find('button[type="submit"]');
             }
 
-            @php
-                $currentOperatorId = old('operator_id', $operationLog->operator_id);
-                $currentGenerationUnitId = old('generation_unit_id', $operationLog->generator->generation_unit_id ?? null);
-                $currentGeneratorId = old('generator_id', $operationLog->generator_id);
-            @endphp
-
-            // تهيئة Cascading Selects باستخدام المكتبة الموحدة
-            CascadingSelects.init({
-                canSelectOperator: {{ !auth()->user()->isAffiliatedWithOperator() ? 'true' : 'false' }},
-                operatorUrl: '/admin/operators/{id}/generation-units-for-logs',
-                generationUnitUrl: '/admin/generation-units/{id}/generators-for-logs',
-                tariffUrl: '/admin/api/tariff-price',
-                tariffDateField: 'input[name="operation_date"]',
-                tariffPriceField: '#electricity_tariff_price',
-                useSelect2: true,
-                select2Options: {
-                    dir: 'rtl',
-                    language: 'ar',
-                    allowClear: true,
-                    width: '100%'
-                }
-            });
-
-            // تحميل البيانات المحفوظة للتعديل
-            @if(!auth()->user()->isAffiliatedWithOperator() && $currentOperatorId)
-                (async function() {
-                    try {
-                        const response = await fetch(`/admin/operators/{{ $currentOperatorId }}/generation-units-for-logs`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                            }
-                            });
-                            
-                            if (response.ok) {
-                                const data = await response.json();
-                                const $generationUnitSelect = $('#generation_unit_id');
-                                const $generatorSelect = $('#generator_id');
-                                
-                                $generationUnitSelect.empty().append('<option value="">-- اختر وحدة التوليد --</option>');
-                                
-                                if (data.generation_units && data.generation_units.length > 0) {
-                                    data.generation_units.forEach(unit => {
-                                        const isSelected = unit.id == {{ $currentGenerationUnitId ?? 0 }};
-                                        $generationUnitSelect.append(new Option(unit.label, unit.id, false, isSelected));
-                                    });
-                                    $generationUnitSelect.prop('disabled', false);
-                                    CascadingSelects.initSelect2($generationUnitSelect, {
-                                        dir: 'rtl', language: 'ar', allowClear: true, width: '100%'
-                                    });
-                                    
-                                    @if($currentGenerationUnitId)
-                                        // تحميل المولدات للوحدة المحددة
-                                        const genResponse = await fetch(`/admin/generation-units/{{ $currentGenerationUnitId }}/generators-for-logs`, {
-                                            headers: {
-                                                'X-Requested-With': 'XMLHttpRequest',
-                                                'Accept': 'application/json',
-                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                                            }
-                                        });
-                                        
-                                        if (genResponse.ok) {
-                                            const genData = await genResponse.json();
-                                            $generatorSelect.empty().append('<option value="">-- اختر المولد --</option>');
-                                            
-                                            if (genData.generators && genData.generators.length > 0) {
-                                                genData.generators.forEach(generator => {
-                                                    const isSelected = generator.id == {{ $currentGeneratorId ?? 0 }};
-                                                    $generatorSelect.append(new Option(generator.label, generator.id, false, isSelected));
-                                                });
-                                                $generatorSelect.prop('disabled', false);
-                                                CascadingSelects.initSelect2($generatorSelect, {
-                                                    dir: 'rtl', language: 'ar', allowClear: true, width: '100%'
-                                                });
-                                            }
-                                        }
-                                    @endif
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Error loading initial data:', error);
-                        }
-                    })();
-            @else
-                // تحميل المولدات للمستخدمين المرتبطين
-                @if($currentGenerationUnitId)
-                    $('#generation_unit_id').trigger('change');
-                @endif
-            @endif
-            
             const fuelStart = document.querySelector('input[name="fuel_meter_start"]');
             const fuelEnd = document.querySelector('input[name="fuel_meter_end"]');
             const fuelConsumed = document.getElementById('fuel_consumed');

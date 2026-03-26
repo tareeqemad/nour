@@ -1,29 +1,18 @@
 /* =========================================================
-   Operators UI (Neutral / Minimal Blue)
+   Operators UI (Unique styles only - shared styles in general-cards.css)
    ========================================================= */
-
-.operators-page{
-    --op-border: #e5e7eb;
-    --op-border-2: #eef2f7;
-    --op-surface: #ffffff;
-    --op-subtle: #f8fafc;
-    --op-text: #0f172a;
-    --op-muted: #6b7280;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-}
 
 /* Card styles removed - using general-card from general-cards.css */
 
-.operators-page .op-toolbar{
+.general-page .op-toolbar{
     margin-top: .5rem;
 }
 
 /* Search box: icon inside input + clear button */
-.operators-page .op-search{
+.general-page .op-search{
     position: relative;
 }
-.operators-page .op-search > i{
+.general-page .op-search > i{
     position:absolute;
     top:50%;
     transform: translateY(-50%);
@@ -31,18 +20,18 @@
     color: #94a3b8;
     pointer-events:none;
 }
-.operators-page .op-search input{
+.general-page .op-search input{
     padding-right: 38px;
     padding-left: 38px;
     height: 44px;
     border-radius: 12px;
-    border: 1px solid var(--op-border);
+    border: 1px solid var(--r-border, #e5e7eb);
 }
-.operators-page .op-search input:focus{
+.general-page .op-search input:focus{
     border-color: rgba(var(--primary-rgb), .85);
     box-shadow: 0 0 0 .2rem rgba(var(--primary-rgb), .12);
 }
-.operators-page .op-search .op-clear{
+.general-page .op-search .op-clear{
     position:absolute;
     left: 10px;
     top: 50%;
@@ -53,20 +42,19 @@
     padding: 0;
     line-height: 1;
 }
-.operators-page .op-search .op-clear:hover{
+.general-page .op-search .op-clear:hover{
     color: rgba(var(--primary-rgb), .85);
 }
 
-.operators-page .op-table th{
+.general-page .op-table th{
     white-space: nowrap;
 }
-.operators-page .op-table td{
+.general-page .op-table td{
     vertical-align: middle;
 }
 
 /* Loading overlay */
-/* Loading overlay */
-.operators-page .op-loading{
+.general-page .op-loading{
     position: absolute;
     inset: 0;
     background: rgba(255, 255, 255, .95);
@@ -79,21 +67,21 @@
     border-radius: 12px;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-.operators-page .op-loading .spinner-border{
+.general-page .op-loading .spinner-border{
     width: 3rem;
     height: 3rem;
     border-width: 4px;
     border-color: rgba(var(--primary-rgb), .3);
     border-right-color: transparent;
 }
-.operators-page .op-loading .text-muted{
+.general-page .op-loading .text-muted{
     font-size: 1rem;
     font-weight: 600;
-    color: var(--op-muted);
+    color: var(--r-muted, #6b7280);
     margin-top: 1rem;
 }
 
-.operators-page .op-loading-old{
+.general-page .op-loading-old{
     position:absolute;
     inset:0;
     background: rgba(255,255,255,.92);
@@ -105,64 +93,64 @@
 }
 
 /* Key/Value blocks */
-.operators-page .op-kv{
+.general-page .op-kv{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:1rem;
     padding:.35rem 0;
-    border-bottom: 1px dashed var(--op-border-2);
+    border-bottom: 1px dashed var(--r-border2, #eef2f7);
 }
-.operators-page .op-kv:last-child{
+.general-page .op-kv:last-child{
     border-bottom: 0;
 }
-.operators-page .op-kv .k{
-    color: var(--op-muted);
+.general-page .op-kv .k{
+    color: var(--r-muted, #6b7280);
     font-size: .82rem;
 }
-.operators-page .op-kv .v{
+.general-page .op-kv .v{
     font-weight: 800;
-    color: var(--op-text);
+    color: var(--r-text, #0f172a);
 }
 
 /* Tabs */
-.operators-page .op-tabs{
+.general-page .op-tabs{
     gap: .35rem;
     flex-wrap: wrap;
 }
-.operators-page .op-tabs .nav-link{
-    border: 1px solid var(--op-border);
+.general-page .op-tabs .nav-link{
+    border: 1px solid var(--r-border, #e5e7eb);
     border-radius: 999px;
     padding: .35rem .75rem;
     font-weight: 700;
-    color: var(--op-text);
+    color: var(--r-text, #0f172a);
     background: #fff;
 }
-.operators-page .op-tabs .nav-link.active{
+.general-page .op-tabs .nav-link.active{
     background: rgba(var(--primary-rgb), .10);
     border-color: rgba(var(--primary-rgb), .85);
 }
 
 /* Map */
-.operators-page .op-map{
+.general-page .op-map{
     height: 380px;
     width: 100%;
     border-radius: 12px;
-    border: 1px solid var(--op-border);
+    border: 1px solid var(--r-border, #e5e7eb);
     overflow: hidden;
 }
 
 /* Statistics Cards */
-.operators-page .stat-card{
+.general-page .stat-card{
     display: flex;
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: var(--op-subtle);
+    background: var(--r-subtle, #f8fafc);
     border-radius: 12px;
-    border: 1px solid var(--op-border-2);
+    border: 1px solid var(--r-border2, #eef2f7);
 }
-.operators-page .stat-icon{
+.general-page .stat-icon{
     width: 48px;
     height: 48px;
     border-radius: 12px;
@@ -173,60 +161,56 @@
     font-size: 1.25rem;
     flex-shrink: 0;
 }
-.operators-page .stat-content{
+.general-page .stat-content{
     flex: 1;
 }
-.operators-page .stat-label{
+.general-page .stat-label{
     font-size: .85rem;
-    color: var(--op-muted);
+    color: var(--r-muted, #6b7280);
     margin-bottom: .25rem;
 }
-.operators-page .stat-value{
+.general-page .stat-value{
     font-size: 1.5rem;
     font-weight: 800;
-    color: var(--op-text);
+    color: var(--r-text, #0f172a);
 }
 
 /* Info Items */
-.operators-page .info-item{
+.general-page .info-item{
     margin-bottom: 1rem;
 }
-.operators-page .info-label{
+.general-page .info-label{
     font-size: .85rem;
-    color: var(--op-muted);
+    color: var(--r-muted, #6b7280);
     margin-bottom: .35rem;
     font-weight: 600;
 }
-.operators-page .info-value{
+.general-page .info-value{
     font-size: .95rem;
-    color: var(--op-text);
+    color: var(--r-text, #0f172a);
     font-weight: 500;
 }
 
 /* Generators List */
-.operators-page .generators-list{
+.general-page .generators-list{
     display: flex;
     flex-direction: column;
     gap: .75rem;
 }
-.operators-page .generator-item{
+.general-page .generator-item{
     padding: .75rem;
-    background: var(--op-subtle);
+    background: var(--r-subtle, #f8fafc);
     border-radius: 10px;
-    border: 1px solid var(--op-border-2);
+    border: 1px solid var(--r-border2, #eef2f7);
 }
-.operators-page .generator-item:hover{
+.general-page .generator-item:hover{
     background: #ffffff;
     border-color: rgba(var(--primary-rgb), .3);
 }
 
-.operators-page .card-body {
-    padding: 1.5rem;
-}
-
-.operators-page hr {
+.general-page hr {
     border: 0;
-    border-top: 1px solid var(--op-border-2);
+    border-top: 1px solid var(--r-border2, #eef2f7);
     margin: 1.5rem 0;
     opacity: 0.5;
 }

@@ -10,7 +10,7 @@
 @endpush
 
 @section('content')
-<div class="profile-page">
+<div class="general-page profile-page">
     <div class="row g-4">
         {{-- معلومات المستخدم --}}
         <div class="col-12">
@@ -84,8 +84,8 @@
         {{-- تغيير كلمة المرور --}}
         <div class="col-12">
             <div class="password-change-card position-relative">
-                <div class="password-change-header">
-                    <h5 class="password-change-title">
+                <div class="card-header-form password-change-header">
+                    <h5 class="general-title password-change-title">
                         <i class="bi bi-shield-lock"></i>
                         تغيير كلمة المرور
                     </h5>

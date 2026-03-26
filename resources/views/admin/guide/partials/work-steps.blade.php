@@ -1,6 +1,6 @@
 {{-- خطوات العمل للمشغل --}}
 <div class="guide-section">
-    <div class="general-card">
+    <x-admin.card>
         <div class="section-header">
             <h5>
                 <i class="bi bi-list-check"></i>
@@ -194,5 +194,5 @@
                 </p>
             </div>
         </ol>
-    </div>
+    </x-admin.card>
 </div>

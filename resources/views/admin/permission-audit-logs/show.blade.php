@@ -133,27 +133,15 @@
 @endpush
 
 @section('content')
-<div class="perm-audit-detail-page">
+<div class="general-page perm-audit-detail-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="perm-audit-card">
-                <div class="perm-audit-card-header">
-                    <div>
-                        <h5 class="perm-detail-title">
-                            <i class="bi bi-shield-check me-2"></i>
-                            تفاصيل سجل الصلاحية
-                        </h5>
-                        <div class="perm-detail-subtitle">
-                            عرض تفاصيل التغيير على الصلاحية
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.permission-audit-logs.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            رجوع
-                        </a>
-                    </div>
-                </div>
+            <x-admin.card class="perm-audit-card">
+                <x-admin.card-header-form
+                    title="تفاصيل سجل الصلاحية"
+                    icon="bi-shield-check"
+                    :backRoute="route('admin.permission-audit-logs.index')"
+                />
 
                 <div class="card-body">
                     <div class="row g-4">
@@ -268,7 +256,7 @@
                         @endif
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

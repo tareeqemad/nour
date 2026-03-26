@@ -12,10 +12,10 @@
     <link rel="stylesheet" href="{{ asset('assets/leaflet/leaflet.css') }}" />
     <style>
         .territory-popup-own {
-            border-left: 4px solid #28a745;
+            border-left: 4px solid var(--color-success, #10B981);
         }
         .territory-popup-other {
-            border-left: 4px solid #dc3545;
+            border-left: 4px solid var(--color-danger, #EF4444);
         }
         .leaflet-popup-content-wrapper {
             border-radius: 8px;
@@ -33,29 +33,13 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card position-relative" id="generationUnitCard">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-lightning-charge me-2"></i>
-                            إضافة وحدة توليد جديدة
-                        </h5>
-                        <div class="general-subtitle">
-                            إدخال بيانات وحدة التوليد
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.generation-units.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-1"></i>
-                            العودة
-                        </a>
-                        <button class="btn btn-primary" id="saveBtn" type="button">
-                            <i class="bi bi-check-lg me-1"></i>
-                            حفظ
-                        </button>
-                    </div>
-                </div>
+            <x-admin.card class="position-relative" id="generationUnitCard">
+                <x-admin.card-header-form title="إضافة وحدة توليد جديدة" icon="bi-lightning-charge" :backRoute="route('admin.generation-units.index')">
+                    <button class="btn btn-success" id="saveBtn" type="button">
+                        <i class="bi bi-check-lg me-1"></i>
+                        حفظ
+                    </button>
+                </x-admin.card-header-form>
 
                 <div class="card-body pb-4">
                     <form id="generationUnitForm" action="{{ route('admin.generation-units.store') }}" method="POST">
@@ -141,9 +125,9 @@
                                         @enderror
                                     </div>
                                     <div class="col-12">
-                                        <div class="alert alert-warning">
-                                            <i class="bi bi-exclamation-triangle me-2"></i>
-                                            <strong>يمكنك إدخال الحد الأدنى من البيانات الآن:</strong> اسم الوحدة، المحافظة، المدينة، العنوان التفصيلي، والإحداثيات. باقي البيانات يمكن ملؤها لاحقاً عند التعديل.
+                                        <div style="background: var(--color-info-bg, #F0F9FF); border: 1px solid var(--color-info-border, #BAE6FD); border-radius: 8px; padding: 0.65rem 1rem; font-size: 0.85rem; color: var(--color-info-text, #0369A1);">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            يمكنك إدخال الحد الأدنى الآن. باقي البيانات يمكن ملؤها لاحقاً عند التعديل.
                                         </div>
                                     </div>
                                 </div>
@@ -547,7 +531,7 @@
                     </form>
                 </div>
 
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

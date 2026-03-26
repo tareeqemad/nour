@@ -72,36 +72,15 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card position-relative" id="profileCard">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-ui-checks-grid me-2"></i>
-                            بيانات المشغل
-                        </h5>
-                        <div class="general-subtitle d-flex align-items-center gap-2 flex-wrap">
-                            <span>ملف المشغل</span>
-                            @if($operator && $operator->is_approved !== null)
-                                <span>|</span>
-                                <span class="badge {{ $operator->is_approved ? 'bg-success' : 'bg-warning' }}">
-                                    <i class="bi bi-{{ $operator->is_approved ? 'check-circle' : 'clock' }} me-1"></i>
-                                    {{ $operator->is_approved ? 'معتمد' : 'في انتظار الاعتماد' }}
-                                </span>
-                            @elseif(!$operator)
-                                <span>|</span>
-                                <span class="badge bg-secondary">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    لم يتم إنشاء المشغل بعد
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary" id="saveProfileBtn" type="button">
-                        <i class="bi bi-save me-1"></i>
-                        حفظ
-                    </button>
-                </div>
+            <x-admin.card class="position-relative" id="profileCard">
+                <x-admin.card-header title="بيانات المشغل" icon="bi-ui-checks-grid">
+                    <x-slot:actions>
+                        <button class="btn btn-success" id="saveProfileBtn" type="button">
+                            <i class="bi bi-save me-1"></i>
+                            حفظ
+                        </button>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body">
                     <form id="operatorProfileForm" action="{{ route('admin.operators.profile.update') }}" method="POST">
@@ -153,7 +132,7 @@
                         <button type="submit" class="d-none" id="hiddenSubmitBtn"></button>
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
 
             </div>
         </div>
@@ -167,36 +146,31 @@
 
         {{-- قسم وحدات التوليد --}}
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-lightning-charge me-2"></i>
-                            وحدات التوليد
-                        </h5>
-                        <div class="general-subtitle">إدارة وحدات التوليد والمولدات التابعة لها</div>
-                    </div>
-                    @can('create', App\Models\GenerationUnit::class)
-                        @php
-                            $canAddUnit = $operator && 
-                                         !empty($operator->name) && 
-                                         !empty($operator->owner_name) && 
-                                         !empty($operator->owner_id_number) && 
-                                         !empty($operator->operator_id_number);
-                        @endphp
-                        @if($canAddUnit)
-                            <a href="{{ route('admin.generation-units.create') }}" class="btn btn-primary">
-                                <i class="bi bi-plus-lg me-1"></i>
-                                إضافة وحدة توليد
-                            </a>
-                        @else
-                            <button type="button" class="btn btn-primary" disabled title="يرجى إكمال بيانات المشغل أولاً">
-                                <i class="bi bi-plus-lg me-1"></i>
-                                إضافة وحدة توليد
-                            </button>
-                        @endif
-                    @endcan
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="وحدات التوليد" icon="bi-lightning-charge">
+                    <x-slot:actions>
+                        @can('create', App\Models\GenerationUnit::class)
+                            @php
+                                $canAddUnit = $operator &&
+                                             !empty($operator->name) &&
+                                             !empty($operator->owner_name) &&
+                                             !empty($operator->owner_id_number) &&
+                                             !empty($operator->operator_id_number);
+                            @endphp
+                            @if($canAddUnit)
+                                <a href="{{ route('admin.generation-units.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg me-1"></i>
+                                    إضافة وحدة توليد
+                                </a>
+                            @else
+                                <button type="button" class="btn btn-primary" disabled title="يرجى إكمال بيانات المشغل أولاً">
+                                    <i class="bi bi-plus-lg me-1"></i>
+                                    إضافة وحدة توليد
+                                </button>
+                            @endif
+                        @endcan
+                    </x-slot:actions>
+                </x-admin.card-header>
                 <div class="card-body">
                     @if($generationUnits->isEmpty())
                         <div class="text-center py-5">
@@ -257,7 +231,7 @@
                                                         </a>
                                                     @endcan
                                                     @can('create', App\Models\Generator::class)
-                                                        <a href="{{ route('admin.generators.create', ['generation_unit_id' => $unit->id]) }}" class="btn btn-sm btn-success" title="إضافة مولد">
+                                                        <a href="{{ route('admin.generators.create', ['generation_unit_id' => $unit->id]) }}" class="btn btn-sm btn-primary" title="إضافة مولد">
                                                             <i class="bi bi-plus-circle"></i> مولد
                                                         </a>
                                                     @endcan
@@ -270,7 +244,7 @@
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

@@ -51,85 +51,74 @@
 
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
+            <x-admin.card>
 
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-people me-2"></i>
-                            إدارة المستخدمين
-                            <span class="text-muted fw-normal fs-6 ms-2" id="usersSubtitle"></span>
-                        </h5>
-                    </div>
-
-                    <div class="d-flex gap-2">
+                <x-admin.card-header title="إدارة المستخدمين" icon="bi-people">
+                    <x-slot:actions>
                         @can('create', App\Models\User::class)
                             <button type="button" class="btn btn-primary" id="btnOpenCreate">
                                 <i class="bi bi-person-plus me-1"></i>
                                 إضافة مستخدم
                             </button>
                         @endcan
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
+                <span class="text-muted fw-normal fs-6 ms-2" id="usersSubtitle"></span>
 
                 <div class="card-body pt-3 pb-4">
 
                     {{-- فلاتر البحث --}}
-                    <div class="filter-card">
-                        <div class="card-body">
-                            <div class="row g-2 align-items-end">
-                                <div class="col-md-4 col-lg-3">
-                                    <label class="form-label small fw-semibold mb-1">الاسم</label>
-                                    <input type="text" class="form-control form-control-sm" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
-                                </div>
-
-                                <div class="col-md-4 col-lg-3">
-                                    <label class="form-label small fw-semibold mb-1">اسم المستخدم</label>
-                                    <input type="text" class="form-control form-control-sm" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
-                                </div>
-
-                                <div class="col-md-4 col-lg-3">
-                                    <label class="form-label small fw-semibold mb-1">الدور</label>
-                                    <select class="form-select form-select-sm" id="roleFilter">
-                                        <option value="">الكل</option>
-                                        @if(!empty($sortedSystemRoles))
-                                            <optgroup label="الأدوار النظامية">
-                                                @foreach($sortedSystemRoles as $roleName => $roleData)
-                                                    <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endif
-                                        @if(!empty($customRoles))
-                                            <optgroup label="الأدوار المخصصة">
-                                                @foreach($customRoles as $roleName => $roleData)
-                                                    <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endif
-                                    </select>
-                                </div>
-
-                                @if($isSuperAdmin)
-                                    <div class="col-md-4 col-lg-3 d-none" id="operatorFilterWrap">
-                                        <label class="form-label small fw-semibold mb-1">المشغل</label>
-                                        <select class="form-select form-select-sm" id="operatorFilter">
-                                            <option value="">اختر المشغل</option>
-                                        </select>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="d-flex gap-2 mt-3">
-                                <button class="btn btn-primary" id="btnSearch">
-                                    <i class="bi bi-search me-1"></i>
-                                    بحث
-                                </button>
-                                <button class="btn btn-outline-secondary" id="btnResetFilters" title="تفريغ">
-                                    <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                    تفريغ
-                                </button>
-                            </div>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4 col-lg-3">
+                            <label class="form-label small fw-semibold mb-1">الاسم</label>
+                            <input type="text" class="form-control form-control-sm" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
                         </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <label class="form-label small fw-semibold mb-1">اسم المستخدم</label>
+                            <input type="text" class="form-control form-control-sm" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <label class="form-label small fw-semibold mb-1">الدور</label>
+                            <select class="form-select form-select-sm" id="roleFilter">
+                                <option value="">الكل</option>
+                                @if(!empty($sortedSystemRoles))
+                                    <optgroup label="الأدوار النظامية">
+                                        @foreach($sortedSystemRoles as $roleName => $roleData)
+                                            <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                                @if(!empty($customRoles))
+                                    <optgroup label="الأدوار المخصصة">
+                                        @foreach($customRoles as $roleName => $roleData)
+                                            <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                            </select>
+                        </div>
+
+                        @if($isSuperAdmin)
+                            <div class="col-md-4 col-lg-3 d-none" id="operatorFilterWrap">
+                                <label class="form-label small fw-semibold mb-1">المشغل</label>
+                                <select class="form-select form-select-sm" id="operatorFilter">
+                                    <option value="">اختر المشغل</option>
+                                </select>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-primary" id="btnSearch">
+                            <i class="bi bi-search me-1"></i>
+                            بحث
+                        </button>
+                        <button class="btn btn-outline-secondary" id="btnResetFilters" title="تفريغ">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            تفريغ
+                        </button>
                     </div>
 
                     <div class="position-relative" id="usersTableContainer">
@@ -172,7 +161,7 @@
                         </nav>
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 

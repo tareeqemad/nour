@@ -13,46 +13,18 @@
 @endpush
 
 @section('content')
-    <div class="operation-logs-page">
+    <div class="general-page operation-logs-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="log-title">
-                                    <i class="bi bi-journal-text me-2"></i>
-                                    تفاصيل سجل التشغيل
-                                    @if($operationLog->sequence)
-                                        #{{ $operationLog->formatted_sequence }}
-                                    @else
-                                        #{{ $operationLog->id }}
-                                    @endif
-                                </div>
-                                <div class="log-subtitle">
-                                    @if($operationLog->generator)
-                                        المولد: {{ $operationLog->generator->name }} |
-                                    @endif
-                                    التاريخ: {{ $operationLog->operation_date->format('Y-m-d') }}
-                                    @if($operationLog->start_time && $operationLog->end_time)
-                                        | الوقت: {{ $operationLog->start_time->format('H:i') }} - {{ $operationLog->end_time->format('H:i') }}
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2">
-                                @can('update', $operationLog)
-                                    <a href="{{ route('admin.operation-logs.edit', $operationLog) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-pencil me-1"></i>
-                                        تعديل
-                                    </a>
-                                @endcan
-                                <a href="{{ route('admin.operation-logs.index') }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-arrow-right me-1"></i>
-                                    رجوع
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form :title="'تفاصيل سجل التشغيل ' . ($operationLog->sequence ? '#' . $operationLog->formatted_sequence : '#' . $operationLog->id)" icon="bi-journal-text" :backRoute="route('admin.operation-logs.index')">
+                        @can('update', $operationLog)
+                            <a href="{{ route('admin.operation-logs.edit', $operationLog) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil me-1"></i>
+                                تعديل
+                            </a>
+                        @endcan
+                    </x-admin.card-header-form>
 
                     <div class="card-body p-4">
                         <!-- Basic Information Section -->
@@ -399,7 +371,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

@@ -10,16 +10,9 @@
         <div class="col-lg-10">
 
             {{-- رأس الصفحة --}}
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-cash-stack me-2"></i>
-                            سجل الدفعات
-                            <span class="text-muted fs-6">{{ $invoice->invoice_number ?? 'مسودة' }}</span>
-                        </h5>
-                    </div>
-                    <div class="d-flex gap-2">
+            <x-admin.card>
+                <x-admin.card-header title="سجل الدفعات" icon="bi-cash-stack">
+                    <x-slot:actions>
                         @can('createForInvoice', [App\Models\Payment::class, $invoice])
                             <a href="{{ route('admin.invoices.payments.create', $invoice) }}"
                                class="btn btn-success btn-sm">
@@ -30,8 +23,8 @@
                            class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-arrow-right me-1"></i>الفاتورة
                         </a>
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 {{-- ملخص الفاتورة --}}
                 <div class="card-body border-bottom pb-3 mb-3">
@@ -129,7 +122,7 @@
                         {{ $payments->links() }}
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
 
         </div>
     </div>

@@ -6,23 +6,6 @@
     $breadcrumbTitle = 'إدارة الأرقام المصرح بها';
 @endphp
 
-@push('styles')
-<style>
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-    }
-</style>
-@endpush
-
 @section('content')
 <div class="general-page" id="authorizedPhonesPage">
     <div class="row g-3">
@@ -30,109 +13,90 @@
             {{-- Statistics --}}
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
-                    <div class="card border-primary">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted mb-2">إجمالي الأرقام المفعلة</h6>
-                            <h3 class="mb-0 text-primary" id="totalActive">-</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-primary"><i class="bi bi-phone"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="totalActive">-</div>
+                            <div class="dash-kpi-label">إجمالي المفعلة</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card border-success">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted mb-2">مسجلين</h6>
-                            <h3 class="mb-0 text-success" id="registeredCount">-</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-success"><i class="bi bi-person-check"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="registeredCount">-</div>
+                            <div class="dash-kpi-label">مسجلين</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card border-warning">
-                        <div class="card-body text-center">
-                            <h6 class="text-muted mb-2">متبقيين</h6>
-                            <h3 class="mb-0 text-warning" id="pendingCount">-</h3>
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon kpi-warning"><i class="bi bi-hourglass-split"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="pendingCount">-</div>
+                            <div class="dash-kpi-label">متبقيين</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-phone me-2"></i>
-                            إدارة الأرقام المصرح بها
-                        </h5>
-                        <div class="general-subtitle">
-                            إدارة أرقام الجوالات المسموح لها بالتسجيل في المنصة
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-success" id="btnImportExcel">
+            <x-admin.card>
+                <x-admin.card-header title="إدارة الأرقام المصرح بها" icon="bi-phone">
+                    <x-slot:actions>
+                        <button type="button" class="btn btn-outline-success" id="btnImportExcel">
                             <i class="bi bi-file-earmark-excel me-1"></i>
-                            استيراد من Excel
+                            استيراد Excel
                         </button>
-                        <button type="button" class="btn btn-warning" id="btnNotifyPending">
+                        <button type="button" class="btn btn-outline-info" id="btnNotifyPending">
                             <i class="bi bi-bell me-1"></i>
                             إشعار المتبقيين
                         </button>
-                        <button type="button" class="btn btn-danger" id="btnDeleteAll">
+                        <button type="button" class="btn btn-outline-danger" id="btnDeleteAll">
                             <i class="bi bi-trash me-1"></i>
                             حذف الكل
                         </button>
                         <a href="{{ route('admin.authorized-phones.create') }}" class="btn btn-primary">
                             <i class="bi bi-plus-lg me-1"></i>
-                            إضافة رقم جديد
+                            إضافة رقم
                         </a>
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4 position-relative">
                     {{-- Filters --}}
-                    <div class="filter-card mb-3">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">بحث</label>
+                            <input type="text" id="searchInput" class="form-control"
+                                   placeholder="ابحث بالرقم أو الاسم..." autocomplete="off">
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">بحث</label>
-                                    <input type="text" id="searchInput" class="form-control" 
-                                           placeholder="ابحث بالرقم أو الاسم..." autocomplete="off">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">الحالة</label>
-                                    <select id="statusFilter" class="form-select">
-                                        <option value="">الكل</option>
-                                        <option value="1">مفعل</option>
-                                        <option value="0">معطل</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">حالة التسجيل</label>
-                                    <select id="registeredFilter" class="form-select">
-                                        <option value="">الكل</option>
-                                        <option value="1">مسجل</option>
-                                        <option value="0">غير مسجل</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="button" class="btn btn-primary w-100" id="btnSearch">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </button>
-                                </div>
-                            </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">الحالة</label>
+                            <select id="statusFilter" class="form-select">
+                                <option value="">الكل</option>
+                                <option value="1">مفعل</option>
+                                <option value="0">معطل</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">حالة التسجيل</label>
+                            <select id="registeredFilter" class="form-select">
+                                <option value="">الكل</option>
+                                <option value="1">مسجل</option>
+                                <option value="0">غير مسجل</option>
+                            </select>
                         </div>
                     </div>
-
-                    <hr class="my-3">
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn btn-primary" id="btnSearch">
+                            <i class="bi bi-search me-1"></i>
+                            بحث
+                        </button>
+                    </div>
 
                     {{-- Loading Overlay --}}
-                    <div class="loading-overlay d-none" id="loadingOverlay">
+                    <div class="d-none" id="loadingOverlay" style="position:absolute;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:10;">
                         <div class="text-center">
                             <div class="spinner-border text-primary mb-2" role="status"></div>
                             <p class="text-muted mb-0">جاري التحميل...</p>
@@ -167,7 +131,7 @@
 
                     <div id="paginationContainer" class="mt-3"></div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>
@@ -222,7 +186,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
                     <button type="submit" class="btn btn-success" id="btnConfirmImport">
                         <span class="spinner-border spinner-border-sm me-2 d-none" id="importSpinner"></span>
                         <i class="bi bi-upload me-1"></i>

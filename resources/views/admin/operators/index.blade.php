@@ -10,38 +10,18 @@
 @endpush
 
 @section('content')
-<div class="operators-page">
+<div class="general-page">
 
     @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
         <div class="general-page" id="operatorsPage">
             <div class="row g-3">
                 <div class="col-12">
-                    <div class="general-card">
-                        <div class="general-card-header">
-                            <div>
-                                <h5 class="general-title">
-                                    <i class="bi bi-buildings me-2"></i>
-                                    إدارة المشغلين
-                                </h5>
-                                <div class="general-subtitle">
-                                    إدارة المشغلين والموظفين التابعين لهم.
-                                </div>
-                            </div>
-
-                            <div class="d-flex gap-2">
-                            </div>
-                        </div>
+                    <x-admin.card>
+                        <x-admin.card-header title="إدارة المشغلين" icon="bi-buildings">
+                        </x-admin.card-header>
 
                         <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title">
-                                    <i class="bi bi-funnel me-2"></i>
-                                    فلاتر البحث
-                                </h6>
-                            </div>
-                            <div class="card-body">
                                 <div class="row g-3">
                                     <div class="col-lg-4">
                                         <label class="form-label fw-semibold">
@@ -80,10 +60,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <hr class="my-3">
 
                         {{-- list (body + footer pagination) --}}
                         <div class="position-relative" id="operatorsListWrap">
@@ -96,7 +73,7 @@
                             </div>
                             @include('admin.operators.partials.list', ['operators' => $operators])
                         </div>
-                    </div>
+                    </x-admin.card>
                 </div>
             </div>
         </div>
@@ -133,7 +110,7 @@
                         <div class="fw-bold mt-1" id="deleteOpName">—</div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
                         <button class="btn btn-danger" id="confirmDeleteOperatorBtn">
                             <i class="bi bi-trash me-1"></i>
                             حذف
@@ -148,18 +125,9 @@
         <div class="general-page">
             <div class="row g-3">
                 <div class="col-12 col-lg-4">
-                    <div class="general-card">
-                        <div class="general-card-header">
-                            <div>
-                                <h5 class="general-title">
-                                    <i class="bi bi-building me-2"></i>
-                                    مشغلي
-                                </h5>
-                                <div class="general-subtitle">
-                                    عرض سريع + روابط للإدارة حسب صلاحياتك.
-                                </div>
-                            </div>
-                        </div>
+                    <x-admin.card>
+                        <x-admin.card-header title="مشغلي" icon="bi-building">
+                        </x-admin.card-header>
 
                         <div class="card-body">
                         @if($myOperator)
@@ -221,15 +189,9 @@
                 </div>
 
                 <div class="col-12 col-lg-8">
-                    <div class="general-card">
-                        <div class="general-card-header">
-                            <div>
-                                <h5 class="general-title">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    معلومات المشغل
-                                </h5>
-                            </div>
-                        </div>
+                    <x-admin.card>
+                        <x-admin.card-header title="معلومات المشغل" icon="bi-info-circle">
+                        </x-admin.card-header>
                         <div class="card-body">
                         @if($myOperator)
                             <div class="row g-3">
@@ -272,7 +234,7 @@
                             </div>
                         @endif
                         </div>
-                    </div>
+                    </x-admin.card>
                 </div>
             </div>
         </div>

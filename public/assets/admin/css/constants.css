@@ -1,216 +1,80 @@
-/* ===== Constants Page (Same style as Users Page) ===== */
-.constants-page {
-    --c-border: #e5e7eb;
-    --c-border2: #eef2f7;
-    --c-surface: #ffffff;
-    --c-subtle: #f8fafc;
-    --c-text: #0f172a;
-    --c-muted: #64748b;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-}
+/* ===== Constants Page - Nour Design System ===== */
 
-.constants-page .constants-card {
-    position: relative;
-    border: 1px solid var(--c-border);
-    border-radius: 14px;
-    background: var(--c-surface);
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
-}
-
-.constants-page .constants-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: rgba(var(--primary-rgb), .85);
-}
-
-.constants-page .constants-card-header {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--c-border2);
-    background: var(--c-surface);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.constants-page .constants-title {
-    font-weight: 900;
-    font-size: 1.05rem;
-    margin: 0;
-    color: var(--c-text);
-}
-
-.constants-page .constants-subtitle {
-    margin-top: .25rem;
-    color: var(--c-muted);
-    font-size: .85rem;
-}
-
-.constants-page .constants-search {
-    position: relative;
-}
-
-.constants-page .constants-search .bi-search {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 12px;
-    color: #94a3b8;
-    pointer-events: none;
-    font-size: 1.05rem;
-}
-
-.constants-page .constants-search .form-control {
-    padding-right: 42px !important;
-    padding-left: 42px !important;
-}
-
-.constants-page .constants-search .constants-clear {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 10px;
-    border: 0;
-    background: transparent;
-    color: #94a3b8;
+/* Icon button */
+.general-page .btn-icon {
+    width: 34px;
+    height: 34px;
     padding: 0;
-    cursor: pointer;
-}
-
-.constants-page .constants-search .constants-clear:hover {
-    color: #64748b;
-}
-
-.constants-page .constants-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    margin-top: 1rem;
-}
-
-.constants-page .constants-stat {
-    background: var(--c-subtle);
-    border: 1px solid var(--c-border2);
-    border-radius: 12px;
-    padding: .65rem .8rem;
-    min-width: 140px;
-}
-
-.constants-page .constants-stat .label {
-    font-size: .75rem;
-    color: var(--c-muted);
-}
-
-.constants-page .constants-stat .value {
-    font-size: 1.1rem;
-    font-weight: 900;
-    color: var(--c-text);
-    margin-top: .15rem;
-}
-
-.constants-page .constants-table thead th {
-    background: var(--c-subtle);
-    border-bottom: 1px solid var(--c-border2);
-    color: #475569;
-    font-size: .75rem;
-    letter-spacing: .4px;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.constants-page .constants-table tbody tr {
-    transition: background-color 0.15s ease;
-}
-
-.constants-page .constants-table tbody tr:hover {
-    background-color: var(--c-subtle);
-}
-
-.constants-page .btn-icon {
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    border-radius: 10px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
-.constants-page .badge-soft {
-    border: 1px solid var(--c-border2);
-    background: var(--c-surface);
-    color: var(--c-text);
-    font-weight: 800;
-    border-radius: 999px;
-    padding: .35rem .6rem;
+/* Badge soft */
+.general-page .badge-soft {
+    border: 1px solid var(--badge-neutral-border, #E5E7EB);
+    background: var(--badge-neutral-bg, #F3F4F6);
+    color: var(--badge-neutral-text, #3B4863);
+    font-weight: 600;
+    border-radius: 6px;
+    padding: .3rem .6rem;
     font-size: .75rem;
     white-space: nowrap;
 }
 
-.constants-page .badge-active {
-    background: rgba(var(--success-rgb), .12);
-    border: 1px solid rgba(var(--success-rgb), .25);
-    color: rgba(var(--success-rgb), 1);
+.general-page .badge-active {
+    background: var(--color-success-bg, #ECFDF5);
+    border: 1px solid var(--color-success-border, #A7F3D0);
+    color: var(--color-success-text, #047857);
 }
 
-.constants-page .badge-inactive {
-    background: rgba(var(--danger-rgb), .12);
-    border: 1px solid rgba(var(--danger-rgb), .25);
-    color: rgba(var(--danger-rgb), 1);
+.general-page .badge-inactive {
+    background: var(--color-danger-bg, #FEF2F2);
+    border: 1px solid var(--color-danger-border, #FECACA);
+    color: var(--color-danger-text, #B91C1C);
 }
 
-.constants-page .card-body {
-    padding: 1.5rem;
-    padding-bottom: 1.5rem !important;
-}
-
-.constants-page .detail-row {
-    background: var(--c-subtle);
-    border: 1px solid var(--c-border2);
-    border-radius: 8px;
+/* Detail row (show page) */
+.general-page .detail-row {
+    background: #FAFCFF;
+    border: 1px solid var(--color-border-soft, #EDF1F5);
+    border-radius: 10px;
     padding: 1rem;
-    margin-bottom: 1rem;
-    position: relative;
+    margin-bottom: 0.75rem;
 }
 
-.constants-page .detail-row-header {
+.general-page .detail-row-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--c-border2);
+    border-bottom: 1px solid var(--color-border-soft, #EDF1F5);
 }
 
-.constants-page .detail-row-number {
+.general-page .detail-row-number {
     font-weight: 700;
-    color: var(--c-text);
-    font-size: 0.9rem;
+    color: var(--color-text-main, #1F2937);
+    font-size: 0.88rem;
 }
 
-.constants-page .btn-remove-detail {
-    padding: 0.25rem 0.5rem;
+.general-page .btn-remove-detail {
+    padding: 0.2rem 0.5rem;
     font-size: 0.75rem;
 }
 
-.constants-page .empty-state {
+.general-page .empty-state {
     padding: 2rem 0;
     text-align: center;
-    color: var(--c-muted);
+    color: var(--color-text-muted, #5B6780);
 }
 
-.constants-page code {
-    background: rgba(var(--primary-rgb), .1);
-    color: rgba(var(--primary-rgb), 1);
-    padding: .25rem .5rem;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: .875rem;
+.general-page code {
+    background: var(--badge-primary-bg, #EEF2FF);
+    color: var(--badge-primary-text, #24308F);
+    padding: .2rem .5rem;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: .85rem;
 }
-

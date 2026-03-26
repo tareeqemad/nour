@@ -13,77 +13,53 @@
 
 @push('styles')
     <style>
-        .info-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .info-item {
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            border-right: 3px solid #3b82f6;
-        }
-        .info-label {
-            font-size: 0.875rem;
-            color: #64748b;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        .info-value {
-            font-size: 1rem;
-            color: #1e293b;
-            font-weight: 600;
-        }
-        .description-box {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-right: 3px solid #3b82f6;
-        }
-        .description-label {
-            font-size: 0.875rem;
-            color: #64748b;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-        }
-        .description-content {
-            font-size: 1rem;
-            color: #1e293b;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        .status-update-form {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        }
         .badge-type-maintenance {
-            background: #fef3c7;
+            background: rgba(217, 119, 6, 0.08);
             color: #92400e;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-type-safety_inspection {
-            background: #dbeafe;
+            background: rgba(2, 132, 199, 0.08);
             color: #1e40af;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-pending {
-            background: #fef3c7;
+            background: rgba(217, 119, 6, 0.08);
             color: #92400e;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-in_progress {
-            background: #dbeafe;
+            background: rgba(2, 132, 199, 0.08);
             color: #1e40af;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-completed {
-            background: #d1fae5;
+            background: rgba(22, 163, 74, 0.08);
             color: #065f46;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-cancelled {
-            background: #fee2e2;
+            background: rgba(220, 38, 38, 0.08);
             color: #991b1b;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
     </style>
 @endpush
@@ -92,175 +68,136 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-clipboard-check me-2"></i>
-                            تفاصيل المهمة
-                        </h5>
-                        <div class="general-subtitle">
-                            <span class="badge badge-type-{{ $task->type }} me-2">
-                                {{ $task->type_label }}
-                            </span>
-                            <span class="badge badge-status-{{ $task->status }}">
-                                {{ $task->status_label }}
-                            </span>
-                        </div>
-                    </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تفاصيل المهمة" icon="bi-clipboard-check" :backRoute="route('admin.tasks.index')" backLabel="العودة">
+                    @if($canManage)
+                        <form action="{{ route('admin.tasks.destroy', $task) }}" method="POST"
+                              class="d-inline task-delete-form">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger"
+                                    onclick="return confirm('هل أنت متأكد من حذف هذه المهمة؟')">
+                                <i class="bi bi-trash me-1"></i>
+                                حذف
+                            </button>
+                        </form>
+                    @endif
+                </x-admin.card-header-form>
 
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.tasks.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            العودة
-                        </a>
-                        @if($canManage)
-                            <form action="{{ route('admin.tasks.destroy', $task) }}" method="POST" 
-                                  class="d-inline task-delete-form">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-outline-danger" 
-                                        onclick="return confirm('هل أنت متأكد من حذف هذه المهمة؟')">
-                                    <i class="bi bi-trash me-1"></i>
-                                    حذف
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="card-body">
+                <div class="card-body p-4">
                     {{-- معلومات المهمة --}}
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">المكلف</div>
-                            <div class="info-value">
-                                {{ $task->assignedTo->name }}
-                                <br>
-                                <small class="text-muted">{{ $task->assignedTo->getRoleLabel() }}</small>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">المكلف من</div>
-                            <div class="info-value">{{ $task->assignedBy->name }}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">تاريخ الإنشاء</div>
-                            <div class="info-value">{{ $task->created_at->format('Y-m-d H:i') }}</div>
-                        </div>
-                        @if($task->due_date)
-                        <div class="info-item">
-                            <div class="info-label">تاريخ الاستحقاق</div>
-                            <div class="info-value">
-                                {{ $task->due_date->format('Y-m-d') }}
-                                @if($task->due_date->isPast() && $task->status !== 'completed')
-                                    <br>
-                                    <small class="text-danger">متأخرة</small>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <x-admin.section title="معلومات التكليف" icon="bi-person-check" :boxed="true">
+                                <x-admin.field label="المكلف" :value="$task->assignedTo->name . ' — ' . $task->assignedTo->getRoleLabel()" />
+                                <x-admin.field label="المكلف من" :value="$task->assignedBy->name" />
+                                <x-admin.field label="تاريخ الإنشاء" :value="$task->created_at->format('Y-m-d H:i')" />
+                                @if($task->due_date)
+                                    <div class="mb-2">
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600; margin-bottom: 0.15rem;">تاريخ الاستحقاق</div>
+                                        <div style="font-size: 0.92rem; color: var(--color-text-main, #1F2937); font-weight: 500;">
+                                            {{ $task->due_date->format('Y-m-d') }}
+                                            @if($task->due_date->isPast() && $task->status !== 'completed')
+                                                <span class="badge bg-danger ms-1">متأخرة</span>
+                                            @endif
+                                        </div>
+                                    </div>
                                 @endif
-                            </div>
+                                @if($task->completed_at)
+                                    <x-admin.field label="تاريخ الإنجاز" :value="$task->completed_at->format('Y-m-d H:i')" />
+                                @endif
+                            </x-admin.section>
                         </div>
-                        @endif
-                        @if($task->completed_at)
-                        <div class="info-item">
-                            <div class="info-label">تاريخ الإنجاز</div>
-                            <div class="info-value">{{ $task->completed_at->format('Y-m-d H:i') }}</div>
-                        </div>
-                        @endif
-                    </div>
 
-                    {{-- موقع المهمة --}}
-                    <div class="info-row">
-                        <div class="info-item">
-                            <div class="info-label">المشغل</div>
-                            <div class="info-value">{{ $task->operator->name }}</div>
-                        </div>
-                        @if($task->generationUnit)
-                        <div class="info-item">
-                            <div class="info-label">وحدة التوليد</div>
-                            <div class="info-value">
-                                {{ $task->generationUnit->name }}
-                                @if($task->generationUnit->unit_code)
-                                    <br>
-                                    <small class="text-muted">{{ $task->generationUnit->unit_code }}</small>
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <x-admin.section title="موقع المهمة" icon="bi-geo-alt" :boxed="true">
+                                <x-admin.field label="المشغل" :value="$task->operator->name" />
+                                @if($task->generationUnit)
+                                    <x-admin.field label="وحدة التوليد" :value="$task->generationUnit->name . ($task->generationUnit->unit_code ? ' (' . $task->generationUnit->unit_code . ')' : '')" />
                                 @endif
-                            </div>
-                        </div>
-                        @endif
-                        @if($task->generator)
-                        <div class="info-item">
-                            <div class="info-label">المولد</div>
-                            <div class="info-value">
                                 @if($task->generator)
-                                    {{ $task->generator->name }}
-                                    @if($task->generator->trashed())
-                                        <span class="badge bg-secondary ms-1" title="مولد محذوف">محذوف</span>
-                                    @endif
-                                    <br>
-                                    <small class="text-muted">{{ $task->generator->generator_number }}</small>
-                                @else
-                                    <span class="text-muted">مولد محذوف</span>
+                                    <div class="mb-2">
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600; margin-bottom: 0.15rem;">المولد</div>
+                                        <div style="font-size: 0.92rem; color: var(--color-text-main, #1F2937); font-weight: 500;">
+                                            {{ $task->generator->name }}
+                                            @if($task->generator->trashed())
+                                                <span class="badge bg-secondary ms-1">محذوف</span>
+                                            @endif
+                                            @if($task->generator->generator_number)
+                                                <br><small class="text-muted">{{ $task->generator->generator_number }}</small>
+                                            @endif
+                                        </div>
+                                    </div>
                                 @endif
-                            </div>
+                            </x-admin.section>
                         </div>
-                        @endif
+
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <x-admin.section title="تفاصيل" icon="bi-info-circle" :boxed="true">
+                                <div class="mb-2">
+                                    <div style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600; margin-bottom: 0.15rem;">نوع المهمة</div>
+                                    <span class="badge badge-type-{{ $task->type }}">{{ $task->type === 'maintenance' ? 'صيانة' : 'فحص سلامة' }}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <div style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600; margin-bottom: 0.15rem;">الحالة</div>
+                                    <span class="badge badge-status-{{ $task->status }}">{{ ['pending' => 'قيد الانتظار', 'in_progress' => 'قيد التنفيذ', 'completed' => 'مكتملة', 'cancelled' => 'ملغاة'][$task->status] ?? $task->status }}</span>
+                                </div>
+                            </x-admin.section>
+                        </div>
                     </div>
 
                     {{-- وصف المهمة --}}
                     @if($task->description)
-                    <div class="description-box">
-                        <div class="description-label">وصف المهمة</div>
-                        <div class="description-content">{{ $task->description }}</div>
-                    </div>
+                        <x-admin.section title="وصف المهمة" icon="bi-journal-text" :boxed="true">
+                            <div class="text-break" style="font-size: 0.92rem; color: var(--color-text-main, #1F2937); line-height: 1.6; white-space: pre-wrap;">{{ $task->description }}</div>
+                        </x-admin.section>
                     @endif
 
                     {{-- ملاحظات --}}
                     @if($task->notes)
-                    <div class="description-box" style="border-right-color: #10b981;">
-                        <div class="description-label">ملاحظات</div>
-                        <div class="description-content">{{ $task->notes }}</div>
-                    </div>
+                        <x-admin.section title="ملاحظات" icon="bi-sticky" :boxed="true">
+                            <div class="text-break" style="font-size: 0.92rem; color: var(--color-text-main, #1F2937); line-height: 1.6; white-space: pre-wrap;">{{ $task->notes }}</div>
+                        </x-admin.section>
                     @endif
 
                     {{-- تحديث حالة المهمة (للمكلف فقط) --}}
                     @if($isAssigned && $task->status !== 'completed' && $task->status !== 'cancelled')
-                    <div class="status-update-form">
-                        <h6 class="fw-bold mb-3">
-                            <i class="bi bi-arrow-repeat me-2"></i>
-                            تحديث حالة المهمة
-                        </h6>
-                        <form action="{{ route('admin.tasks.update', $task) }}" method="POST" id="updateStatusForm">
-                            @csrf
-                            @method('PUT')
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">الحالة الجديدة</label>
-                                    <select name="status" class="form-select" required>
-                                        <option value="pending" {{ $task->status === 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
-                                        <option value="in_progress" {{ $task->status === 'in_progress' ? 'selected' : '' }}>قيد التنفيذ</option>
-                                        <option value="completed" {{ $task->status === 'completed' ? 'selected' : '' }}>مكتملة</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">ملاحظات (اختياري)</label>
-                                    <textarea name="notes" rows="2" class="form-control" 
-                                              placeholder="أضف ملاحظات حول التحديث..."></textarea>
-                                </div>
-                                <div class="col-md-12">
-                                    <button type="submit" class="btn btn-primary" id="updateStatusBtn">
-                                        <i class="bi bi-check-lg me-2"></i>
-                                        <span class="btn-text">تحديث الحالة</span>
-                                        <span class="btn-spinner d-none">
-                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            جاري المعالجة...
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                        <div class="mt-4">
+                            <x-admin.section title="تحديث حالة المهمة" icon="bi-arrow-repeat" :boxed="true">
+                                <form action="{{ route('admin.tasks.update', $task) }}" method="POST" id="updateStatusForm">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold">الحالة الجديدة</label>
+                                            <select name="status" class="form-select" required>
+                                                <option value="pending" {{ $task->status === 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
+                                                <option value="in_progress" {{ $task->status === 'in_progress' ? 'selected' : '' }}>قيد التنفيذ</option>
+                                                <option value="completed" {{ $task->status === 'completed' ? 'selected' : '' }}>مكتملة</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold">ملاحظات (اختياري)</label>
+                                            <textarea name="notes" rows="2" class="form-control"
+                                                      placeholder="أضف ملاحظات حول التحديث..."></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary" id="updateStatusBtn">
+                                                <i class="bi bi-check-lg me-2"></i>
+                                                <span class="btn-text">تحديث الحالة</span>
+                                                <span class="btn-spinner d-none">
+                                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                    جاري المعالجة...
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </x-admin.section>
+                        </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

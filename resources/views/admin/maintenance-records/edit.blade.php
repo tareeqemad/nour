@@ -8,62 +8,40 @@
     $breadcrumbParentUrl = route('admin.maintenance-records.index');
 @endphp
 
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/maintenance-records.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
-@endpush
 
 @section('content')
-    <div class="maintenance-records-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div>
-                            <h1 class="maintenance-record-edit__title">
-                                <i class="bi bi-pencil-square me-2"></i>
-                                تعديل سجل الصيانة
-                            </h1>
-                            <div class="maintenance-record-edit__meta">
-                                @if($maintenanceRecord->generator)
-                                    {{ $maintenanceRecord->generator->generator_number }} — {{ $maintenanceRecord->generator->name }}
-                                    <span class="opacity-75 mx-1">·</span>
-                                @endif
-                                {{ $maintenanceRecord->maintenance_date->format('Y-m-d') }}
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.maintenance-records.show', $maintenanceRecord) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye me-1"></i>
-                                عرض السجل
-                            </a>
-                            <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-1"></i>
-                                العودة للقائمة
-                            </a>
-                        </div>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="تعديل سجل الصيانة" icon="bi-pencil" :backRoute="route('admin.maintenance-records.index')" />
 
                     <div class="card-body p-4">
                         <form action="{{ route('admin.maintenance-records.update', $maintenanceRecord) }}" method="POST" id="maintenanceRecordForm">
                             @csrf
                             @method('PUT')
 
+                            {{-- Section 1: الموقع والتاريخ --}}
+                            <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">الموقع والتاريخ</h6>
                             <div class="row g-3 mb-4">
-                                @include('admin.partials.cascading-selects', [
-                                    'operators' => $operators ?? collect(),
-                                    'showGenerator' => true,
-                                    'showGenerationUnit' => true,
-                                    'generationUnits' => $generationUnits ?? collect(),
-                                    'generators' => $generators ?? collect(),
-                                    'colClass' => auth()->user()->isAffiliatedWithOperator() ? 'col-md-6' : 'col-md-4',
-                                    'operatorRequired' => false,
-                                    'generationUnitRequired' => false,
-                                    'generatorRequired' => true,
-                                    'selectedOperatorId' => old('operator_id', $maintenanceRecord->generator?->operator_id ?? null),
-                                    'selectedGenerationUnitId' => old('generation_unit_id', $maintenanceRecord->generator?->generation_unit_id ?? null),
-                                    'selectedGeneratorId' => old('generator_id', $maintenanceRecord->generator_id),
-                                ])
+                                <x-admin.operator-cascade
+                                    :operators="$operators ?? collect()"
+                                    :showGenerator="true"
+                                    :showGenerationUnit="true"
+                                    :generationUnits="$generationUnits ?? collect()"
+                                    :generators="$generators ?? collect()"
+                                    :colClass="auth()->user()->isAffiliatedWithOperator() ? 'col-md-6' : 'col-md-4'"
+                                    :operatorRequired="false"
+                                    :generationUnitRequired="false"
+                                    :generatorRequired="true"
+                                    :selectedOperatorId="old('operator_id', $maintenanceRecord->generator?->operator_id ?? null)"
+                                    :selectedGenerationUnitId="old('generation_unit_id', $maintenanceRecord->generator?->generation_unit_id ?? null)"
+                                    :selectedGeneratorId="old('generator_id', $maintenanceRecord->generator_id)"
+                                    :routes="[
+                                        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-maintenance-records',
+                                        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-for-maintenance-records',
+                                    ]"
+                                />
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">نوع الصيانة <span class="text-danger">*</span></label>
                                     <select name="maintenance_type_id" id="maintenance_type_id" class="form-select @error('maintenance_type_id') is-invalid @enderror">
@@ -112,6 +90,8 @@
                                 </div>
                             </div>
 
+                            {{-- Section 2: تفاصيل الصيانة --}}
+                            <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">تفاصيل الصيانة</h6>
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">الأعمال المنفذة</label>
                                 <textarea name="work_performed" class="form-control @error('work_performed') is-invalid @enderror" rows="4"
@@ -121,13 +101,16 @@
                                 @enderror
                             </div>
 
+                            {{-- Section 3: التكاليف --}}
+                            <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">التكاليف</h6>
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6 col-lg-4">
                                     <label class="form-label fw-semibold">زمن التوقف (ساعات)</label>
                                     <input type="number" step="0.01" name="downtime_hours" id="downtime_hours"
-                                           class="form-control calculated-field @error('downtime_hours') is-invalid @enderror"
-                                           value="{{ old('downtime_hours', $maintenanceRecord->downtime_hours) }}" min="0" readonly tabindex="-1">
-                                    <small class="text-muted">يُحسب من وقت البدء والانتهاء</small>
+                                           class="form-control bg-light @error('downtime_hours') is-invalid @enderror"
+                                           value="{{ old('downtime_hours', $maintenanceRecord->downtime_hours) }}" min="0" readonly tabindex="-1"
+                                           placeholder="محسوب تلقائياً">
+                                    <small class="form-text text-muted">يُحسب من وقت البدء والانتهاء</small>
                                     @error('downtime_hours')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
@@ -159,51 +142,33 @@
                                 <div class="col-md-6 col-lg-4">
                                     <label class="form-label fw-semibold">التكلفة الإجمالية (₪)</label>
                                     <input type="number" step="0.01" name="maintenance_cost" id="maintenance_cost"
-                                           class="form-control calculated-field @error('maintenance_cost') is-invalid @enderror"
-                                           value="{{ old('maintenance_cost', $maintenanceRecord->maintenance_cost) }}" min="0" readonly tabindex="-1">
-                                    <small class="text-muted">تُحسب تلقائياً</small>
+                                           class="form-control bg-light @error('maintenance_cost') is-invalid @enderror"
+                                           value="{{ old('maintenance_cost', $maintenanceRecord->maintenance_cost) }}" min="0" readonly tabindex="-1"
+                                           placeholder="محسوب تلقائياً">
+                                    <small class="form-text text-muted">تكلفة القطع + (ساعات العمل × أجر الساعة)</small>
                                     @error('maintenance_cost')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
-                                <a href="{{ route('admin.maintenance-records.show', $maintenanceRecord) }}" class="btn btn-outline-secondary">
-                                    إلغاء
+                            <div class="d-flex justify-content-end align-items-center gap-2 pt-3 border-top">
+                                <a href="{{ route('admin.maintenance-records.index') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-right me-1"></i>إلغاء
                                 </a>
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-check-lg me-1"></i>
-                                    حفظ التعديلات
+                                    <i class="bi bi-check-lg me-2"></i>حفظ التعديلات
                                 </button>
                             </div>
                         </form>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>
 @endsection
 
-@push('styles')
-<style>
-    .maintenance-record-edit__title { font-size: 1.25rem; font-weight: 700; margin: 0; }
-    .maintenance-record-edit__meta { font-size: 0.9rem; color: var(--log-muted, #6b7280); margin-top: 0.25rem; }
-</style>
-@endpush
-
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
-<script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
-@include('admin.partials.cascading-selects-scripts', [
-    'cascadingRoutes' => [
-        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-maintenance-records',
-        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-for-maintenance-records',
-    ],
-    'initialOperatorId' => old('operator_id', $maintenanceRecord->generator?->operator_id ?? null),
-    'initialGenerationUnitId' => old('generation_unit_id', $maintenanceRecord->generator?->generation_unit_id ?? null),
-    'initialGeneratorId' => old('generator_id', $maintenanceRecord->generator_id),
-])
 <script>
 (function($) {
     $(document).ready(function() {

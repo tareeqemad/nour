@@ -10,244 +10,141 @@
 
 @section('content')
 <div class="general-page">
-    <div class="row">
+    <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-arrow-left-right me-2"></i>
-                            نقل المولد
-                        </h5>
-                        <div class="general-subtitle">
-                            نقل المولد "{{ $generator->name }}" من مشغل لآخر
-                        </div>
-                    </div>
-                </div>
-                <div class="general-card-body">
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            {{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
+            <x-admin.card>
+                <x-admin.card-header-form :title="'نقل: ' . $generator->name" icon="bi-arrow-left-right" :backRoute="route('admin.generators.show', $generator)">
+                </x-admin.card-header-form>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card border-primary mb-4">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-building me-2"></i>
-                                        المشغل الحالي
-                                    </h6>
+                <div class="card-body">
+                    {{-- معلومات المولد الحالية --}}
+                    <div style="background: #FAFCFF; border: 1px solid var(--color-border-soft, #EDF1F5); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+                        <div class="row g-3">
+                            @foreach([
+                                ['label' => 'المولد', 'value' => $generator->name, 'icon' => 'bi-lightning-charge'],
+                                ['label' => 'الرقم', 'value' => $generator->generator_number ?? '—', 'icon' => 'bi-hash'],
+                                ['label' => 'المشغل الحالي', 'value' => $generator->operator->name ?? '—', 'icon' => 'bi-building'],
+                                ['label' => 'وحدة التوليد', 'value' => $generator->generationUnit->name ?? '—', 'icon' => 'bi-diagram-3'],
+                            ] as $field)
+                            <div class="col-md-3 col-6">
+                                <div style="font-size: 0.75rem; color: var(--color-text-muted, #5B6780); font-weight: 600; margin-bottom: 0.15rem;">
+                                    <i class="{{ $field['icon'] }} me-1" style="opacity: .6;"></i>{{ $field['label'] }}
                                 </div>
-                                <div class="card-body">
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="bi bi-tag text-primary"></i>
-                                            اسم المشغل
-                                        </div>
-                                        <div class="info-value">{{ $generator->operator->name ?? 'غير محدد' }}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="bi bi-lightning-charge text-primary"></i>
-                                            وحدة التوليد الحالية
-                                        </div>
-                                        <div class="info-value">{{ $generator->generationUnit->name ?? 'غير محدد' }}</div>
-                                    </div>
-                                </div>
+                                <div style="font-size: 0.9rem; color: var(--color-text-main, #1F2937); font-weight: 600;">{{ $field['value'] }}</div>
                             </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="card border-success mb-4">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-gear me-2"></i>
-                                        معلومات المولد
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="bi bi-tag text-success"></i>
-                                            اسم المولد
-                                        </div>
-                                        <div class="info-value">{{ $generator->name }}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="bi bi-hash text-success"></i>
-                                            رقم المولد
-                                        </div>
-                                        <div class="info-value">{{ $generator->generator_number ?? 'غير محدد' }}</div>
-                                    </div>
-                                    @if($generator->capacity_kva)
-                                        <div class="info-item">
-                                            <div class="info-label">
-                                                <i class="bi bi-lightning text-success"></i>
-                                                السعة
-                                            </div>
-                                            <div class="info-value">{{ $generator->capacity_kva }} kVA</div>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
 
-                    <form action="{{ route('admin.generators.transfer.store', $generator) }}" method="POST">
+                    {{-- نموذج النقل --}}
+                    <form action="{{ route('admin.generators.transfer.store', $generator) }}" method="POST" id="transferForm">
                         @csrf
-                        
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning text-dark">
-                                <h6 class="mb-0">
-                                    <i class="bi bi-arrow-right-circle me-2"></i>
-                                    تفاصيل النقل
-                                </h6>
+
+                        <div class="invoice-section">
+                            <div class="invoice-section-header">
+                                <i class="bi bi-arrow-right-circle"></i>
+                                تفاصيل النقل
                             </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="target_operator_id" class="form-label fw-semibold">
-                                        المشغل الهدف <span class="text-danger">*</span>
-                                    </label>
-                                    <select name="target_operator_id" id="target_operator_id" 
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">المشغل الهدف <span class="text-danger">*</span></label>
+                                    <select name="target_operator_id" id="target_operator_id"
                                             class="form-select @error('target_operator_id') is-invalid @enderror" required>
-                                        <option value="">-- اختر المشغل الهدف --</option>
+                                        <option value="">اختر المشغل الهدف</option>
                                         @foreach($operators as $operator)
                                             <option value="{{ $operator->id }}" {{ old('target_operator_id') == $operator->id ? 'selected' : '' }}>
-                                                {{ $operator->name }} 
-                                                @if($operator->owner_name)
-                                                    - {{ $operator->owner_name }}
-                                                @endif
+                                                {{ $operator->name }}@if($operator->owner_name) - {{ $operator->owner_name }}@endif
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('target_operator_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                    <small class="form-text text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        اختر المشغل الذي تريد نقل المولد إليه
-                                    </small>
+                                    @error('target_operator_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
-
-                                <div class="mb-3">
-                                    <label for="target_generation_unit_id" class="form-label fw-semibold">
-                                        وحدة التوليد الهدف <span class="text-danger">*</span>
-                                    </label>
-                                    <select name="target_generation_unit_id" id="target_generation_unit_id" 
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">وحدة التوليد الهدف <span class="text-danger">*</span></label>
+                                    <select name="target_generation_unit_id" id="target_generation_unit_id"
                                             class="form-select @error('target_generation_unit_id') is-invalid @enderror" required disabled>
-                                        <option value="">-- اختر المشغل أولاً --</option>
+                                        <option value="">اختر المشغل أولاً</option>
                                     </select>
-                                    @error('target_generation_unit_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                    <small class="form-text text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        سيتم تحديث القائمة تلقائياً بعد اختيار المشغل الهدف
-                                    </small>
+                                    @error('target_generation_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
-
-                                <div class="mb-3">
-                                    <label for="reason" class="form-label fw-semibold">
-                                        سبب النقل (اختياري)
-                                    </label>
-                                    <textarea name="reason" id="reason" 
-                                              class="form-control @error('reason') is-invalid @enderror" 
-                                              rows="3" 
-                                              maxlength="500"
-                                              placeholder="أدخل سبب نقل المولد (مثال: بيع المولد، نقل الملكية، إعادة التوزيع...)">{{ old('reason') }}</textarea>
-                                    @error('reason')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                    <small class="form-text text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        سيتم تسجيل سبب النقل في سجل التدقيق
-                                    </small>
-                                </div>
-
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    <strong>ملاحظة مهمة:</strong> عند نقل المولد، ستكون السجلات القديمة (سجلات التشغيل والصيانة والسلامة) مرتبطة بالمشغل القديم وتبقى محفوظة في سجلاته التاريخية. السجلات الجديدة بعد النقل ستكون مرتبطة بالمشغل الجديد.
-                                </div>
-                                
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <strong>تحذير:</strong> هذه العملية لا يمكن التراجع عنها. سيتم نقل المولد إلى المشغل ووحدة التوليد المحددين.
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">سبب النقل</label>
+                                    <textarea name="reason" class="form-control @error('reason') is-invalid @enderror"
+                                              rows="2" maxlength="500" placeholder="اختياري — بيع، نقل ملكية، إعادة توزيع...">{{ old('reason') }}</textarea>
+                                    @error('reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2 justify-content-end mt-4">
-                            <a href="{{ route('admin.generators.show', $generator) }}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i>
-                                إلغاء
+                        <div style="background: var(--color-warning-bg, #FFFBEB); border: 1px solid var(--color-warning-border, #FCD34D); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--color-warning-text, #B45309);">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>تنبيه:</strong> هذه العملية لا يمكن التراجع عنها. السجلات القديمة تبقى مرتبطة بالمشغل السابق.
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-3 pt-3" style="border-top: 1px solid var(--color-border-soft, #EDF1F5);">
+                            <a href="{{ route('admin.generators.show', $generator) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>إلغاء
                             </a>
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('هل أنت متأكد من نقل المولد إلى المشغل ووحدة التوليد المحددين؟')">
-                                <i class="bi bi-arrow-left-right me-1"></i>
-                                تأكيد النقل
+                            <button type="submit" class="btn btn-danger" id="transferBtn">
+                                <i class="bi bi-arrow-left-right me-1"></i>تأكيد النقل
                             </button>
                         </div>
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const operatorSelect = document.getElementById('target_operator_id');
-        const generationUnitSelect = document.getElementById('target_generation_unit_id');
-        const generatorId = {{ $generator->id }};
+$(document).ready(function() {
+    const $opSelect = $('#target_operator_id');
+    const $unitSelect = $('#target_generation_unit_id');
 
-        operatorSelect.addEventListener('change', function() {
-            const operatorId = this.value;
-            
-            if (!operatorId) {
-                generationUnitSelect.innerHTML = '<option value="">-- اختر المشغل أولاً --</option>';
-                generationUnitSelect.disabled = true;
-                return;
-            }
+    $opSelect.on('change', function() {
+        const opId = $(this).val();
+        if (!opId) {
+            $unitSelect.html('<option value="">اختر المشغل أولاً</option>').prop('disabled', true);
+            return;
+        }
+        $unitSelect.html('<option value="">جاري التحميل...</option>').prop('disabled', true);
 
-            // Show loading
-            generationUnitSelect.innerHTML = '<option value="">جاري التحميل...</option>';
-            generationUnitSelect.disabled = true;
-
-            // Fetch generation units for selected operator
-            fetch(`{{ route('admin.generators.transfer.generation-units', ['generator' => $generator->id, 'operator' => ':operatorId']) }}`.replace(':operatorId', operatorId), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.generation_units) {
-                    generationUnitSelect.innerHTML = '<option value="">-- اختر وحدة التوليد --</option>';
-                    data.generation_units.forEach(unit => {
-                        const option = document.createElement('option');
-                        option.value = unit.id;
-                        option.textContent = unit.name + (unit.unit_code ? ' (' + unit.unit_code + ')' : '');
-                        generationUnitSelect.appendChild(option);
-                    });
-                    generationUnitSelect.disabled = false;
+        $.ajax({
+            url: `{{ route('admin.generators.transfer.generation-units', ['generator' => $generator->id, 'operator' => ':id']) }}`.replace(':id', opId),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            success: function(data) {
+                if (data.success && data.generation_units && data.generation_units.length) {
+                    let html = '<option value="">اختر وحدة التوليد</option>';
+                    data.generation_units.forEach(u => { html += `<option value="${u.id}">${u.name}${u.unit_code ? ' ('+u.unit_code+')' : ''}</option>`; });
+                    $unitSelect.html(html).prop('disabled', false);
                 } else {
-                    generationUnitSelect.innerHTML = '<option value="">لا توجد وحدات توليد متاحة</option>';
-                    generationUnitSelect.disabled = true;
+                    $unitSelect.html('<option value="">لا توجد وحدات متاحة</option>');
+                    if (window.adminNotifications) window.adminNotifications.warning('لا توجد وحدات توليد لهذا المشغل');
                 }
-            })
-            .catch(error => {
-                console.error('Error loading generation units:', error);
-                generationUnitSelect.innerHTML = '<option value="">حدث خطأ أثناء التحميل</option>';
-                generationUnitSelect.disabled = true;
-            });
+            },
+            error: function() {
+                $unitSelect.html('<option value="">خطأ في التحميل</option>');
+            }
         });
     });
+
+    $('#transferForm').on('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        Swal.fire({
+            title: 'تأكيد النقل',
+            html: 'هل أنت متأكد من نقل المولد؟<br><small style="color: var(--color-danger-text, #B91C1C);">لا يمكن التراجع عن هذه العملية</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#D1D5DB',
+            confirmButtonText: '<i class="bi bi-arrow-left-right me-1"></i>نقل',
+            cancelButtonText: 'إلغاء',
+            reverseButtons: true,
+        }).then((result) => { if (result.isConfirmed) form.submit(); });
+    });
+});
 </script>
 @endpush
 @endsection

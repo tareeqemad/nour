@@ -14,28 +14,52 @@
     <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
     <style>
         .badge-type-maintenance {
-            background: #fef3c7;
+            background: rgba(217, 119, 6, 0.08);
             color: #92400e;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-type-safety_inspection {
-            background: #dbeafe;
+            background: rgba(2, 132, 199, 0.08);
             color: #1e40af;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-pending {
-            background: #fef3c7;
+            background: rgba(217, 119, 6, 0.08);
             color: #92400e;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-in_progress {
-            background: #dbeafe;
+            background: rgba(2, 132, 199, 0.08);
             color: #1e40af;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-completed {
-            background: #d1fae5;
+            background: rgba(22, 163, 74, 0.08);
             color: #065f46;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
         .badge-status-cancelled {
-            background: #fee2e2;
+            background: rgba(220, 38, 38, 0.08);
             color: #991b1b;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
     </style>
 @endpush
@@ -44,176 +68,131 @@
 <div class="general-page" id="tasksPage" data-index-url="{{ route('admin.tasks.index') }}">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-clipboard-check me-2"></i>
-                            إدارة المهام
-                        </h5>
-                        <div class="general-subtitle">
-                            إدارة مهام الصيانة وفحص السلامة. العدد: <span id="tasksCount">{{ $tasks->total() }}</span>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
+            <x-admin.card>
+                <x-admin.card-header title="إدارة المهام" icon="bi-clipboard-check">
+                    <x-slot:actions>
                         @if($canCreate)
                             <a href="{{ route('admin.tasks.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-lg me-1"></i>
                                 تكليف مهمة جديدة
                             </a>
                         @endif
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
                     @if(auth()->user()->isTechnician() || auth()->user()->isCivilDefense())
-                        <div class="alert alert-info mb-4">
-                            <i class="bi bi-info-circle me-2"></i>
+                        <x-admin.info-box type="info" icon="bi-info-circle">
                             أنت ترى فقط المهام المكلف بها.
-                        </div>
+                        </x-admin.info-box>
                     @endif
 
-                    {{-- Statistics Cards --}}
+                    {{-- Statistics KPIs --}}
                     <div class="row g-3 mb-4">
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card border-primary">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">إجمالي</h6>
-                                    <h4 class="mb-0 text-primary" id="statTotal">{{ number_format($stats['total'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 col-6">
+                            <x-admin.kpi icon="bi-clipboard-check" color="primary" :value="number_format($stats['total'] ?? 0)" label="إجمالي المهام" />
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card border-warning">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">قيد الانتظار</h6>
-                                    <h4 class="mb-0 text-warning" id="statPending">{{ number_format($stats['pending'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 col-6">
+                            <x-admin.kpi icon="bi-hourglass-split" color="warning" :value="number_format($stats['pending'] ?? 0)" label="قيد الانتظار" />
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card border-info">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">قيد التنفيذ</h6>
-                                    <h4 class="mb-0 text-info" id="statInProgress">{{ number_format($stats['in_progress'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 col-6">
+                            <x-admin.kpi icon="bi-gear-wide-connected" color="info" :value="number_format($stats['in_progress'] ?? 0)" label="قيد التنفيذ" />
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="card border-success">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">مكتملة</h6>
-                                    <h4 class="mb-0 text-success" id="statCompleted">{{ number_format($stats['completed'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 col-6">
+                            <x-admin.kpi icon="bi-check-circle" color="success" :value="number_format($stats['completed'] ?? 0)" label="مكتملة" />
                         </div>
                     </div>
 
-                    {{-- Filter Card --}}
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
+                    {{-- فلاتر البحث --}}
+                    <div class="row g-3 align-items-end">
+                        {{-- البحث --}}
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <label class="form-label fw-semibold" for="searchInput">
+                                <i class="bi bi-search me-1"></i>
+                                البحث
+                            </label>
+                            <input
+                                type="text"
+                                id="searchInput"
+                                class="form-control"
+                                placeholder="ابحث عن مهمة..."
+                                value="{{ request('search', '') }}"
+                            >
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                {{-- البحث --}}
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        البحث
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="searchInput"
-                                        class="form-control"
-                                        placeholder="ابحث عن مهمة..."
-                                        value="{{ request('search', '') }}"
-                                    >
-                                </div>
 
-                                {{-- النوع --}}
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-tag me-1"></i>
-                                        نوع المهمة
-                                    </label>
-                                    <select id="typeFilter" class="form-select">
-                                        <option value="">كل الأنواع</option>
-                                        <option value="maintenance" {{ request('type') == 'maintenance' ? 'selected' : '' }}>صيانة</option>
-                                        <option value="safety_inspection" {{ request('type') == 'safety_inspection' ? 'selected' : '' }}>فحص سلامة</option>
-                                    </select>
-                                </div>
+                        {{-- النوع --}}
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label fw-semibold" for="typeFilter">
+                                <i class="bi bi-tag me-1"></i>
+                                نوع المهمة
+                            </label>
+                            <select id="typeFilter" class="form-select">
+                                <option value="">كل الأنواع</option>
+                                <option value="maintenance" {{ request('type') == 'maintenance' ? 'selected' : '' }}>صيانة</option>
+                                <option value="safety_inspection" {{ request('type') == 'safety_inspection' ? 'selected' : '' }}>فحص سلامة</option>
+                            </select>
+                        </div>
 
-                                {{-- الحالة --}}
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-flag me-1"></i>
-                                        الحالة
-                                    </label>
-                                    <select id="statusFilter" class="form-select">
-                                        <option value="">كل الحالات</option>
-                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
-                                        <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>قيد التنفيذ</option>
-                                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>مكتملة</option>
-                                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>ملغاة</option>
-                                    </select>
-                                </div>
+                        {{-- الحالة --}}
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label fw-semibold" for="statusFilter">
+                                <i class="bi bi-flag me-1"></i>
+                                الحالة
+                            </label>
+                            <select id="statusFilter" class="form-select">
+                                <option value="">كل الحالات</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
+                                <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>قيد التنفيذ</option>
+                                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>مكتملة</option>
+                                <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>ملغاة</option>
+                            </select>
+                        </div>
 
-                                {{-- المكلف (SuperAdmin, Admin, EnergyAuthority فقط) --}}
-                                @if($canCreate && isset($technicians) && isset($civilDefense))
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-person me-1"></i>
-                                            المكلف
-                                        </label>
-                                        <select id="assignedToFilter" class="form-select">
-                                            <option value="">كل المكلفين</option>
-                                            <optgroup label="فنيون">
-                                                @foreach($technicians as $tech)
-                                                    <option value="{{ $tech->id }}" {{ request('assigned_to') == $tech->id ? 'selected' : '' }}>
-                                                        {{ $tech->name }}
-                                                    </option>
-                                                @endforeach
-                                            </optgroup>
-                                            <optgroup label="دفاع مدني">
-                                                @foreach($civilDefense as $cd)
-                                                    <option value="{{ $cd->id }}" {{ request('assigned_to') == $cd->id ? 'selected' : '' }}>
-                                                        {{ $cd->name }}
-                                                    </option>
-                                                @endforeach
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                @endif
+                        {{-- المكلف (SuperAdmin, Admin, EnergyAuthority فقط) --}}
+                        @if($canCreate && isset($technicians) && isset($civilDefense))
+                            <div class="col-6 col-md-4 col-lg-3">
+                                <label class="form-label fw-semibold" for="assignedToFilter">
+                                    <i class="bi bi-person me-1"></i>
+                                    المكلف
+                                </label>
+                                <select id="assignedToFilter" class="form-select">
+                                    <option value="">كل المكلفين</option>
+                                    <optgroup label="فنيون">
+                                        @foreach($technicians as $tech)
+                                            <option value="{{ $tech->id }}" {{ request('assigned_to') == $tech->id ? 'selected' : '' }}>
+                                                {{ $tech->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="دفاع مدني">
+                                        @foreach($civilDefense as $cd)
+                                            <option value="{{ $cd->id }}" {{ request('assigned_to') == $cd->id ? 'selected' : '' }}>
+                                                {{ $cd->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                </select>
+                            </div>
+                        @endif
 
-                                {{-- أزرار البحث --}}
-                                <div class="col-md-1 d-flex align-items-end">
-                                    <div class="d-flex gap-2 w-100">
-                                        <button class="btn btn-primary flex-fill" type="button" id="searchBtn" title="بحث">
-                                            <i class="bi bi-search"></i>
-                                        </button>
-                                        <button
-                                            class="btn btn-outline-secondary flex-fill {{ request('search') || request('type') || request('status') || request('assigned_to') ? '' : 'd-none' }}"
-                                            type="button"
-                                            id="clearSearchBtn"
-                                            title="تفريغ"
-                                        >
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                        {{-- أزرار البحث --}}
+                        <div class="col-12 col-lg-auto order-last order-lg-0 mt-2 mt-lg-0">
+                            <label class="form-label fw-semibold d-none d-lg-block">&nbsp;</label>
+                            <div class="d-flex flex-wrap gap-2 align-items-end">
+                                <button class="btn btn-primary" type="button" id="searchBtn">
+                                    <i class="bi bi-search me-2"></i>
+                                    بحث
+                                </button>
+                                <button class="btn btn-outline-secondary {{ request('search') || request('type') || request('status') || request('assigned_to') ? '' : 'd-none' }}" type="button" id="clearSearchBtn">
+                                    <i class="bi bi-x me-2"></i>
+                                    تفريغ
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <hr class="my-3">
 
                     {{-- Table --}}
-                    <div class="table-responsive">
+                    <div class="table-responsive mt-4">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
@@ -239,7 +218,7 @@
                         @include('admin.tasks.partials.pagination')
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

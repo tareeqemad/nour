@@ -12,10 +12,10 @@
     <link rel="stylesheet" href="{{ asset('assets/leaflet/leaflet.css') }}" />
     <style>
         .territory-popup-own {
-            border-left: 4px solid #28a745;
+            border-left: 4px solid var(--color-success, #10B981);
         }
         .territory-popup-other {
-            border-left: 4px solid #dc3545;
+            border-left: 4px solid var(--color-danger, #EF4444);
         }
         .leaflet-popup-content-wrapper {
             border-radius: 8px;
@@ -33,27 +33,13 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card position-relative" id="generationUnitCard">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-lightning-charge me-2"></i>
-                            تعديل وحدة التوليد
-                        </h5>
-                        <div class="general-subtitle">{{ $generationUnit->name }}</div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.generation-units.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-1"></i>
-                            العودة
-                        </a>
-                        <button class="btn btn-primary" id="saveBtn" type="button">
-                            <i class="bi bi-check-lg me-1"></i>
-                            حفظ
-                        </button>
-                    </div>
-                </div>
+            <x-admin.card class="position-relative" id="generationUnitCard">
+                <x-admin.card-header-form title="تعديل وحدة التوليد" icon="bi-lightning-charge" :backRoute="route('admin.generation-units.index')">
+                    <button class="btn btn-success" id="saveBtn" type="button">
+                        <i class="bi bi-check-lg me-1"></i>
+                        حفظ
+                    </button>
+                </x-admin.card-header-form>
 
                 <div class="card-body pb-4">
                     <form id="generationUnitForm" action="{{ route('admin.generation-units.update', $generationUnit) }}" method="POST">
@@ -567,7 +553,7 @@
                     </form>
                 </div>
 
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

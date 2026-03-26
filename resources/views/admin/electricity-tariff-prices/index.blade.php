@@ -14,56 +14,35 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/fuel-efficiencies.css') }}">
 @endpush
 
 @section('content')
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="general-title">
-                                    <i class="bi bi-currency-exchange me-2"></i>
-                                    @if($operator)
-                                        أسعار التعرفة الكهربائية - {{ $operator->name }}
-                                    @else
-                                        أسعار التعرفة الكهربائية العامة
-                                    @endif
-                                </div>
-                                <div class="general-subtitle">
-                                    @if($operator)
-                                        إدارة أسعار التعرفة الكهربائية للمشغل. العدد: <span>{{ $tariffPrices->total() }}</span>
-                                    @else
-                                        إدارة أسعار التعرفة الكهربائية العامة لجميع المشغلين. العدد: <span>{{ $tariffPrices->total() }}</span>
-                                    @endif
-                                </div>
-                            </div>
+                <x-admin.card>
+                    <x-admin.card-header :title="$operator ? 'أسعار التعرفة الكهربائية - ' . $operator->name : 'أسعار التعرفة الكهربائية العامة'" icon="bi-currency-exchange">
+                        <x-slot:actions>
+                            @can('create', \App\Models\ElectricityTariffPrice::class)
+                                <a href="{{ route('admin.electricity-tariff-prices.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    إضافة سعر جديد
+                                </a>
+                            @endcan
 
-                            <div class="d-flex gap-2 flex-wrap">
-                                @can('create', \App\Models\ElectricityTariffPrice::class)
-                                    <a href="{{ route('admin.electricity-tariff-prices.create') }}" class="btn btn-primary">
-                                        <i class="bi bi-plus-circle me-2"></i>
-                                        إضافة سعر جديد
-                                    </a>
-                                @endcan
-                                
-                                @if($operator)
-                                    <a href="{{ route('admin.operators.show', $operator) }}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-right me-2"></i>
-                                        العودة للمشغل
-                                    </a>
-                                @else
-                                    <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-right me-2"></i>
-                                        العودة
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
+                            @if($operator)
+                                <a href="{{ route('admin.operators.show', $operator) }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-right me-1"></i>
+                                    العودة للمشغل
+                                </a>
+                            @else
+                                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-right me-1"></i>
+                                    العودة
+                                </a>
+                            @endif
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body p-4">
                         @if($tariffPrices->count() > 0)
@@ -88,9 +67,9 @@
                                                 <td><strong>{{ number_format($tariffPrice->price_per_kwh, 2) }}</strong> ₪/kWh</td>
                                                 <td>
                                                     @if($tariffPrice->is_active)
-                                                        <span class="badge bg-success">نشط</span>
+                                                        <x-admin.badge type="success">نشط</x-admin.badge>
                                                     @else
-                                                        <span class="badge bg-secondary">غير نشط</span>
+                                                        <x-admin.badge type="neutral">غير نشط</x-admin.badge>
                                                     @endif
                                                 </td>
                                                 <td>
@@ -137,19 +116,17 @@
                                 {{ $tariffPrices->links() }}
                             </div>
                         @else
-                            <div class="text-center py-5">
-                                <i class="bi bi-inbox fs-1 text-muted"></i>
-                                <p class="text-muted mt-3">لا توجد أسعار تعرفة مسجلة</p>
+                            <x-admin.empty-state icon="bi-currency-exchange" message="لا توجد أسعار تعرفة مسجلة">
                                 @can('create', \App\Models\ElectricityTariffPrice::class)
                                     <a href="{{ route('admin.electricity-tariff-prices.create') }}" class="btn btn-primary">
                                         <i class="bi bi-plus-circle me-2"></i>
                                         إضافة سعر جديد
                                     </a>
                                 @endcan
-                            </div>
+                            </x-admin.empty-state>
                         @endif
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

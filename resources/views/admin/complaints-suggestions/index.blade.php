@@ -9,153 +9,79 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/complaints-suggestions.css') }}">
 @endpush
 
 @section('content')
-<div class="complaints-page" id="complaintsPage" data-index-url="{{ route('admin.complaints-suggestions.index') }}">
+<div class="general-page" id="complaintsPage" data-index-url="{{ route('admin.complaints-suggestions.index') }}">
     <div class="row g-3">
         <div class="col-12">
-            <div class="complaints-card">
-                <div class="complaints-card-header">
-                    <div>
-                        <h5 class="complaints-title">
-                            <i class="bi bi-chat-left-text me-2"></i>
-                            الشكاوى والمقترحات
-                        </h5>
-                        <div class="complaints-subtitle">
-                            إدارة الشكاوى والمقترحات الواردة من المواطنين
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="الشكاوى والمقترحات" icon="bi-chat-left-text" />
 
                 <div class="card-body pb-4">
 
-                    {{-- Statistics Cards --}}
+                    {{-- Statistics KPIs --}}
                     <div class="row g-3 mb-4">
-                        <div class="col-lg-2 col-md-4 col-sm-6">
-                            <div class="card border-primary">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">إجمالي</h6>
-                                    <h4 class="mb-0 text-primary" id="statTotal">{{ number_format($stats['total'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <x-admin.kpi icon="bi-chat-left-text" color="primary" :value="number_format($stats['total'] ?? 0)" label="إجمالي" />
                         </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6">
-                            <div class="card border-danger">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">شكاوى</h6>
-                                    <h4 class="mb-0 text-danger" id="statComplaints">{{ number_format($stats['complaints'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <x-admin.kpi icon="bi-exclamation-triangle" color="danger" :value="number_format($stats['complaints'] ?? 0)" label="شكاوى" />
                         </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6">
-                            <div class="card border-info">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">مقترحات</h6>
-                                    <h4 class="mb-0 text-info" id="statSuggestions">{{ number_format($stats['suggestions'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <x-admin.kpi icon="bi-lightbulb" color="info" :value="number_format($stats['suggestions'] ?? 0)" label="مقترحات" />
                         </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6">
-                            <div class="card border-warning">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">قيد الانتظار</h6>
-                                    <h4 class="mb-0 text-warning" id="statPending">{{ number_format($stats['pending'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <x-admin.kpi icon="bi-hourglass-split" color="warning" :value="number_format($stats['pending'] ?? 0)" label="قيد الانتظار" />
                         </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6">
-                            <div class="card border-secondary">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">قيد المعالجة</h6>
-                                    <h4 class="mb-0 text-secondary" id="statInProgress">{{ number_format($stats['in_progress'] ?? 0) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <x-admin.kpi icon="bi-gear-wide-connected" color="secondary" :value="number_format($stats['in_progress'] ?? 0)" label="قيد المعالجة" />
                         </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6">
-                            <div class="card border-success">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted mb-2 small">تم الحل</h6>
-                                    <h4 class="mb-0 text-success" id="statResolved">{{ number_format($stats['resolved'] ?? 0) }}</h4>
-                                </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <x-admin.kpi icon="bi-check-circle" color="success" :value="number_format($stats['resolved'] ?? 0)" label="تم الحل" />
+                        </div>
+                    </div>
+
+                    {{-- فلاتر البحث --}}
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">بحث</label>
+                            <input type="text" id="complaintsSearch" class="form-control"
+                                   placeholder="اسم / هاتف / رمز التتبع..." value="{{ request('search', '') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">النوع</label>
+                            <select id="typeFilter" class="form-select">
+                                <option value="all" {{ !request('type') || request('type') == 'all' ? 'selected' : '' }}>الكل</option>
+                                <option value="complaint" {{ request('type') == 'complaint' ? 'selected' : '' }}>شكوى</option>
+                                <option value="suggestion" {{ request('type') == 'suggestion' ? 'selected' : '' }}>مقترح</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">الحالة</label>
+                            <select id="statusFilter" class="form-select">
+                                <option value="all" {{ !request('status') || request('status') == 'all' ? 'selected' : '' }}>الكل</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
+                                <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>قيد المعالجة</option>
+                                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>تم الحل</option>
+                                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>مرفوض</option>
+                            </select>
+                        </div>
+                        <div class="col-md-auto">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-primary" id="btnSearch">
+                                    <i class="bi bi-search me-2"></i>بحث
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
+                                    <i class="bi bi-x me-2"></i>تفريغ
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {{-- كارد الفلاتر --}}
-                    <div class="card border mb-0">
-                        <div class="card-header bg-light">
-                            <h6 class="card-title mb-0">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </label>
-                                    <input type="text" id="complaintsSearch" class="form-control" 
-                                           placeholder="اسم / هاتف / رمز التتبع..." 
-                                           value="{{ request('search', '') }}" autocomplete="off">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-tag me-1"></i>
-                                        النوع
-                                    </label>
-                                    <select id="typeFilter" class="form-select">
-                                        <option value="all" {{ !request('type') || request('type') == 'all' ? 'selected' : '' }}>الكل</option>
-                                        <option value="complaint" {{ request('type') == 'complaint' ? 'selected' : '' }}>شكوى</option>
-                                        <option value="suggestion" {{ request('type') == 'suggestion' ? 'selected' : '' }}>مقترح</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-funnel me-1"></i>
-                                        الحالة
-                                    </label>
-                                    <select id="statusFilter" class="form-select">
-                                        <option value="all" {{ !request('status') || request('status') == 'all' ? 'selected' : '' }}>الكل</option>
-                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
-                                        <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>قيد المعالجة</option>
-                                        <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>تم الحل</option>
-                                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>مرفوض</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <div class="d-flex gap-2 w-100">
-                                        <button type="button" class="btn btn-primary flex-fill" id="btnSearch">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary {{ request('search') || request('type') || request('status') ? '' : 'd-none' }}" id="btnResetFilters">
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- HR separator --}}
-                <hr class="my-4" style="border-top: 2px solid #dee2e6; opacity: 0.5;">
-
-                {{-- كارد الجدول --}}
-                <div class="card border">
-                    <div class="card-header bg-light">
-                        <h6 class="card-title mb-0">
-                            <i class="bi bi-table me-2"></i>
-                            نتائج البحث
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 complaints-table">
+                    {{-- الجدول --}}
+                    <div class="table-responsive mt-4">
+                        <table class="table table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th style="min-width:120px;">رمز التتبع</th>
@@ -176,7 +102,7 @@
                         </div>
 
                         @if($complaintsSuggestions->hasPages())
-                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top gap-2">
                                 <div class="small text-muted" id="complaintsMeta">
                                     @if($complaintsSuggestions->total() > 0)
                                         عرض {{ $complaintsSuggestions->firstItem() }} - {{ $complaintsSuggestions->lastItem() }} من {{ $complaintsSuggestions->total() }}
@@ -191,9 +117,8 @@
                                 </nav>
                             </div>
                         @endif
-                    </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

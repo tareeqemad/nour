@@ -10,18 +10,9 @@
         <div class="col-lg-10">
 
             {{-- رأس الصفحة --}}
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-receipt me-2"></i>
-                            {{ $invoice->invoice_number }}
-                        </h5>
-                        <span class="badge bg-{{ $invoice->status_badge_class }} fs-6">
-                            {{ $invoice->status_name }}
-                        </span>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
+            <x-admin.card>
+                <x-admin.card-header :title="$invoice->invoice_number" icon="bi-receipt">
+                    <x-slot:actions>
                         <a href="{{ route('admin.invoices.print', $invoice) }}" class="btn btn-info btn-sm" target="_blank">
                             <i class="bi bi-printer me-1"></i>طباعة
                         </a>
@@ -49,8 +40,8 @@
                         <a href="{{ route('admin.invoices.index') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-arrow-right me-1"></i>القائمة
                         </a>
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
                     <div class="row g-4">
@@ -350,16 +341,13 @@
 
                     </div>{{-- end row --}}
                 </div>
-            </div>
+            </x-admin.card>
 
             {{-- قسم الدفعات --}}
             @if(!$invoice->isEditable() && $invoice->invoice_status !== \App\Models\Invoice::STATUS_CANCELLED)
-            <div class="general-card mt-3">
-                <div class="general-card-header">
-                    <h5 class="general-title">
-                        <i class="bi bi-cash-stack me-2"></i>الدفعات
-                    </h5>
-                    <div class="d-flex gap-2 align-items-center">
+            <x-admin.card class="mt-3">
+                <x-admin.card-header title="الدفعات" icon="bi-cash-stack">
+                    <x-slot:actions>
                         @php $payments = $invoice->payments()->with('creator')->latest('payment_date')->get(); @endphp
                         @can('createForInvoice', [App\Models\Payment::class, $invoice])
                             <a href="{{ route('admin.invoices.payments.create', $invoice) }}"
@@ -373,8 +361,8 @@
                                 <i class="bi bi-list-ul me-1"></i>كل الدفعات
                             </a>
                         @endif
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body">
                     {{-- شريط السداد --}}
@@ -443,7 +431,7 @@
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
             @endif
 
         </div>

@@ -9,41 +9,28 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/fuel-efficiencies.css') }}">
 @endpush
 
 @section('content')
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                            <div>
-                                <div class="general-title">
-                                    <i class="bi bi-percent me-2"></i>
-                                    نسب خصم الموظفين
-                                </div>
-                                <div class="general-subtitle">
-                                    إدارة نسب خصم موظفي الشركة (موظف + منزلي + 1 فاز). العدد: <span>{{ $discountRates->total() }}</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex gap-2 flex-wrap">
-                                @can('create', \App\Models\EmployeeDiscountRate::class)
-                                    <a href="{{ route('admin.employee-discount-rates.create') }}" class="btn btn-primary">
-                                        <i class="bi bi-plus-circle me-2"></i>
-                                        إضافة نسبة جديدة
-                                    </a>
-                                @endcan
-
-                                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-right me-2"></i>
-                                    العودة
+                <x-admin.card>
+                    <x-admin.card-header title="نسب خصم الموظفين" icon="bi-percent">
+                        <x-slot:actions>
+                            @can('create', \App\Models\EmployeeDiscountRate::class)
+                                <a href="{{ route('admin.employee-discount-rates.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    إضافة نسبة جديدة
                                 </a>
-                            </div>
-                        </div>
-                    </div>
+                            @endcan
+
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                العودة
+                            </a>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body p-4">
                         @if($discountRates->count() > 0)
@@ -68,9 +55,9 @@
                                                 <td><strong>{{ number_format($rate->discount_rate, 2) }}</strong>%</td>
                                                 <td>
                                                     @if($rate->is_active)
-                                                        <span class="badge bg-success">نشط</span>
+                                                        <x-admin.badge type="success">نشط</x-admin.badge>
                                                     @else
-                                                        <span class="badge bg-secondary">غير نشط</span>
+                                                        <x-admin.badge type="neutral">غير نشط</x-admin.badge>
                                                     @endif
                                                 </td>
                                                 <td>
@@ -117,19 +104,17 @@
                                 {{ $discountRates->links() }}
                             </div>
                         @else
-                            <div class="text-center py-5">
-                                <i class="bi bi-inbox fs-1 text-muted"></i>
-                                <p class="text-muted mt-3">لا توجد نسب خصم مسجلة</p>
+                            <x-admin.empty-state icon="bi-percent" message="لا توجد نسب خصم مسجلة">
                                 @can('create', \App\Models\EmployeeDiscountRate::class)
                                     <a href="{{ route('admin.employee-discount-rates.create') }}" class="btn btn-primary">
                                         <i class="bi bi-plus-circle me-2"></i>
                                         إضافة نسبة جديدة
                                     </a>
                                 @endcan
-                            </div>
+                            </x-admin.empty-state>
                         @endif
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

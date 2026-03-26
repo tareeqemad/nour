@@ -48,7 +48,7 @@
                         </div>
                         <div class="col-lg-3 d-flex gap-2">
                             <button class="btn btn-primary flex-grow-1">بحث</button>
-                            <a class="btn btn-light-subtle" href="{{ route('admin.operators.employees', $operator) }}">إلغاء</a>
+                            <a class="btn btn-outline-secondary" href="{{ route('admin.operators.employees', $operator) }}">إلغاء</a>
                         </div>
                     </div>
                 </form>

@@ -1,4 +1,3 @@
-{{-- resources/views/admin/complaints-suggestions/show.blade.php --}}
 @extends('layouts.admin')
 
 @section('title', 'تفاصيل الشكوى/المقترح')
@@ -10,345 +9,151 @@
     $isSuperAdmin = auth()->user()->isSuperAdmin();
 @endphp
 
-@push('styles')
-    <style>
-        .info-item {
-            margin-bottom: 1.5rem;
-        }
-        .info-item:last-child {
-            margin-bottom: 0;
-        }
-        .info-label {
-            font-size: 0.875rem;
-            color: #6b7280;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        .info-value {
-            font-size: 0.95rem;
-            color: #1f2937;
-            font-weight: 500;
-        }
-        .info-value code {
-            background: #e9ecef;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.95em;
-            color: #0d6efd;
-            font-weight: 600;
-        }
-        .message-box {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-right: 4px solid #3b82f6;
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-top: 1.5rem;
-        }
-        .message-label {
-            font-size: 0.875rem;
-            color: #6b7280;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-        .message-content {
-            font-size: 0.95rem;
-            color: #1f2937;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        .response-box {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-right: 4px solid #3b82f6;
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-top: 1.5rem;
-        }
-        .response-label {
-            font-size: 0.875rem;
-            color: #1e40af;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-        .response-content {
-            font-size: 0.95rem;
-            color: #1e3a8a;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        .attached-image {
-            max-width: 100%;
-            border-radius: 8px;
-            border: 2px solid #e5e7eb;
-            margin-top: 0.75rem;
-        }
-    </style>
-@endpush
-
 @section('content')
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            {{-- معلومات الشكوى/المقترح --}}
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-chat-left-text me-2"></i>
-                            تفاصيل الشكوى/المقترح
-                        </h5>
-                        <div class="general-subtitle">
-                            <span class="badge-status badge-status-{{ $complaintSuggestion->status }}">
-                                {{ $complaintSuggestion->status_label }}
-                            </span>
-                            <span class="badge bg-{{ $complaintSuggestion->type === 'complaint' ? 'danger' : 'primary' }} ms-2">
-                                {{ $complaintSuggestion->type_label }}
-                            </span>
-                            @if($complaintSuggestion->operator)
-                            <span class="badge bg-info ms-2">
-                                {{ $complaintSuggestion->operator->name }}
-                            </span>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('admin.complaints-suggestions.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-1"></i>
-                            العودة
+            <x-admin.card>
+                <x-admin.card-header-form title="تفاصيل الشكوى/المقترح" icon="bi-chat-left-text" :backRoute="route('admin.complaints-suggestions.index')">
+                    @if($isSuperAdmin)
+                        <a href="{{ route('admin.complaints-suggestions.edit', $complaintSuggestion) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil me-1"></i>تعديل
                         </a>
-                        @if($isSuperAdmin)
-                            <a href="{{ route('admin.complaints-suggestions.edit', $complaintSuggestion) }}" class="btn btn-warning">
-                                <i class="bi bi-pencil me-1"></i>
-                                تعديل
-                            </a>
-                        @endif
-                    </div>
-                </div>
-                <div class="card-body pb-4">
-                    {{-- رمز التتبع --}}
-                    <div class="info-item">
-                        <div class="info-label">
-                            <i class="bi bi-hash me-1"></i>
-                            رمز التتبع
-                        </div>
-                        <div class="info-value">
-                            <code>{{ $complaintSuggestion->tracking_code }}</code>
-                        </div>
+                    @endif
+                </x-admin.card-header-form>
+
+                <div class="card-body p-4">
+                    {{-- رمز التتبع + النوع + الحالة --}}
+                    <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+                        <code style="background: #e9ecef; padding: 6px 12px; border-radius: 6px; font-size: 0.95rem; color: #0d6efd; font-weight: 700;">{{ $complaintSuggestion->tracking_code }}</code>
+                        <span class="badge bg-{{ $complaintSuggestion->type == 'complaint' ? 'danger' : 'info' }}">{{ $complaintSuggestion->type_label }}</span>
+                        <span class="badge bg-{{ ['pending' => 'warning', 'in_progress' => 'primary', 'resolved' => 'success', 'rejected' => 'danger'][$complaintSuggestion->status] ?? 'secondary' }}">{{ $complaintSuggestion->status_label }}</span>
                     </div>
 
                     {{-- معلومات المرسل --}}
-                    <div class="row g-3 mb-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-person me-1"></i>
-                                    الاسم
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->name }}</div>
-                            </div>
+                            <x-admin.field label="الاسم" :value="$complaintSuggestion->name" />
                         </div>
                         <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-telephone me-1"></i>
-                                    رقم الهاتف
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->phone }}</div>
-                            </div>
+                            <x-admin.field label="رقم الهاتف" :value="$complaintSuggestion->phone" />
                         </div>
                         @if($complaintSuggestion->email)
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-envelope me-1"></i>
-                                    البريد الإلكتروني
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->email }}</div>
+                            <div class="col-md-4">
+                                <x-admin.field label="البريد الإلكتروني" :value="$complaintSuggestion->email" />
                             </div>
-                        </div>
                         @endif
                     </div>
 
                     {{-- الموقع والمشغل --}}
-                    <div class="row g-3 mb-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-geo-alt me-1"></i>
-                                    المحافظة
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->getGovernorateLabel() ?? 'غير محدد' }}</div>
-                            </div>
+                            <x-admin.field label="المحافظة" :value="$complaintSuggestion->getGovernorateLabel() ?? 'غير محدد'" />
                         </div>
                         @if($complaintSuggestion->generator)
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-lightning-charge me-1"></i>
-                                    المولد
-                                </div>
-                                <div class="info-value">
+                            <div class="col-md-4">
+                                <div style="font-size: 0.78rem; color: var(--color-text-muted, #5B6780); font-weight: 600; margin-bottom: 0.15rem;">المولد</div>
+                                <div style="font-size: 0.92rem; color: var(--color-text-main, #1F2937); font-weight: 500;">
                                     {{ $complaintSuggestion->generator->name ?? 'مولد محذوف' }}
-                                    @if($complaintSuggestion->generator && $complaintSuggestion->generator->trashed())
-                                        <span class="badge bg-secondary ms-1" title="مولد محذوف">محذوف</span>
+                                    @if($complaintSuggestion->generator->trashed())
+                                        <span class="badge bg-secondary ms-1">محذوف</span>
                                     @endif
                                 </div>
                             </div>
-                        </div>
                         @endif
                         @if($complaintSuggestion->operator)
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-building me-1"></i>
-                                    المشغل
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->operator->name }}</div>
+                            <div class="col-md-4">
+                                <x-admin.field label="المشغل" :value="$complaintSuggestion->operator->name" />
                             </div>
-                        </div>
                         @endif
                     </div>
 
                     {{-- التواريخ --}}
-                    <div class="row g-3 mb-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-calendar me-1"></i>
-                                    تاريخ الإرسال
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->created_at->format('Y-m-d H:i') }}</div>
-                            </div>
+                            <x-admin.field label="تاريخ الإرسال" :value="$complaintSuggestion->created_at->format('Y-m-d H:i')" />
                         </div>
                         @if($complaintSuggestion->responded_at)
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-clock-history me-1"></i>
-                                    تاريخ الرد
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->responded_at->format('Y-m-d H:i') }}</div>
+                            <div class="col-md-4">
+                                <x-admin.field label="تاريخ الرد" :value="$complaintSuggestion->responded_at->format('Y-m-d H:i')" />
                             </div>
-                        </div>
                         @endif
                         @if($complaintSuggestion->responder)
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="bi bi-person-check me-1"></i>
-                                    الرد من
-                                </div>
-                                <div class="info-value">{{ $complaintSuggestion->responder->name }}</div>
+                            <div class="col-md-4">
+                                <x-admin.field label="الرد من" :value="$complaintSuggestion->responder->name" />
                             </div>
-                        </div>
                         @endif
                     </div>
 
                     {{-- الرسالة --}}
-                    <div class="message-box">
-                        <div class="message-label">
-                            <i class="bi bi-chat-dots me-1"></i>
-                            الرسالة
-                        </div>
-                        <div class="message-content">{{ $complaintSuggestion->message }}</div>
-                    </div>
+                    <x-admin.section title="الرسالة" icon="bi-chat-dots" :boxed="true">
+                        <div class="text-break" style="white-space: pre-wrap; line-height: 1.6; font-size: 0.95rem; color: var(--color-text-main, #1F2937);">{{ $complaintSuggestion->message }}</div>
+                    </x-admin.section>
 
                     {{-- الصورة المرفقة --}}
                     @if($complaintSuggestion->image)
-                    <div class="message-box">
-                        <div class="message-label">
-                            <i class="bi bi-image me-1"></i>
-                            الصورة المرفقة
-                        </div>
-                        <div>
-                            <img src="{{ asset('storage/' . $complaintSuggestion->image) }}" 
-                                 alt="صورة مرفقة" 
-                                 class="attached-image">
-                        </div>
-                    </div>
+                        <x-admin.section title="الصورة المرفقة" icon="bi-image" :boxed="true">
+                            <div class="text-center">
+                                <a href="{{ asset('storage/' . $complaintSuggestion->image) }}" target="_blank">
+                                    <img src="{{ asset('storage/' . $complaintSuggestion->image) }}" alt="صورة مرفقة" class="img-fluid rounded" style="max-height: 400px;">
+                                </a>
+                            </div>
+                        </x-admin.section>
                     @endif
 
                     {{-- الرد --}}
                     @if($complaintSuggestion->response)
-                        <div class="response-box">
-                            <div class="response-label">
-                                <i class="bi bi-reply me-1"></i>
-                                رد الإدارة
-                            </div>
-                            <div class="response-content">{{ $complaintSuggestion->response }}</div>
-                        </div>
+                        <x-admin.section title="رد الإدارة" icon="bi-reply" :boxed="true">
+                            <div class="text-break" style="white-space: pre-wrap; line-height: 1.6; font-size: 0.95rem; color: #1e3a8a;">{{ $complaintSuggestion->response }}</div>
+                        </x-admin.section>
                     @else
-                        <div class="message-box" style="background: #fef3c7; border-right-color: #f59e0b;">
-                            <div style="font-size: 0.95rem; color: #92400e;">
-                                <i class="bi bi-hourglass-split me-1"></i>
-                                الطلب قيد المراجعة. لم يتم الرد عليه بعد.
-                            </div>
+                        <div class="mt-3 p-3 rounded-3" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2);">
+                            <i class="bi bi-hourglass-split me-1 text-warning"></i>
+                            <span style="color: #92400e;">الطلب قيد المراجعة. لم يتم الرد عليه بعد.</span>
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
 
             {{-- نموذج الرد --}}
             @php
-                $canRespond = !$complaintSuggestion->response || 
-                              $isSuperAdmin || 
+                $canRespond = !$complaintSuggestion->response ||
+                              $isSuperAdmin ||
                               ($complaintSuggestion->responded_by && $complaintSuggestion->responded_by == auth()->id());
             @endphp
 
             @if($canRespond)
-            <div class="general-card mt-3">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-reply me-2"></i>
-                            {{ $complaintSuggestion->response ? 'تعديل الرد' : 'الرد على الطلب' }}
-                        </h5>
-                    </div>
-                </div>
-                <div class="card-body pb-4">
+            <x-admin.card class="mt-3">
+                <x-admin.card-header-form :title="$complaintSuggestion->response ? 'تعديل الرد' : 'الرد على الطلب'" icon="bi-reply" />
+                <div class="card-body p-4">
                     <form action="{{ route('admin.complaints-suggestions.respond', $complaintSuggestion) }}" method="POST">
                         @csrf
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-chat-text me-1"></i>
-                                الرد <span class="text-danger">*</span>
-                            </label>
-                            <textarea name="response" class="form-control" rows="6" 
-                                      placeholder="اكتب ردك هنا...">{{ old('response', $complaintSuggestion->response) }}</textarea>
-                            @error('response')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">الرد <span class="text-danger">*</span></label>
+                                <textarea name="response" class="form-control" rows="5" placeholder="اكتب ردك هنا...">{{ old('response', $complaintSuggestion->response) }}</textarea>
+                                @error('response')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">تحديث الحالة <span class="text-danger">*</span></label>
+                                <select name="status" class="form-select">
+                                    <option value="pending" {{ old('status', $complaintSuggestion->status) == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
+                                    <option value="in_progress" {{ old('status', $complaintSuggestion->status) == 'in_progress' ? 'selected' : '' }}>قيد المعالجة</option>
+                                    <option value="resolved" {{ old('status', $complaintSuggestion->status) == 'resolved' ? 'selected' : '' }}>تم الحل</option>
+                                    <option value="rejected" {{ old('status', $complaintSuggestion->status) == 'rejected' ? 'selected' : '' }}>مرفوض</option>
+                                </select>
+                                @error('status')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-tag me-1"></i>
-                                تحديث الحالة <span class="text-danger">*</span>
-                            </label>
-                            <select name="status" class="form-select">
-                                <option value="pending" {{ old('status', $complaintSuggestion->status) == 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
-                                <option value="in_progress" {{ old('status', $complaintSuggestion->status) == 'in_progress' ? 'selected' : '' }}>قيد المعالجة</option>
-                                <option value="resolved" {{ old('status', $complaintSuggestion->status) == 'resolved' ? 'selected' : '' }}>تم الحل</option>
-                                <option value="rejected" {{ old('status', $complaintSuggestion->status) == 'rejected' ? 'selected' : '' }}>مرفوض</option>
-                            </select>
-                            @error('status')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex justify-content-end gap-2 pt-3 mt-3 border-top">
+                            <a href="{{ route('admin.complaints-suggestions.index') }}" class="btn btn-outline-secondary">إلغاء</a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-send me-1"></i>
-                                {{ $complaintSuggestion->response ? 'تحديث الرد' : 'إرسال الرد' }}
+                                <i class="bi bi-send me-2"></i>{{ $complaintSuggestion->response ? 'تحديث الرد' : 'إرسال الرد' }}
                             </button>
-                            <a href="{{ route('admin.complaints-suggestions.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x me-1"></i>
-                                إلغاء
-                            </a>
                         </div>
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
             @endif
         </div>
     </div>

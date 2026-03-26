@@ -54,18 +54,9 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-shield-check me-2"></i>
-                            سجل تغييرات الصلاحيات
-                        </h5>
-                        <div class="general-subtitle">
-                            {{ $isSuperAdmin ? 'متابعة جميع التغييرات على الصلاحيات في النظام' : 'متابعة تغييرات الصلاحيات للموظفين والفنيين التابعين لمشغلك' }}
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="سجل تغييرات الصلاحيات" icon="bi-shield-check">
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
                     <div class="table-responsive data-table-container" id="auditLogsTableContainer">
@@ -155,7 +146,7 @@
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

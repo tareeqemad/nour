@@ -58,7 +58,7 @@
 
         {{-- ===== عمود يسار: بيانات المشترك ===== --}}
         <div class="col-lg-3 col-md-4">
-            <div class="general-card h-100">
+            <x-admin.card class="h-100">
                 <div class="card-body">
                     <div class="text-center mb-3">
                         <div class="mx-auto mb-2 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
@@ -142,7 +142,7 @@
                         </span>
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
 
         {{-- ===== عمود يمين: الحساب والكشف ===== --}}
@@ -233,7 +233,7 @@
             </div>
 
             {{-- ===== فلتر الفترة الزمنية ===== --}}
-            <div class="general-card mb-3">
+            <x-admin.card class="mb-3">
                 <div class="card-body py-3">
                     <form method="GET" action="{{ route('admin.subscriber-account.show', $subscriber) }}" class="row g-2 align-items-end">
                         <div class="col-auto">
@@ -269,10 +269,10 @@
                         @endif
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
 
             {{-- ===== تبويبات: الفواتير + الدفعات ===== --}}
-            <div class="general-card">
+            <x-admin.card>
                 <div class="card-body">
                     <ul class="nav nav-tabs mb-3" id="accountTabs">
                         <li class="nav-item">
@@ -474,7 +474,7 @@
 
                     </div>{{-- /.tab-content --}}
                 </div>
-            </div>{{-- /.general-card --}}
+            </x-admin.card>{{-- /.general-card --}}
 
         </div>{{-- /.col-lg-9 --}}
     </div>{{-- /.row --}}

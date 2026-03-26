@@ -17,108 +17,84 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-person-lines-fill me-2"></i>
-                            حساب المشترك
-                        </h5>
-                        <div class="general-subtitle">
-                            اختر مشتركاً مباشرةً أو ابحث في القائمة لعرض سجله المالي الكامل
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="حساب المشترك" icon="bi-person-lines-fill" />
 
                 <div class="card-body pb-4">
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                بحث وفلترة
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
+                    <div class="row g-3">
 
-                                {{-- المشغل --}}
-                                @if($canSelectOperator && $operators->count() > 0)
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building me-1"></i>
-                                            المشغل
-                                        </label>
-                                        <select id="operatorFilter" class="form-select">
-                                            <option value="">كل المشغلين</option>
-                                            @foreach($operators as $op)
-                                                <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
-                                                    {{ $op->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @elseif(isset($currentOperator))
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building me-1"></i>
-                                            المشغل
-                                        </label>
-                                        <select id="operatorFilter" class="form-select" disabled>
-                                            <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
-                                        </select>
-                                        <input type="hidden" id="operatorFilterHidden" value="{{ $currentOperator->id }}">
-                                    </div>
-                                @endif
-
-                                {{-- المشترك (Select2 مع بحث) --}}
-                                <div class="col-md-5">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-person me-1"></i>
-                                        المشترك
-                                        <small class="text-primary fw-normal">— اختر مباشرةً للانتقال لحسابه</small>
-                                    </label>
-                                    <select id="subscriberSelect" class="form-select" style="width:100%">
-                                        <option value="">ابحث باسم أو رقم اشتراك ...</option>
-                                        @foreach($subscribers as $sub)
-                                            <option value="{{ $sub->id }}"
-                                                data-url="{{ route('admin.subscriber-account.show', $sub) }}">
-                                                {{ $sub->subscription_number }} — {{ $sub->subscriber_name }}
-                                                @if($sub->phone) &lrm;({{ $sub->phone }}) @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                {{-- بحث نصي --}}
-                                <div class="col">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث في القائمة
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="text" id="searchInput" class="form-control"
-                                               placeholder="اسم، رقم اشتراك، جوال، رقم عداد..."
-                                               value="{{ $search }}">
-                                        <button class="btn btn-primary" id="searchBtn" type="button">
-                                            <i class="bi bi-search"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
+                        {{-- المشغل --}}
+                        @if($canSelectOperator && $operators->count() > 0)
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>
+                                    المشغل
+                                </label>
+                                <select id="operatorFilter" class="form-select">
+                                    <option value="">كل المشغلين</option>
+                                    @foreach($operators as $op)
+                                        <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
+                                            {{ $op->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
+                        @elseif(isset($currentOperator))
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>
+                                    المشغل
+                                </label>
+                                <select id="operatorFilter" class="form-select" disabled>
+                                    <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
+                                </select>
+                                <input type="hidden" id="operatorFilterHidden" value="{{ $currentOperator->id }}">
+                            </div>
+                        @endif
 
-                            <div class="row mt-2">
-                                <div class="col-12 d-flex justify-content-end">
-                                    <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="clearBtn">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                        تفريغ الفلاتر
-                                    </button>
-                                </div>
+                        {{-- المشترك (Select2 مع بحث) --}}
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person me-1"></i>
+                                المشترك
+                                <small class="fw-normal" style="color: var(--color-text-muted, #5B6780);">— اختر للانتقال لحسابه</small>
+                            </label>
+                            <select id="subscriberSelect" class="form-select" style="width:100%">
+                                <option value="">ابحث باسم أو رقم اشتراك ...</option>
+                                @foreach($subscribers as $sub)
+                                    <option value="{{ $sub->id }}"
+                                        data-url="{{ route('admin.subscriber-account.show', $sub) }}">
+                                        {{ $sub->subscription_number }} — {{ $sub->subscriber_name }}
+                                        @if($sub->phone) &lrm;({{ $sub->phone }}) @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- بحث نصي --}}
+                        <div class="col">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-search me-1"></i>
+                                بحث في القائمة
+                            </label>
+                            <div class="input-group">
+                                <input type="text" id="searchInput" class="form-control"
+                                       placeholder="اسم، رقم اشتراك، جوال، رقم عداد..."
+                                       value="{{ $search }}">
+                                <button class="btn btn-primary" id="searchBtn" type="button">
+                                    <i class="bi bi-search"></i>
+                                </button>
                             </div>
                         </div>
+
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-outline-secondary" type="button" id="clearBtn">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            تفريغ
+                        </button>
                     </div>
 
-                    <hr class="my-3">
 
                     <div id="subscribersListWrap" class="position-relative">
                         <div id="subLoading" class="data-table-loading d-none">
@@ -131,7 +107,7 @@
                         @include('admin.subscriber-account.partials.list', ['subscribers' => $subscribers, 'search' => $search])
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

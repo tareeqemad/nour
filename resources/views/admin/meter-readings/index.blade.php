@@ -17,24 +17,14 @@
     <div class="general-page" id="meterReadingsPage">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-speedometer2 me-2"></i>
-                                قراءات العدادات
-                            </h5>
-                            <div class="general-subtitle">
-                                البحث والفلترة وإدارة قراءات العدادات. العدد: <span id="meterReadingsCount">{{ $meterReadings->total() }}</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2 flex-wrap">
+                <x-admin.card>
+                    <x-admin.card-header title="قراءات العدادات" icon="bi-speedometer2">
+                        <x-slot:actions>
                             @can('create', App\Models\MeterReading::class)
-                                <button type="button" id="bulkApproveBtn" class="btn btn-success d-none">
+                                <button type="button" id="bulkApproveBtn" class="btn btn-outline-secondary d-none">
                                     <i class="bi bi-check-circle me-1"></i>
                                     اعتماد المحدد
-                                    <span id="bulkApproveCount" class="badge bg-white text-success ms-1">0</span>
+                                    <span id="bulkApproveCount" class="badge bg-primary text-white ms-1">0</span>
                                 </button>
                             @endcan
                             @can('create', App\Models\MeterReading::class)
@@ -43,18 +33,10 @@
                                     إضافة قراءة جديدة
                                 </a>
                             @endcan
-                        </div>
-                    </div>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body pb-4">
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title">
-                                    <i class="bi bi-funnel me-2"></i>
-                                    فلاتر البحث
-                                </h6>
-                            </div>
-                            <div class="card-body">
                                 @php
                                     $user = auth()->user();
                                     $isCompanyOwner = $user->isCompanyOwner();
@@ -178,10 +160,7 @@
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <hr class="my-3">
 
                         <div id="meterReadingsListWrap" class="position-relative">
                             <div id="mrLoading" class="data-table-loading d-none">
@@ -194,7 +173,7 @@
                             @include('admin.meter-readings.partials.list', ['meterReadings' => $meterReadings])
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>
@@ -234,7 +213,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-1"></i>
                         إلغاء
                     </button>

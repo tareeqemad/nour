@@ -9,37 +9,14 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/compliance-safeties.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
 @endpush
 
 @section('content')
-    <div class="compliance-safeties-page">
+    <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="card log-card">
-                    <div class="log-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div>
-                            <h1 class="log-title mb-0">
-                                <i class="bi bi-shield-check me-2"></i>
-                                تعديل سجل الامتثال والسلامة
-                            </h1>
-                            <div class="log-subtitle text-muted mt-1">
-                                @if($complianceSafety->operator)
-                                    {{ $complianceSafety->operator->name }}
-                                    @if($complianceSafety->last_inspection_date)
-                                        · {{ $complianceSafety->last_inspection_date->format('Y-m-d') }}
-                                    @endif
-                                @else
-                                    قم بتعديل بيانات الامتثال والسلامة
-                                @endif
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-right me-1"></i>
-                            العودة للقائمة
-                        </a>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="تعديل سجل الامتثال والسلامة" icon="bi-shield-check" :backRoute="route('admin.compliance-safeties.index')" />
 
                     <div class="card-body p-4">
                         <form action="{{ route('admin.compliance-safeties.update', $complianceSafety) }}" method="POST" id="complianceSafetyForm">
@@ -48,21 +25,24 @@
 
                             <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">المعلومات الأساسية</h6>
                             <div class="row g-3 mb-4">
-                                @include('admin.partials.cascading-selects', [
-                                    'operators' => $operators ?? collect(),
-                                    'showGenerator' => true,
-                                    'showGenerationUnit' => true,
-                                    'generationUnits' => $generationUnits ?? collect(),
-                                    'generators' => $generators ?? collect(),
-                                    'colClass' => 'col-md-6 col-lg-3',
-                                    'operatorRequired' => true,
-                                    'generationUnitRequired' => true,
-                                    'generatorRequired' => true,
-                                    'selectedOperatorId' => old('operator_id', $complianceSafety->operator_id),
-                                    'selectedGenerationUnitId' => old('generation_unit_id', $complianceSafety->generation_unit_id),
-                                    'selectedGeneratorId' => old('generator_id', $complianceSafety->generator_id),
-                                    'useSelect2' => true,
-                                ])
+                                <x-admin.operator-cascade
+                                    :operators="$operators ?? collect()"
+                                    :showGenerator="true"
+                                    :showGenerationUnit="true"
+                                    :generationUnits="$generationUnits ?? collect()"
+                                    :generators="$generators ?? collect()"
+                                    colClass="col-md-6 col-lg-3"
+                                    :operatorRequired="true"
+                                    :generationUnitRequired="true"
+                                    :generatorRequired="true"
+                                    :selectedOperatorId="old('operator_id', $complianceSafety->operator_id)"
+                                    :selectedGenerationUnitId="old('generation_unit_id', $complianceSafety->generation_unit_id)"
+                                    :selectedGeneratorId="old('generator_id', $complianceSafety->generator_id)"
+                                    :routes="[
+                                        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-compliance-safeties',
+                                        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-for-compliance-safeties',
+                                    ]"
+                                />
                                 <div class="col-md-6 col-lg-3">
                                     <label class="form-label fw-semibold">حالة شهادة السلامة <span class="text-danger">*</span></label>
                                     <select name="safety_certificate_status_id" class="form-select select2 @error('safety_certificate_status_id') is-invalid @enderror" required>
@@ -120,36 +100,25 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center pt-2">
+                            <div class="d-flex justify-content-end align-items-center gap-2 pt-3 border-top">
                                 <a href="{{ route('admin.compliance-safeties.index') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-right me-2"></i>
+                                    <i class="bi bi-arrow-right me-1"></i>
                                     إلغاء
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4">
+                                <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>
                                     حفظ التعديلات
                                 </button>
                             </div>
                         </form>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
-<script src="{{ asset('assets/admin/libs/select2/i18n/ar.js') }}"></script>
-@include('admin.partials.cascading-selects-scripts', [
-    'cascadingRoutes' => [
-        'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-compliance-safeties',
-        'generators' => url('/admin/generation-units') . '/__UNIT__/generators-for-compliance-safeties',
-    ],
-    'initialOperatorId' => old('operator_id', $complianceSafety->operator_id),
-    'initialGenerationUnitId' => old('generation_unit_id', $complianceSafety->generation_unit_id),
-    'initialGeneratorId' => old('generator_id', $complianceSafety->generator_id),
-])
 <script>
 $(document).ready(function() {
     $('select[name="safety_certificate_status_id"]').select2({ dir: document.documentElement.dir || 'rtl', width: '100%' });

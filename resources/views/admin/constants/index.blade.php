@@ -16,76 +16,53 @@
 
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
+            <x-admin.card>
 
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                        <i class="bi bi-database me-2"></i>
-                        إدارة الثوابت
-                    </h5>
-                        <div class="general-subtitle">
-                            إدارة وتنظيم ثوابت النظام
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
+                <x-admin.card-header title="إدارة الثوابت" icon="bi-database">
+                    <x-slot:actions>
                         @can('create', App\Models\ConstantMaster::class)
                             <a href="{{ route('admin.constants.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-lg me-1"></i>
                                 إضافة ثابت
                             </a>
                         @endcan
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
-                    {{-- كارد واحد للفلاتر --}}
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title">
-                                <i class="bi bi-funnel me-2"></i>
-                                فلاتر البحث
-                            </h6>
+                    {{-- فلاتر البحث --}}
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-search me-1"></i>
+                                بحث
+                            </label>
+                            <input type="text" class="form-control" id="constantsSearch" placeholder="رقم الثابت / الاسم / الوصف..." autocomplete="off" value="{{ request('search', '') }}">
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-5">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </label>
-                                    <input type="text" class="form-control" id="constantsSearch" placeholder="رقم الثابت / الاسم / الوصف..." autocomplete="off" value="{{ request('search', '') }}">
-                                </div>
 
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="bi bi-funnel me-1"></i>
-                                        الحالة
-                                    </label>
-                                    <select class="form-select" id="statusFilter">
-                                        <option value="">الكل</option>
-                                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>نشط فقط</option>
-                                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>غير نشط فقط</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <div class="d-flex gap-2 w-100">
-                                        <button class="btn btn-primary flex-fill" id="btnSearch">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary {{ request('search') || request('status') ? '' : 'd-none' }}" id="btnResetFilters">
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-funnel me-1"></i>
+                                الحالة
+                            </label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">الكل</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>نشط فقط</option>
+                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>غير نشط فقط</option>
+                            </select>
                         </div>
+
                     </div>
-
-                    <hr class="my-3">
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-primary" id="btnSearch">
+                            <i class="bi bi-search me-1"></i>
+                            بحث
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            تفريغ
+                        </button>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0 general-table">
@@ -121,7 +98,7 @@
                         </nav>
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 

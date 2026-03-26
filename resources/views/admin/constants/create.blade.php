@@ -9,28 +9,12 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/constants.css') }}">
     <style>
-        .editable-field.is-saving {
-            border-color: #0d6efd;
-            background-color: #e7f1ff;
-        }
-        .editable-field.is-saved {
-            border-color: #198754;
-            background-color: #d1e7dd;
-        }
-        .editable-field.is-invalid {
-            border-color: #dc3545;
-            background-color: #f8d7da;
-        }
-        .editable-field:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-        }
-        .editable-field {
-            transition: all 0.3s ease;
-        }
+        .editable-field { transition: all 0.2s ease; }
+        .editable-field.is-saving { border-color: var(--color-primary, #24308F) !important; background: var(--color-primary-soft, #EEF2FF) !important; }
+        .editable-field.is-saved { border-color: var(--color-success, #10B981) !important; background: var(--color-success-bg, #ECFDF5) !important; }
+        .editable-field.is-invalid { border-color: var(--color-danger, #EF4444) !important; background: var(--color-danger-bg, #FEF2F2) !important; }
     </style>
 @endpush
 
@@ -39,22 +23,8 @@
     <div class="row g-3">
         <div class="col-12">
             <!-- Card إضافة الثابت الرئيسي -->
-            <div class="general-card mb-4">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            إضافة ثابت جديد
-                        </h5>
-                        <div class="general-subtitle">
-                            قم بإدخال بيانات الثابت الرئيسي
-                        </div>
-                    </div>
-                    <a href="{{ route('admin.constants.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-right me-2"></i>
-                        رجوع
-                    </a>
-                </div>
+            <x-admin.card class="mb-4">
+                <x-admin.card-header-form title="إضافة ثابت جديد" icon="bi-plus-circle" :backRoute="route('admin.constants.index')" />
                 <div class="card-body">
                     <form action="{{ route('admin.constants.store') }}" method="POST" id="constantForm">
                         @csrf
@@ -63,12 +33,11 @@
                             {{-- Select للثوابت الموجودة (للاستنساخ) --}}
                             @if(isset($existingConstants) && $existingConstants->count() > 0)
                                 <div class="col-12">
-                                    <div class="alert alert-info d-flex align-items-center mb-0">
-                                        <i class="bi bi-info-circle me-2"></i>
-                                        <div>
-                                            <strong>استنساخ ثابت موجود (اختياري):</strong>
-                                            <small class="d-block text-muted">يمكنك اختيار ثابت موجود لجلب بياناته واستنساخها</small>
-                                        </div>
+                                    <div style="background: var(--color-info-bg, #F0F9FF); border: 1px solid var(--color-info-border, #BAE6FD); border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="bi bi-info-circle" style="color: var(--color-info-text, #0369A1);"></i>
+                                        <span style="font-size: 0.85rem; color: var(--color-info-text, #0369A1);">
+                                            يمكنك اختيار ثابت موجود لاستنساخ بياناته
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="col-12">
@@ -140,29 +109,20 @@
                         </div>
                     </form>
                 </div>
-            </div>
-            
+            </x-admin.card>
+
             <!-- Card تفاصيل الثابت -->
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-list-ul me-2"></i>
-                            تفاصيل الثابت
-                        </h5>
-                        <div class="general-subtitle">
-                            إضافة وإدارة تفاصيل الثابت
-                        </div>
-                    </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تفاصيل الثابت" icon="bi-list-ul">
                     <button type="button" class="btn btn-primary" id="addNewRowBtn">
                         <i class="bi bi-plus-circle me-1"></i>
                         إضافة تفصيل
                     </button>
-                </div>
+                </x-admin.card-header-form>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead class="table-light">
+                            <thead>
                                 <tr>
                                     <th class="text-nowrap">البيان</th>
                                     <th class="text-nowrap d-none d-md-table-cell">الترميز</th>
@@ -184,17 +144,17 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer d-flex justify-content-between align-items-center">
+                <div style="padding: 0.85rem 1.25rem; background: var(--color-bg-card-header, #F8FBFD); border-top: 1px solid var(--color-border-soft, #EDF1F5); display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem;">
                     <a href="{{ route('admin.constants.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle me-2"></i>
+                        <i class="bi bi-x-circle me-1"></i>
                         إلغاء
                     </a>
-                    <button type="submit" form="constantForm" class="btn btn-primary" id="submitBtn">
-                        <i class="bi bi-check-lg me-2"></i>
+                    <button type="submit" form="constantForm" class="btn btn-success" id="submitBtn">
+                        <i class="bi bi-check-lg me-1"></i>
                         حفظ الثابت والتفاصيل
                     </button>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

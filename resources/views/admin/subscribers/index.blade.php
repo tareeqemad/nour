@@ -9,63 +9,11 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
     <style>
-        /* Import Modal Styles */
-        #importModal .modal-header {
-            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.85) 0%, rgba(var(--primary-rgb), 0.65) 100%) !important;
-            color: #fff !important;
-        }
-        #importModal .modal-header .modal-title,
-        #importModal .modal-header .modal-title i {
-            color: #fff !important;
-        }
-        #importModal .card-header.bg-primary {
-            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.8) 0%, rgba(var(--primary-rgb), 0.65) 100%) !important;
-            color: #fff !important;
-        }
-        #importModal .card-header.bg-info {
-            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.5) 0%, rgba(var(--primary-rgb), 0.35) 100%) !important;
-            color: #fff !important;
-        }
-        #importModal .display-6 {
-            font-size: 2.5rem;
-        }
-        #importModal .nav-tabs .nav-link {
-            border-radius: 0;
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
-        }
-        #importModal .nav-tabs .nav-link.active {
-            border-bottom: 3px solid rgb(var(--primary-rgb));
-        }
-        #importModal .table thead.sticky-top {
-            z-index: 1;
-        }
-        #importModal .table thead.table-success {
-            background: rgba(var(--primary-rgb), 0.15) !important;
-        }
-        #importModal .table thead.table-danger {
-            background: #f8d7da !important;
-        }
-        #previewTabsContent {
-            min-height: 200px;
-        }
-        .bg-success-subtle {
-            background-color: rgba(var(--primary-rgb), 0.1) !important;
-        }
-        .bg-danger-subtle {
-            background-color: rgba(220, 53, 69, 0.1) !important;
-        }
-        #importModal .btn-primary {
-            background: rgba(var(--primary-rgb), 0.85) !important;
-            border-color: rgba(var(--primary-rgb), 0.85) !important;
-        }
-        #importModal .btn-primary:hover {
-            background: rgb(var(--primary-rgb)) !important;
-            border-color: rgb(var(--primary-rgb)) !important;
-        }
-        #importModal .border-primary {
-            border-color: rgba(var(--primary-rgb), 0.5) !important;
-        }
+        #importModal .display-6 { font-size: 2rem; }
+        #importModal .nav-tabs .nav-link { border-radius: 0; padding: 0.6rem 1.25rem; font-weight: 600; font-size: 0.85rem; }
+        #importModal .nav-tabs .nav-link.active { border-bottom: 2.5px solid var(--color-primary, #24308F); color: var(--color-primary, #24308F); }
+        #importModal .table thead.sticky-top { z-index: 1; }
+        #previewTabsContent { min-height: 200px; }
     </style>
 @endpush
 
@@ -75,42 +23,24 @@
     <div class="general-page" id="subscribersPage">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-people me-2"></i>
-                                إدارة بيانات المشتركين
-                            </h5>
-                            <div class="general-subtitle">
-                                البحث والفلترة وإدارة بيانات المشتركين. العدد: <span id="subscribersCount">{{ $subscribers->total() }}</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
+                <x-admin.card>
+                    <x-admin.card-header title="إدارة بيانات المشتركين" icon="bi-people">
+                        <x-slot:actions>
                             @can('create', App\Models\Subscriber::class)
-                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal">
                                     <i class="bi bi-file-earmark-excel me-1"></i>
-                                    استيراد من Excel
+                                    استيراد Excel
                                 </button>
                                 <a href="{{ route('admin.subscribers.create') }}" class="btn btn-primary">
                                     <i class="bi bi-plus-lg me-1"></i>
-                                    إضافة مشترك جديد
+                                    إضافة مشترك
                                 </a>
                             @endcan
-                        </div>
-                    </div>
+                        </x-slot:actions>
+                    </x-admin.card-header>
 
                     <div class="card-body pb-4">
                         {{-- كارد واحد للفلاتر --}}
-                        <div class="filter-card">
-                            <div class="card-header">
-                                <h6 class="card-title">
-                                    <i class="bi bi-funnel me-2"></i>
-                                    فلاتر البحث
-                                </h6>
-                            </div>
-                            <div class="card-body">
                                 <div class="row g-3">
                                     @php
                                         $user = auth()->user();
@@ -182,28 +112,17 @@
                                     </div>
                                 </div>
 
-                                {{-- صف جديد لزر البحث --}}
-                                <div class="row g-3 mt-2">
-                                    <div class="col-12 d-flex justify-content-center gap-2">
-                                        <button class="btn btn-primary" type="button" id="searchBtn">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
-                                        </button>
-                                        <button
-                                            class="btn btn-outline-secondary {{ request('operator_id') || request('subscription_status') || request('is_employee') !== null && request('is_employee') !== '' || request('search') ? '' : 'd-none' }}"
-                                            type="button"
-                                            id="clearBtn"
-                                            title="تفريغ الحقول"
-                                        >
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                            تفريغ الحقول
-                                        </button>
-                                    </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-primary" type="button" id="searchBtn">
+                                        <i class="bi bi-search me-1"></i>
+                                        بحث
+                                    </button>
+                                    <button class="btn btn-outline-secondary" type="button" id="clearBtn">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                        تفريغ
+                                    </button>
                                 </div>
-                            </div>
-                        </div>
 
-                        <hr class="my-3">
 
                         <div id="subscribersListWrap" class="position-relative">
                             {{-- Loading overlay --}}
@@ -217,7 +136,7 @@
                             @include('admin.subscribers.partials.list', ['subscribers' => $subscribers])
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>
@@ -228,21 +147,21 @@
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="importModalLabel">
-                    <i class="bi bi-file-earmark-excel me-2"></i>
+                    <i class="bi bi-file-earmark-excel me-1"></i>
                     استيراد المشتركين من Excel
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 {{-- Step 1: File Upload --}}
                 <div id="importStep1">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="card border-primary h-100">
-                                <div class="card-header bg-primary text-white">
-                                    <i class="bi bi-upload me-2"></i>
+                            <div style="border: 1px solid var(--color-border, #E5E7EB); border-radius: 10px; height: 100%;">
+                                <div style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 0.88rem; color: var(--color-primary, #24308F);">
+                                    <i class="bi bi-upload me-2" style="opacity: .75;"></i>
                                     رفع الملف
                                 </div>
                                 <div class="card-body">
@@ -271,9 +190,9 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="card border-primary h-100">
-                                <div class="card-header bg-primary text-white">
-                                    <i class="bi bi-info-circle me-2"></i>
+                            <div style="border: 1px solid var(--color-border, #E5E7EB); border-radius: 10px; height: 100%;">
+                                <div style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 0.88rem; color: var(--color-primary, #24308F);">
+                                    <i class="bi bi-info-circle me-2" style="opacity: .75;"></i>
                                     تعليمات الاستيراد
                                 </div>
                                 <div class="card-body">
@@ -308,27 +227,21 @@
                     {{-- Summary Cards --}}
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <div class="card bg-light border-0 text-center">
-                                <div class="card-body py-3">
-                                    <div class="display-6 text-primary fw-bold" id="totalRowsCount">0</div>
-                                    <small class="text-muted">إجمالي الصفوف</small>
-                                </div>
+                            <div class="dash-kpi justify-content-center text-center" style="flex-direction: column; gap: 0.25rem;">
+                                <div class="display-6 fw-bold" id="totalRowsCount" style="color: var(--color-primary, #24308F); font-size: 2rem;">0</div>
+                                <div class="dash-kpi-label">إجمالي الصفوف</div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card bg-success-subtle border-0 text-center">
-                                <div class="card-body py-3">
-                                    <div class="display-6 text-success fw-bold" id="validRowsCount">0</div>
-                                    <small class="text-muted">صالحة للاستيراد</small>
-                                </div>
+                            <div class="dash-kpi justify-content-center text-center" style="flex-direction: column; gap: 0.25rem; border-color: var(--color-success-border, #A7F3D0);">
+                                <div class="display-6 fw-bold" id="validRowsCount" style="color: var(--color-success, #10B981); font-size: 2rem;">0</div>
+                                <div class="dash-kpi-label">صالحة للاستيراد</div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card bg-danger-subtle border-0 text-center">
-                                <div class="card-body py-3">
-                                    <div class="display-6 text-danger fw-bold" id="errorRowsCount">0</div>
-                                    <small class="text-muted">بها أخطاء</small>
-                                </div>
+                            <div class="dash-kpi justify-content-center text-center" style="flex-direction: column; gap: 0.25rem; border-color: var(--color-danger-border, #FECACA);">
+                                <div class="display-6 fw-bold" id="errorRowsCount" style="color: var(--color-danger, #EF4444); font-size: 2rem;">0</div>
+                                <div class="dash-kpi-label">بها أخطاء</div>
                             </div>
                         </div>
                     </div>
@@ -352,7 +265,7 @@
                         <div class="tab-pane fade show active p-3" id="valid-pane" role="tabpanel">
                             <div class="table-responsive" style="max-height: 350px;">
                                 <table class="table table-sm table-hover table-striped mb-0 text-center">
-                                    <thead class="table-success sticky-top">
+                                    <thead class="sticky-top" style="background: var(--color-success-bg, #ECFDF5);">
                                         <tr>
                                             <th class="text-center">#</th>
                                             <th class="text-center">رقم الهوية</th>
@@ -373,7 +286,7 @@
                         <div class="tab-pane fade p-3" id="errors-pane" role="tabpanel">
                             <div class="table-responsive" style="max-height: 350px;">
                                 <table class="table table-sm table-hover mb-0 text-center">
-                                    <thead class="table-danger sticky-top">
+                                    <thead class="sticky-top" style="background: var(--color-danger-bg, #FEF2F2);">
                                         <tr>
                                             <th class="text-center">الصف</th>
                                             <th class="text-center">البيانات</th>
@@ -407,7 +320,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModalBtn">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="closeModalBtn">
                     <i class="bi bi-x-lg me-1"></i>
                     إغلاق
                 </button>

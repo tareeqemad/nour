@@ -115,7 +115,7 @@
                             @endif
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
                             @if($role->users_count == 0)
                                 <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="d-inline">
                                     @csrf

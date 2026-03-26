@@ -15,36 +15,24 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-receipt me-2"></i>
-                            الفوترة والتحصيل
-                        </h5>
-                        <div class="general-subtitle">
-                            العدد: <span id="invoicesCount">{{ $invoices->total() }}</span>
-                        </div>
-                    </div>
-                    @can('create', App\Models\Invoice::class)
-                        <a href="{{ route('admin.invoices.create') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-lg me-1"></i>
-                            إنشاء فاتورة جديدة
-                        </a>
-                    @endcan
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="الفوترة والتحصيل" icon="bi-receipt">
+                    <x-slot:actions>
+                        @can('create', App\Models\Invoice::class)
+                            <a href="{{ route('admin.invoices.create') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                إنشاء فاتورة جديدة
+                            </a>
+                        @endcan
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body pb-4">
-                    <div class="filter-card">
-                        <div class="card-header">
-                            <h6 class="card-title"><i class="bi bi-funnel me-2"></i>فلاتر البحث</h6>
-                        </div>
-                        <div class="card-body">
-                            @php
-                                $user = auth()->user();
-                                $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
-                            @endphp
-                            <div class="row g-3">
+                    @php
+                        $user = auth()->user();
+                        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                    @endphp
+                    <div class="row g-3">
 
                                 {{-- المشغل --}}
                                 @if($canSelectOperator && $operators->count())
@@ -116,10 +104,7 @@
                                     <button class="btn btn-outline-secondary d-none" id="clearBtn"><i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ</button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <hr class="my-3">
 
                     <div id="invoicesListWrap" class="position-relative">
                         <div id="invLoading" class="data-table-loading d-none">
@@ -131,7 +116,7 @@
                         @include('admin.invoices.partials.list', ['invoices' => $invoices])
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

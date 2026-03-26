@@ -10,18 +10,8 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-journal-text me-2"></i>
-                            سجل التغييرات
-                        </h5>
-                        <div class="general-subtitle">
-                            تاريخ جميع التحديثات والتغييرات على المنصة
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header title="سجل التغييرات" icon="bi-journal-text" />
 
                 <div class="card-body">
                     @if($versions->isEmpty())
@@ -35,7 +25,7 @@
                             @foreach($versions as $version)
                                 <div class="timeline-item mb-4">
                                     <div class="card border-0 shadow-sm {{ $version->is_current ? 'border-start border-primary border-4' : '' }}">
-                                        <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem;">
                                             <div class="d-flex align-items-center gap-3">
                                                 <span class="badge {{ $version->getTypeBadgeClass() }} fs-6">
                                                     v{{ $version->version }}
@@ -158,7 +148,7 @@
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

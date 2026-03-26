@@ -12,33 +12,17 @@
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-speedometer2 me-2"></i>
-                                تفاصيل قراءة العداد
-                            </h5>
-                            <div class="general-subtitle">
-                                {{ $meterReading->reading_number }}
-                            </div>
-                        </div>
-                        {{-- أزرار التعديل في الرأس تخضع لحالة الإجراء --}}
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.meter-readings.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-2"></i>
-                                العودة للقائمة
-                            </a>
-                            @if($meterReading->isEditable())
-                                @can('update', $meterReading)
-                                    <a href="{{ route('admin.meter-readings.edit', $meterReading) }}" class="btn btn-primary">
-                                        <i class="bi bi-pencil me-2"></i>
-                                        تعديل
-                                    </a>
-                                @endcan
-                            @endif
-                        </div>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="تفاصيل قراءة العداد" icon="bi-speedometer2" :backRoute="route('admin.meter-readings.index')">
+                        @if($meterReading->isEditable())
+                            @can('update', $meterReading)
+                                <a href="{{ route('admin.meter-readings.edit', $meterReading) }}" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    تعديل
+                                </a>
+                            @endcan
+                        @endif
+                    </x-admin.card-header-form>
 
                     <div class="card-body">
                         <div class="row g-3">
@@ -187,7 +171,7 @@
                             @endif
                         </div>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

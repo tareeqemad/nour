@@ -9,26 +9,17 @@
     <div class="row justify-content-center">
         <div class="col-lg-7">
 
-            <div class="general-card">
-                <div class="general-card-header">
-                    <h5 class="general-title">
-                        <i class="bi bi-receipt me-2"></i>تفاصيل الدفعة
-                    </h5>
-                    <div class="d-flex gap-2">
-                        @can('delete', $payment)
-                            <button type="button" class="btn btn-outline-danger btn-sm"
-                                    data-action="{{ route('admin.invoices.payments.destroy', [$invoice, $payment]) }}"
-                                    data-csrf="{{ csrf_token() }}"
-                                    onclick="swalDeletePayment(this)">
-                                <i class="bi bi-trash me-1"></i>حذف
-                            </button>
-                        @endcan
-                        <a href="{{ route('admin.invoices.payments.index', $invoice) }}"
-                           class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-right me-1"></i>سجل الدفعات
-                        </a>
-                    </div>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تفاصيل الدفعة" icon="bi-receipt" :backRoute="route('admin.invoices.payments.index', $invoice)" backLabel="سجل الدفعات">
+                    @can('delete', $payment)
+                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                data-action="{{ route('admin.invoices.payments.destroy', [$invoice, $payment]) }}"
+                                data-csrf="{{ csrf_token() }}"
+                                onclick="swalDeletePayment(this)">
+                            <i class="bi bi-trash me-1"></i>حذف
+                        </button>
+                    @endcan
+                </x-admin.card-header-form>
 
                 <div class="card-body">
                     <dl class="row g-2">
@@ -79,7 +70,7 @@
                         </dd>
                     </dl>
                 </div>
-            </div>
+            </x-admin.card>
 
         </div>
     </div>

@@ -9,19 +9,12 @@
 @endphp
 
 @section('content')
+    <div class="general-page">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-building me-2"></i>
-                        تعديل المشغل
-                    </h5>
-                    <a href="{{ route('admin.operators.index') }}" class="btn btn-sm">
-                        <i class="bi bi-arrow-right me-1"></i>
-                        رجوع
-                    </a>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="تعديل المشغل" icon="bi-building" :backRoute="route('admin.operators.index')">
+                </x-admin.card-header-form>
                 <div class="card-body">
                     <form action="{{ route('admin.operators.update', $operator) }}" method="POST">
                         @csrf
@@ -111,15 +104,16 @@
                                 <i class="bi bi-x-circle me-2"></i>
                                 إلغاء
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-success">
                                 <i class="bi bi-check-lg me-2"></i>
                                 حفظ التغييرات
                             </button>
                         </div>
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
+    </div>
     </div>
 @endsection
 

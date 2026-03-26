@@ -1,17 +1,9 @@
-<!-- Recent Items & Alerts - Unified with Tabs -->
-<div class="row g-3">
+<!-- Recent Items -->
+<div class="row g-3 mb-4">
     <div class="col-12">
-        <div class="dashboard-card">
-            <div class="dashboard-card-header">
-                <div>
-                    <h5 class="dashboard-card-title">
-                        <i class="bi bi-clock-history me-2"></i>
-                        العناصر الأخيرة
-                    </h5>
-                    <p class="dashboard-card-subtitle">نظرة سريعة على آخر الأنشطة والعناصر</p>
-                </div>
-            </div>
-            <div class="dashboard-card-body">
+        <x-admin.card>
+            <x-admin.card-header title="العناصر الأخيرة" icon="bi-clock-history" />
+            <div class="p-3">
                 <!-- Tabs Navigation -->
                 <ul class="nav nav-tabs nav-tabs-custom mb-3" id="recentItemsTab" role="tablist">
                     @if(isset($generatorsNeedingMaintenance) && $generatorsNeedingMaintenance->count() > 0)
@@ -359,7 +351,7 @@
                     @endif
                 </div>
             </div>
-        </div>
+        </x-admin.card>
     </div>
 </div>
 

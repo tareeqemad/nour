@@ -10,12 +10,8 @@
 
         {{-- ===== بيانات الفاتورة (دائماً ظاهرة) ===== --}}
         <div class="col-lg-4">
-            <div class="general-card h-100">
-                <div class="general-card-header">
-                    <h6 class="general-title mb-0">
-                        <i class="bi bi-receipt me-2"></i>بيانات الفاتورة
-                    </h6>
-                </div>
+            <x-admin.card class="h-100">
+                <x-admin.card-header-form title="بيانات الفاتورة" icon="bi-receipt" />
                 <div class="card-body">
 
                     {{-- رقم الفاتورة والحالة --}}
@@ -80,21 +76,13 @@
                     </div>
 
                 </div>
-            </div>
+            </x-admin.card>
         </div>
 
         {{-- ===== نموذج الدفعة ===== --}}
         <div class="col-lg-6">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <h6 class="general-title mb-0">
-                        <i class="bi bi-cash-coin me-2"></i>بيانات الدفعة
-                    </h6>
-                    <a href="{{ route('admin.invoices.show', $invoice) }}"
-                       class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-right me-1"></i>رجوع
-                    </a>
-                </div>
+            <x-admin.card>
+                <x-admin.card-header-form title="بيانات الدفعة" icon="bi-cash-coin" :backRoute="route('admin.invoices.show', $invoice)" />
 
                 <div class="card-body">
 
@@ -220,7 +208,7 @@
 
                     </form>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
 
     </div>

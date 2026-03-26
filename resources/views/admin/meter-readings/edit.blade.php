@@ -17,22 +17,8 @@
     <div class="general-page">
         <div class="row g-3">
             <div class="col-12">
-                <div class="general-card">
-                    <div class="general-card-header">
-                        <div>
-                            <h5 class="general-title">
-                                <i class="bi bi-pencil me-2"></i>
-                                تعديل قراءة العداد
-                            </h5>
-                            <div class="general-subtitle">
-                                تعديل قراءة العداد: {{ $meterReading->reading_number }}
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.meter-readings.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-right me-2"></i>
-                            العودة للقائمة
-                        </a>
-                    </div>
+                <x-admin.card>
+                    <x-admin.card-header-form title="تعديل قراءة العداد" icon="bi-pencil" :backRoute="route('admin.meter-readings.index')" />
 
                     <div class="card-body">
                         <form action="{{ route('admin.meter-readings.update', $meterReading) }}" method="POST" id="meterReadingForm">
@@ -128,12 +114,10 @@
                                     $showAbnormal = $currentConsumption <= 0 || ($maxKwh > 0 && $currentConsumption > $maxKwh);
                                 @endphp
                                 <div class="col-12 {{ $showAbnormal ? '' : 'd-none' }}" id="abnormalAlert">
-                                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-0">
-                                        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
-                                        <div>
-                                            <strong>تنبيه: قراءة غير طبيعية</strong><br>
-                                            هذه القراءة صُنِّفت تلقائياً كغير طبيعية بسبب استهلاك صفري أو سالب أو يتجاوز الحد الأقصى المسموح به.
-                                            ستظل موقوفة عن الاعتماد الجماعي وتحتاج إلى مراجعة واعتماد منفرد مع ذكر السبب.
+                                    <div style="background: var(--color-warning-bg, #FFFBEB); border: 1px solid var(--color-warning-border, #FCD34D); border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.5rem;">
+                                        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" style="color: var(--color-warning, #F59E0B);"></i>
+                                        <div style="font-size: 0.85rem; color: var(--color-warning-text, #B45309);">
+                                            <strong>قراءة غير طبيعية</strong> — تحتاج مراجعة واعتماد منفرد.
                                         </div>
                                     </div>
                                 </div>
@@ -173,14 +157,14 @@
                                     @enderror
                                 </div>
 
-                                <div class="col-12 mt-4">
-                                    <div class="d-flex gap-2 justify-content-end">
+                                <div class="col-12">
+                                    <div class="d-flex gap-2 justify-content-end mt-3 pt-3" style="border-top: 1px solid var(--color-border-soft, #EDF1F5);">
                                         <a href="{{ route('admin.meter-readings.index') }}" class="btn btn-outline-secondary">
                                             <i class="bi bi-x-circle me-1"></i>
                                             إلغاء
                                         </a>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="bi bi-check-circle me-1"></i>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-check-lg me-1"></i>
                                             حفظ التعديلات
                                         </button>
                                     </div>
@@ -188,7 +172,7 @@
                             </div>
                         </form>
                     </div>
-                </div>
+                </x-admin.card>
             </div>
         </div>
     </div>

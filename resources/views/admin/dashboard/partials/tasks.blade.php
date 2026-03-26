@@ -3,22 +3,18 @@
     use Illuminate\Support\Str;
 @endphp
 @if(isset($tasksData) && isset($tasksData['tasks']) && $tasksData['tasks']->count() > 0)
-<div class="row g-3 mt-3">
+<div class="row g-3 mb-4">
     <div class="col-12">
-        <div class="dashboard-card">
-            <div class="dashboard-card-header">
-                <div>
-                    <h5 class="dashboard-card-title">
-                        <i class="bi bi-clipboard-check me-2"></i>
-                        مهامي
-                    </h5>
-                    <p class="dashboard-card-subtitle">آخر المهام المكلف بها</p>
+        <x-admin.card>
+            <x-admin.card-header title="مهامي" icon="bi-clipboard-check">
+                <x-slot:actions>
                 </div>
-                <a href="{{ route('admin.tasks.index') }}" class="btn btn-outline-primary btn-sm">
-                    عرض الكل <i class="bi bi-arrow-left ms-1"></i>
-                </a>
-            </div>
-            <div class="dashboard-card-body p-0">
+                    <a href="{{ route('admin.tasks.index') }}" class="btn btn-outline-primary btn-sm">
+                        عرض الكل <i class="bi bi-arrow-left ms-1"></i>
+                    </a>
+                </x-slot:actions>
+            </x-admin.card-header>
+            <div class="p-0">
                 <div class="dashboard-list-container">
                     @foreach($tasksData['tasks'] as $task)
                         <div class="dashboard-list-item">
@@ -80,7 +76,7 @@
                     @endforeach
                 </div>
             </div>
-        </div>
+        </x-admin.card>
     </div>
 </div>
 @endif

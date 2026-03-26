@@ -10,18 +10,9 @@
 <div class="general-page">
     <div class="row g-3">
         <div class="col-12">
-            <div class="general-card">
-                <div class="general-card-header">
-                    <div>
-                        <h5 class="general-title">
-                            <i class="bi bi-box-seam me-2"></i>
-                            تفاصيل الإصدار v{{ $version->version }}
-                        </h5>
-                        <div class="general-subtitle">
-                            {{ $version->title }}
-                        </div>
-                    </div>
-                    <div class="general-card-actions">
+            <x-admin.card>
+                <x-admin.card-header :title="'تفاصيل الإصدار v' . $version->version" icon="bi-box-seam">
+                    <x-slot:actions>
                         @if(auth()->user()->isSuperAdmin())
                             <a href="{{ route('admin.versions.edit', $version) }}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil me-1"></i>
@@ -32,8 +23,8 @@
                             <i class="bi bi-arrow-right me-1"></i>
                             العودة للسجل
                         </a>
-                    </div>
-                </div>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
                 <div class="card-body">
                     {{-- بطاقة معلومات الإصدار --}}
@@ -85,7 +76,7 @@
                     {{-- الوصف --}}
                     @if($version->description)
                         <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-header bg-light">
+                            <div class="card-header" style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem;">
                                 <h6 class="mb-0 fw-bold">
                                     <i class="bi bi-file-text text-primary me-2"></i>
                                     وصف الإصدار
@@ -102,7 +93,7 @@
                     
                     @if(!empty($changes['features']) || !empty($changes['fixes']) || !empty($changes['improvements']) || !empty($changes['security']))
                         <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-light">
+                            <div class="card-header" style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem;">
                                 <h6 class="mb-0 fw-bold">
                                     <i class="bi bi-list-check text-primary me-2"></i>
                                     سجل التغييرات
@@ -211,7 +202,7 @@
                         @endif
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>

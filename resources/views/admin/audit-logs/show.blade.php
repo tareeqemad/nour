@@ -9,19 +9,12 @@
 @endphp
 
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">
-                    <i class="bi bi-info-circle me-2"></i>
-                    تفاصيل سجل النشاط #{{ $auditLog->id }}
-                </h5>
-                <a href="{{ route('admin.activity-logs.index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-right me-1"></i>
-                    رجوع
-                </a>
-            </div>
+<div class="general-page">
+    <div class="row">
+        <div class="col-12">
+            <x-admin.card>
+                <x-admin.card-header-form :title="'تفاصيل سجل النشاط #' . $auditLog->id" icon="bi-info-circle" :backRoute="route('admin.activity-logs.index')">
+                </x-admin.card-header-form>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -163,13 +156,14 @@
 
                 <div class="mt-4 pt-3 border-top">
                     <a href="{{ route('admin.activity-logs.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-right me-2"></i>
+                        <i class="bi bi-arrow-right me-1"></i>
                         رجوع
                     </a>
                 </div>
             </div>
-        </div>
+        </x-admin.card>
     </div>
+</div>
 </div>
 @endsection
 
