@@ -139,7 +139,6 @@
                     <h6 class="general-title mb-0">
                         <i class="bi bi-people me-2" style="color: var(--color-info, #0EA5E9); opacity: .75;"></i>
                         6. المشتركون المفوترون في الفترة
-                        <span class="badge bg-secondary ms-2">{{ $billedSubscribers->count() }}</span>
                     </h6>
                 </div>
                 <div class="card-body p-0">
@@ -372,7 +371,6 @@
                     <h6 class="general-title mb-0">
                         <i class="bi bi-arrow-up-circle me-2" style="color: var(--color-danger, #EF4444); opacity: .75;"></i>
                         4أ. الأرصدة المدينة (مديون على المشترك)
-                        <span class="badge bg-danger ms-2">{{ $debitBalances->count() }}</span>
                     </h6>
                 </div>
                 <div class="card-body p-0">
@@ -421,7 +419,6 @@
                     <h6 class="general-title mb-0">
                         <i class="bi bi-arrow-down-circle me-2" style="color: var(--color-success, #10B981); opacity: .75;"></i>
                         4ب. الأرصدة الدائنة (دائن لصالح المشترك)
-                        <span class="badge bg-success ms-2">{{ $creditBalances->count() }}</span>
                     </h6>
                 </div>
                 <div class="card-body p-0">

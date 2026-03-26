@@ -18,7 +18,7 @@
         <div class="users-page-header">
             <div>
                 <h1 class="users-title">موظفي المشغل</h1>
-                <div class="users-subtitle">{{ $operator->name }} — العدد: {{ $employees->total() }}</div>
+                <div class="users-subtitle">{{ $operator->name }}</div>
             </div>
 
             <a href="{{ route('admin.users.index') }}" class="btn btn-light-subtle">
@@ -26,7 +26,7 @@
             </a>
         </div>
 
-        <div class="card ui-card">
+        <x-admin.card>
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.operators.employees', $operator) }}" class="users-filters">
                     <div class="row g-2 align-items-end">
@@ -78,7 +78,7 @@
                                 </td>
                                 <td>{{ $emp->username }}</td>
                                 <td>{{ $emp->email }}</td>
-                                <td><span class="badge bg-success">{{ $emp->role_name }}</span></td>
+                                <td><x-admin.badge type="success">{{ $emp->role_name }}</x-admin.badge></td>
                                 <td><span class="text-muted">{{ optional($emp->created_at)->format('Y-m-d') }}</span></td>
                                 <td>
                                     <div class="d-flex gap-1">
@@ -100,7 +100,7 @@
                     {{ $employees->links() }}
                 </div>
             @endif
-        </div>
+        </x-admin.card>
 
     </div>
 @endsection

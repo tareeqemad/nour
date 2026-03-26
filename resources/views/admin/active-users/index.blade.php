@@ -17,11 +17,7 @@
     <div class="row g-3">
         <div class="col-12">
             <x-admin.card>
-                <x-admin.card-header title="المستخدمين النشطين" icon="bi-activity">
-                    <x-slot:actions>
-                        <span class="stat-chip"><strong>{{ $activeUsers->count() }}</strong></span>
-                    </x-slot:actions>
-                </x-admin.card-header>
+                <x-admin.card-header title="المستخدمين النشطين" icon="bi-activity" />
 
                 <div class="card-body">
                     @if($activeUsers->isEmpty())

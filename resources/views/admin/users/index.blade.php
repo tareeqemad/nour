@@ -63,7 +63,6 @@
                         @endcan
                     </x-slot:actions>
                 </x-admin.card-header>
-                <span class="text-muted fw-normal fs-6 ms-2" id="usersSubtitle"></span>
 
                 <div class="card-body pt-3 pb-4">
 
@@ -615,7 +614,7 @@
                     return;
                 }
                 $meta.text(`عرض ${meta.from || 0} - ${meta.to || 0} من ${meta.total || 0}`);
-                $('#usersSubtitle').text(`${meta.total || 0} مستخدم`);
+                // count removed from header
             }
 
             function renderPagination(meta){

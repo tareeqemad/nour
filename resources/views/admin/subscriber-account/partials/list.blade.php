@@ -1,9 +1,10 @@
 @if($subscribers->count() > 0)
-    <p class="text-muted small mb-3">
-        <i class="bi bi-info-circle me-1"></i>
-        عدد النتائج: <strong>{{ $subscribers->total() }}</strong>
-        @if($search) — نتائج البحث عن: "<strong>{{ $search }}</strong>" @endif
-    </p>
+    @if($search)
+        <p class="text-muted small mb-3">
+            <i class="bi bi-search me-1"></i>
+            نتائج البحث عن: "<strong>{{ $search }}</strong>"
+        </p>
+    @endif
 
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">

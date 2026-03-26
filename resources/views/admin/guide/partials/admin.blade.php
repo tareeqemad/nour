@@ -1,93 +1,67 @@
 {{-- المدير --}}
-<div class="role-section">
-    <div class="role-header">
-        <div class="role-title">
-            <i class="bi bi-person-check"></i>
-            <span>المدير (Admin)</span>
-            <span class="role-badge bg-secondary ms-2">مدير</span>
-        </div>
-    </div>
-    
-    <div class="alert alert-secondary mb-4">
-        <h6 class="alert-heading">
-            <i class="bi bi-eye"></i>
-            دور العرض والمراقبة
-        </h6>
-        <p class="mb-0">
-            دور Admin هو دور <strong>عرض فقط</strong> مصمم للمراقبين والمدققين الذين يحتاجون 
-            إلى الاطلاع على جميع البيانات دون القدرة على إجراء تعديلات. يمكنك عرض جميع 
-            المعلومات ولكن لا يمكنك إنشاء أو تعديل أو حذف أي شيء.
-        </p>
-    </div>
+<div class="d-accordion-item">
+    <button class="d-accordion-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdmin" aria-expanded="true">
+        <i class="bi bi-person-check icon"></i>
+        المدير (Admin)
+        <span class="d-accordion-badge badge-admin">عرض فقط</span>
+        <i class="bi bi-chevron-down chevron"></i>
+    </button>
+    <div class="collapse show" id="collapseAdmin">
+        <div class="d-accordion-body">
 
-    <div class="info-box">
-        <h4><i class="bi bi-eye"></i>الصلاحيات (عرض فقط):</h4>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">عرض البيانات الأساسية:</h6>
-                <ul>
-                    <li>عرض جميع المشغلين وبياناتهم</li>
-                    <li>عرض جميع وحدات التوليد</li>
-                    <li>عرض جميع المولدات</li>
-                    <li>عرض المناطق الجغرافية</li>
-                    <li>عرض جميع المستخدمين</li>
-                </ul>
+            <div class="d-callout d-callout-info mb-3">
+                <p>دور Admin هو دور <strong>عرض فقط</strong> مصمم للمراقبين والمدققين. يمكنك عرض جميع المعلومات ولكن لا يمكنك إنشاء أو تعديل أو حذف أي شيء.</p>
             </div>
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">عرض السجلات والتقارير:</h6>
-                <ul>
-                    <li>عرض جميع سجلات التشغيل</li>
-                    <li>عرض جميع سجلات الصيانة</li>
-                    <li>عرض سجلات كفاءة الوقود</li>
-                    <li>عرض سجلات الامتثال والسلامة</li>
-                    <li>عرض أسعار التعرفة</li>
-                </ul>
-            </div>
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">عرض الإحصائيات:</h6>
-                <ul>
-                    <li>عرض لوحة التحكم والإحصائيات</li>
-                    <li>عرض التقارير المختلفة</li>
-                    <li>عرض المستخدمين النشطين</li>
-                </ul>
-            </div>
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">عرض الإعدادات:</h6>
-                <ul>
-                    <li>عرض إعدادات الموقع</li>
-                    <li>عرض الثوابت (المحافظات، المدن)</li>
-                    <li>عرض الأدوار والصلاحيات</li>
-                </ul>
-            </div>
-        </div>
-        <div class="mt-3 pt-3 border-top">
-            <h6 class="fw-bold text-danger mb-2">❌ القيود الكاملة:</h6>
-            <ul class="mb-0">
-                <li>❌ لا يمكنك إنشاء أو تعديل أو حذف أي مستخدم</li>
-                <li>❌ لا يمكنك إنشاء أو تعديل أو حذف أي مشغل</li>
-                <li>❌ لا يمكنك إنشاء أو تعديل أو حذف أي وحدة توليد أو مولد</li>
-                <li>❌ لا يمكنك إضافة أو تعديل أي سجل</li>
-                <li>❌ لا يمكنك تعديل الإعدادات</li>
-                <li>❌ لا يمكنك إرسال رسائل</li>
-                <li>❌ لا يمكنك إدارة الصلاحيات</li>
-            </ul>
-        </div>
-    </div>
 
-    <div class="info-box">
-        <h4><i class="bi bi-info-circle"></i>كيفية استخدام دور Admin:</h4>
-        <p>
-            دور Admin مفيد للمراقبين والمدققين الذين يحتاجون إلى:
-        </p>
-        <ul>
-            <li><strong>المراقبة:</strong> مراقبة جميع العمليات والأنشطة في النظام</li>
-            <li><strong>التحقق:</strong> التحقق من صحة البيانات والسجلات</li>
-            <li><strong>التدقيق:</strong> تدقيق العمليات والامتثال</li>
-            <li><strong>التقارير:</strong> إعداد التقارير بناءً على البيانات المعروضة</li>
-        </ul>
-        <p class="mb-0 mt-3">
-            يمكنك التنقل في جميع صفحات النظام وعرض جميع البيانات، 
-            لكن لن تجد أزرار "إضافة" أو "تعديل" أو "حذف" في أي صفحة.
-        </p>
+            <div class="d-workflow-title"><i class="bi bi-eye"></i> الصلاحيات (عرض فقط)</div>
+            <div class="d-perms-grid">
+                <div class="d-perms-group">
+                    <h6>البيانات الأساسية</h6>
+                    <ul>
+                        <li>عرض جميع المشغلين وبياناتهم</li>
+                        <li>عرض وحدات التوليد والمولدات</li>
+                        <li>عرض المناطق الجغرافية</li>
+                        <li>عرض جميع المستخدمين</li>
+                    </ul>
+                </div>
+                <div class="d-perms-group">
+                    <h6>السجلات والتقارير</h6>
+                    <ul>
+                        <li>عرض سجلات التشغيل والصيانة</li>
+                        <li>عرض كفاءة الوقود والامتثال</li>
+                        <li>عرض أسعار التعرفة</li>
+                    </ul>
+                </div>
+                <div class="d-perms-group">
+                    <h6>الإحصائيات</h6>
+                    <ul>
+                        <li>عرض لوحة التحكم والتقارير</li>
+                        <li>عرض المستخدمين النشطين</li>
+                    </ul>
+                </div>
+                <div class="d-perms-group">
+                    <h6>الإعدادات</h6>
+                    <ul>
+                        <li>عرض إعدادات الموقع والثوابت</li>
+                        <li>عرض الأدوار والصلاحيات</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-restrictions">
+                <h6>القيود الكاملة:</h6>
+                <ul>
+                    <li>&#10060; لا يمكنك إنشاء أو تعديل أو حذف أي مستخدم أو مشغل</li>
+                    <li>&#10060; لا يمكنك إضافة أو تعديل وحدات توليد أو مولدات أو سجلات</li>
+                    <li>&#10060; لا يمكنك تعديل الإعدادات أو إرسال رسائل أو إدارة الصلاحيات</li>
+                </ul>
+            </div>
+
+            <div class="d-callout d-callout-info mt-3">
+                <div class="d-callout-title"><i class="bi bi-info-circle"></i> الاستخدام المناسب</div>
+                <p>مفيد للمراقبين والمدققين — مراقبة العمليات، التحقق من البيانات، تدقيق الامتثال، وإعداد التقارير.</p>
+            </div>
+
+        </div>
     </div>
 </div>

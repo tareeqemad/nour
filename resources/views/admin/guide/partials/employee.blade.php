@@ -1,98 +1,59 @@
 {{-- الموظف --}}
-<div class="role-section">
-    <div class="role-header">
-        <div class="role-title">
-            <i class="bi bi-person"></i>
-            <span>الموظف (Employee)</span>
-            <span class="role-badge bg-success ms-2">موظف</span>
-        </div>
-    </div>
-    
-    <div class="alert alert-success mb-4">
-        <h6 class="alert-heading">
-            <i class="bi bi-person-check"></i>
-            دور الموظف
-        </h6>
-        <p class="mb-0">
-            الموظف يعمل تحت إشراف المشغل ويمكنه تسجيل السجلات اليومية حسب الصلاحيات الممنوحة له. 
-            يمكن للمشغل تخصيص الصلاحيات لكل موظف حسب احتياجاته.
-        </p>
-    </div>
+<div class="d-accordion-item">
+    <button class="d-accordion-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEmployee" aria-expanded="true">
+        <i class="bi bi-person icon"></i>
+        الموظف (Employee)
+        <span class="d-accordion-badge badge-employee">موظف</span>
+        <i class="bi bi-chevron-down chevron"></i>
+    </button>
+    <div class="collapse show" id="collapseEmployee">
+        <div class="d-accordion-body">
 
-    <div class="info-box">
-        <h4><i class="bi bi-key"></i>الصلاحيات الأساسية:</h4>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">عرض البيانات:</h6>
+            <div class="d-callout d-callout-success mb-3">
+                <p>الموظف يعمل تحت إشراف المشغل ويمكنه تسجيل السجلات اليومية حسب الصلاحيات الممنوحة له. يمكن للمشغل تخصيص الصلاحيات لكل موظف.</p>
+            </div>
+
+            <div class="d-workflow-title"><i class="bi bi-key"></i> الصلاحيات الأساسية</div>
+            <div class="d-perms-grid">
+                <div class="d-perms-group">
+                    <h6>عرض البيانات</h6>
+                    <ul>
+                        <li>عرض بيانات المشغل التابع له</li>
+                        <li>عرض وحدات التوليد والمولدات</li>
+                        <li>عرض لوحة التحكم والإحصائيات</li>
+                    </ul>
+                </div>
+                <div class="d-perms-group">
+                    <h6>تسجيل السجلات (حسب الصلاحيات)</h6>
+                    <ul>
+                        <li>سجلات التشغيل اليومية</li>
+                        <li>سجلات الصيانة</li>
+                        <li>كفاءة الوقود والامتثال</li>
+                        <li>تعديل/حذف السجلات التي أنشأها</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-restrictions">
+                <h6>القيود:</h6>
                 <ul>
-                    <li>عرض بيانات المشغل التابع له</li>
-                    <li>عرض وحدات التوليد التابعة للمشغل</li>
-                    <li>عرض المولدات التابعة لوحدات التوليد</li>
-                    <li>عرض لوحة التحكم والإحصائيات</li>
+                    <li>&#10060; لا يمكنه إدارة المستخدمين أو فريق العمل أو إعدادات المشغل</li>
+                    <li>&#10060; لا يمكنه إضافة/تعديل وحدات التوليد أو المولدات أو التعرفة</li>
                 </ul>
             </div>
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">تسجيل السجلات (حسب الصلاحيات):</h6>
-                <ul>
-                    <li>تسجيل سجلات التشغيل اليومية</li>
-                    <li>تسجيل سجلات الصيانة</li>
-                    <li>تسجيل كفاءة الوقود</li>
-                    <li>تسجيل الامتثال والسلامة</li>
-                    <li>تعديل أو حذف السجلات التي أنشأها (حسب الصلاحيات)</li>
-                </ul>
+
+            <div class="d-workflow-title"><i class="bi bi-gear"></i> كيفية العمل</div>
+            <ol>
+                <li><strong>سجلات التشغيل:</strong> سجلات التشغيل &rarr; إضافة سجل جديد &rarr; اختر الوحدة والمولد &rarr; أدخل البيانات &rarr; حفظ</li>
+                <li><strong>سجلات الصيانة:</strong> سجلات الصيانة &rarr; إضافة سجل جديد &rarr; اختر النوع &rarr; أدخل التفاصيل &rarr; حفظ</li>
+                <li><strong>المراقبة:</strong> استخدم لوحة التحكم لعرض الإحصائيات ومراقبة كفاءة الوقود</li>
+            </ol>
+
+            <div class="d-callout d-callout-warning mt-2">
+                <div class="d-callout-title"><i class="bi bi-info-circle"></i> ملاحظة</div>
+                <p>صلاحياتك تختلف حسب ما يحدده المشغل. إذا لم تتمكن من الوصول لصفحة معينة، تواصل مع المشغل لإضافة الصلاحية المطلوبة.</p>
             </div>
-        </div>
-        <div class="mt-3 pt-3 border-top">
-            <h6 class="fw-bold text-danger mb-2">❌ القيود:</h6>
-            <ul class="mb-0">
-                <li>❌ لا يمكنه إدارة المستخدمين أو فريق العمل</li>
-                <li>❌ لا يمكنه إدارة إعدادات المشغل</li>
-                <li>❌ لا يمكنه إضافة أو تعديل وحدات التوليد</li>
-                <li>❌ لا يمكنه إضافة أو تعديل المولدات</li>
-                <li>❌ لا يمكنه إدارة أسعار التعرفة</li>
-                <li>❌ لا يمكنه الوصول إلى إعدادات النظام</li>
-            </ul>
-        </div>
-    </div>
 
-    <div class="info-box">
-        <h4><i class="bi bi-gear"></i>كيفية العمل:</h4>
-        <ol class="mb-0">
-            <li><strong>تسجيل سجلات التشغيل:</strong>
-                <ul>
-                    <li>اذهب إلى <strong>سجلات التشغيل → إضافة سجل جديد</strong></li>
-                    <li>اختر وحدة التوليد والمولد</li>
-                    <li>أدخل البيانات: التاريخ، وقت البدء والانتهاء، الطاقة المنتجة، الوقود المستهلك</li>
-                    <li>احفظ السجل</li>
-                </ul>
-            </li>
-            <li><strong>تسجيل سجلات الصيانة:</strong>
-                <ul>
-                    <li>اذهب إلى <strong>سجلات الصيانة → إضافة سجل جديد</strong></li>
-                    <li>اختر نوع الصيانة (دورية، طارئة، وقائية)</li>
-                    <li>أدخل تفاصيل الصيانة والتكلفة</li>
-                    <li>احفظ السجل</li>
-                </ul>
-            </li>
-            <li><strong>مراقبة الأداء:</strong>
-                <ul>
-                    <li>استخدم لوحة التحكم لعرض الإحصائيات</li>
-                    <li>راجع السجلات التاريخية</li>
-                    <li>راقب كفاءة الوقود</li>
-                </ul>
-            </li>
-        </ol>
-    </div>
-
-    <div class="alert alert-info mt-3 mb-0">
-        <h6 class="alert-heading">
-            <i class="bi bi-info-circle"></i>
-            ملاحظة مهمة
-        </h6>
-        <p class="mb-0">
-            الصلاحيات المحددة لك يمكن أن تختلف حسب ما يحدده المشغل. 
-            إذا لم تتمكن من الوصول إلى صفحة معينة، فهذا يعني أن المشغل لم يمنحك الصلاحية المطلوبة. 
-            تواصل مع المشغل لإضافة الصلاحيات المطلوبة.
-        </p>
+        </div>
     </div>
 </div>

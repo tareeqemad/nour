@@ -1,103 +1,59 @@
 {{-- الفني --}}
-<div class="role-section">
-    <div class="role-header">
-        <div class="role-title">
-            <i class="bi bi-tools"></i>
-            <span>الفني (Technician)</span>
-            <span class="role-badge bg-warning ms-2">فني</span>
-        </div>
-    </div>
-    
-    <div class="alert alert-warning mb-4">
-        <h6 class="alert-heading">
-            <i class="bi bi-tools"></i>
-            دور الفني
-        </h6>
-        <p class="mb-0">
-            الفني متخصص في أعمال الصيانة والسلامة. يعمل تحت إشراف المشغل ويركز على 
-            تسجيل سجلات الصيانة والامتثال والسلامة. يمكن للمشغل تخصيص الصلاحيات لكل فني.
-        </p>
-    </div>
+<div class="d-accordion-item">
+    <button class="d-accordion-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTechnician" aria-expanded="true">
+        <i class="bi bi-tools icon"></i>
+        الفني (Technician)
+        <span class="d-accordion-badge badge-technician">فني</span>
+        <i class="bi bi-chevron-down chevron"></i>
+    </button>
+    <div class="collapse show" id="collapseTechnician">
+        <div class="d-accordion-body">
 
-    <div class="info-box">
-        <h4><i class="bi bi-key"></i>الصلاحيات الأساسية:</h4>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">عرض البيانات:</h6>
+            <div class="d-callout d-callout-warning mb-3">
+                <p>الفني متخصص في أعمال الصيانة والسلامة. يعمل تحت إشراف المشغل ويركز على تسجيل سجلات الصيانة والامتثال والسلامة.</p>
+            </div>
+
+            <div class="d-workflow-title"><i class="bi bi-key"></i> الصلاحيات الأساسية</div>
+            <div class="d-perms-grid">
+                <div class="d-perms-group">
+                    <h6>عرض البيانات</h6>
+                    <ul>
+                        <li>عرض بيانات المشغل التابع له</li>
+                        <li>عرض وحدات التوليد والمولدات</li>
+                        <li>عرض لوحة التحكم والإحصائيات</li>
+                    </ul>
+                </div>
+                <div class="d-perms-group">
+                    <h6>تسجيل السجلات (حسب الصلاحيات)</h6>
+                    <ul>
+                        <li>سجلات الصيانة (دورية، طارئة، وقائية)</li>
+                        <li>سجلات الامتثال والسلامة</li>
+                        <li>كفاءة الوقود</li>
+                        <li>تعديل/حذف السجلات التي أنشأها</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-restrictions">
+                <h6>القيود:</h6>
                 <ul>
-                    <li>عرض بيانات المشغل التابع له</li>
-                    <li>عرض وحدات التوليد التابعة للمشغل</li>
-                    <li>عرض المولدات التابعة لوحدات التوليد</li>
-                    <li>عرض لوحة التحكم والإحصائيات</li>
+                    <li>&#10060; لا يمكنه تسجيل سجلات التشغيل (محجوزة للموظفين عادة)</li>
+                    <li>&#10060; لا يمكنه إدارة المستخدمين أو إعدادات المشغل أو الوحدات/المولدات/التعرفة</li>
                 </ul>
             </div>
-            <div class="col-md-6">
-                <h6 class="fw-bold mb-2">تسجيل السجلات (حسب الصلاحيات):</h6>
-                <ul>
-                    <li>تسجيل سجلات الصيانة (الدورية والطارئة)</li>
-                    <li>تسجيل سجلات الامتثال والسلامة</li>
-                    <li>تسجيل كفاءة الوقود</li>
-                    <li>تعديل أو حذف السجلات التي أنشأها (حسب الصلاحيات)</li>
-                </ul>
+
+            <div class="d-workflow-title"><i class="bi bi-gear"></i> كيفية العمل</div>
+            <ol>
+                <li><strong>سجلات الصيانة:</strong> سجلات الصيانة &rarr; إضافة سجل &rarr; اختر النوع (دورية/طارئة/وقائية) &rarr; التفاصيل والتكلفة والأجزاء المستبدلة &rarr; حفظ</li>
+                <li><strong>الامتثال والسلامة:</strong> الامتثال &rarr; إضافة سجل &rarr; سجل التقارير والفحوصات &rarr; حفظ</li>
+                <li><strong>المراقبة:</strong> راجع سجلات الصيانة السابقة وراقب حالة المولدات من لوحة التحكم</li>
+            </ol>
+
+            <div class="d-callout d-callout-warning mt-2">
+                <div class="d-callout-title"><i class="bi bi-info-circle"></i> ملاحظة</div>
+                <p>صلاحياتك تختلف حسب ما يحدده المشغل. إذا لم تتمكن من الوصول لصفحة معينة، تواصل مع المشغل لإضافة الصلاحية المطلوبة.</p>
             </div>
-        </div>
-        <div class="mt-3 pt-3 border-top">
-            <h6 class="fw-bold text-danger mb-2">❌ القيود:</h6>
-            <ul class="mb-0">
-                <li>❌ لا يمكنه تسجيل سجلات التشغيل (عادة محجوزة للموظفين)</li>
-                <li>❌ لا يمكنه إدارة المستخدمين أو فريق العمل</li>
-                <li>❌ لا يمكنه إدارة إعدادات المشغل</li>
-                <li>❌ لا يمكنه إضافة أو تعديل وحدات التوليد</li>
-                <li>❌ لا يمكنه إضافة أو تعديل المولدات</li>
-                <li>❌ لا يمكنه إدارة أسعار التعرفة</li>
-            </ul>
-        </div>
-    </div>
 
-    <div class="info-box">
-        <h4><i class="bi bi-gear"></i>كيفية العمل:</h4>
-        <ol class="mb-0">
-            <li><strong>تسجيل سجلات الصيانة:</strong>
-                <ul>
-                    <li>اذهب إلى <strong>سجلات الصيانة → إضافة سجل جديد</strong></li>
-                    <li>اختر نوع الصيانة:
-                        <ul>
-                            <li><strong>صيانة دورية:</strong> الصيانة المخطط لها مسبقاً</li>
-                            <li><strong>صيانة طارئة:</strong> لإصلاح أعطال مفاجئة</li>
-                            <li><strong>صيانة وقائية:</strong> للوقاية من المشاكل</li>
-                        </ul>
-                    </li>
-                    <li>أدخل تفاصيل الصيانة: الوصف، التكلفة، الأجزاء المستبدلة</li>
-                    <li>احفظ السجل</li>
-                </ul>
-            </li>
-            <li><strong>تسجيل سجلات الامتثال والسلامة:</strong>
-                <ul>
-                    <li>اذهب إلى <strong>الامتثال والسلامة → إضافة سجل جديد</strong></li>
-                    <li>سجل أي تقارير أو فحوصات متعلقة بالامتثال</li>
-                    <li>سجل أي مشاكل أو تحسينات متعلقة بالسلامة</li>
-                    <li>احفظ السجل</li>
-                </ul>
-            </li>
-            <li><strong>مراقبة حالة المولدات:</strong>
-                <ul>
-                    <li>راجع سجلات الصيانة السابقة</li>
-                    <li>راقب حالة المولدات من لوحة التحكم</li>
-                    <li>راجع التقارير المتعلقة بالصيانة</li>
-                </ul>
-            </li>
-        </ol>
-    </div>
-
-    <div class="alert alert-info mt-3 mb-0">
-        <h6 class="alert-heading">
-            <i class="bi bi-info-circle"></i>
-            ملاحظة مهمة
-        </h6>
-        <p class="mb-0">
-            الصلاحيات المحددة لك يمكن أن تختلف حسب ما يحدده المشغل. 
-            إذا لم تتمكن من الوصول إلى صفحة معينة، فهذا يعني أن المشغل لم يمنحك الصلاحية المطلوبة. 
-            تواصل مع المشغل لإضافة الصلاحيات المطلوبة.
-        </p>
+        </div>
     </div>
 </div>

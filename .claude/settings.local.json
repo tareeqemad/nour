@@ -7,7 +7,21 @@
       "Bash(sed -i 's/table-light//' resources/views/admin/invoice-reports/index.blade.php)",
       "Bash(php artisan:*)",
       "WebSearch",
-      "WebFetch(domain:www.designstudiouiux.com)"
+      "WebFetch(domain:www.designstudiouiux.com)",
+      "Bash(grep -r \"login\\\\|auth\" /c/Users/PC/Desktop/nour/routes/*.php --include=*.php)",
+      "Bash(find /c/Users/PC/Desktop/nour/resources/views -type f -name *layout* -o -name *app*)",
+      "Bash(find /c/Users/PC/Desktop/nour/public -type f -name *login* -o -name *auth*)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/PC/Desktop/nour -type f -name cascading-selects.js -o -name *cascade* -o -name *generation-units*controller*)",
+      "Bash(find /c/Users/PC/Desktop/nour -path */public/assets/site/* -o -path */resources/views/site/partials/*)",
+      "Bash(find /c/Users/PC/Desktop/nour/public/assets -type f -name *.css)",
+      "Bash(find /c/Users/PC/Desktop/nour/resources/views -path *partials* -name *.blade.php)",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --no-import-alias --use-npm)",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --no-import-alias --use-npm --no-turbopack --yes)",
+      "Bash(php -r \"echo file_exists\\(''C:/Users/PC/Desktop/nour/config/cors.php''\\) ? ''exists'' : ''not found'';\")",
+      "Bash(netsh interface:*)",
+      "Bash(npx next:*)",
+      "Bash(taskkill //F //IM node.exe)"
     ]
   }
 }

@@ -126,7 +126,6 @@
                 <x-admin.card>
                     <x-admin.card-header title="شجرة الصلاحيات" icon="bi-diagram-3" class="perm-tree-header">
                         <x-slot:actions>
-                            <span class="badge text-bg-secondary fw-normal" id="treeCount">{{ $permissions->flatten()->count() }}</span>
                             <button type="button" class="btn btn-sm btn-outline-primary" id="expandAllBtn">
                                 <i class="bi bi-arrows-angle-expand me-1"></i>
                                 توسيع الكل

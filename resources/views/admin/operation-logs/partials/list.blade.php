@@ -3,7 +3,7 @@
     @include('admin.operation-logs.partials.generator-info-card', ['operationLogs' => $operationLogs, 'totalStats' => $totalStats])
     
     {{-- جدول سجلات التشغيل --}}
-    <div class="card border mt-3">
+    <x-admin.card class="mt-3">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -128,7 +128,7 @@
                 </table>
             </div>
         </div>
-    </div>
+    </x-admin.card>
 
     @if($operationLogs->hasPages())
         <div class="mt-4">

@@ -2,14 +2,8 @@
 
 @if($authUser->isSuperAdmin())
     {{-- مشغلون --}}
-    <div class="card ui-card">
-        <div class="card-header">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-building text-primary"></i>
-                <div class="fw-bold">المشغلون</div>
-                <span class="badge bg-secondary">{{ $companyOwners->total() }}</span>
-            </div>
-        </div>
+    <x-admin.card class="mb-3">
+        <x-admin.card-header title="المشغلون" icon="bi-building" />
 
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -34,7 +28,7 @@
                             <td>{{ $owner->email }}</td>
                             <td>
                                 @if($op)
-                                    <span class="badge bg-primary">{{ $op->name }}</span>
+                                    <x-admin.badge type="primary">{{ $op->name }}</x-admin.badge>
                                 @else
                                     <span class="text-muted">غير مربوط</span>
                                 @endif
@@ -71,17 +65,11 @@
                 {{ $companyOwners->links() }}
             </div>
         @endif
-    </div>
+    </x-admin.card>
 
     {{-- سلطة الطاقة/النظام --}}
-    <div class="card ui-card">
-        <div class="card-header">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-lightning-charge text-primary"></i>
-                <div class="fw-bold">سلطة الطاقة / النظام</div>
-                <span class="badge bg-secondary">{{ $otherUsers->total() }}</span>
-            </div>
-        </div>
+    <x-admin.card>
+        <x-admin.card-header title="سلطة الطاقة / النظام" icon="bi-lightning-charge" />
 
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -102,7 +90,7 @@
                             <td class="fw-semibold">{{ $u->name }}</td>
                             <td>{{ $u->username }}</td>
                             <td>{{ $u->email }}</td>
-                            <td><span class="badge bg-dark">{{ $u->role_name ?? '-' }}</span></td>
+                            <td><x-admin.badge type="neutral">{{ $u->role_name ?? '-' }}</x-admin.badge></td>
                             <td><span class="text-muted">{{ optional($u->created_at)->format('Y-m-d') }}</span></td>
                             <td>
                                 <div class="d-flex gap-1">
@@ -135,19 +123,11 @@
                 {{ $otherUsers->links() }}
             </div>
         @endif
-    </div>
+    </x-admin.card>
 @else
     {{-- مشغل: موظفين/فنيين --}}
-    <div class="card ui-card">
-        <div class="card-header">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-people text-primary"></i>
-                <div class="fw-bold">فريق العمل</div>
-                @if(isset($operator) && $operator)
-                    <span class="badge bg-primary">{{ $operator->name }}</span>
-                @endif
-            </div>
-        </div>
+    <x-admin.card>
+        <x-admin.card-header title="فريق العمل" icon="bi-people" />
 
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -168,7 +148,7 @@
                             <td class="fw-semibold">{{ $emp->name }}</td>
                             <td>{{ $emp->username }}</td>
                             <td>{{ $emp->email }}</td>
-                            <td><span class="badge bg-success">{{ $emp->role_name ?? '-' }}</span></td>
+                            <td><x-admin.badge type="success">{{ $emp->role_name ?? '-' }}</x-admin.badge></td>
                             <td><span class="text-muted">{{ optional($emp->created_at)->format('Y-m-d') }}</span></td>
                             <td>
                                 <div class="d-flex gap-1">
@@ -201,5 +181,5 @@
                 {{ $employees->links() }}
             </div>
         @endif
-    </div>
+    </x-admin.card>
 @endif

@@ -17,7 +17,6 @@
                 <x-admin.card>
                     <x-admin.card-header title="سجلات الصيانة" icon="bi-tools">
                         <x-slot:actions>
-                            <span class="text-muted small">العدد: <span id="maintenanceRecordsCount">{{ isset($groupedLogs) ? $groupedLogs->flatten()->count() : $maintenanceRecords->total() }}</span></span>
                             @can('create', App\Models\MaintenanceRecord::class)
                                 <a href="{{ route('admin.maintenance-records.create') }}" class="btn btn-primary btn-sm">
                                     <i class="bi bi-plus-lg me-1"></i>

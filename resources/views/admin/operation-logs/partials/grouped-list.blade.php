@@ -11,29 +11,15 @@
         
         @if($generator)
             {{-- عنوان المجموعة --}}
-            <div class="card border mt-3">
-                <div class="card-header bg-light">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <i class="bi bi-lightning-charge fs-4"></i>
-                        </div>
-                        <div>
-                            <h5 class="mb-0">
-                                {{ $generator->name }}
-                                <span class="badge bg-secondary ms-2">{{ $generator->generator_number }}</span>
-                            </h5>
-                            @if($generationUnit)
-                                <small class="text-muted">
-                                    <i class="bi bi-grid-3x3 me-1"></i>
-                                    {{ $generationUnit->name }} ({{ $generationUnit->unit_code }})
-                                </small>
-                            @endif
-                        </div>
-                        <div class="ms-auto">
-                            <span class="badge bg-info">{{ $logs->count() }} سجل</span>
-                        </div>
-                    </div>
-                </div>
+            <x-admin.card class="mt-3">
+                <x-admin.card-header :title="$generator->name" icon="bi-lightning-charge">
+                    <x-slot:actions>
+                        <x-admin.badge type="neutral">{{ $generator->generator_number }}</x-admin.badge>
+                        @if($generationUnit)
+                            <span class="text-muted small"><i class="bi bi-grid-3x3 me-1"></i>{{ $generationUnit->name }} ({{ $generationUnit->unit_code }})</span>
+                        @endif
+                    </x-slot:actions>
+                </x-admin.card-header>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -149,7 +135,7 @@
                         </table>
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         @endif
     @endforeach
 

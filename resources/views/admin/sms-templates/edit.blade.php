@@ -64,16 +64,11 @@
                             </div>
 
                             <div class="col-md-12">
-                                <div class="card bg-light">
-                                    <div class="card-header">
-                                        <h6 class="card-title mb-0">معاينة الرسالة</h6>
+                                <x-admin.section title="معاينة الرسالة" icon="bi-eye" :boxed="true">
+                                    <div class="template-preview" id="templatePreview">
+                                        {{ $smsTemplate->template }}
                                     </div>
-                                    <div class="card-body">
-                                        <div class="template-preview" id="templatePreview">
-                                            {{ $smsTemplate->template }}
-                                        </div>
-                                    </div>
-                                </div>
+                                </x-admin.section>
                             </div>
                         </div>
 

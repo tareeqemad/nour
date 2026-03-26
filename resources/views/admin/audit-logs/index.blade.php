@@ -126,7 +126,7 @@
                 </div>
 
                 {{-- Row 3: Card للجدول --}}
-                <div class="card border mt-3">
+                <x-admin.card class="mt-3">
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -166,7 +166,7 @@
                             </div>
                         @endif
                     </div>
-                </div>
+                </x-admin.card>
             </x-admin.card>
         </div>
     </div>
