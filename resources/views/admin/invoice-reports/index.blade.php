@@ -591,6 +591,185 @@
             </x-admin.card>
         </div>
 
+        {{-- ===== إيرادات حسب المشغل ===== --}}
+        @if($revenueByOperator->isNotEmpty())
+        <div class="col-12 mt-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:1.1rem;">
+                    <i class="bi bi-building"></i>
+                </div>
+                <h6 class="fw-bold mb-0" style="font-size:1.05rem;">إيرادات حسب المشغل</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th class="text-end">المشغل</th>
+                            <th>المشتركين</th>
+                            <th>الفواتير</th>
+                            <th>الاستهلاك (kWh)</th>
+                            <th>إجمالي الفوترة</th>
+                            <th>إجمالي المحصّل</th>
+                            <th>نسبة التحصيل</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($revenueByOperator as $i => $op)
+                        <tr>
+                            <td>{{ $i + 1 }}</td>
+                            <td class="text-end fw-semibold">{{ $op->name }}</td>
+                            <td><span class="badge bg-secondary">{{ $op->subscriber_count }}</span></td>
+                            <td><span class="badge bg-info">{{ $op->invoice_count }}</span></td>
+                            <td>{{ number_format($op->total_kwh, 2) }}</td>
+                            <td class="fw-semibold">{{ number_format($op->total_billed, 2) }} ₪</td>
+                            <td class="text-success fw-semibold">{{ number_format($op->total_paid, 2) }} ₪</td>
+                            <td>
+                                @php $rateColor = $op->collection_rate >= 80 ? 'success' : ($op->collection_rate >= 50 ? 'warning' : 'danger'); @endphp
+                                <span class="badge bg-{{ $rateColor }}">{{ $op->collection_rate }}%</span>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="2" class="text-end">الإجمالي</td>
+                            <td>{{ $revenueByOperator->sum('subscriber_count') }}</td>
+                            <td>{{ $revenueByOperator->sum('invoice_count') }}</td>
+                            <td>{{ number_format($revenueByOperator->sum('total_kwh'), 2) }}</td>
+                            <td>{{ number_format($revenueByOperator->sum('total_billed'), 2) }} ₪</td>
+                            <td class="text-success">{{ number_format($revenueByOperator->sum('total_paid'), 2) }} ₪</td>
+                            <td>
+                                @php
+                                    $totalB = $revenueByOperator->sum('total_billed');
+                                    $totalP = $revenueByOperator->sum('total_paid');
+                                    $totalRate = $totalB > 0 ? round(($totalP / $totalB) * 100, 1) : 0;
+                                    $totalRateColor = $totalRate >= 80 ? 'success' : ($totalRate >= 50 ? 'warning' : 'danger');
+                                @endphp
+                                <span class="badge bg-{{ $totalRateColor }}">{{ $totalRate }}%</span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        {{-- ===== أكبر المتأخرين ===== --}}
+        @if($topDelinquents->isNotEmpty())
+        <div class="col-12 mt-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ef4444,#f87171);color:#fff;font-size:1.1rem;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <h6 class="fw-bold mb-0" style="font-size:1.05rem;">أكبر المتأخرين <span class="badge bg-danger ms-1">{{ $topDelinquents->count() }}</span></h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th class="text-end">المشترك</th>
+                            <th>رقم الاشتراك</th>
+                            <th>المشغل</th>
+                            <th>فواتير متأخرة</th>
+                            <th>إجمالي المتأخر</th>
+                            <th>أقدم فاتورة</th>
+                            <th>أيام التأخر</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($topDelinquents as $i => $d)
+                        <tr>
+                            <td>{{ $i + 1 }}</td>
+                            <td class="text-end fw-semibold">{{ $d->subscriber_name }}</td>
+                            <td><code>{{ $d->subscription_number }}</code></td>
+                            <td><span class="badge bg-secondary">{{ $d->operator_name }}</span></td>
+                            <td><span class="badge bg-danger">{{ $d->overdue_count }}</span></td>
+                            <td class="text-danger fw-bold">{{ number_format($d->total_remaining, 2) }} ₪</td>
+                            <td>{{ $d->oldest_invoice_date }}</td>
+                            <td>
+                                @php $dColor = $d->days_overdue > 60 ? 'danger' : ($d->days_overdue > 30 ? 'warning' : 'secondary'); @endphp
+                                <span class="badge bg-{{ $dColor }}">{{ $d->days_overdue }} يوم</span>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="4" class="text-end">الإجمالي</td>
+                            <td>{{ $topDelinquents->sum('overdue_count') }}</td>
+                            <td class="text-danger">{{ number_format($topDelinquents->sum('total_remaining'), 2) }} ₪</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        {{-- ===== الإيرادات الشهرية ===== --}}
+        @if($monthlyRevenue->isNotEmpty())
+        <div class="col-12 mt-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#34d399);color:#fff;font-size:1.1rem;">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h6 class="fw-bold mb-0" style="font-size:1.05rem;">الإيرادات الشهرية (آخر 12 شهر)</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-end">الشهر</th>
+                            <th>الفواتير</th>
+                            <th>إجمالي الفوترة</th>
+                            <th>إجمالي التحصيل</th>
+                            <th>نسبة التحصيل</th>
+                            <th>الرصيد المتبقي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($monthlyRevenue as $m)
+                        <tr>
+                            <td class="text-end fw-semibold">{{ $m->month }}</td>
+                            <td><span class="badge bg-info">{{ $m->invoice_count }}</span></td>
+                            <td class="fw-semibold">{{ number_format($m->total_billed, 2) }} ₪</td>
+                            <td class="text-success fw-semibold">{{ number_format($m->total_paid, 2) }} ₪</td>
+                            <td>
+                                @php $mColor = $m->collection_rate >= 80 ? 'success' : ($m->collection_rate >= 50 ? 'warning' : 'danger'); @endphp
+                                <span class="badge bg-{{ $mColor }}">{{ $m->collection_rate }}%</span>
+                            </td>
+                            <td class="{{ $m->balance > 0 ? 'text-danger' : 'text-success' }} fw-semibold">
+                                {{ number_format($m->balance, 2) }} ₪
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td class="text-end">الإجمالي</td>
+                            <td>{{ $monthlyRevenue->sum('invoice_count') }}</td>
+                            <td>{{ number_format($monthlyRevenue->sum('total_billed'), 2) }} ₪</td>
+                            <td class="text-success">{{ number_format($monthlyRevenue->sum('total_paid'), 2) }} ₪</td>
+                            <td>
+                                @php
+                                    $mTotalB = $monthlyRevenue->sum('total_billed');
+                                    $mTotalP = $monthlyRevenue->sum('total_paid');
+                                    $mTotalRate = $mTotalB > 0 ? round(($mTotalP / $mTotalB) * 100, 1) : 0;
+                                @endphp
+                                <span class="badge bg-{{ $mTotalRate >= 80 ? 'success' : ($mTotalRate >= 50 ? 'warning' : 'danger') }}">{{ $mTotalRate }}%</span>
+                            </td>
+                            <td class="{{ $monthlyRevenue->sum('balance') > 0 ? 'text-danger' : 'text-success' }}">
+                                {{ number_format($monthlyRevenue->sum('balance'), 2) }} ₪
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        @endif
+
     </div>{{-- end row --}}
 </div>
 

@@ -33,17 +33,43 @@
                                     </h6>
                                 </div>
 
+                                {{-- المشغل --}}
                                 <div class="col-md-6">
+                                    <label class="form-label fw-semibold">المشغل <span class="text-danger">*</span></label>
+                                    @if(auth()->user()->isAffiliatedWithOperator())
+                                        @php $affiliatedOp = $operator ?? auth()->user()->getAffiliatedOperator(); @endphp
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
+                                            <input type="text" class="form-control bg-light" value="{{ $affiliatedOp->name }}" disabled readonly>
+                                        </div>
+                                        <input type="hidden" id="operator_id" value="{{ $affiliatedOp->id }}">
+                                        <small class="form-text text-success"><i class="bi bi-check-circle me-1"></i>محدد تلقائياً</small>
+                                    @else
+                                        <select id="operator_id" class="form-select" required>
+                                            <option value="">اختر المشغل</option>
+                                            @foreach($operators as $op)
+                                                <option value="{{ $op->id }}">{{ $op->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                </div>
+
+                                {{-- المشترك --}}
+                                <div class="col-md-6" id="subscriber_id_wrapper">
                                     <label class="form-label fw-semibold">المشترك <span class="text-danger">*</span></label>
-                                    <select name="subscriber_id" id="subscriber_id" class="form-select @error('subscriber_id') is-invalid @enderror" required>
-                                        <option value="">اختر المشترك</option>
-                                        @foreach($subscribers as $sub)
-                                            <option value="{{ $sub->id }}" 
-                                                {{ old('subscriber_id', $selectedSubscriber?->id) == $sub->id ? 'selected' : '' }}
-                                                data-meter-number="{{ $sub->meter_number ?? '' }}">
-                                                {{ $sub->subscription_number }} - {{ $sub->subscriber_name }}
-                                            </option>
-                                        @endforeach
+                                    <select name="subscriber_id" id="subscriber_id" class="form-select @error('subscriber_id') is-invalid @enderror" required @if(!auth()->user()->isAffiliatedWithOperator() && $subscribers->isEmpty()) disabled @endif>
+                                        @if(!auth()->user()->isAffiliatedWithOperator() && $subscribers->isEmpty())
+                                            <option value="">اختر المشغل أولاً</option>
+                                        @else
+                                            <option value="">اختر المشترك</option>
+                                            @foreach($subscribers as $sub)
+                                                <option value="{{ $sub->id }}"
+                                                    {{ old('subscriber_id', $selectedSubscriber?->id) == $sub->id ? 'selected' : '' }}
+                                                    data-meter-number="{{ $sub->meter_number ?? '' }}">
+                                                    {{ $sub->subscription_number }} - {{ $sub->subscriber_name }}
+                                                </option>
+                                            @endforeach
+                                        @endif
                                     </select>
                                     @error('subscriber_id')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -179,6 +205,52 @@
     <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
     <script>
         $(document).ready(function() {
+            // Cascade: المشغل → المشتركين
+            $('#operator_id').on('change', function() {
+                var operatorId = $(this).val();
+                var $subSelect = $('#subscriber_id');
+
+                $subSelect.empty();
+                $('#meter_number').val('');
+                $('#previous_reading').val('0');
+                $('#previous_reading_note').text('');
+
+                if (!operatorId) {
+                    $subSelect.append('<option value="">اختر المشغل أولاً</option>');
+                    $subSelect.prop('disabled', true);
+                    if ($subSelect.hasClass('select2-hidden-accessible')) {
+                        $subSelect.trigger('change.select2');
+                    }
+                    return;
+                }
+
+                $subSelect.append('<option value="">جاري التحميل...</option>');
+                $subSelect.prop('disabled', true);
+
+                $.ajax({
+                    url: "{{ route('admin.meter-readings.subscribers-by-operator') }}",
+                    data: { operator_id: operatorId },
+                    success: function(res) {
+                        $subSelect.empty().append('<option value="">اختر المشترك</option>');
+                        if (res.success && res.subscribers) {
+                            res.subscribers.forEach(function(s) {
+                                $subSelect.append(
+                                    $('<option>', {
+                                        value: s.id,
+                                        text: s.subscription_number + ' - ' + s.subscriber_name,
+                                        'data-meter-number': s.meter_number || ''
+                                    })
+                                );
+                            });
+                        }
+                        $subSelect.prop('disabled', false);
+                        if ($subSelect.hasClass('select2-hidden-accessible')) {
+                            $subSelect.trigger('change.select2');
+                        }
+                    }
+                });
+            });
+
             // Initialize Select2
             $('#subscriber_id').select2({
                 placeholder: 'اختر المشترك',

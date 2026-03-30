@@ -179,6 +179,7 @@ class SubscriberImportController extends Controller
             'نوع_الفاز',
             'نوع_الخدمة',
             'اشتراك_موظف',
+            'تاريخ_الاشتراك',
             'تاريخ_الطلب',
             'ملاحظات'
         ];
@@ -193,8 +194,8 @@ class SubscriberImportController extends Controller
         $secondAmpere = $ampereLabels[2] ?? '3 أمبير';
 
         $exampleData = [
-            ['402111222', 'أحمد محمد علي', '0591234567', '0562345678', 'غزة - الرمال', '1234', 'MTR001', $firstAmpere, '100', $firstCategory, $firstPhase, $firstService, 'لا', '2026-03-01', 'ملاحظة تجريبية'],
-            ['402333444', 'محمود خالد سعيد', '0567654321', '', 'غزة - النصيرات', '', 'MTR002', $secondAmpere, '0', $secondCategory, $secondPhase, $secondService, 'نعم', '', ''],
+            ['402111222', 'أحمد محمد علي', '0591234567', '0562345678', 'غزة - الرمال', '1234', 'MTR001', $firstAmpere, '100', $firstCategory, $firstPhase, $firstService, 'لا', '2026-01-15', '2026-03-01', 'ملاحظة تجريبية'],
+            ['402333444', 'محمود خالد سعيد', '0567654321', '', 'غزة - النصيرات', '', '', $secondAmpere, '0', $secondCategory, $secondPhase, $secondService, 'نعم', '', '', ''],
         ];
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -203,7 +204,7 @@ class SubscriberImportController extends Controller
         $sheet->setRightToLeft(true);
 
         // إضافة العناوين
-        $columns = range('A', 'O');
+        $columns = range('A', 'P');
         foreach ($headers as $index => $header) {
             $cell = $columns[$index] . '1';
             $sheet->setCellValue($cell, $header);
@@ -238,6 +239,7 @@ class SubscriberImportController extends Controller
             'K' => implode(',', $phaseLabels),      // نوع الفاز
             'L' => implode(',', $serviceLabels),    // نوع الخدمة
             'M' => 'نعم,لا',                        // اشتراك موظف
+            // N = تاريخ_الاشتراك (حر)، O = تاريخ_الطلب (حر)، P = ملاحظات (حر)
         ];
 
         foreach ($validations as $col => $list) {

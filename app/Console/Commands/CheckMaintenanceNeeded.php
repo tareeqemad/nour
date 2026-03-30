@@ -66,37 +66,45 @@ class CheckMaintenanceNeeded extends Command
      */
     private function getGeneratorsNeedingMaintenance(int $days)
     {
+        $cutoffDate = Carbon::now()->subDays($days);
+
         return Generator::with(['generationUnit.operator', 'operator'])
-            ->where(function ($query) use ($days) {
-                // لم يتم صيانة أبداً
-                $query->whereNull('last_major_maintenance_date')
-                    // أو تجاوزت المدة المحددة
-                    ->orWhere('last_major_maintenance_date', '<', Carbon::now()->subDays($days));
+            ->whereHas('statusDetail', fn($q) => $q->where('code', 'ACTIVE'))
+            ->where(function ($query) use ($cutoffDate) {
+                $query
+                    // لم يتم صيانة أبداً (لا سجلات صيانة ولا تاريخ يدوي)
+                    ->where(function ($q) {
+                        $q->whereDoesntHave('maintenanceRecords')
+                          ->whereNull('last_major_maintenance_date');
+                    })
+                    // أو آخر سجل صيانة فعلي تجاوز المدة
+                    ->orWhereHas('maintenanceRecords', function ($q) use ($cutoffDate) {
+                        $q->havingRaw('MAX(maintenance_date) < ?', [$cutoffDate->toDateString()]);
+                    }, '>=', 1);
             })
-            ->whereHas('statusDetail', function ($q) {
-                // فقط المولدات النشطة
-                $q->where('code', 'ACTIVE');
+            // استثناء المولدات التي عندها سجل صيانة حديث
+            ->whereDoesntHave('maintenanceRecords', function ($q) use ($cutoffDate) {
+                $q->where('maintenance_date', '>=', $cutoffDate);
             })
             ->get();
     }
 
     /**
      * جلب المولدات القريبة من الصيانة (تذكير مسبق)
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     private function getUpcomingMaintenanceGenerators()
     {
-        // المولدات التي بين 5 و 6 أشهر (تذكير قبل شهر)
         $fiveMonthsAgo = Carbon::now()->subMonths(5);
         $sixMonthsAgo = Carbon::now()->subMonths(6);
 
         return Generator::with(['generationUnit.operator', 'operator'])
-            ->whereNotNull('last_major_maintenance_date')
-            ->where('last_major_maintenance_date', '>=', $sixMonthsAgo)
-            ->where('last_major_maintenance_date', '<', $fiveMonthsAgo)
-            ->whereHas('statusDetail', function ($q) {
-                $q->where('code', 'ACTIVE');
+            ->whereHas('statusDetail', fn($q) => $q->where('code', 'ACTIVE'))
+            // عنده سجل صيانة وآخر صيانة بين 5 و 6 أشهر
+            ->whereHas('maintenanceRecords', function ($q) use ($fiveMonthsAgo) {
+                $q->where('maintenance_date', '<', $fiveMonthsAgo);
+            })
+            ->whereDoesntHave('maintenanceRecords', function ($q) use ($fiveMonthsAgo) {
+                $q->where('maintenance_date', '>=', $fiveMonthsAgo);
             })
             ->get();
     }

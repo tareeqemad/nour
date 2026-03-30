@@ -165,6 +165,104 @@ class InvoiceReportController extends Controller
             ->selectRaw('SUM(consumption_kwh) as total_kwh, AVG(consumption_kwh) as avg_kwh, COUNT(*) as count')
             ->first();
 
+        // === تقرير الإيرادات حسب المشغل ===
+        $revenueByOperator = \App\Models\Operator::select('operators.id', 'operators.name')
+            ->withCount(['generationUnits as subscriber_count' => function ($q) use ($base) {
+                // Count distinct subscribers through generation units
+            }])
+            ->get()
+            ->map(function ($operator) use ($dateFrom, $dateTo) {
+                $invoices = \App\Models\Invoice::whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $operator->id))
+                    ->whereNotIn('invoice_status', [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_CANCELLED])
+                    ->whereBetween('invoice_date', [$dateFrom, $dateTo])
+                    ->get();
+
+                $totalBilled = $invoices->sum('invoice_amount');
+                $invoiceIds = $invoices->pluck('id');
+                $totalPaid = \App\Models\Payment::whereIn('invoice_id', $invoiceIds)->sum('amount_paid');
+
+                $subscriberCount = \App\Models\Subscriber::whereHas('generationUnits', fn($q) => $q->where('operator_id', $operator->id))->count();
+
+                return (object)[
+                    'name' => $operator->name,
+                    'subscriber_count' => $subscriberCount,
+                    'invoice_count' => $invoices->count(),
+                    'total_kwh' => round($invoices->sum('consumption_kwh'), 2),
+                    'total_billed' => round($totalBilled, 2),
+                    'total_paid' => round($totalPaid, 2),
+                    'collection_rate' => $totalBilled > 0 ? round(($totalPaid / $totalBilled) * 100, 1) : 0,
+                ];
+            })
+            ->filter(fn($op) => $op->invoice_count > 0 || $op->subscriber_count > 0)
+            ->values();
+
+        // === أكبر المتأخرين ===
+        $topDelinquentQuery = \App\Models\Invoice::where('invoice_status', \App\Models\Invoice::STATUS_ISSUED)
+            ->where('due_date', '<', now())
+            ->with(['subscriber.generationUnits.operator']);
+
+        if ($selectedOpId) {
+            $topDelinquentQuery->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $selectedOpId));
+        } elseif (isset($scopedOperatorIds) && !empty($scopedOperatorIds)) {
+            $topDelinquentQuery->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $scopedOperatorIds));
+        }
+
+        $topDelinquents = $topDelinquentQuery->get()
+            ->groupBy('subscriber_id')
+            ->map(function ($invoices) {
+                $subscriber = $invoices->first()->subscriber;
+                $totalRemaining = $invoices->sum(fn($inv) => max($inv->total_amount - $inv->paidAmount(), 0));
+                $oldestInvoice = $invoices->sortBy('due_date')->first();
+                $daysOverdue = $oldestInvoice->due_date ? (int) now()->diffInDays($oldestInvoice->due_date) : 0;
+                $operatorName = $subscriber->generationUnits->first()?->operator?->name ?? '—';
+
+                return (object)[
+                    'subscriber_name' => $subscriber->subscriber_name,
+                    'subscription_number' => $subscriber->subscription_number,
+                    'operator_name' => $operatorName,
+                    'overdue_count' => $invoices->count(),
+                    'total_remaining' => round($totalRemaining, 2),
+                    'oldest_invoice_date' => $oldestInvoice->invoice_date?->format('Y-m-d'),
+                    'days_overdue' => $daysOverdue,
+                ];
+            })
+            ->sortByDesc('total_remaining')
+            ->take(20)
+            ->values();
+
+        // === تقرير الإيرادات الشهري (آخر 12 شهر) ===
+        $monthlyRevenue = collect();
+        for ($i = 11; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $monthLabel = $monthStart->translatedFormat('M Y');
+
+            $monthInvoicesQuery = \App\Models\Invoice::whereNotIn('invoice_status', [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_CANCELLED])
+                ->whereBetween('invoice_date', [$monthStart, $monthEnd]);
+
+            if ($selectedOpId) {
+                $monthInvoicesQuery->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $selectedOpId));
+            } elseif (isset($scopedOperatorIds) && !empty($scopedOperatorIds)) {
+                $monthInvoicesQuery->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $scopedOperatorIds));
+            }
+
+            $monthInvoices = $monthInvoicesQuery->get();
+            $monthBilled = $monthInvoices->sum('invoice_amount');
+            $monthInvoiceIds = $monthInvoices->pluck('id');
+            $monthPaid = \App\Models\Payment::whereIn('invoice_id', $monthInvoiceIds)
+                ->whereBetween('payment_date', [$monthStart, $monthEnd])
+                ->sum('amount_paid');
+
+            $monthlyRevenue->push((object)[
+                'month' => $monthLabel,
+                'invoice_count' => $monthInvoices->count(),
+                'total_billed' => round($monthBilled, 2),
+                'total_paid' => round($monthPaid, 2),
+                'collection_rate' => $monthBilled > 0 ? round(($monthPaid / $monthBilled) * 100, 1) : 0,
+                'balance' => round($monthBilled - $monthPaid, 2),
+            ]);
+        }
+
         return view('admin.invoice-reports.index', compact(
             'dateFrom', 'dateTo',
             'operators', 'selectedOpId', 'canSelectOperator',
@@ -174,7 +272,8 @@ class InvoiceReportController extends Controller
             'debitBalances', 'creditBalances',
             'discounts', 'discountSummary',
             'billedSubscribers',
-            'consumptionPeriod'
+            'consumptionPeriod',
+            'revenueByOperator', 'topDelinquents', 'monthlyRevenue'
         ));
     }
 }

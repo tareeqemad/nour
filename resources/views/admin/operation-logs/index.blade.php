@@ -187,6 +187,7 @@
                                 @endif
                             </div>
                         </div>
+                    </div> {{-- /card-body --}}
                 </x-admin.card>
             </div>
         </div>

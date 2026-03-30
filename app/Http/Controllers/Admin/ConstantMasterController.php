@@ -25,13 +25,15 @@ class ConstantMasterController extends Controller
         $query = ConstantMaster::withCount('allDetails');
 
         // Search filter (using 'search' or 'q' parameter)
-        $search = trim((string) ($request->input('search') ?? $request->input('q', '')));
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('constant_number', 'like', "%{$search}%")
-                    ->orWhere('constant_name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
+        if ($request->filled('search') || $request->filled('q')) {
+            $search = trim((string) ($request->input('search') ?? $request->input('q')));
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->where('constant_number', 'like', "%{$search}%")
+                        ->orWhere('constant_name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
         }
 
         if ($request->filled('status')) {
@@ -213,14 +215,16 @@ class ConstantMasterController extends Controller
         $query = $constant->allDetails();
 
         // Search filter
-        $search = trim((string) ($request->input('search') ?? $request->input('q', '')));
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('label', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%")
-                    ->orWhere('value', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
-            });
+        if ($request->filled('search') || $request->filled('q')) {
+            $search = trim((string) ($request->input('search') ?? $request->input('q')));
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->where('label', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('value', 'like', "%{$search}%")
+                        ->orWhere('notes', 'like', "%{$search}%");
+                });
+            }
         }
 
         // Status filter

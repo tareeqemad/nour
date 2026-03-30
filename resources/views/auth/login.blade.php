@@ -505,6 +505,14 @@
             .form-half { padding: 1.5rem 1rem; }
             .form-welcome h1 { font-size: 1.6rem; }
         }
+
+        @media (max-width: 360px) {
+            .form-half { padding: 1.25rem 0.75rem; }
+            .form-card { padding: 1.75rem 1rem; }
+            .form-welcome h1 { font-size: 1.4rem; }
+            .btn-submit { height: 44px; font-size: 1rem; }
+            .field-label { font-size: 0.88rem; }
+        }
     </style>
 </head>
 <body>

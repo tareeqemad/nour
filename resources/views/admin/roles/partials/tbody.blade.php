@@ -53,43 +53,26 @@
                 </span>
             @endif
         </td>
-        <td class="text-center text-nowrap">
-            <div class="btn-group" role="group">
-                <button type="button" 
-                        class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" 
-                        data-bs-toggle="dropdown" 
-                        aria-expanded="false" 
-                        title="إجراءات">
-                    <span class="visually-hidden">إجراءات</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    @can('view', $role)
-                        <li>
-                            <a class="dropdown-item" href="{{ route('admin.roles.show', $role) }}">
-                                <i class="bi bi-eye me-2 text-info"></i> عرض التفاصيل
-                            </a>
-                        </li>
-                    @endcan
-                    @can('update', $role)
-                        <li>
-                            <a class="dropdown-item" href="{{ route('admin.roles.edit', $role) }}">
-                                <i class="bi bi-pencil me-2 text-primary"></i> تعديل
-                            </a>
-                        </li>
-                    @endcan
-                    @can('delete', $role)
-                        @if(!$role->is_system && $role->users_count == 0)
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <button type="button" class="dropdown-item text-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal{{ $role->id }}">
-                                    <i class="bi bi-trash me-2"></i> حذف
-                                </button>
-                            </li>
-                        @endif
-                    @endcan
-                </ul>
+        <td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+                @can('view', $role)
+                    <a href="{{ route('admin.roles.show', $role) }}" class="btn btn-sm btn-outline-info" title="عرض">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                @endcan
+                @can('update', $role)
+                    <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                @endcan
+                @can('delete', $role)
+                    @if(!$role->is_system && $role->users_count == 0)
+                        <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ $role->id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    @endif
+                @endcan
             </div>
         </td>
     </tr>

@@ -823,11 +823,10 @@ class GeneratorController extends Controller
         // للـ SuperAdmin و Admin و EnergyAuthority و CivilDefense: السماح بالوصول بدون قيود
 
         // فلترة حسب الحالة (إذا كانت محددة)
-        $status = trim((string) $request->input('status', ''));
-        
         $query = Generator::where('generation_unit_id', $generationUnit->id);
-        
-        if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
+
+        if ($request->filled('status') && in_array($request->input('status'), ['active', 'inactive'], true)) {
+            $status = $request->input('status');
             $statusConstant = \App\Models\ConstantDetail::whereHas('master', function($q) {
                 $q->where('constant_number', 3);
             })->where('code', strtoupper($status) === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')->first();

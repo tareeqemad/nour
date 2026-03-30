@@ -5,7 +5,7 @@
     $subscriptionStatuses   = \App\Helpers\ConstantsHelper::get(25);
     $serviceTypes           = \App\Helpers\ConstantsHelper::get(26);
     $ampereOptions          = \App\Helpers\ConstantsHelper::get(31);
-    $selectedUnitIds        = old('generation_unit_ids', $isEdit ? $subscriber->generationUnits->pluck('id')->toArray() : []);
+    $selectedUnitId         = old('generation_unit_id', $isEdit ? $subscriber->generationUnits->first()?->id : null);
 @endphp
 
 <div class="row g-3">
@@ -202,6 +202,7 @@
 
     <div class="col-md-6 d-flex align-items-center">
         <div class="form-check mt-3">
+            <input type="hidden" name="is_employee_subscription" value="0">
             <input class="form-check-input" type="checkbox" name="is_employee_subscription" id="is_employee_subscription" value="1"
                    {{ old('is_employee_subscription', $isEdit ? $subscriber->is_employee_subscription : false) ? 'checked' : '' }}>
             <label class="form-check-label fw-semibold" for="is_employee_subscription">
@@ -253,55 +254,29 @@
         @enderror
     </div>
 
-    {{-- ===== وحدات التوليد ===== --}}
+    {{-- ===== المشغل ووحدة التوليد ===== --}}
     <div class="col-12 mt-4">
         <h6 class="fw-semibold mb-3" style="padding-bottom:0.5rem;border-bottom:2px solid var(--color-border,#E5E7EB);">
-                <i class="bi bi-lightning-charge me-2"></i>وحدات التوليد
+                <i class="bi bi-lightning-charge me-2"></i>المشغل ووحدة التوليد
         </h6>
     </div>
 
-    <div class="col-12">
-        <label class="form-label fw-semibold">وحدات التوليد المرتبطة <span class="text-danger">*</span></label>
-        <div style="background:var(--color-info-bg,#F0F9FF);border:1px solid var(--color-info-border,#BAE6FD);border-radius:8px;padding:0.5rem 0.85rem;margin-bottom:0.75rem;font-size:0.82rem;color:var(--color-info-text,#0369A1);">
-            <i class="bi bi-info-circle me-1"></i>اختر وحدة توليد واحدة على الأقل
-        </div>
-        <div class="@error('generation_unit_ids') border-danger @enderror" style="max-height:250px;overflow-y:auto;background:#FAFCFF;border:1px solid var(--color-border,#E5E7EB);border-radius:10px;padding:0.75rem;">
-            @forelse($generationUnits as $unit)
-                <div class="d-flex align-items-center mb-2 p-2 rounded" style="border:1px solid var(--color-border-soft,#EDF1F5);background:{{ in_array($unit->id, $selectedUnitIds) ? 'var(--color-primary-soft,#EEF2FF)' : '#fff' }};">
-                    <input class="form-check-input generation-unit-checkbox m-0 me-3"
-                           type="checkbox" name="generation_unit_ids[]" value="{{ $unit->id }}" id="unit_{{ $unit->id }}"
-                           style="width:20px;height:20px;cursor:pointer;"
-                           {{ in_array($unit->id, $selectedUnitIds) ? 'checked' : '' }}>
-                    <label class="d-flex align-items-center justify-content-between flex-grow-1 m-0" for="unit_{{ $unit->id }}" style="cursor:pointer;">
-                        <span>
-                            <i class="bi bi-lightning-charge text-warning me-2"></i>
-                            <strong>{{ $unit->name }}</strong>
-                        </span>
-                        <span>
-                            <span class="badge-neutral">{{ $unit->unit_code }}</span>
-                            @if($unit->operator)
-                                <small class="text-muted me-2">
-                                    <i class="bi bi-building me-1"></i>{{ $unit->operator->name }}
-                                </small>
-                            @endif
-                        </span>
-                    </label>
-                </div>
-            @empty
-                <div class="text-center text-muted py-3">
-                    <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
-                    لا توجد وحدات توليد متاحة
-                </div>
-            @endforelse
-        </div>
-        <small class="form-text text-muted mt-1 d-block">
-            <i class="bi bi-check2-square me-1"></i>
-            تم اختيار <span id="selectedUnitsCount" class="fw-bold text-primary">0</span> وحدة توليد
-        </small>
-        @error('generation_unit_ids')
-            <div class="text-danger small mt-1">{{ $message }}</div>
-        @enderror
-    </div>
+    <x-admin.operator-cascade
+        :operators="$operators ?? collect()"
+        :affiliatedOperator="$operator ?? null"
+        :showGenerator="false"
+        :showGenerationUnit="true"
+        :operatorRequired="true"
+        :generationUnitRequired="true"
+        :selectedOperatorId="old('operator_id', $isEdit ? $subscriber->generationUnits->first()?->operator_id : null)"
+        :selectedGenerationUnitId="old('generation_unit_id', $isEdit ? $subscriber->generationUnits->first()?->id : null)"
+        :generationUnits="$generationUnits ?? collect()"
+        colClass="col-md-6"
+        :routes="[
+            'generationUnits' => url('/admin/operators') . '/__OPERATOR__/generation-units-for-subscribers',
+            'generators' => url('/admin/generation-units') . '/__UNIT__/generators-list',
+        ]"
+    />
 
     {{-- ===== أزرار الإجراء ===== --}}
     <div class="col-12">
@@ -318,24 +293,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // === وحدات التوليد ===
-    const unitCheckboxes = document.querySelectorAll('.generation-unit-checkbox');
-    const selectedCountSpan = document.getElementById('selectedUnitsCount');
-
-    function updateSelectedCount() {
-        const count = document.querySelectorAll('.generation-unit-checkbox:checked').length;
-        selectedCountSpan.textContent = count;
-        unitCheckboxes.forEach(cb => {
-            const row = cb.closest('.d-flex.align-items-center.mb-2');
-            if (row) {
-                row.style.background = cb.checked ? 'var(--color-primary-soft,#EEF2FF)' : '#fff';
-            }
-        });
-    }
-
-    unitCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectedCount));
-    updateSelectedCount();
-
     // === التحقق من رقم الهوية الفلسطيني ===
     const idInput = document.getElementById('subscriber_id_number');
     const idFeedback = document.getElementById('idFeedback');

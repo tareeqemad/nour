@@ -23,7 +23,11 @@
       "Bash(npx next:*)",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -h 127.0.0.1 -P 3306 nour -e \"SELECT name, label, \\\\`group\\\\`, group_label, description, \\\\`order\\\\` FROM permissions ORDER BY \\\\`order\\\\`, id;\")",
-      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -h 127.0.0.1 nour -e \"SELECT subscriber_id_number, COUNT\\(*\\) as cnt FROM subscribers GROUP BY subscriber_id_number HAVING cnt > 1 LIMIT 5;\")"
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -h 127.0.0.1 nour -e \"SELECT subscriber_id_number, COUNT\\(*\\) as cnt FROM subscribers GROUP BY subscriber_id_number HAVING cnt > 1 LIMIT 5;\")",
+      "Bash(grep -l \"subscriber_generation_unit\" /e/nour/database/migrations/*.php)",
+      "Bash(grep -r \"generationUnits\\\\|subscribers\" /e/nour/routes/*.php)",
+      "Bash(php artisan tinker --execute=\":*)",
+      "Bash(ls -1 E:/nour/database/migrations/*.php)"
     ]
   }
 }

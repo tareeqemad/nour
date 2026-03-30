@@ -50,10 +50,10 @@ class PortalRequestController extends Controller
     {
         $page        = max(1, (int) $request->query('page', 1));
         $perPage     = max(5, min(100, (int) $request->query('per_page', 15)));
-        $status      = trim((string) $request->query('status', ''));
-        $date        = trim((string) $request->query('date', ''));
-        $appNo       = trim((string) $request->query('app_no', ''));
-        $applicantId = trim((string) $request->query('applicant_id', ''));
+        $status      = $request->filled('status') ? trim((string) $request->query('status')) : '';
+        $date        = $request->filled('date') ? trim((string) $request->query('date')) : '';
+        $appNo       = $request->filled('app_no') ? trim((string) $request->query('app_no')) : '';
+        $applicantId = $request->filled('applicant_id') ? trim((string) $request->query('applicant_id')) : '';
 
         try {
             // ── 1. بحث برقم طلب محدد ──────────────────────────────────

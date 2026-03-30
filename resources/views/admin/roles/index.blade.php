@@ -51,30 +51,25 @@
                     <form id="searchForm" method="POST" action="{{ route('admin.roles.filter') }}">
                         @csrf
                         <div class="row g-3">
-                            <div class="col-lg-4">
+                            <div class="col-md-4">
                                 <label class="form-label fw-semibold">
-                                    <i class="bi bi-tag me-1"></i>
-                                    اسم الدور
+                                    <i class="bi bi-tag me-1"></i>اسم الدور
                                 </label>
                                 <input type="text" name="name" id="nameFilter" class="form-control"
                                        placeholder="اسم الدور..."
                                        value="{{ session('roles_filter.name', '') }}" autocomplete="off">
                             </div>
-
-                            <div class="col-lg-4">
+                            <div class="col-md-4">
                                 <label class="form-label fw-semibold">
-                                    <i class="bi bi-bookmark me-1"></i>
-                                    التسمية
+                                    <i class="bi bi-bookmark me-1"></i>التسمية
                                 </label>
                                 <input type="text" name="label" id="labelFilter" class="form-control"
                                        placeholder="التسمية..."
                                        value="{{ session('roles_filter.label', '') }}" autocomplete="off">
                             </div>
-
-                            <div class="col-lg-4">
+                            <div class="col-md-4">
                                 <label class="form-label fw-semibold">
-                                    <i class="bi bi-file-text me-1"></i>
-                                    الوصف
+                                    <i class="bi bi-file-text me-1"></i>الوصف
                                 </label>
                                 <input type="text" name="description" id="descriptionFilter" class="form-control"
                                        placeholder="الوصف..."
@@ -82,41 +77,34 @@
                             </div>
                         </div>
 
-                        <div class="row g-3 mt-2">
-                            <div class="col-12">
-                                <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary" id="btnSearch">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </button>
-                                    @if(session('roles_filter.name') || session('roles_filter.label') || session('roles_filter.description'))
-                                        <button type="button" class="btn btn-outline-secondary" id="btnResetFilters">
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                            تفريغ الحقول
-                                        </button>
-                                    @endif
-                                </div>
+                        <div class="row mt-3">
+                            <div class="col-12 d-flex justify-content-center gap-2">
+                                <button type="submit" class="btn btn-primary" id="btnSearch">
+                                    <i class="bi bi-search me-1"></i>بحث
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary {{ session('roles_filter.name') || session('roles_filter.label') || session('roles_filter.description') ? '' : 'd-none' }}" id="btnResetFilters">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ
+                                </button>
                             </div>
                         </div>
                     </form>
 
-
-                    <div class="position-relative" id="rolesTableContainer">
+                    <div class="position-relative mt-3" id="rolesTableContainer">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 general-table">
-                                <thead class="table-primary">
+                            <table class="table table-hover align-middle table-striped mb-0">
+                                <thead class="table-light">
                                 <tr>
-                                    <th style="min-width:60px;" class="text-center text-nowrap">#</th>
-                                    <th style="min-width:150px;" class="text-nowrap">اسم الدور</th>
-                                    <th style="min-width:150px;" class="text-nowrap">التسمية</th>
-                                    <th class="d-none d-md-table-cell text-nowrap">الوصف</th>
+                                    <th class="text-center fw-semibold" style="width:50px;">#</th>
+                                    <th class="fw-semibold">اسم الدور</th>
+                                    <th class="fw-semibold">التسمية</th>
+                                    <th class="d-none d-md-table-cell fw-semibold">الوصف</th>
                                     @if(auth()->user()->isSuperAdmin())
-                                        <th class="text-center text-nowrap" style="min-width:120px;">المشغل</th>
+                                        <th class="text-center fw-semibold">المشغل</th>
                                     @endif
-                                    <th class="text-center text-nowrap" style="min-width:100px;">المستخدمين</th>
-                                    <th class="text-center text-nowrap" style="min-width:100px;">الصلاحيات</th>
-                                    <th class="text-center text-nowrap" style="min-width:100px;">النوع</th>
-                                    <th style="min-width:140px;" class="text-center text-nowrap">الإجراءات</th>
+                                    <th class="text-center fw-semibold">المستخدمين</th>
+                                    <th class="text-center fw-semibold">الصلاحيات</th>
+                                    <th class="text-center fw-semibold">النوع</th>
+                                    <th class="text-end fw-semibold">الإجراءات</th>
                                 </tr>
                                 </thead>
                             <tbody id="rolesTbody">
@@ -124,6 +112,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </div> {{-- /rolesTableContainer --}}
 
                     <div id="rolesPagination">
                         @if($roles->hasPages())
@@ -141,7 +130,7 @@
                             </div>
                         @endif
                     </div>
-                </div>
+                </div> {{-- /card-body --}}
             </x-admin.card>
         </div>
     </div>

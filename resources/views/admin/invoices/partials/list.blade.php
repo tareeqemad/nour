@@ -85,12 +85,22 @@
                 </a>
                 @endcan
                 @can('cancel', $invoice)
-                <button type="button" class="btn btn-sm btn-outline-danger"
-                        data-action="{{ route('admin.invoices.cancel', $invoice) }}"
-                        data-csrf="{{ csrf_token() }}"
-                        onclick="swalCancel(this)" title="إلغاء">
-                    <i class="bi bi-x-circle"></i>
-                </button>
+                    @if($invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT)
+                        <form action="{{ route('admin.invoices.cancel', $invoice) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذه المسودة؟')">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف المسودة">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    @elseif($invoice->invoice_status === \App\Models\Invoice::STATUS_ISSUED)
+                        <button type="button" class="btn btn-sm btn-outline-danger cancel-invoice-btn"
+                            data-id="{{ $invoice->id }}"
+                            data-number="{{ $invoice->invoice_number }}"
+                            data-url="{{ route('admin.invoices.cancel', $invoice) }}"
+                            title="إلغاء الفاتورة">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    @endif
                 @endcan
             </div>
         </td>
@@ -225,12 +235,22 @@
                             </a>
                             @endcan
                             @can('cancel', $invoice)
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    data-action="{{ route('admin.invoices.cancel', $invoice) }}"
-                                    data-csrf="{{ csrf_token() }}"
-                                    onclick="swalCancel(this)" title="إلغاء">
-                                <i class="bi bi-x-circle"></i>
-                            </button>
+                                @if($invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT)
+                                    <form action="{{ route('admin.invoices.cancel', $invoice) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذه المسودة؟')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف المسودة">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                @elseif($invoice->invoice_status === \App\Models\Invoice::STATUS_ISSUED)
+                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-invoice-btn"
+                                        data-id="{{ $invoice->id }}"
+                                        data-number="{{ $invoice->invoice_number }}"
+                                        data-url="{{ route('admin.invoices.cancel', $invoice) }}"
+                                        title="إلغاء الفاتورة">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                @endif
                             @endcan
                         </div>
                     </td>

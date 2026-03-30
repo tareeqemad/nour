@@ -116,6 +116,7 @@ class SubscribersImport
     {
         $altPhone = trim($row['رقم_جوال_بديل'] ?? $row['alt_phone'] ?? '');
         $boxNumber = trim($row['رقم_الصندوق'] ?? $row['box_number'] ?? '');
+        $subscriptionDate = trim($row['تاريخ_الاشتراك'] ?? $row['subscription_date'] ?? '');
         $requestDate = trim($row['تاريخ_الطلب'] ?? $row['request_date'] ?? '');
         $notes = trim($row['ملاحظات'] ?? $row['notes'] ?? '');
         $ampere = trim($row['الأمبير'] ?? $row['ampere'] ?? '');
@@ -136,6 +137,7 @@ class SubscribersImport
             'phase_type' => $this->mapPhaseType($row['نوع_الفاز'] ?? $row['phase_type'] ?? ''),
             'service_type' => $this->mapServiceType($row['نوع_الخدمة'] ?? $row['service_type'] ?? ''),
             'is_employee_subscription' => $this->mapBoolean($isEmployee),
+            'subscription_date' => $subscriptionDate,
             'request_date' => $requestDate,
             'notes' => $notes,
         ];
@@ -206,9 +208,15 @@ class SubscribersImport
 
     protected function mapBoolean($value): bool
     {
-        if (empty($value)) return false;
-        $trueValues = ['نعم', 'yes', '1', 'true', 1, true];
-        return in_array($value, $trueValues, false);
+        if ($value === null || $value === '') return false;
+        if ($value === true || $value === 1) return true;
+
+        $value = trim((string) $value);
+        // إزالة الحروف غير المرئية (zero-width joiners, BOM, etc.) من قيم الاكسل
+        $value = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}\x{00A0}]/u', '', $value);
+        $value = mb_strtolower($value, 'UTF-8');
+
+        return in_array($value, ['نعم', 'yes', '1', 'true'], true);
     }
 
     /**
@@ -244,9 +252,7 @@ class SubscribersImport
             $errors[] = 'العنوان مطلوب';
         }
         
-        if (empty($data['meter_number'])) {
-            $errors[] = 'رقم العداد مطلوب';
-        }
+        // رقم العداد اختياري (في اشتراكات بدون عداد)
 
         // التحقق من رقم الجوال البديل
         if (!empty($data['alt_phone']) && !preg_match('/^05[69]\d{7}$/', $data['alt_phone'])) {
@@ -304,12 +310,12 @@ class SubscribersImport
             'alt_phone' => !empty($data['alt_phone']) ? $data['alt_phone'] : null,
             'address' => $data['address'],
             'box_number' => !empty($data['box_number']) ? $data['box_number'] : null,
-            'subscription_date' => now(),
+            'subscription_date' => !empty($data['subscription_date']) ? $data['subscription_date'] : now(),
             'request_date' => !empty($data['request_date']) ? $data['request_date'] : null,
             'subscription_category' => $data['subscription_category'],
             'phase_type' => $data['phase_type'],
             'subscription_status' => 1, // نشط
-            'meter_number' => $data['meter_number'],
+            'meter_number' => !empty($data['meter_number']) ? $data['meter_number'] : null,
             'ampere' => $data['ampere'] ?? null,
             'opening_reading' => $data['opening_reading'] ?? null,
             'service_type' => $data['service_type'],

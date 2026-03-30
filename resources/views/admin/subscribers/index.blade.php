@@ -81,12 +81,9 @@
                                     <i class="bi bi-lightning-charge me-1"></i>وحدة التوليد
                                 </label>
                                 @if($canSelectOperator)
-                                    {{-- للسوبر أدمن: يتم ملؤها ديناميكياً عند اختيار المشغل --}}
-                                    <select id="generationUnitFilter" class="form-select">
-                                        <option value="">الكل</option>
-                                        @foreach($generationUnits ?? [] as $unit)
-                                            <option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
-                                        @endforeach
+                                    {{-- للسوبر أدمن: تبدأ فارغة ومعطلة حتى يختار المشغل --}}
+                                    <select id="generationUnitFilter" class="form-select" disabled>
+                                        <option value="">اختر المشغل أولاً</option>
                                     </select>
                                 @else
                                     {{-- للمشغل/الموظف: الوحدات مبنية مسبقاً --}}
@@ -235,7 +232,7 @@
 
 {{-- Import Modal --}}
 @can('create', App\Models\Subscriber::class)
-<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true" style="display:none">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -250,18 +247,42 @@
                 <div id="importStep1">
                     {{-- رفع الملف --}}
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-building me-1"></i>وحدة التوليد <span class="text-danger">*</span>
+                                <i class="bi bi-building me-1"></i>المشغل <span class="text-danger">*</span>
                             </label>
-                            <select id="importGenerationUnit" class="form-select" required>
-                                <option value="">-- اختر وحدة التوليد --</option>
-                                @foreach($generationUnits ?? [] as $unit)
-                                    <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
-                                @endforeach
-                            </select>
+                            @if($canSelectOperator)
+                                <select id="importOperator" class="form-select" required>
+                                    <option value="">-- اختر المشغل --</option>
+                                    @foreach($operators as $op)
+                                        <option value="{{ $op->id }}">{{ $op->name }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <select id="importOperator" class="form-select" disabled style="background-color:#f8f9fa;cursor:not-allowed;">
+                                    <option value="{{ $currentOperator->id ?? '' }}" selected>{{ $currentOperator->name ?? '' }}</option>
+                                </select>
+                                <input type="hidden" id="importOperatorHidden" value="{{ $currentOperator->id ?? '' }}">
+                            @endif
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-lightning-charge me-1"></i>وحدة التوليد <span class="text-danger">*</span>
+                            </label>
+                            @if($canSelectOperator)
+                                <select id="importGenerationUnit" class="form-select" required disabled>
+                                    <option value="">-- اختر المشغل أولاً --</option>
+                                </select>
+                            @else
+                                <select id="importGenerationUnit" class="form-select" required>
+                                    <option value="">-- اختر وحدة التوليد --</option>
+                                    @foreach($generationUnits ?? [] as $unit)
+                                        <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                    @endforeach
+                                </select>
+                            @endif
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-file-earmark-spreadsheet me-1"></i>ملف Excel <span class="text-danger">*</span>
                             </label>
@@ -289,7 +310,6 @@
                                     <li>- اسم_المشترك</li>
                                     <li>- رقم_الموبايل (059/056)</li>
                                     <li>- العنوان</li>
-                                    <li>- رقم_العداد (فريد)</li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
@@ -297,10 +317,10 @@
                                     <i class="bi bi-dash-circle text-secondary me-1"></i>الأعمدة الاختيارية:
                                 </h6>
                                 <ul class="list-unstyled small mb-0">
-                                    <li>- رقم_جوال_بديل، رقم_الصندوق</li>
+                                    <li>- رقم_جوال_بديل، رقم_الصندوق، رقم_العداد</li>
                                     <li>- الأمبير، القراءة_الافتتاحية</li>
                                     <li>- تصنيف_الاشتراك، نوع_الفاز، نوع_الخدمة</li>
-                                    <li>- اشتراك_موظف، تاريخ_الطلب، ملاحظات</li>
+                                    <li>- اشتراك_موظف، تاريخ_الاشتراك، تاريخ_الطلب، ملاحظات</li>
                                 </ul>
                                 <div class="form-text mt-1" style="font-size:0.78rem;">
                                     <i class="bi bi-info-circle me-1"></i>النموذج يحتوي على قوائم منسدلة للقيم المتاحة
@@ -437,7 +457,6 @@
     <script>
         (function() {
             const listUrl = @json(route('admin.subscribers.index'));
-            const allUnits = @json(($generationUnits ?? collect())->map(fn($u) => ['id' => $u->id, 'operator_id' => $u->operator_id, 'label' => $u->name . ' (' . $u->unit_code . ')'])->values());
             const $wrap = $('#subscribersListWrap');
             const $operatorFilter = $('#operatorFilter');
             const $searchInput = $('#searchInput');
@@ -488,6 +507,7 @@
                     url: listUrl,
                     method: 'GET',
                     dataType: 'json',
+                    cache: false,
                     data: currentParams({ page: 1 }),
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function(res) {
@@ -575,22 +595,25 @@
                 var $unitSelect = $('#generationUnitFilter');
 
                 // إعادة تهيئة وحدات التوليد
-                $unitSelect.empty().append('<option value="">الكل</option>');
+                $unitSelect.empty();
 
                 if (!operatorId) {
-                    // المشغل = "كل المشغلين": أعِد كل الوحدات المحلية
-                    allUnits.forEach(function(u) {
-                        $unitSelect.append($('<option>', { value: u.id, text: u.label, 'data-operator-id': u.operator_id }));
-                    });
+                    // لم يُختر مشغل: عطّل قائمة وحدات التوليد
+                    $unitSelect.append('<option value="">اختر المشغل أولاً</option>');
+                    $unitSelect.prop('disabled', true);
                     return;
                 }
 
                 // جلب الوحدات من الـ API
+                $unitSelect.append('<option value="">جاري التحميل...</option>');
+                $unitSelect.prop('disabled', true);
+
                 $.ajax({
                     url: unitApiUrl + '/' + operatorId + '/generation-units-for-subscribers',
                     method: 'GET',
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                     success: function(data) {
+                        $unitSelect.empty().append('<option value="">الكل</option>');
                         if (data.generation_units && data.generation_units.length > 0) {
                             data.generation_units.forEach(function(unit) {
                                 $unitSelect.append(
@@ -598,16 +621,49 @@
                                 );
                             });
                         }
+                        $unitSelect.prop('disabled', false);
+                    },
+                    error: function() {
+                        $unitSelect.empty().append('<option value="">خطأ في التحميل</option>');
                     }
                 });
             });
 
-            // عند تغيير وحدة التوليد → اضبط المشغل تلقائياً (بدون بحث)
-            $('#generationUnitFilter').on('change', function() {
-                var opId = $(this).find(':selected').data('operator-id');
-                if (opId && !$operatorFilter.val()) {
-                    $operatorFilter.val(opId);
+            // === Import Modal: cascade المشغل → وحدة التوليد ===
+            $('#importOperator').on('change', function() {
+                var operatorId = $(this).val();
+                var $unitSelect = $('#importGenerationUnit');
+
+                $unitSelect.empty();
+
+                if (!operatorId) {
+                    $unitSelect.append('<option value="">-- اختر المشغل أولاً --</option>');
+                    $unitSelect.prop('disabled', true);
+                    return;
                 }
+
+                $unitSelect.append('<option value="">جاري التحميل...</option>');
+                $unitSelect.prop('disabled', true);
+
+                $.ajax({
+                    url: unitApiUrl + '/' + operatorId + '/generation-units-for-subscribers',
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    success: function(data) {
+                        $unitSelect.empty().append('<option value="">-- اختر وحدة التوليد --</option>');
+                        if (data.generation_units && data.generation_units.length > 0) {
+                            data.generation_units.forEach(function(unit) {
+                                $unitSelect.append(
+                                    $('<option>', { value: unit.id, text: unit.label })
+                                );
+                            });
+                        }
+                        $unitSelect.prop('disabled', false);
+                    },
+                    error: function() {
+                        $unitSelect.empty().append('<option value="">خطأ في التحميل</option>');
+                    }
+                });
             });
             @else
             // === للمشغل/الموظف: تصفية محلية (client-side) ===
@@ -640,15 +696,14 @@
             $clearBtn.on('click', function() {
                 filterIds.forEach(id => $('#' + id).val(''));
                 $searchInput.val('');
+                @if($canSelectOperator)
+                // أعِد تعطيل وحدات التوليد (لازم يختار مشغل أولاً)
+                var $unitSelect = $('#generationUnitFilter');
+                $unitSelect.empty().append('<option value="">اختر المشغل أولاً</option>');
+                $unitSelect.prop('disabled', true);
+                @else
                 // أعد إظهار كل وحدات التوليد
                 $('#generationUnitFilter option').show().prop('disabled', false);
-                @if($canSelectOperator)
-                // أعِد ملء كل الوحدات من جديد
-                var $unitSelect = $('#generationUnitFilter');
-                $unitSelect.empty().append('<option value="">الكل</option>');
-                allUnits.forEach(function(u) {
-                    $unitSelect.append($('<option>', { value: u.id, text: u.label, 'data-operator-id': u.operator_id }));
-                });
                 @endif
                 $clearBtn.addClass('d-none');
                 loadSubscribers();

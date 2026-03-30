@@ -18,12 +18,24 @@
             <x-admin.card>
                 <x-admin.card-header title="الفوترة والتحصيل" icon="bi-receipt">
                     <x-slot:actions>
+                        {{-- Create invoice button hidden
                         @can('create', App\Models\Invoice::class)
                             <a href="{{ route('admin.invoices.create') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-lg me-1"></i>
                                 إنشاء فاتورة جديدة
                             </a>
                         @endcan
+                        --}}
+                        @can('create', App\Models\Invoice::class)
+                            <button type="button" class="btn btn-success" id="bulkIssueBtn">
+                                <i class="bi bi-check-all me-1"></i>
+                                إصدار الفواتير
+                            </button>
+                        @endcan
+                        <a href="#" id="exportExcelBtn" class="btn btn-outline-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i>
+                            تصدير Excel
+                        </a>
                     </x-slot:actions>
                 </x-admin.card-header>
 
@@ -120,6 +132,72 @@
         </div>
     </div>
 </div>
+{{-- Modal: إصدار الفواتير --}}
+<div class="modal fade" id="bulkIssueModal" tabindex="-1" aria-hidden="true" style="display:none">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-all me-2"></i>إصدار الفواتير دفعة واحدة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">قيمة التعرفة (سعر الكيلوواط) <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" min="0" id="bulkPricePerKwh" class="form-control" placeholder="مثال: 0.75">
+                    <small class="form-text text-muted">سيتم تطبيق هذه التعرفة على جميع الفواتير</small>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmMinCharge">
+                    <label class="form-check-label fw-semibold" for="confirmMinCharge">
+                        أقر بأن الحد الأدنى للاشتراكات تم إدخاله وتحديثه بشكل صحيح
+                    </label>
+                </div>
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    سيتم إصدار جميع فواتير المسودة دفعة واحدة. هذا الإجراء لا يمكن التراجع عنه.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" id="confirmBulkIssue" disabled>
+                    <i class="bi bi-check-all me-1"></i>
+                    تأكيد الإصدار
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal: سبب إلغاء الفاتورة --}}
+<div class="modal fade" id="cancelInvoiceModal" tabindex="-1" aria-hidden="true" style="display:none">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>إلغاء فاتورة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">سيتم إلغاء الفاتورة رقم: <strong id="cancelInvoiceNumber"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">سبب الإلغاء <span class="text-danger">*</span></label>
+                    <textarea id="cancelReason" class="form-control" rows="3" required minlength="5" placeholder="اذكر سبب إلغاء الفاتورة..."></textarea>
+                </div>
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    سيتم إنشاء قيد مالي عكسي في حساب المشترك وتغيير حالة القراءة إلى غير معتمدة.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">تراجع</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelInvoice">
+                    <i class="bi bi-x-circle me-1"></i>
+                    تأكيد الإلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -276,6 +354,115 @@
 
     // تفعيل tooltips عند أول تحميل
     initTooltips();
+
+    // === Bulk Issue ===
+    $('#bulkIssueBtn').on('click', function() {
+        $('#bulkPricePerKwh').val('');
+        $('#confirmMinCharge').prop('checked', false);
+        $('#confirmBulkIssue').prop('disabled', true);
+        new bootstrap.Modal('#bulkIssueModal').show();
+    });
+
+    $('#confirmMinCharge').on('change', function() {
+        var priceOk = parseFloat($('#bulkPricePerKwh').val()) > 0;
+        $('#confirmBulkIssue').prop('disabled', !($(this).is(':checked') && priceOk));
+    });
+    $('#bulkPricePerKwh').on('input', function() {
+        var priceOk = parseFloat($(this).val()) > 0;
+        var checked = $('#confirmMinCharge').is(':checked');
+        $('#confirmBulkIssue').prop('disabled', !(checked && priceOk));
+    });
+
+    $('#confirmBulkIssue').on('click', function() {
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الإصدار...');
+
+        $.ajax({
+            url: "{{ route('admin.invoices.bulk-issue') }}",
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val(),
+                price_per_kwh: $('#bulkPricePerKwh').val(),
+                confirm_minimum_charge: 1,
+            },
+            success: function(res) {
+                bootstrap.Modal.getInstance('#bulkIssueModal').hide();
+                if (res.success) {
+                    if (window.adminNotifications) window.adminNotifications.success(res.message);
+                    else alert(res.message);
+                    if (typeof loadList === 'function') loadList();
+                    else loadInvoices();
+                } else {
+                    if (window.adminNotifications) window.adminNotifications.error(res.message);
+                    else alert(res.message);
+                }
+            },
+            error: function(xhr) {
+                var msg = xhr.responseJSON?.message || 'حدث خطأ أثناء إصدار الفواتير';
+                if (window.adminNotifications) window.adminNotifications.error(msg);
+                else alert(msg);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-check-all me-1"></i>تأكيد الإصدار');
+            }
+        });
+    });
+
+    // === Export Excel ===
+    $('#exportExcelBtn').on('click', function(e) {
+        e.preventDefault();
+        var p = params();
+        window.location.href = "{{ route('admin.invoices.export') }}" + '?' + $.param(p);
+    });
+
+    // === Cancel Invoice (Issued) ===
+    var cancelUrl = '';
+    $(document).on('click', '.cancel-invoice-btn', function() {
+        cancelUrl = $(this).data('url');
+        $('#cancelInvoiceNumber').text($(this).data('number'));
+        $('#cancelReason').val('');
+        new bootstrap.Modal('#cancelInvoiceModal').show();
+    });
+
+    $('#confirmCancelInvoice').on('click', function() {
+        var reason = $('#cancelReason').val().trim();
+        if (reason.length < 5) {
+            alert('يجب ذكر سبب الإلغاء (5 أحرف على الأقل)');
+            return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الإلغاء...');
+
+        $.ajax({
+            url: cancelUrl,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val(),
+                cancel_reason: reason,
+            },
+            success: function(res) {
+                bootstrap.Modal.getInstance('#cancelInvoiceModal').hide();
+                if (res.success) {
+                    if (window.adminNotifications) window.adminNotifications.success(res.message);
+                    else alert(res.message);
+                    if (typeof loadList === 'function') loadList();
+                    else loadInvoices();
+                } else {
+                    if (window.adminNotifications) window.adminNotifications.error(res.message);
+                    else alert(res.message);
+                }
+            },
+            error: function(xhr) {
+                var msg = xhr.responseJSON?.message || 'حدث خطأ أثناء إلغاء الفاتورة';
+                if (window.adminNotifications) window.adminNotifications.error(msg);
+                else alert(msg);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-x-circle me-1"></i>تأكيد الإلغاء');
+            }
+        });
+    });
 })();
 </script>
 @endpush

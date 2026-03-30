@@ -417,6 +417,10 @@
                                                    class="btn btn-outline-secondary btn-xs py-0 px-2">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
+                                                <a href="{{ route('admin.invoices.payments.receipt', [$invoice, $p]) }}"
+                                                   class="btn btn-outline-success btn-xs py-0 px-2" title="طباعة إيصال" target="_blank">
+                                                    <i class="bi bi-printer"></i>
+                                                </a>
                                                 @can('delete', $p)
                                                     <button type="button"
                                                             class="btn btn-outline-danger btn-xs py-0 px-2"

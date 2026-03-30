@@ -14,6 +14,7 @@ use App\Models\Setting;
 use App\Helpers\ConstantsHelper;
 use App\Models\MinimumChargeRule;
 use App\Models\Payment;
+use Illuminate\Support\Facades\DB;
 
 class Invoice extends Model
 {
@@ -258,7 +259,7 @@ class Invoice extends Model
      */
     public function isCancellable(): bool
     {
-        return in_array($this->invoice_status, [self::STATUS_DRAFT, self::STATUS_ISSUED]);
+        return in_array($this->action_status ?? $this->invoice_status, [self::STATUS_DRAFT, self::STATUS_ISSUED]);
     }
 
     /**
@@ -286,24 +287,26 @@ class Invoice extends Model
      */
     public static function calculatePreviousBalance(int $subscriberId, ?int $excludeInvoiceId = null): float
     {
-        // فقط الفواتير المؤكدة (غير المسودة وغير الملغاة)
-        $invoiceQuery = self::where('subscriber_id', $subscriberId)
-            ->whereNotIn('invoice_status', [self::STATUS_DRAFT, self::STATUS_CANCELLED]);
+        return DB::transaction(function () use ($subscriberId, $excludeInvoiceId) {
+            // Lock subscriber's invoices to prevent concurrent modifications
+            $invoiceQuery = static::where('subscriber_id', $subscriberId)
+                ->whereNotIn('invoice_status', [self::STATUS_DRAFT, self::STATUS_CANCELLED])
+                ->lockForUpdate();
 
-        if ($excludeInvoiceId) {
-            $invoiceQuery->where('id', '!=', $excludeInvoiceId);
-        }
+            if ($excludeInvoiceId) {
+                $invoiceQuery->where('id', '!=', $excludeInvoiceId);
+            }
 
-        // مجموع قيم الفواتير (invoice_amount فقط)
-        $totalInvoiced = (float) (clone $invoiceQuery)->sum('invoice_amount');
+            $totalInvoiced = (clone $invoiceQuery)->sum('invoice_amount');
 
-        // مجموع الدفعات على تلك الفواتير فقط (subquery)
-        $totalPaid = (float) Payment::whereIn(
-            'invoice_id',
-            (clone $invoiceQuery)->select('id')
-        )->sum('amount_paid');
+            $invoiceIds = (clone $invoiceQuery)->pluck('id')->toArray();
 
-        return round($totalInvoiced - $totalPaid, 2);
+            $totalPaid = !empty($invoiceIds)
+                ? (float) Payment::whereIn('invoice_id', $invoiceIds)->sum('amount_paid')
+                : 0.0;
+
+            return round($totalInvoiced - $totalPaid, 2);
+        });
     }
 
     /**
@@ -334,7 +337,13 @@ class Invoice extends Model
 
         $seq = \DB::selectOne('SELECT LAST_INSERT_ID() AS seq')->seq;
 
-        return sprintf('%s-%s%s-%05d', $prefix, $year, $month, (int) $seq);
+        $invoiceNumber = sprintf('%s-%s%s-%05d', $prefix, $year, $month, (int) $seq);
+
+        if (static::where('invoice_number', $invoiceNumber)->exists()) {
+            throw new \RuntimeException('Duplicate invoice number generated: ' . $invoiceNumber);
+        }
+
+        return $invoiceNumber;
     }
 
     /**
@@ -397,17 +406,16 @@ class Invoice extends Model
         float $previousBalance = 0.0
     ): array {
         // الخطوة 1: ثمن الاستهلاك (قبل تطبيق الحد الأدنى)
-        $consumptionCost = $consumptionKwh * $pricePerKwh * (1 - ($discountRate / 100));
+        $consumptionCost = round($consumptionKwh * $pricePerKwh * (1 - ($discountRate / 100)), 2);
 
         // الخطوة 2: قيمة الفاتورة = max(ثمن الاستهلاك, الحد الأدنى)
-        $invoiceAmount = max($consumptionCost, $minimumCharge);
+        $invoiceAmount = round(max($consumptionCost, $minimumCharge), 2);
 
         // الخطوة 3: المبلغ المطلوب = قيمة_الفاتورة + رصيد_سابق
         // الرصيد موجب = مديون على المشترك (يُضاف)
         // الرصيد سالب = دائن لصالح المشترك (يُخصم)
         // في حال كان الناتج سالباً يُثبَّت على صفر
-        $rawTotal    = $invoiceAmount + $previousBalance;
-        $totalAmount = max($rawTotal, 0.0);
+        $totalAmount = round(max($invoiceAmount + $previousBalance, 0), 2);
 
         return [
             'consumption_cost' => round($consumptionCost, 2),

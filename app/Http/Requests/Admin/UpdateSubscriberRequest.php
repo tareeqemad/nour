@@ -32,8 +32,8 @@ class UpdateSubscriberRequest extends FormRequest
             'box_number' => ['nullable', 'string', 'regex:/^\d{4}$/'],
             'is_employee_subscription' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'generation_unit_ids' => ['required', 'array', 'min:1'],
-            'generation_unit_ids.*' => ['exists:generation_units,id'],
+            'operator_id' => ['nullable', 'exists:operators,id'],
+            'generation_unit_id' => ['required', 'exists:generation_units,id'],
         ];
         
         // فقط SuperAdmin يمكنه تعديل رقم الاشتراك
@@ -71,10 +71,8 @@ class UpdateSubscriberRequest extends FormRequest
             'opening_reading.min' => 'قراءة العداد الافتتاحية يجب أن تكون أكبر من أو تساوي صفر.',
             'service_type.required' => 'نوع الخدمة مطلوب.',
             'service_type.in' => 'نوع الخدمة غير صحيح.',
-            'generation_unit_ids.required' => 'يجب اختيار وحدة توليد واحدة على الأقل.',
-            'generation_unit_ids.array' => 'وحدات التوليد يجب أن تكون مصفوفة.',
-            'generation_unit_ids.min' => 'يجب اختيار وحدة توليد واحدة على الأقل.',
-            'generation_unit_ids.*.exists' => 'إحدى وحدات التوليد المحددة غير موجودة.',
+            'generation_unit_id.required' => 'يجب اختيار وحدة توليد.',
+            'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
         ];
         
         // رسائل خاصة برقم الاشتراك (فقط لـ SuperAdmin)
@@ -90,6 +88,7 @@ class UpdateSubscriberRequest extends FormRequest
     {
         $this->merge([
             'meter_number' => $this->meter_number !== '' ? $this->meter_number : null,
+            'is_employee_subscription' => $this->has('is_employee_subscription') ? (bool) $this->is_employee_subscription : false,
         ]);
     }
 }

@@ -251,14 +251,13 @@ class MaintenanceRecordController extends Controller
 
         $maintenanceRecord = MaintenanceRecord::create($data);
 
-        // Update generator's last maintenance date if it's a periodic maintenance
+        // تحديث تاريخ آخر صيانة على المولد (لكل أنواع الصيانة)
         $generator = Generator::find($maintenanceRecord->generator_id);
-        if ($generator && $maintenanceRecord->maintenance_type_id) {
-            // الحصول على ID ثابت "دوري" من constant_master رقم 12
-            $periodicConstant = \App\Helpers\ConstantsHelper::findByCode(12, 'PERIODIC');
-            if ($periodicConstant && (int)$maintenanceRecord->maintenance_type_id === $periodicConstant->id) {
+        if ($generator && $maintenanceRecord->maintenance_date) {
+            // حدّث فقط إذا التاريخ الجديد أحدث من المسجل
+            if (!$generator->last_major_maintenance_date || $maintenanceRecord->maintenance_date >= $generator->last_major_maintenance_date) {
                 $generator->update([
-                    'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
+                    'last_major_maintenance_date' => $maintenanceRecord->maintenance_date,
                 ]);
             }
         }
@@ -405,14 +404,15 @@ class MaintenanceRecordController extends Controller
 
         $maintenanceRecord->update($data);
 
-        // Update generator's last maintenance date if it's a periodic maintenance
+        // تحديث تاريخ آخر صيانة على المولد (لكل أنواع الصيانة)
         $maintenanceRecord->load('generator');
-        if ($maintenanceRecord->generator && $maintenanceRecord->maintenance_type_id) {
-            // الحصول على ID ثابت "دوري" من constant_master رقم 12
-            $periodicConstant = \App\Helpers\ConstantsHelper::findByCode(12, 'PERIODIC');
-            if ($periodicConstant && (int)$maintenanceRecord->maintenance_type_id === $periodicConstant->id) {
+        if ($maintenanceRecord->generator && $maintenanceRecord->maintenance_date) {
+            // جلب أحدث تاريخ صيانة من كل السجلات
+            $latestDate = \App\Models\MaintenanceRecord::where('generator_id', $maintenanceRecord->generator_id)
+                ->max('maintenance_date');
+            if ($latestDate) {
                 $maintenanceRecord->generator->update([
-                    'last_major_maintenance_date' => $maintenanceRecord->maintenance_date
+                    'last_major_maintenance_date' => $latestDate,
                 ]);
             }
         }

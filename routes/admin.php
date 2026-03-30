@@ -105,7 +105,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      * Constants (SuperAdmin only via Policy)
      */
     Route::resource('constants', ConstantMasterController::class);
-    Route::get('constants/{constant}/details', [ConstantMasterController::class, 'show'])->name('constants.show');
+    Route::get('constants/{constant}/details', [ConstantMasterController::class, 'show'])->name('constants.details');
     Route::get('constants/by-number/{number}', [ConstantMasterController::class, 'getByNumber'])->name('constants.get-by-number');
     Route::post('constant-details', [ConstantDetailController::class, 'store'])->name('constant-details.store');
     Route::put('constant-details/{constantDetail}', [ConstantDetailController::class, 'update'])->name('constant-details.update');
@@ -359,6 +359,8 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     /**
      * الفوترة والتحصيل (Invoices)
      */
+    Route::post('invoices/bulk-issue',       [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkIssue'])->name('invoices.bulk-issue');
+    Route::get('invoices/export',            [\App\Http\Controllers\Admin\InvoiceController::class, 'export'])->name('invoices.export');
     Route::post('invoices/{invoice}/issue',  [\App\Http\Controllers\Admin\InvoiceController::class, 'issue'])->name('invoices.issue');
     Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Admin\InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::get('invoices/{invoice}/print',   [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
@@ -375,6 +377,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('invoices/{invoice}/payments',         [\App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('invoices.payments.store');
     Route::get('invoices/{invoice}/payments/{payment}',[\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('invoices.payments.show');
     Route::delete('invoices/{invoice}/payments/{payment}',[\App\Http\Controllers\Admin\PaymentController::class, 'destroy'])->name('invoices.payments.destroy');
+    Route::get('invoices/{invoice}/payments/{payment}/receipt', [\App\Http\Controllers\Admin\PaymentController::class, 'receipt'])->name('invoices.payments.receipt');
 
     /**
      * حساب المشترك (Subscriber Account)
