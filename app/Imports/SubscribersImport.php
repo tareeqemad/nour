@@ -273,18 +273,8 @@ class SubscribersImport
         }
 
         // التحقق من التكرار في قاعدة البيانات
-        if (!empty($data['subscriber_id_number'])) {
-            if (Subscriber::where('subscriber_id_number', $data['subscriber_id_number'])->exists()) {
-                $errors[] = 'رقم الهوية موجود مسبقاً';
-            }
-        }
-        
-        if (!empty($data['phone'])) {
-            if (Subscriber::where('phone', $data['phone'])->exists()) {
-                $errors[] = 'رقم الموبايل موجود مسبقاً';
-            }
-        }
-        
+        // ملاحظة: يُسمح بتكرار رقم الهوية ورقم الجوال لأكثر من مشترك
+
         if (!empty($data['meter_number'])) {
             if (Subscriber::where('meter_number', $data['meter_number'])->exists()) {
                 $errors[] = 'رقم العداد موجود مسبقاً';
