@@ -732,57 +732,61 @@
         setLoading(true);
 
         // تحميل الشجرة أولاً ثم صلاحيات المستخدم لتفادي مشكلة التسابق
-        loadAvailablePermissions(userId, null, '').then(() => {
-            return $.ajax({
+        loadAvailablePermissions(userId, null, '').then(function () {
+            $.ajax({
                 url: userPermissionsUrl(userId),
                 method: 'GET',
                 dataType: 'json'
-            });
-        })
-            .done(res => {
-                if (!res.success) {
-                    flash('danger', res.message || 'فشل تحميل الصلاحيات');
-                    resetUserContextUI();
-                    return;
-                }
-
-                const u = res.user || {};
-                // تحميل الصلاحيات الحالية من السيرفر
-                directSet = new Set(normalizeIds(u.direct_permissions));
-                roleSet = new Set(normalizeIds(u.role_permissions));
-                revokedSet = new Set(normalizeIds(u.revoked_permissions));
-
-                // حفظ نسخة احتياطية (baseline) للرجوع إليها عند Reset
-                baselineDirect = cloneSet(directSet);
-                baselineRevoked = cloneSet(revokedSet);
-
-                renderAllRows();
-                flash('success', 'تم تحميل الصلاحيات بنجاح. يمكنك الآن تعديلها.');
             })
-            .fail(xhr => {
-                let errorMsg = 'حدث خطأ أثناء تحميل الصلاحيات';
-
-                if (xhr.responseJSON) {
-                    if (xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    } else if (xhr.responseJSON.error) {
-                        errorMsg = xhr.responseJSON.error;
-                    } else if (xhr.responseJSON.errors) {
-                        const errors = Object.values(xhr.responseJSON.errors).flat();
-                        errorMsg = errors.join(' | ');
+                .done(function (res) {
+                    if (!res.success) {
+                        flash('danger', res.message || 'فشل تحميل الصلاحيات');
+                        resetUserContextUI();
+                        return;
                     }
-                } else if (xhr.status === 403) {
-                    errorMsg = 'ليس لديك صلاحية لعرض صلاحيات هذا المستخدم';
-                } else if (xhr.status === 404) {
-                    errorMsg = 'المستخدم المحدد غير موجود';
-                } else if (xhr.status === 500) {
-                    errorMsg = 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً';
-                }
 
-                flash('danger', errorMsg);
-                resetUserContextUI();
-            })
-            .always(() => setLoading(false));
+                    const u = res.user || {};
+                    // تحميل الصلاحيات الحالية من السيرفر
+                    directSet = new Set(normalizeIds(u.direct_permissions));
+                    roleSet = new Set(normalizeIds(u.role_permissions));
+                    revokedSet = new Set(normalizeIds(u.revoked_permissions));
+
+                    // حفظ نسخة احتياطية (baseline) للرجوع إليها عند Reset
+                    baselineDirect = cloneSet(directSet);
+                    baselineRevoked = cloneSet(revokedSet);
+
+                    renderAllRows();
+                    flash('success', 'تم تحميل الصلاحيات بنجاح. يمكنك الآن تعديلها.');
+                })
+                .fail(function (xhr) {
+                    let errorMsg = 'حدث خطأ أثناء تحميل الصلاحيات';
+
+                    if (xhr.responseJSON) {
+                        if (xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        } else if (xhr.responseJSON.errors) {
+                            const errors = Object.values(xhr.responseJSON.errors).flat();
+                            errorMsg = errors.join(' | ');
+                        }
+                    } else if (xhr.status === 403) {
+                        errorMsg = 'ليس لديك صلاحية لعرض صلاحيات هذا المستخدم';
+                    } else if (xhr.status === 404) {
+                        errorMsg = 'المستخدم المحدد غير موجود';
+                    } else if (xhr.status === 500) {
+                        errorMsg = 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً';
+                    }
+
+                    flash('danger', errorMsg);
+                    resetUserContextUI();
+                })
+                .always(function () { setLoading(false); });
+        }, function () {
+            // فشل تحميل الشجرة
+            flash('danger', 'فشل تحميل شجرة الصلاحيات');
+            setLoading(false);
+        });
     }
 
     // ===== Toggle permission =====
