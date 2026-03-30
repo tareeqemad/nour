@@ -16,9 +16,7 @@
                         <a href="{{ route('admin.invoices.print', $invoice) }}" class="btn btn-info btn-sm" target="_blank">
                             <i class="bi bi-printer me-1"></i>طباعة
                         </a>
-                        <a href="{{ route('admin.invoices.pdf', $invoice) }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-                        </a>
+                        {{-- زر PDF مخفي مؤقتاً --}}
                         @can('update', $invoice)
                             <a href="{{ route('admin.invoices.edit', $invoice) }}" class="btn btn-warning btn-sm">
                                 <i class="bi bi-pencil me-1"></i>تعديل
