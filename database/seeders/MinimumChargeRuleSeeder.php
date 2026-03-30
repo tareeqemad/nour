@@ -4,29 +4,17 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\MinimumChargeRule;
+use App\Models\Operator;
 
 class MinimumChargeRuleSeeder extends Seeder
 {
     public function run(): void
     {
-        $rules = [
-            ['ampere' =>  2, 'phase_type' => 1, 'minimum_charge' =>  10.00],
-            ['ampere' =>  2, 'phase_type' => 2, 'minimum_charge' =>  30.00],
-            ['ampere' =>  6, 'phase_type' => 1, 'minimum_charge' =>  20.00],
-            ['ampere' =>  6, 'phase_type' => 2, 'minimum_charge' =>  60.00],
-            ['ampere' => 10, 'phase_type' => 1, 'minimum_charge' =>  50.00],
-            ['ampere' => 10, 'phase_type' => 2, 'minimum_charge' => 150.00],
-            ['ampere' => 16, 'phase_type' => 1, 'minimum_charge' =>  50.00],
-            ['ampere' => 16, 'phase_type' => 2, 'minimum_charge' => 300.00],
-        ];
+        // إنشاء القواعد الافتراضية (قيمة 0) لكل مشغل حسب قيم الأمبير من الثوابت
+        $operatorIds = Operator::pluck('id');
 
-        foreach ($rules as $rule) {
-            MinimumChargeRule::updateOrCreate(
-                ['ampere' => $rule['ampere'], 'phase_type' => $rule['phase_type']],
-                ['minimum_charge' => $rule['minimum_charge']]
-            );
+        foreach ($operatorIds as $operatorId) {
+            MinimumChargeRule::seedForOperator($operatorId);
         }
-
-        MinimumChargeRule::clearCache();
     }
 }

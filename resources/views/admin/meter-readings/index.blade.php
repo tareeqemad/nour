@@ -21,6 +21,10 @@
                     <x-admin.card-header title="قراءات العدادات" icon="bi-speedometer2">
                         <x-slot:actions>
                             @can('create', App\Models\MeterReading::class)
+                                <button type="button" id="bulkApproveFilterBtn" class="btn btn-outline-success d-none">
+                                    <i class="bi bi-check-all me-1"></i>
+                                    اعتماد حسب الفلتر
+                                </button>
                                 <button type="button" id="bulkApproveBtn" class="btn btn-outline-secondary d-none">
                                     <i class="bi bi-check-circle me-1"></i>
                                     اعتماد المحدد
@@ -28,6 +32,10 @@
                                 </button>
                             @endcan
                             @can('create', App\Models\MeterReading::class)
+                                <a href="{{ route('admin.meter-readings.bulk-create') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-journal-text me-1"></i>
+                                    إضافة قراءات جماعية
+                                </a>
                                 <a href="{{ route('admin.meter-readings.create') }}" class="btn btn-primary">
                                     <i class="bi bi-plus-lg me-1"></i>
                                     إضافة قراءة جديدة
@@ -120,20 +128,26 @@
                                         </select>
                                     </div>
 
-                                    {{-- من تاريخ --}}
-                                    <div class="col-md-3">
+                                    {{-- رقم الصندوق --}}
+                                    <div class="col-md-2">
                                         <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-event me-1"></i>
-                                            من تاريخ
+                                            <i class="bi bi-mailbox me-1"></i>رقم الصندوق
+                                        </label>
+                                        <input type="text" id="boxNumberFilter" class="form-control" placeholder="0000" maxlength="4">
+                                    </div>
+
+                                    {{-- من تاريخ --}}
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-calendar-event me-1"></i>من تاريخ
                                         </label>
                                         <input type="date" id="dateFromFilter" class="form-control" value="{{ request('date_from') }}">
                                     </div>
 
                                     {{-- إلى تاريخ --}}
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-event me-1"></i>
-                                            إلى تاريخ
+                                            <i class="bi bi-calendar-event me-1"></i>إلى تاريخ
                                         </label>
                                         <input type="date" id="dateToFilter" class="form-control" value="{{ request('date_to') }}">
                                     </div>
@@ -141,22 +155,22 @@
                                     {{-- البحث --}}
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">
-                                            <i class="bi bi-search me-1"></i>
-                                            البحث
+                                            <i class="bi bi-search me-1"></i>بحث
                                         </label>
-                                        <input type="text" id="searchInput" class="form-control" placeholder="ابحث برقم القراءة، رقم العداد، رقم الاشتراك، أو اسم المشترك..." value="{{ request('search') }}">
+                                        <input type="text" id="searchInput" class="form-control" placeholder="رقم القراءة، العداد، الاشتراك، الاسم..." value="{{ request('search') }}">
                                     </div>
                                 </div>
 
                                 <div class="row g-3 mt-2">
                                     <div class="col-12 d-flex justify-content-center gap-2">
                                         <button class="btn btn-primary" type="button" id="searchBtn">
-                                            <i class="bi bi-search me-1"></i>
-                                            بحث
+                                            <i class="bi bi-search me-1"></i>استعلام
                                         </button>
+                                        <a href="#" id="exportExcelBtn" class="btn btn-outline-success">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>تصدير Excel
+                                        </a>
                                         <button class="btn btn-outline-secondary d-none" type="button" id="clearBtn" title="تفريغ الحقول">
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                            تفريغ الحقول
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ
                                         </button>
                                     </div>
                                 </div>
@@ -318,6 +332,7 @@
             subscriber_id:  $subscriberFilter.val() || '',
             reading_status: $readingStatusFilter.val() || '',
             action_status:  (actionVal !== null && actionVal !== undefined) ? actionVal : '',
+            box_number:     $('#boxNumberFilter').val() || '',
             date_from:      $dateFromFilter.val() || '',
             date_to:        $dateToFilter.val() || '',
             search:         $searchInput.val() || '',
@@ -331,7 +346,11 @@
     }
 
     function updateClearBtn() {
-        $clearBtn.toggleClass('d-none', !hasActiveFilter(currentParams()));
+        const p = currentParams();
+        $clearBtn.toggleClass('d-none', !hasActiveFilter(p));
+        // إظهار زر "اعتماد حسب الفلتر" لما يكون فيه فلتر تاريخ أو صندوق
+        const hasApproveFilter = p.date_from || p.date_to || p.box_number;
+        $('#bulkApproveFilterBtn').toggleClass('d-none', !hasApproveFilter);
     }
 
     function loadList(extra) {
@@ -433,6 +452,7 @@
     $subscriberFilter.on('change', function() { loadList(); });
     $readingStatusFilter.on('change', function() { updateClearBtn(); });
     $actionStatusFilter.on('change', function() { updateClearBtn(); });
+    $('#boxNumberFilter').on('input', function() { updateClearBtn(); });
     $dateFromFilter.on('change', function() { updateClearBtn(); });
     $dateToFilter.on('change', function() { updateClearBtn(); });
 
@@ -442,11 +462,157 @@
         $subscriberFilter.find('option:not(:first)').remove();
         $readingStatusFilter.val('');
         $actionStatusFilter.val('');
+        $('#boxNumberFilter').val('');
         $dateFromFilter.val('');
         $dateToFilter.val('');
         $searchInput.val('');
         loadList();
     });
+
+    // تصدير Excel حسب الفلاتر
+    $('#exportExcelBtn').on('click', function(e) {
+        e.preventDefault();
+        window.location.href = @json(route('admin.meter-readings.export')) + '?' + $.param(currentParams());
+    });
+
+    // اعتماد حسب الفلتر (طبيعية + مودال لغير الطبيعية)
+    $('#bulkApproveFilterBtn').on('click', function() {
+        const p = currentParams();
+        if (!p.date_from && !p.date_to && !p.box_number) {
+            alert('يرجى تحديد تاريخ أو رقم صندوق للاعتماد');
+            return;
+        }
+
+        Swal.fire({
+            title: 'اعتماد حسب الفلتر',
+            html: 'سيتم اعتماد القراءات الطبيعية غير المعتمدة المطابقة للفلاتر.<br>في حال وجود قراءات غير طبيعية ستظهر لك لإدخال الأسباب.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-check-all me-1"></i>متابعة',
+            cancelButtonText: 'إلغاء',
+            reverseButtons: true,
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            const $btn = $('#bulkApproveFilterBtn');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الاعتماد...');
+
+            $.ajax({
+                url: @json(route('admin.meter-readings.bulk-approve-filter')),
+                method: 'POST',
+                data: Object.assign({ _token: csrfToken }, p),
+                success: function(res) {
+                    if (!res.success) {
+                        Swal.fire({ icon: 'error', title: 'خطأ', text: res.message });
+                        return;
+                    }
+
+                    // لو فيه غير طبيعية → عرض المودال
+                    if (res.abnormal_count > 0) {
+                        showAbnormalModal(res.message, res.abnormal_readings);
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'تم بنجاح', text: res.message, timer: 3000, showConfirmButton: false });
+                    }
+                    loadList();
+                },
+                error: function(xhr) {
+                    Swal.fire({ icon: 'error', title: 'خطأ', text: xhr.responseJSON?.message || 'حدث خطأ.' });
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="bi bi-check-all me-1"></i>اعتماد حسب الفلتر');
+                }
+            });
+        });
+    });
+
+    // ===== مودال القراءات غير الطبيعية =====
+    function showAbnormalModal(successMsg, abnormals) {
+        let tableRows = '';
+        abnormals.forEach((r, i) => {
+            tableRows += `<tr>
+                <td class="small">${r.reading_number}</td>
+                <td class="small">${r.subscriber_name}</td>
+                <td class="small">${r.consumption_kwh}</td>
+                <td class="small">${r.reading_date}</td>
+                <td><input type="text" class="form-control form-control-sm abnormal-reason" data-id="${r.id}" placeholder="السبب..."></td>
+            </tr>`;
+        });
+
+        Swal.fire({
+            title: 'قراءات غير طبيعية',
+            html: `
+                <p class="text-success small mb-2"><i class="bi bi-check-circle me-1"></i>${successMsg}</p>
+                <p class="small text-muted mb-2">القراءات التالية غير طبيعية وتحتاج سبب للاعتماد:</p>
+                <div class="mb-2">
+                    <input type="text" id="globalAbnormalReason" class="form-control form-control-sm" placeholder="سبب جماعي لكل القراءات (اختياري)">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="applyGlobalReason">
+                        <i class="bi bi-arrow-down me-1"></i>تطبيق على الكل
+                    </button>
+                </div>
+                <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+                    <table class="table table-sm table-hover mb-0 text-center">
+                        <thead class="table-light"><tr>
+                            <th>رقم القراءة</th><th>المشترك</th><th>الاستهلاك</th><th>التاريخ</th><th>السبب</th>
+                        </tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>`,
+            width: '750px',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-check-lg me-1"></i>اعتماد غير الطبيعية',
+            cancelButtonText: 'تخطي',
+            reverseButtons: true,
+            didOpen: () => {
+                document.getElementById('applyGlobalReason').addEventListener('click', function() {
+                    const globalReason = document.getElementById('globalAbnormalReason').value;
+                    if (globalReason) {
+                        document.querySelectorAll('.abnormal-reason').forEach(inp => {
+                            if (!inp.value) inp.value = globalReason;
+                        });
+                    }
+                });
+            },
+            preConfirm: () => {
+                const readings = [];
+                let hasEmpty = false;
+                document.querySelectorAll('.abnormal-reason').forEach(inp => {
+                    const reason = inp.value.trim();
+                    if (!reason || reason.length < 5) hasEmpty = true;
+                    readings.push({ id: inp.dataset.id, reason: reason });
+                });
+                if (hasEmpty) {
+                    Swal.showValidationMessage('يرجى إدخال سبب (5 أحرف على الأقل) لكل قراءة');
+                    return false;
+                }
+                return readings;
+            },
+        }).then((result) => {
+            if (!result.isConfirmed || !result.value) return;
+
+            $.ajax({
+                url: @json(route('admin.meter-readings.bulk-approve-abnormal')),
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ readings: result.value, _token: csrfToken }),
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                success: function(res) {
+                    if (res.success) {
+                        Swal.fire({ icon: 'success', title: 'تم بنجاح', text: res.message, timer: 3000, showConfirmButton: false });
+                        loadList();
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'خطأ', text: res.message });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({ icon: 'error', title: 'خطأ', text: xhr.responseJSON?.message || 'حدث خطأ.' });
+                }
+            });
+        });
+    }
 
     // Pagination AJAX
     $(document).on('click', '#meterReadingsListWrap .pagination a', function(e) {

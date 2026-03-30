@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 
-// تم إلغاء هذا الملف — المحافظة تُستخرج من وحدة التوليد المرتبطة بالمشترك
+// تم إلغاء هذا الملف — حقل governorate_name لم يعد موجوداً
 return new class extends Migration
 {
     public function up(): void {}

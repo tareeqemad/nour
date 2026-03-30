@@ -137,12 +137,34 @@ class User extends Authenticatable
         'roles.view',
         'roles.create',
         'roles.update',
+        // إدارة بيانات المشتركين
         'subscribers.view',
         'subscribers.create',
         'subscribers.update',
+        'subscribers.delete',
+        // قراءات العدادات
         'meter_readings.view',
         'meter_readings.create',
         'meter_readings.update',
+        'meter_readings.delete',
+        // قضايا التفتيش والتعدي
+        'inspection_violation_cases.view',
+        'inspection_violation_cases.create',
+        'inspection_violation_cases.update',
+        'inspection_violation_cases.delete',
+        // الفوترة والتحصيل
+        'invoices.view',
+        'invoices.create',
+        'invoices.update',
+        'invoices.delete',
+        'invoices.issue',
+        // تقارير الفوترة
+        'invoice_reports.view',
+        // قواعد الحد الأدنى
+        'minimum_charge_rules.view',
+        'minimum_charge_rules.update',
+        // حساب المشترك
+        'subscriber_accounts.view',
     ];
 
     protected $fillable = [

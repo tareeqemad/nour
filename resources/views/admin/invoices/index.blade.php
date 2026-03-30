@@ -126,8 +126,8 @@
 <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
 <script>
 (function () {
-    const listUrl       = @json(route('admin.invoices.index'));
-    const subsByOpUrl   = @json(route('admin.invoices.subscribers-by-operator'));
+    const listUrl     = @json(route('admin.invoices.index'));
+    const subsByOpUrl = @json(route('admin.invoices.subscribers-by-operator'));
 
     const $wrap      = $('#invoicesListWrap');
     const $opFilter  = $('#operatorFilter');
@@ -139,6 +139,10 @@
     const $searchBtn = $('#searchBtn');
     const $clearBtn  = $('#clearBtn');
 
+    let nextPage = {{ $invoices->hasMorePages() ? 2 : 'null' }};
+    let hasMore  = {{ $invoices->hasMorePages() ? 'true' : 'false' }};
+    let isLoading = false;
+
     $subFilter.select2({
         placeholder: 'اختر أو ابحث...', allowClear: true, dir: 'rtl',
         language: { noResults: () => 'لا توجد نتائج', searching: () => 'جاري البحث...' }
@@ -146,7 +150,7 @@
 
     $opFilter.on('change', function () {
         loadSubscribersByOperator($(this).val());
-        loadList();
+        loadInvoices();
     });
 
     function loadSubscribersByOperator(opId) {
@@ -178,73 +182,100 @@
         return !!(p.operator_id || p.subscriber_id || p.invoice_status !== '' || p.date_from || p.date_to || p.search);
     }
 
-    function loadList(extra) {
-        const p = params(extra);
+    function initTooltips(ctx) {
+        (ctx || document).querySelectorAll('[data-bs-toggle="tooltip"]:not(.tooltip-init)').forEach(function (el) {
+            el.classList.add('tooltip-init');
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
+    }
+
+    // تحميل الصفحة الأولى (يستبدل كل شيء)
+    function loadInvoices() {
+        if (isLoading) return;
+        isLoading = true;
+        nextPage  = null;
+        hasMore   = true;
+
         $('#invLoading').removeClass('d-none');
-        $wrap.find('.table,.pagination,.empty-state').css('visibility','hidden');
+        $wrap.find('.table,.empty-state').css('visibility','hidden');
 
         $.ajax({
-            url: listUrl, method: 'GET', data: p,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            url: listUrl, method: 'GET', data: params({ page: 1 }),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
             success(res) {
                 if (res.success) {
                     $wrap.html(res.html);
                     $('#invoicesCount').text(res.count);
-                    $clearBtn.toggleClass('d-none', !hasFilter(p));
-                    // تفعيل tooltips على العناصر الجديدة
-                    $wrap[0].querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-                        new bootstrap.Tooltip(el, { trigger: 'hover' });
-                    });
+                    hasMore  = res.has_more;
+                    nextPage = res.next_page;
+                    if (!hasMore) $('#scrollLoader').remove();
+                    $clearBtn.toggleClass('d-none', !hasFilter(params()));
+                    initTooltips($wrap[0]);
                 }
             },
             complete() {
                 $('#invLoading').addClass('d-none');
-                $wrap.find('.table,.pagination,.empty-state').css('visibility','visible');
+                $wrap.find('.table,.empty-state').css('visibility','visible');
+                isLoading = false;
             }
         });
     }
 
-    $searchBtn.on('click', () => loadList());
-    $search.on('keypress', e => { if (e.which === 13) loadList(); });
-    $subFilter.on('change', () => loadList());
-    $stFilter.on('change', () => { $clearBtn.toggleClass('d-none', !hasFilter(params())); });
-    $dfFilter.on('change', () => { $clearBtn.toggleClass('d-none', !hasFilter(params())); });
-    $dtFilter.on('change', () => { $clearBtn.toggleClass('d-none', !hasFilter(params())); });
+    // تحميل الصفحة التالية (يلحق بالجدول)
+    function loadMore() {
+        if (isLoading || !hasMore || !nextPage) return;
+        isLoading = true;
+
+        var $loader = $('#scrollLoader');
+        $loader.show();
+
+        $.ajax({
+            url: listUrl, method: 'GET', data: params({ page: nextPage }),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            success(res) {
+                if (res.success && res.append) {
+                    $('#invoicesBody').append(res.html);
+                    hasMore  = res.has_more;
+                    nextPage = res.next_page;
+                    if (!hasMore) $loader.remove();
+                    initTooltips($('#invoicesBody')[0]);
+                }
+            },
+            complete() { isLoading = false; }
+        });
+    }
+
+    // Infinite scroll
+    function checkScroll() {
+        if (isLoading || !hasMore || !nextPage) return;
+        var el = document.getElementById('scrollLoader');
+        if (!el) return;
+        var rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 300) loadMore();
+    }
+
+    $(window).on('scroll resize', checkScroll);
+    $('.app-content, .main-content, .main-container').on('scroll', checkScroll);
+    setInterval(checkScroll, 500);
+
+    // أحداث الفلاتر
+    $searchBtn.on('click', () => loadInvoices());
+    $search.on('keypress', e => { if (e.which === 13) loadInvoices(); });
+    $subFilter.on('change', () => loadInvoices());
+    $stFilter.on('change', () => loadInvoices());
+    $dfFilter.on('change', () => loadInvoices());
+    $dtFilter.on('change', () => loadInvoices());
 
     $clearBtn.on('click', function () {
-        $opFilter.val('');
+        if (!$opFilter.prop('disabled')) $opFilter.val('');
         $subFilter.val(null).trigger('change.select2');
         $subFilter.find('option:not(:first)').remove();
         $stFilter.val(''); $dfFilter.val(''); $dtFilter.val(''); $search.val('');
-        loadList();
+        loadInvoices();
     });
 
-    $(document).on('click', '#invoicesListWrap .pagination a', function (e) {
-        e.preventDefault();
-        const url = new URL($(this).attr('href'), window.location.origin);
-        loadList({ page: url.searchParams.get('page') });
-    });
+    // تفعيل tooltips عند أول تحميل
+    initTooltips();
 })();
-</script>
-<script>
-// تفعيل tooltips في القائمة بعد كل تحميل AJAX
-$(document).on('htmx:afterSwap ajaxSuccess', function () {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        new bootstrap.Tooltip(el, { trigger: 'hover' });
-    });
-});
-// تفعيل أولي عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        new bootstrap.Tooltip(el, { trigger: 'hover' });
-    });
-});
-// إعادة تفعيل بعد كل تحميل AJAX للقائمة
-$(document).on('ajaxComplete', function () {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]:not(.tooltip-init)').forEach(function (el) {
-        el.classList.add('tooltip-init');
-        new bootstrap.Tooltip(el, { trigger: 'hover' });
-    });
-});
 </script>
 @endpush

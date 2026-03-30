@@ -28,6 +28,31 @@ class ConstantDetail extends Model
         ];
     }
 
+    /**
+     * عند إضافة قيمة أمبير جديدة، إنشاء قواعد حد أدنى لكل المشغلين مع إشعار
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $detail) {
+            if ($detail->master && $detail->master->constant_number == MinimumChargeRule::AMPERE_CONSTANT_NUMBER) {
+                $ampere = intval($detail->value);
+                MinimumChargeRule::syncNewAmpere($ampere);
+
+                // إشعار كل المشغلين بالأمبير الجديد
+                $link = route('admin.minimum-charge-rules.index');
+                \App\Models\Operator::whereNotNull('owner_id')->each(function ($operator) use ($ampere, $link) {
+                    Notification::notifyOperatorUsers(
+                        $operator,
+                        'ampere_rule_added',
+                        'قيمة أمبير جديدة',
+                        "تمت إضافة قيمة أمبير جديدة ({$ampere} A) لقواعد الحد الأدنى. يرجى تعديل القيمة من إعدادات الحد الأدنى.",
+                        $link
+                    );
+                });
+            }
+        });
+    }
+
     public function master(): BelongsTo
     {
         return $this->belongsTo(ConstantMaster::class, 'constant_master_id');

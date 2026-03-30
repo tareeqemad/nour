@@ -77,7 +77,8 @@
                             $isEmployee = $sub ? $sub->isEligibleForEmployeeDiscount() : false;
                             $ampereKey = intval($sub->ampere ?? 0);
                             $phaseKey  = $sub->phase_type ?? 1;
-                            $autoMinCharge = \App\Models\MinimumChargeRule::allCached()[$ampereKey][$phaseKey] ?? null;
+                            $editOperatorId = $sub?->generationUnits->first()?->operator_id ?? 0;
+                            $autoMinCharge = \App\Models\MinimumChargeRule::cachedForOperator($editOperatorId)[$ampereKey][$phaseKey] ?? null;
                             $empDiscountRate = $isEmployee
                                 ? \App\Models\Invoice::getEmployeeDiscountRate($invoice->invoice_date ? \Carbon\Carbon::parse($invoice->invoice_date) : null)
                                 : 0;

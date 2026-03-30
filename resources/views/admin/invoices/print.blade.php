@@ -1,7 +1,11 @@
 @php
     $siteName  = \App\Models\Setting::get('site_name', 'نور');
     $siteLogo  = \App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/nour_logo.png');
-    $logoUrl   = str_starts_with($siteLogo, 'http') ? $siteLogo : asset($siteLogo);
+    if (!empty($isPdf)) {
+        $logoUrl = str_starts_with($siteLogo, 'http') ? $siteLogo : public_path($siteLogo);
+    } else {
+        $logoUrl = str_starts_with($siteLogo, 'http') ? $siteLogo : asset($siteLogo);
+    }
     $operator  = $invoice->subscriber?->generationUnits->first()?->operator;
     $paidAmt   = $invoice->paidAmount();
     $remaining = $invoice->remainingAmount();
@@ -9,7 +13,8 @@
     $subAmpere   = intval($invoice->subscriber?->ampere ?? 0);
     $subPhase    = $invoice->subscriber?->phase_type ?? 1;
     $phaseLabel  = $subPhase == 2 ? '3' : '1';
-    $autoMinCharge = \App\Models\MinimumChargeRule::allCached()[$subAmpere][$subPhase] ?? null;
+    $operatorId = $operator?->id ?? 0;
+    $autoMinCharge = \App\Models\MinimumChargeRule::getMinCharge($subAmpere, $subPhase, $operatorId);
     // القيم الفعلية - للمسودات: تطبيق القواعد تلقائياً عبر الدالة المركزية
     $isDraft = $invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT;
     if ($isDraft && $invoice->subscriber) {
@@ -39,8 +44,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>فاتورة {{ $invoice->invoice_number ?? 'مسودة' }} - {{ $siteName }}</title>
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/tajawal-font.css') }}">
+    @if(empty($isPdf))
+        <link rel="stylesheet" href="{{ asset('assets/admin/css/tajawal-font.css') }}">
+    @endif
     <style>
+        @if(!empty($isPdf))
+        * { font-family: 'DejaVu Sans', sans-serif !important; }
+        @endif
         /* ===== Reset & Base ===== */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -664,7 +674,7 @@
 <body>
 
     {{-- Print Controls --}}
-    <div class="print-controls no-print">
+    <div class="print-controls no-print" @if(!empty($isPdf)) style="display:none" @endif>
         <button class="btn-print" onclick="window.print()">
             <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>

@@ -13,48 +13,75 @@
                 <div class="card-body">
                     <div style="background: var(--color-info-bg, #F0F9FF); border: 1px solid var(--color-info-border, #BAE6FD); border-radius: 8px; padding: 0.65rem 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--color-info-text, #0369A1);">
                         <i class="bi bi-info-circle me-1"></i>
-                        الحد الأدنى يُحسب تلقائياً بناءً على أمبير الاشتراك ونوع الفاز. يُطبَّق على الفواتير الجديدة والمسودات فقط.
+                        الحد الأدنى يُحسب تلقائياً بناءً على أمبير الاشتراك ونوع الفاز. يُطبَّق على الفواتير الجديدة والمسودات فقط. كل مشغل يستطيع تعديل قواعده الخاصة.
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 general-table text-center">
-                            <thead>
-                                <tr>
-                                    <th>الأمبير</th>
-                                    <th>نوع الفاز</th>
-                                    <th>الحد الأدنى (₪)</th>
-                                    <th>إجراء</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($rules as $rule)
-                                <tr>
-                                    <td>
-                                        <span class="badge-role-system" style="font-size: 0.85rem;">{{ $rule->ampere }} A</span>
-                                    </td>
-                                    <td>
-                                        @if($rule->phase_type === 2)
-                                            <span class="badge-warning">ثلاثي (3 فاز)</span>
-                                        @else
-                                            <span class="badge-info">أحادي (1 فاز)</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="fw-bold" style="color: var(--color-primary, #24308F);" id="display-{{ $rule->id }}">
-                                            {{ number_format($rule->minimum_charge, 2) }} ₪
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary"
-                                                onclick="openEdit({{ $rule->id }}, {{ $rule->minimum_charge }}, '{{ $rule->ampere }} أمبير / {{ $rule->phase_name }}')">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    {{-- فلتر المشغل --}}
+                    @if($canSelectOperator && $operators->count() > 0)
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>المشغل
+                                </label>
+                                <select id="operatorFilter" class="form-select" onchange="window.location.href='{{ route('admin.minimum-charge-rules.index') }}?operator_id=' + this.value">
+                                    @foreach($operators as $op)
+                                        <option value="{{ $op->id }}" {{ $operatorId == $op->id ? 'selected' : '' }}>{{ $op->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($rules->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 general-table text-center">
+                                <thead>
+                                    <tr>
+                                        <th>الأمبير</th>
+                                        <th>نوع الفاز</th>
+                                        <th>الحد الأدنى (₪)</th>
+                                        @can('update', $rules->first())
+                                            <th>إجراء</th>
+                                        @endcan
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($rules as $rule)
+                                    <tr>
+                                        <td>
+                                            <span class="badge-role-system" style="font-size: 0.85rem;">{{ $rule->ampere }} A</span>
+                                        </td>
+                                        <td>
+                                            @if($rule->phase_type === 2)
+                                                <span class="badge-warning">ثلاثي (3 فاز)</span>
+                                            @else
+                                                <span class="badge-info">أحادي (1 فاز)</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold" style="color: var(--color-primary, #24308F);">
+                                                {{ number_format($rule->minimum_charge, 2) }} ₪
+                                            </span>
+                                        </td>
+                                        @can('update', $rule)
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="openEdit({{ $rule->id }}, {{ $rule->minimum_charge }}, '{{ $rule->ampere }} أمبير / {{ $rule->phase_name }}')">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </td>
+                                        @endcan
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                            <p class="text-muted mt-3">لا توجد قواعد حد أدنى لهذا المشغل</p>
+                        </div>
+                    @endif
                 </div>
             </x-admin.card>
         </div>

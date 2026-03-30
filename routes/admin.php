@@ -318,9 +318,13 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     /**
      * Subscribers (إدارة بيانات المشتركين)
      */
+    Route::get('subscribers/export', [\App\Http\Controllers\Admin\SubscriberController::class, 'export'])
+        ->name('subscribers.export');
     Route::resource('subscribers', \App\Http\Controllers\Admin\SubscriberController::class);
     Route::post('subscribers/check-unique', [\App\Http\Controllers\Admin\SubscriberController::class, 'checkUnique'])
         ->name('subscribers.check-unique');
+    Route::get('/operators/{operator}/generation-units-for-subscribers', [\App\Http\Controllers\Admin\SubscriberController::class, 'getGenerationUnits'])
+        ->name('subscribers.generation-units');
     
     // Subscriber Import Routes
     Route::get('subscribers/import/modal', [\App\Http\Controllers\Admin\SubscriberImportController::class, 'showImportModal'])
@@ -339,7 +343,14 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     /**
      * Meter Readings (قراءات العدادات)
      */
-    Route::post('meter-readings/bulk-approve', [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkApprove'])->name('meter-readings.bulk-approve');
+    Route::get('meter-readings/bulk-create',          [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkCreate'])->name('meter-readings.bulk-create');
+    Route::post('meter-readings/bulk-create/fetch',    [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkCreateFetch'])->name('meter-readings.bulk-create.fetch');
+    Route::post('meter-readings/bulk-create/store',    [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkCreateStore'])->name('meter-readings.bulk-create.store');
+    Route::post('meter-readings/bulk-create/export',   [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkCreateExport'])->name('meter-readings.bulk-create.export');
+    Route::get('meter-readings/export',                [\App\Http\Controllers\Admin\MeterReadingController::class, 'export'])->name('meter-readings.export');
+    Route::post('meter-readings/bulk-approve',        [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkApprove'])->name('meter-readings.bulk-approve');
+    Route::post('meter-readings/bulk-approve-filter',   [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkApproveByFilter'])->name('meter-readings.bulk-approve-filter');
+    Route::post('meter-readings/bulk-approve-abnormal', [\App\Http\Controllers\Admin\MeterReadingController::class, 'bulkApproveAbnormal'])->name('meter-readings.bulk-approve-abnormal');
     Route::post('meter-readings/{meterReading}/approve-abnormal', [\App\Http\Controllers\Admin\MeterReadingController::class, 'approveAbnormal'])->name('meter-readings.approve-abnormal');
     Route::get('meter-readings/subscribers-by-operator', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getSubscribersByOperator'])->name('meter-readings.subscribers-by-operator');
     Route::get('meter-readings/subscriber/last-reading', [\App\Http\Controllers\Admin\MeterReadingController::class, 'getLastReading'])->name('meter-readings.last-reading');
@@ -351,6 +362,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('invoices/{invoice}/issue',  [\App\Http\Controllers\Admin\InvoiceController::class, 'issue'])->name('invoices.issue');
     Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Admin\InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::get('invoices/{invoice}/print',   [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
+    Route::get('invoices/{invoice}/pdf',     [\App\Http\Controllers\Admin\InvoiceController::class, 'pdf'])->name('invoices.pdf');
     Route::get('invoices/reading-data',      [\App\Http\Controllers\Admin\InvoiceController::class, 'getReadingData'])->name('invoices.reading-data');
     Route::get('invoices/subscribers-by-operator', [\App\Http\Controllers\Admin\InvoiceController::class, 'getSubscribersByOperator'])->name('invoices.subscribers-by-operator');
     Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);

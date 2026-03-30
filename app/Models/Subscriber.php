@@ -23,17 +23,20 @@ class Subscriber extends Model
         'subscriber_id_number',
         'subscriber_name',
         'phone',
-        'governorate_name',
+        'alt_phone',
         'address',
         'subscription_date',
+        'request_date',
         'subscription_category',
         'phase_type',
         'subscription_status',
         'meter_number',
+        'box_number',
         'ampere',
         'opening_reading',
         'service_type',
         'is_employee_subscription',
+        'notes',
         'created_by',
         'last_updated_by',
     ];
@@ -42,6 +45,7 @@ class Subscriber extends Model
     {
         return [
             'subscription_date' => 'date',
+            'request_date' => 'date',
             'subscription_category' => 'integer',
             'phase_type' => 'integer',
             'subscription_status' => 'integer',
@@ -181,6 +185,21 @@ class Subscriber extends Model
             1 => 'مولد', 2 => 'شمسي', 3 => 'هجين',
             default => 'غير محدد',
         };
+    }
+
+    /**
+     * Accessor للحصول على اسم المحافظة من وحدة التوليد
+     */
+    public function getGovernorateDisplayNameAttribute(): string
+    {
+        $unit = $this->generationUnits->first();
+        if (!$unit || !$unit->governorate_id) {
+            return '-';
+        }
+
+        $details = ConstantsHelper::get(1);
+        $match = $details->firstWhere('id', $unit->governorate_id);
+        return $match ? $match->label : '-';
     }
 
     /**

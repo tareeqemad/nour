@@ -40,91 +40,182 @@
                     </x-admin.card-header>
 
                     <div class="card-body pb-4">
-                        {{-- كارد واحد للفلاتر --}}
-                                <div class="row g-3">
-                                    @php
-                                        $user = auth()->user();
-                                        $isCompanyOwner = $user->isCompanyOwner();
-                                        $isEmployeeOrTechnician = $user->isEmployee() || $user->isTechnician();
-                                        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
-                                        $subscriptionStatuses = \App\Helpers\ConstantsHelper::get(25);
-                                        $subscriberTypes      = \App\Helpers\ConstantsHelper::get(27);
-                                    @endphp
+                        @php
+                            $user = auth()->user();
+                            $isCompanyOwner = $user->isCompanyOwner();
+                            $isEmployeeOrTechnician = $user->isEmployee() || $user->isTechnician();
+                            $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                            $subscriptionStatuses   = \App\Helpers\ConstantsHelper::get(25);
+                            $subscriptionCategories = \App\Helpers\ConstantsHelper::get(23);
+                            $phaseTypes             = \App\Helpers\ConstantsHelper::get(24);
+                            $serviceTypes           = \App\Helpers\ConstantsHelper::get(26);
+                            $subscriberTypes        = \App\Helpers\ConstantsHelper::get(27);
+                            $ampereOptions          = \App\Helpers\ConstantsHelper::get(31);
+                        @endphp
 
-                                    {{-- فلتر المشغل --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building me-1"></i>
-                                            المشغل
-                                        </label>
-                                        @if($canSelectOperator && isset($operators) && $operators->count() > 0)
-                                            <select id="operatorFilter" class="form-select">
-                                                <option value="">كل المشغلين</option>
-                                                @foreach($operators as $op)
-                                                    <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
-                                                        {{ $op->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        @elseif(($isCompanyOwner || $isEmployeeOrTechnician) && isset($currentOperator))
-                                            <select id="operatorFilter" class="form-select" disabled style="background-color: #f8f9fa; cursor: not-allowed;">
-                                                <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
-                                            </select>
-                                            <input type="hidden" name="operator_id" value="{{ $currentOperator->id }}">
-                                        @endif
-                                    </div>
+                        {{-- الفلاتر - صف 1 --}}
+                        <div class="row g-3">
+                            {{-- المشغل --}}
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>المشغل
+                                </label>
+                                @if($canSelectOperator && isset($operators) && $operators->count() > 0)
+                                    <select id="operatorFilter" class="form-select">
+                                        <option value="">كل المشغلين</option>
+                                        @foreach($operators as $op)
+                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>{{ $op->name }}</option>
+                                        @endforeach
+                                    </select>
+                                @elseif(($isCompanyOwner || $isEmployeeOrTechnician) && isset($currentOperator))
+                                    <select id="operatorFilter" class="form-select" disabled style="background-color:#f8f9fa;cursor:not-allowed;">
+                                        <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
+                                    </select>
+                                    <input type="hidden" id="operatorFilterHidden" name="operator_id" value="{{ $currentOperator->id }}">
+                                @endif
+                            </div>
 
-                                    {{-- فلتر حالة الاشتراك --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-funnel me-1"></i>
-                                            حالة الاشتراك
-                                        </label>
-                                        <select id="subscriptionStatusFilter" class="form-select">
-                                            <option value="">الكل</option>
-                                            @foreach($subscriptionStatuses as $item)
-                                                <option value="{{ $item->value }}" {{ request('subscription_status') == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                            {{-- وحدة التوليد --}}
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-lightning-charge me-1"></i>وحدة التوليد
+                                </label>
+                                @if($canSelectOperator)
+                                    {{-- للسوبر أدمن: يتم ملؤها ديناميكياً عند اختيار المشغل --}}
+                                    <select id="generationUnitFilter" class="form-select">
+                                        <option value="">الكل</option>
+                                        @foreach($generationUnits ?? [] as $unit)
+                                            <option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    {{-- للمشغل/الموظف: الوحدات مبنية مسبقاً --}}
+                                    <select id="generationUnitFilter" class="form-select">
+                                        <option value="">الكل</option>
+                                        @foreach($generationUnits ?? [] as $unit)
+                                            <option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                            </div>
 
-                                    {{-- فلتر نوع المشترك --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-person-badge me-1"></i>
-                                            نوع المشترك
-                                        </label>
-                                        <select id="isEmployeeFilter" class="form-select">
-                                            <option value="">الكل</option>
-                                            @foreach($subscriberTypes as $item)
-                                                <option value="{{ $item->value }}" {{ request('is_employee') === $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-funnel me-1"></i>حالة الاشتراك
+                                </label>
+                                <select id="subscriptionStatusFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    @foreach($subscriptionStatuses as $item)
+                                        <option value="{{ $item->value }}">{{ $item->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                                    {{-- البحث --}}
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-search me-1"></i>
-                                            البحث
-                                        </label>
-                                        <input type="text" id="searchInput" class="form-control" placeholder="ابحث برقم الاشتراك، رقم الهوية، الاسم، الجوال، أو رقم العداد..." value="{{ request('search') }}">
-                                    </div>
-                                </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-tags me-1"></i>تصنيف الاشتراك
+                                </label>
+                                <select id="subscriptionCategoryFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    @foreach($subscriptionCategories as $item)
+                                        <option value="{{ $item->value }}">{{ $item->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
 
-                                <div class="d-flex gap-2 mt-3">
-                                    <button class="btn btn-primary" type="button" id="searchBtn">
-                                        <i class="bi bi-search me-1"></i>
-                                        بحث
-                                    </button>
-                                    <button class="btn btn-outline-secondary" type="button" id="clearBtn">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                        تفريغ
-                                    </button>
-                                </div>
+                        {{-- الفلاتر - صف 2 --}}
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-diagram-3 me-1"></i>نوع الفاز
+                                </label>
+                                <select id="phaseTypeFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    @foreach($phaseTypes as $item)
+                                        <option value="{{ $item->value }}">{{ $item->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-gear me-1"></i>نوع الخدمة
+                                </label>
+                                <select id="serviceTypeFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    @foreach($serviceTypes as $item)
+                                        <option value="{{ $item->value }}">{{ $item->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <div id="subscribersListWrap" class="position-relative">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-speedometer2 me-1"></i>الأمبير
+                                </label>
+                                <select id="ampereFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    @foreach($ampereOptions as $item)
+                                        <option value="{{ $item->value }}">{{ $item->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-person-badge me-1"></i>نوع المشترك
+                                </label>
+                                <select id="isEmployeeFilter" class="form-select">
+                                    <option value="">الكل</option>
+                                    @foreach($subscriberTypes as $item)
+                                        <option value="{{ $item->value }}">{{ $item->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- الفلاتر - صف 3 --}}
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-upc-scan me-1"></i>رقم الاشتراك
+                                </label>
+                                <input type="text" id="subscriptionNumberFilter" class="form-control" placeholder="012010001...">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-mailbox me-1"></i>رقم الصندوق
+                                </label>
+                                <input type="text" id="boxNumberFilter" class="form-control" placeholder="0000" maxlength="4">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-search me-1"></i>بحث عام
+                                </label>
+                                <input type="text" id="searchInput" class="form-control" placeholder="الاسم، الهوية، الجوال، العداد، العنوان..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+
+                        {{-- أزرار --}}
+                        <div class="row mt-3">
+                            <div class="col-12 d-flex justify-content-center gap-2">
+                                <button class="btn btn-primary" type="button" id="searchBtn">
+                                    <i class="bi bi-search me-1"></i>استعلام
+                                </button>
+                                <a href="#" id="exportExcelBtn" class="btn btn-outline-success">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>تصدير Excel
+                                </a>
+                                <button class="btn btn-outline-secondary d-none" type="button" id="clearBtn">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- الجدول --}}
+                        <div id="subscribersListWrap" class="position-relative mt-3">
                             {{-- Loading overlay --}}
                             <div id="subLoading" class="data-table-loading d-none">
                                 <div class="text-center">
@@ -157,65 +248,62 @@
             <div class="modal-body">
                 {{-- Step 1: File Upload --}}
                 <div id="importStep1">
-                    <div class="row g-4">
+                    {{-- رفع الملف --}}
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <div style="border: 1px solid var(--color-border, #E5E7EB); border-radius: 10px; height: 100%;">
-                                <div style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 0.88rem; color: var(--color-primary, #24308F);">
-                                    <i class="bi bi-upload me-2" style="opacity: .75;"></i>
-                                    رفع الملف
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">
-                                            <i class="bi bi-building me-1"></i>
-                                            وحدة التوليد <span class="text-danger">*</span>
-                                        </label>
-                                        <select id="importGenerationUnit" class="form-select" required>
-                                            <option value="">-- اختر وحدة التوليد --</option>
-                                            @foreach($generationUnits ?? [] as $unit)
-                                                <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
-                                            @endforeach
-                                        </select>
-                                        <div class="form-text">سيتم إضافة جميع المشتركين إلى هذه الوحدة</div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">
-                                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>
-                                            ملف Excel <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv" required>
-                                        <div class="form-text">الصيغ المدعومة: xlsx, xls, csv (الحد الأقصى: 5 ميجابايت)</div>
-                                    </div>
-                                </div>
-                            </div>
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-building me-1"></i>وحدة التوليد <span class="text-danger">*</span>
+                            </label>
+                            <select id="importGenerationUnit" class="form-select" required>
+                                <option value="">-- اختر وحدة التوليد --</option>
+                                @foreach($generationUnits ?? [] as $unit)
+                                    <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
-                            <div style="border: 1px solid var(--color-border, #E5E7EB); border-radius: 10px; height: 100%;">
-                                <div style="background: #FAFCFF; border-bottom: 1px solid var(--color-border-soft, #EDF1F5); padding: 0.65rem 1rem; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 0.88rem; color: var(--color-primary, #24308F);">
-                                    <i class="bi bi-info-circle me-2" style="opacity: .75;"></i>
-                                    تعليمات الاستيراد
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="fw-bold mb-2">الأعمدة المطلوبة:</h6>
-                                    <ul class="list-unstyled small">
-                                        <li><i class="bi bi-check-circle text-success me-1"></i> رقم_الهوية (فريد)</li>
-                                        <li><i class="bi bi-check-circle text-success me-1"></i> اسم_المشترك</li>
-                                        <li><i class="bi bi-check-circle text-success me-1"></i> رقم_الموبايل (059/056)</li>
-                                        <li><i class="bi bi-check-circle text-success me-1"></i> العنوان</li>
-                                        <li><i class="bi bi-check-circle text-success me-1"></i> رقم_العداد (فريد)</li>
-                                    </ul>
-                                    <h6 class="fw-bold mb-2 mt-3">الأعمدة الاختيارية:</h6>
-                                    <ul class="list-unstyled small">
-                                        <li><i class="bi bi-dash-circle text-secondary me-1"></i> تصنيف_الاشتراك (منزلي/تجاري/صناعي/زراعي)</li>
-                                        <li><i class="bi bi-dash-circle text-secondary me-1"></i> نوع_الفاز (1 فاز / 3 فاز)</li>
-                                        <li><i class="bi bi-dash-circle text-secondary me-1"></i> نوع_الخدمة (مولد/شبكة/مختلط)</li>
-                                    </ul>
-                                    <div class="mt-3">
-                                        <a href="{{ route('admin.subscribers.import.template') }}" class="btn btn-outline-success btn-sm w-100">
-                                            <i class="bi bi-download me-1"></i>
-                                            تحميل نموذج Excel
-                                        </a>
-                                    </div>
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>ملف Excel <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls,.csv" required>
+                            <div class="form-text">xlsx, xls, csv (الحد الأقصى: 5 ميجابايت)</div>
+                        </div>
+                    </div>
+
+                    {{-- زر تحميل النموذج --}}
+                    <div class="mb-3">
+                        <a href="{{ route('admin.subscribers.import.template') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-download me-1"></i>تحميل نموذج Excel
+                        </a>
+                    </div>
+
+                    {{-- التعليمات --}}
+                    <div style="background:#f8f9fa;border:1px solid var(--color-border,#E5E7EB);border-radius:8px;padding:1rem;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-2" style="font-size:0.85rem;">
+                                    <i class="bi bi-check-circle text-success me-1"></i>الأعمدة المطلوبة:
+                                </h6>
+                                <ul class="list-unstyled small mb-0">
+                                    <li>- رقم_الهوية (فريد)</li>
+                                    <li>- اسم_المشترك</li>
+                                    <li>- رقم_الموبايل (059/056)</li>
+                                    <li>- العنوان</li>
+                                    <li>- رقم_العداد (فريد)</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-2" style="font-size:0.85rem;">
+                                    <i class="bi bi-dash-circle text-secondary me-1"></i>الأعمدة الاختيارية:
+                                </h6>
+                                <ul class="list-unstyled small mb-0">
+                                    <li>- رقم_جوال_بديل، رقم_الصندوق</li>
+                                    <li>- الأمبير، القراءة_الافتتاحية</li>
+                                    <li>- تصنيف_الاشتراك، نوع_الفاز، نوع_الخدمة</li>
+                                    <li>- اشتراك_موظف، تاريخ_الطلب، ملاحظات</li>
+                                </ul>
+                                <div class="form-text mt-1" style="font-size:0.78rem;">
+                                    <i class="bi bi-info-circle me-1"></i>النموذج يحتوي على قوائم منسدلة للقيم المتاحة
                                 </div>
                             </div>
                         </div>
@@ -272,13 +360,16 @@
                                             <th class="text-center">الاسم</th>
                                             <th class="text-center">الموبايل</th>
                                             <th class="text-center">العنوان</th>
-                                            <th class="text-center">رقم العداد</th>
+                                            <th class="text-center">العداد</th>
+                                            <th class="text-center">الأمبير</th>
                                             <th class="text-center">التصنيف</th>
-                                            <th class="text-center">نوع الفاز</th>
+                                            <th class="text-center">الفاز</th>
+                                            <th class="text-center">الخدمة</th>
+                                            <th class="text-center">موظف</th>
                                         </tr>
                                     </thead>
                                     <tbody id="validRowsBody">
-                                        <tr><td colspan="8" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
+                                        <tr><td colspan="11" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -347,132 +438,246 @@
         (function() {
             const listUrl = @json(route('admin.subscribers.index'));
             const $wrap = $('#subscribersListWrap');
-            let $loading = $('#subLoading');
             const $operatorFilter = $('#operatorFilter');
-            const $subscriptionStatusFilter = $('#subscriptionStatusFilter');
             const $searchInput = $('#searchInput');
             const $searchBtn = $('#searchBtn');
             const $clearBtn = $('#clearBtn');
 
-            function setLoading(on) {
-                if (on) {
-                    $loading.removeClass('d-none');
-                    $wrap.find('.table, .pagination, .card').hide();
-                } else {
-                    $loading.addClass('d-none');
-                    $wrap.find('.table, .pagination, .card').show();
-                }
-            }
+            const filterIds = [
+                'operatorFilter', 'generationUnitFilter', 'subscriptionStatusFilter',
+                'subscriptionCategoryFilter', 'phaseTypeFilter', 'serviceTypeFilter',
+                'ampereFilter', 'isEmployeeFilter', 'subscriptionNumberFilter', 'boxNumberFilter'
+            ];
+
+            let nextPage = {{ $subscribers->hasMorePages() ? 2 : 'null' }};
+            let isLoading = false;
+            let hasMore = {{ $subscribers->hasMorePages() ? 'true' : 'false' }};
 
             function currentParams(extra = {}) {
                 let operatorId = $operatorFilter.val() || '';
                 if ($operatorFilter.prop('disabled')) {
-                    operatorId = $('input[name="operator_id"]').val() || '';
+                    operatorId = $('#operatorFilterHidden').val() || $('input[name="operator_id"]').val() || '';
                 }
-                
-                const isEmployee = $('#isEmployeeFilter').val();
                 return Object.assign({
                     operator_id: operatorId,
-                    subscription_status: $subscriptionStatusFilter.val() || '',
-                    is_employee: (isEmployee !== null && isEmployee !== undefined) ? isEmployee : '',
+                    generation_unit_id: $('#generationUnitFilter').val() || '',
+                    subscription_status: $('#subscriptionStatusFilter').val() || '',
+                    subscription_category: $('#subscriptionCategoryFilter').val() || '',
+                    phase_type: $('#phaseTypeFilter').val() || '',
+                    service_type: $('#serviceTypeFilter').val() || '',
+                    ampere: $('#ampereFilter').val() || '',
+                    is_employee: $('#isEmployeeFilter').val() || '',
+                    subscription_number: $('#subscriptionNumberFilter').val() || '',
+                    box_number: $('#boxNumberFilter').val() || '',
                     search: $searchInput.val() || '',
                 }, extra);
             }
 
+            // تحميل الصفحة الأولى (يستبدل كل شي)
             function loadSubscribers() {
-                setLoading(true);
-                const params = currentParams();
-                
+                if (isLoading) return;
+                isLoading = true;
+                nextPage = null;
+                hasMore = true;
+
+                $('#subLoading').removeClass('d-none');
+                $wrap.find('.table, .d-flex, .text-center').hide();
+
                 $.ajax({
                     url: listUrl,
                     method: 'GET',
-                    data: params,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $wrap.html(response.html);
-                            $('#subscribersCount').text(response.count);
-                            
-                            // إظهار/إخفاء زر التفريغ
-                            if (params.operator_id || params.subscription_status || params.is_employee !== '' || params.search) {
-                                $clearBtn.removeClass('d-none');
-                            } else {
-                                $clearBtn.addClass('d-none');
-                            }
+                    data: currentParams({ page: 1 }),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    success: function(res) {
+                        if (res.success) {
+                            $wrap.html(res.html);
+                            $('#subscribersCount').text(res.count);
+                            hasMore = res.has_more;
+                            nextPage = res.next_page;
+
+                            if (!hasMore) $('#scrollLoader').remove();
+
+                            var p = currentParams();
+                            var hasAny = Object.values(p).some(v => v !== '' && v !== null && v !== undefined);
+                            $clearBtn.toggleClass('d-none', !hasAny);
                         }
                     },
-                    error: function(xhr) {
-                        console.error('Error loading subscribers:', xhr);
+                    error: function() {
                         alert('حدث خطأ أثناء تحميل البيانات');
                     },
                     complete: function() {
-                        setLoading(false);
+                        $('#subLoading').addClass('d-none');
+                        $wrap.find('.table, .d-flex, .text-center').show();
+                        isLoading = false;
                     }
                 });
             }
 
-            $searchBtn.on('click', loadSubscribers);
-            $operatorFilter.on('change', loadSubscribers);
-            $subscriptionStatusFilter.on('change', loadSubscribers);
-            $('#isEmployeeFilter').on('change', loadSubscribers);
-            $searchInput.on('keypress', function(e) {
-                if (e.which === 13) {
-                    loadSubscribers();
-                }
-            });
+            // تحميل الصفحة التالية (يلحق بالجدول)
+            function loadMore() {
+                if (isLoading || !hasMore || !nextPage) return;
+                isLoading = true;
 
-            $clearBtn.on('click', function() {
-                $operatorFilter.val('').trigger('change');
-                $subscriptionStatusFilter.val('').trigger('change');
-                $('#isEmployeeFilter').val('');
-                $searchInput.val('');
-                loadSubscribers();
-            });
+                var $loader = $('#scrollLoader');
+                $loader.show();
 
-            // معالجة الحذف بـ AJAX
-            $(document).on('submit', '.delete-subscriber-form', function(e) {
-                e.preventDefault();
-                
-                if (!confirm('هل أنت متأكد من حذف هذا المشترك؟')) {
-                    return false;
-                }
-                
-                const form = $(this);
-                const url = form.attr('action');
-                
                 $.ajax({
-                    url: url,
-                    method: 'POST',
-                    data: form.serialize(),
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            if (window.adminNotifications) {
-                                window.adminNotifications.success(response.message || 'تم حذف المشترك بنجاح');
-                            }
-                            loadSubscribers(); // إعادة تحميل القائمة
-                        } else {
-                            if (window.adminNotifications) {
-                                window.adminNotifications.error(response.message || 'حدث خطأ أثناء الحذف');
-                            }
+                    url: listUrl,
+                    method: 'GET',
+                    data: currentParams({ page: nextPage }),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    success: function(res) {
+                        if (res.success && res.append) {
+                            $('#subscribersBody').append(res.html);
+                            hasMore = res.has_more;
+                            nextPage = res.next_page;
+
+                            if (!hasMore) $loader.remove();
                         }
                     },
-                    error: function(xhr) {
-                        console.error('Error deleting subscriber:', xhr);
-                        if (window.adminNotifications) {
-                            window.adminNotifications.error('حدث خطأ أثناء حذف المشترك');
+                    complete: function() {
+                        isLoading = false;
+                    }
+                });
+            }
+
+            // Infinite scroll
+            function checkScroll() {
+                if (isLoading || !hasMore || !nextPage) return;
+                var el = document.getElementById('scrollLoader');
+                if (!el) return;
+                var rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight + 300) {
+                    loadMore();
+                }
+            }
+
+            // مراقبة السكرول على window + أي parent scrollable
+            $(window).on('scroll resize', checkScroll);
+            $('.app-content, .main-content, .main-container').on('scroll', checkScroll);
+            // فحص دوري كل 500ms كـ fallback
+            setInterval(checkScroll, 500);
+
+            // الأحداث
+            $searchBtn.on('click', loadSubscribers);
+
+            @if($canSelectOperator)
+            // === للسوبر أدمن/الأدمن/سلطة الطاقة: AJAX cascading (بدون بحث تلقائي) ===
+            var unitApiUrl = @json(url('/admin/operators'));
+
+            // عند تغيير المشغل → جلب وحدات التوليد من الـ API (بدون بحث)
+            $operatorFilter.on('change', function() {
+                var operatorId = $(this).val();
+                var $unitSelect = $('#generationUnitFilter');
+
+                // إعادة تهيئة وحدات التوليد
+                $unitSelect.empty().append('<option value="">الكل</option>');
+
+                if (!operatorId) {
+                    // المشغل = "كل المشغلين": أعِد كل الوحدات المحلية
+                    @foreach($generationUnits ?? [] as $unit)
+                        $unitSelect.append('<option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>');
+                    @endforeach
+                    return;
+                }
+
+                // جلب الوحدات من الـ API
+                $.ajax({
+                    url: unitApiUrl + '/' + operatorId + '/generation-units-for-subscribers',
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    success: function(data) {
+                        if (data.generation_units && data.generation_units.length > 0) {
+                            data.generation_units.forEach(function(unit) {
+                                $unitSelect.append(
+                                    $('<option>', { value: unit.id, text: unit.label, 'data-operator-id': operatorId })
+                                );
+                            });
                         }
                     }
                 });
             });
 
-            // Make loadSubscribers accessible globally
+            // عند تغيير وحدة التوليد → اضبط المشغل تلقائياً (بدون بحث)
+            $('#generationUnitFilter').on('change', function() {
+                var opId = $(this).find(':selected').data('operator-id');
+                if (opId && !$operatorFilter.val()) {
+                    $operatorFilter.val(opId);
+                }
+            });
+            @else
+            // === للمشغل/الموظف: تصفية محلية (client-side) ===
+            function filterUnitsByOperator(operatorId) {
+                var $unitSelect = $('#generationUnitFilter');
+                var currentUnit = $unitSelect.val();
+                $unitSelect.find('option:not(:first)').each(function() {
+                    var unitOpId = $(this).data('operator-id');
+                    if (!operatorId || String(unitOpId) === String(operatorId)) {
+                        $(this).show().prop('disabled', false);
+                    } else {
+                        $(this).hide().prop('disabled', true);
+                        if ($(this).val() === currentUnit) {
+                            $unitSelect.val('');
+                        }
+                    }
+                });
+            }
+
+            // المشغل مقفل → صفّ الوحدات بناءً على المشغل المحدد
+            var lockedOpId = $('#operatorFilterHidden').val() || $operatorFilter.val();
+            if (lockedOpId) filterUnitsByOperator(lockedOpId);
+            @endif
+
+            // inputs تبحث عند Enter
+            $searchInput.add('#subscriptionNumberFilter, #boxNumberFilter').on('keypress', function(e) {
+                if (e.which === 13) loadSubscribers();
+            });
+
+            $clearBtn.on('click', function() {
+                filterIds.forEach(id => $('#' + id).val(''));
+                $searchInput.val('');
+                // أعد إظهار كل وحدات التوليد
+                $('#generationUnitFilter option').show().prop('disabled', false);
+                @if($canSelectOperator)
+                // أعِد ملء كل الوحدات من جديد
+                var $unitSelect = $('#generationUnitFilter');
+                $unitSelect.empty().append('<option value="">الكل</option>');
+                @foreach($generationUnits ?? [] as $unit)
+                    $unitSelect.append('<option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>');
+                @endforeach
+                @endif
+                $clearBtn.addClass('d-none');
+                loadSubscribers();
+            });
+
+            // حذف AJAX
+            $(document).on('submit', '.delete-subscriber-form', function(e) {
+                e.preventDefault();
+                if (!confirm('هل أنت متأكد من حذف هذا المشترك؟')) return;
+                var form = $(this), url = form.attr('action');
+                $.ajax({
+                    url: url, method: 'POST', data: form.serialize(),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    success: function(res) {
+                        if (res.success) {
+                            if (window.adminNotifications) window.adminNotifications.success(res.message || 'تم حذف المشترك بنجاح');
+                            loadSubscribers();
+                        } else {
+                            if (window.adminNotifications) window.adminNotifications.error(res.message || 'حدث خطأ');
+                        }
+                    },
+                    error: function() {
+                        if (window.adminNotifications) window.adminNotifications.error('حدث خطأ أثناء حذف المشترك');
+                    }
+                });
+            });
+
+            // تصدير Excel (بنفس الفلاتر)
+            $('#exportExcelBtn').on('click', function(e) {
+                e.preventDefault();
+                window.location.href = @json(route('admin.subscribers.export')) + '?' + $.param(currentParams());
+            });
+
             window.loadSubscribers = loadSubscribers;
         })();
 
@@ -542,10 +747,10 @@
             function renderValidRows() {
                 const $tbody = $('#validRowsBody');
                 if (validRows.length === 0) {
-                    $tbody.html('<tr><td colspan="8" class="text-center text-muted py-4">لا توجد بيانات صالحة</td></tr>');
+                    $tbody.html('<tr><td colspan="11" class="text-center text-muted py-4">لا توجد بيانات صالحة</td></tr>');
                     return;
                 }
-                
+
                 let html = '';
                 validRows.forEach((row, idx) => {
                     html += `<tr>
@@ -555,8 +760,11 @@
                         <td dir="ltr">${row.phone || '-'}</td>
                         <td>${row.address || '-'}</td>
                         <td>${row.meter_number || '-'}</td>
-                        <td><span class="badge bg-secondary">${getCategoryLabel(row.category)}</span></td>
-                        <td><span class="badge bg-info">${getPhaseLabel(row.phase_type)}</span></td>
+                        <td>${row.ampere_label || '-'}</td>
+                        <td><span class="badge bg-secondary">${row.category_label || '-'}</span></td>
+                        <td><span class="badge bg-info">${row.phase_label || '-'}</span></td>
+                        <td>${row.service_label || '-'}</td>
+                        <td>${row.employee_label || 'لا'}</td>
                     </tr>`;
                 });
                 $tbody.html(html);
@@ -585,24 +793,6 @@
                     </tr>`;
                 });
                 $tbody.html(html);
-            }
-
-            function getCategoryLabel(category) {
-                const labels = {
-                    'residential': 'منزلي',
-                    'commercial': 'تجاري',
-                    'industrial': 'صناعي',
-                    'agricultural': 'زراعي'
-                };
-                return labels[category] || category || 'منزلي';
-            }
-
-            function getPhaseLabel(phase) {
-                const labels = {
-                    'single': '1 فاز',
-                    'three': '3 فاز'
-                };
-                return labels[phase] || phase || '1 فاز';
             }
 
             function updateCounts() {

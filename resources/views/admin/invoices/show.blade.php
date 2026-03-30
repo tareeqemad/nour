@@ -16,6 +16,9 @@
                         <a href="{{ route('admin.invoices.print', $invoice) }}" class="btn btn-info btn-sm" target="_blank">
                             <i class="bi bi-printer me-1"></i>طباعة
                         </a>
+                        <a href="{{ route('admin.invoices.pdf', $invoice) }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                        </a>
                         @can('update', $invoice)
                             <a href="{{ route('admin.invoices.edit', $invoice) }}" class="btn btn-warning btn-sm">
                                 <i class="bi bi-pencil me-1"></i>تعديل
@@ -138,7 +141,8 @@
                             $showAmpere = intval($showSub?->ampere ?? 0);
                             $showPhase  = $showSub?->phase_type ?? 1;
                             $showPhaseLabel = $showPhase == 2 ? '3' : '1';
-                            $showAutoMin = \App\Models\MinimumChargeRule::allCached()[$showAmpere][$showPhase] ?? null;
+                            $showOperatorId = $showSub?->generationUnits->first()?->operator_id ?? 0;
+                            $showAutoMin = \App\Models\MinimumChargeRule::cachedForOperator($showOperatorId)[$showAmpere][$showPhase] ?? null;
                             // للفواتير المسودة: تطبيق القواعد تلقائياً عبر الدالة المركزية
                             $isDraft = $invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT;
                             if ($isDraft && $showSub) {

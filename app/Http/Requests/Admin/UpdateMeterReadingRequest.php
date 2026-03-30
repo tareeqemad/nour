@@ -44,6 +44,7 @@ class UpdateMeterReadingRequest extends FormRequest
             'reading_date' => [
                 'required',
                 'date',
+                'before_or_equal:today',
                 function ($attribute, $value, $fail) use ($subscriberId, $meterReading) {
                     if ($subscriberId) {
                         $subscriber = Subscriber::find($subscriberId);
@@ -86,6 +87,7 @@ class UpdateMeterReadingRequest extends FormRequest
             'consumption_kwh.min' => 'قيمة الاستهلاك يجب أن تكون أكبر من أو تساوي صفر.',
             'reading_date.required' => 'تاريخ القراءة مطلوب.',
             'reading_date.date' => 'تاريخ القراءة غير صحيح.',
+            'reading_date.before_or_equal' => 'تاريخ القراءة لا يمكن أن يكون في المستقبل.',
             'consumption_period_days.required' => 'فترة الاستهلاك مطلوبة.',
             'consumption_period_days.integer' => 'فترة الاستهلاك يجب أن تكون رقماً صحيحاً.',
             'consumption_period_days.min' => 'فترة الاستهلاك يجب أن تكون على الأقل يوم واحد.',
@@ -133,9 +135,9 @@ class UpdateMeterReadingRequest extends FormRequest
                     'consumption_period_days' => max(1, $days),
                 ]);
             } else {
-                // إذا لم توجد قراءة سابقة، استخدم 7 أيام كافتراضي
+                // إذا لم توجد قراءة سابقة (مشترك جديد)، الفترة = 1 يوم
                 $this->merge([
-                    'consumption_period_days' => 7,
+                    'consumption_period_days' => 1,
                 ]);
             }
         }

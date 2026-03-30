@@ -14,6 +14,8 @@ return new class extends Migration
 
     public function down(): void
     {
+        // ملء القيم الفارغة قبل تحويل العمود لـ NOT NULL
+        \DB::statement("UPDATE invoices SET invoice_number = CONCAT('DRAFT-', id) WHERE invoice_number IS NULL OR invoice_number = ''");
         \DB::statement("ALTER TABLE invoices MODIFY invoice_number VARCHAR(30) NOT NULL COMMENT 'رقم الفاتورة (يُنشأ تلقائياً عند الإصدار)'");
     }
 };

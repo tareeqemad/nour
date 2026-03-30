@@ -358,10 +358,13 @@ class ConstantSeeder extends Seeder
         // 31. قيم أمبير الاشتراك
         $ampereValues = $this->upsertMaster(31, 'قيم أمبير الاشتراك', 'قيم أمبير المتاحة لاشتراك المشترك', 31);
         $this->seedDetails($ampereValues->id, [
-            ['label' => '2 أمبير', 'code' => 'A2', 'value' => '2', 'order' => 1],
-            ['label' => '6 أمبير', 'code' => 'A6', 'value' => '6', 'order' => 2],
-            ['label' => '10 أمبير', 'code' => 'A10', 'value' => '10', 'order' => 3],
-            ['label' => '16 أمبير', 'code' => 'A16', 'value' => '16', 'order' => 4],
+            ['label' => '1 أمبير', 'code' => 'A1', 'value' => '1', 'order' => 1],
+            ['label' => '2 أمبير', 'code' => 'A2', 'value' => '2', 'order' => 2],
+            ['label' => '3 أمبير', 'code' => 'A3', 'value' => '3', 'order' => 3],
+            ['label' => '4 أمبير', 'code' => 'A4', 'value' => '4', 'order' => 4],
+            ['label' => '6 أمبير', 'code' => 'A6', 'value' => '6', 'order' => 5],
+            ['label' => '10 أمبير', 'code' => 'A10', 'value' => '10', 'order' => 6],
+            ['label' => '16 أمبير', 'code' => 'A16', 'value' => '16', 'order' => 7],
         ]);
 
         $this->command->info('تم إنشاء/تحديث الثوابت بنجاح بدون حذف بيانات المستخدمين.');

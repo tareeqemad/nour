@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSubscriberRequest;
 use App\Http\Requests\Admin\UpdateSubscriberRequest;
+use App\Exports\SubscribersExport;
 use App\Models\MeterReading;
 use App\Models\Subscriber;
 use App\Models\GenerationUnit;
@@ -18,12 +19,10 @@ use Illuminate\View\View;
 class SubscriberController extends Controller
 {
     /**
-     * Display a listing of subscribers.
+     * بناء query الفلترة المشترك بين index و export
      */
-    public function index(Request $request): View|JsonResponse
+    private function buildFilteredQuery(Request $request): array
     {
-        $this->authorize('viewAny', Subscriber::class);
-
         $user = auth()->user();
         $query = Subscriber::with(['creator', 'updater', 'generationUnits.operator']);
 
@@ -32,97 +31,140 @@ class SubscriberController extends Controller
         if ($user->isCompanyOwner()) {
             $currentOperator = $user->ownedOperators()->first();
             if ($currentOperator) {
-                $operatorIds = [$currentOperator->id];
-                $query->whereHas('generationUnits', function($q) use ($operatorIds) {
-                    $q->whereIn('operator_id', $operatorIds);
-                });
+                $query->whereHas('generationUnits', fn($q) => $q->where('operator_id', $currentOperator->id));
             }
         } elseif ($user->isEmployee() || $user->isTechnician()) {
             $operators = $user->operators;
             if ($operators->isNotEmpty()) {
                 $operatorIds = $operators->pluck('id')->toArray();
-                $query->whereHas('generationUnits', function($q) use ($operatorIds) {
-                    $q->whereIn('operator_id', $operatorIds);
-                });
+                $query->whereHas('generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
                 $currentOperator = $operators->first();
             }
         }
 
-        // فلترة حسب المشغل (للأدوار التي يمكنها اختيار المشغل)
         $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+
+        // فلتر المشغل
         if ($canSelectOperator) {
             $operatorId = (int) $request->input('operator_id', 0);
             if ($operatorId > 0) {
-                $query->whereHas('generationUnits', function($q) use ($operatorId) {
-                    $q->where('operator_id', $operatorId);
-                });
+                $query->whereHas('generationUnits', fn($q) => $q->where('operator_id', $operatorId));
             }
         }
 
-        // فلترة حسب حالة الاشتراك
-        $subscriptionStatus = $request->input('subscription_status', '');
-        if ($subscriptionStatus !== '' && in_array($subscriptionStatus, ['1', '2', '3'])) {
-            $query->where('subscription_status', $subscriptionStatus);
+        // فلتر وحدة التوليد
+        $unitId = (int) $request->input('generation_unit_id', 0);
+        if ($unitId > 0) {
+            $query->whereHas('generationUnits', fn($q) => $q->where('generation_units.id', $unitId));
         }
 
-        // فلترة حسب نوع المشترك (موظف شركة / مشترك عادي)
+        // فلتر حالة الاشتراك
+        $status = $request->input('subscription_status', '');
+        if ($status !== '' && in_array($status, ['1', '2', '3'])) {
+            $query->where('subscription_status', $status);
+        }
+
+        // فلتر تصنيف الاشتراك
+        $category = $request->input('subscription_category', '');
+        if ($category !== '' && in_array($category, ['1', '2', '3', '4'])) {
+            $query->where('subscription_category', $category);
+        }
+
+        // فلتر نوع الفاز
+        $phase = $request->input('phase_type', '');
+        if ($phase !== '' && in_array($phase, ['1', '2'])) {
+            $query->where('phase_type', $phase);
+        }
+
+        // فلتر نوع الخدمة
+        $service = $request->input('service_type', '');
+        if ($service !== '' && in_array($service, ['1', '2', '3'])) {
+            $query->where('service_type', $service);
+        }
+
+        // فلتر الأمبير
+        $ampere = $request->input('ampere', '');
+        if ($ampere !== '') {
+            $query->where('ampere', $ampere);
+        }
+
+        // فلتر نوع المشترك (موظف / عادي)
         $isEmployee = $request->input('is_employee', '');
         if ($isEmployee !== '' && in_array($isEmployee, ['0', '1'])) {
             $query->where('is_employee_subscription', (bool) $isEmployee);
         }
 
-        // البحث
+        // فلتر رقم الاشتراك
+        $subscriptionNumber = $request->input('subscription_number', '');
+        if ($subscriptionNumber !== '') {
+            $query->where('subscription_number', 'like', "%{$subscriptionNumber}%");
+        }
+
+        // فلتر رقم الصندوق
+        $boxNumber = $request->input('box_number', '');
+        if ($boxNumber !== '') {
+            $query->where('box_number', $boxNumber);
+        }
+
+        // البحث النصي
         $search = $request->input('search', '');
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('subscription_number', 'like', "%{$search}%")
                   ->orWhere('subscriber_id_number', 'like', "%{$search}%")
                   ->orWhere('subscriber_name', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('meter_number', 'like', "%{$search}%");
+                  ->orWhere('meter_number', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
             });
         }
 
-        $subscribers = $query->latest()->paginate(15);
+        return [$query, $currentOperator, $canSelectOperator];
+    }
+
+    /**
+     * Display a listing of subscribers.
+     */
+    public function index(Request $request): View|JsonResponse
+    {
+        $this->authorize('viewAny', Subscriber::class);
+
+        [$query, $currentOperator, $canSelectOperator] = $this->buildFilteredQuery($request);
+        $subscribers = $query->latest()->paginate(100);
 
         if ($request->ajax() || $request->wantsJson()) {
-            $html = view('admin.subscribers.partials.list', compact('subscribers'))->render();
+            $page = (int) $request->input('page', 1);
+            $append = $page > 1; // append mode for infinite scroll
+            $html = view('admin.subscribers.partials.list', compact('subscribers', 'append'))->render();
             return response()->json([
                 'success' => true,
                 'html' => $html,
                 'count' => $subscribers->total(),
+                'has_more' => $subscribers->hasMorePages(),
+                'next_page' => $subscribers->hasMorePages() ? $page + 1 : null,
+                'append' => $append,
             ]);
         }
 
-        // جلب المشغلين للفلترة
-        $operators = collect();
-        if ($canSelectOperator) {
-            $operators = Operator::select('id', 'name')
-                ->orderBy('name')
-                ->get();
-        }
+        $user = auth()->user();
 
-        // جلب وحدات التوليد للاستيراد
-        $generationUnits = collect();
+        // جلب المشغلين للفلترة
+        $operators = $canSelectOperator
+            ? Operator::select('id', 'name')->orderBy('name')->get()
+            : collect();
+
+        // جلب وحدات التوليد
         if ($user->isSuperAdmin()) {
             $generationUnits = GenerationUnit::with('operator:id,name')
-                ->select('id', 'name', 'unit_code', 'operator_id')
-                ->orderBy('name')
-                ->get();
+                ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
         } elseif ($user->isCompanyOwner()) {
             $operatorIds = $user->ownedOperators()->pluck('id');
             $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
-                ->with('operator:id,name')
-                ->select('id', 'name', 'unit_code', 'operator_id')
-                ->orderBy('name')
-                ->get();
+                ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
         } else {
             $operatorIds = $user->operators()->pluck('operators.id');
             $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
-                ->with('operator:id,name')
-                ->select('id', 'name', 'unit_code', 'operator_id')
-                ->orderBy('name')
-                ->get();
+                ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
         }
 
         return view('admin.subscribers.index', compact('subscribers', 'operators', 'currentOperator', 'canSelectOperator', 'generationUnits'));
@@ -167,25 +209,12 @@ class SubscriberController extends Controller
 
         // جلب وحدات التوليد
         $generationUnits = collect();
-        $defaultGovernorate = null;
-        
+
         if ($operator) {
             $generationUnits = $operator->generationUnits()
-                ->select('id', 'name', 'unit_code', 'operator_id', 'governorate_id')
-                ->with('governorateDetail')
+                ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('name')
                 ->get();
-                
-            // الحصول على المحافظة من أول وحدة توليد
-            $firstUnit = $generationUnits->first();
-            if ($firstUnit && $firstUnit->governorateDetail) {
-                try {
-                    $governorateEnum = \App\Governorate::fromValue((int) $firstUnit->governorateDetail->value);
-                    $defaultGovernorate = $governorateEnum->label();
-                } catch (\Exception $e) {
-                    $defaultGovernorate = $firstUnit->governorateDetail->label;
-                }
-            }
         } elseif ($user->isSuperAdmin()) {
             $generationUnits = GenerationUnit::select('id', 'name', 'unit_code', 'operator_id')
                 ->with('operator:id,name')
@@ -193,7 +222,7 @@ class SubscriberController extends Controller
                 ->get();
         }
 
-        return view('admin.subscribers.create', compact('operators', 'generationUnits', 'operator', 'defaultGovernorate'));
+        return view('admin.subscribers.create', compact('operators', 'generationUnits', 'operator'));
     }
 
     /**
@@ -205,7 +234,12 @@ class SubscriberController extends Controller
 
         try {
             $data = $request->validated();
-            
+
+            // تعيين تاريخ الاشتراك الافتراضي إذا لم يُحدد
+            if (empty($data['subscription_date'])) {
+                $data['subscription_date'] = now()->toDateString();
+            }
+
             // توليد رقم الاشتراك تلقائياً
             if (!empty($request->generation_unit_ids) && is_array($request->generation_unit_ids)) {
                 $firstUnitId = $request->generation_unit_ids[0];
@@ -216,47 +250,12 @@ class SubscriberController extends Controller
                 throw new \Exception('يجب اختيار وحدة توليد واحدة على الأقل لتوليد رقم الاشتراك');
             }
             
-            // إذا لم يتم تعيين governorate_name، استخرجه من وحدات التوليد المرتبطة
-            if (empty($data['governorate_name'])) {
-                $generationUnit = \App\Models\GenerationUnit::with(['governorateDetail'])
-                    ->find($firstUnitId);
-                    
-                if ($generationUnit && $generationUnit->governorateDetail) {
-                    // محاولة الحصول على اسم المحافظة من enum
-                    try {
-                        $governorateEnum = \App\Governorate::fromValue((int) $generationUnit->governorateDetail->value);
-                        $data['governorate_name'] = $governorateEnum->label();
-                    } catch (\Exception $e) {
-                        // إذا فشلت، استخدم label من الثوابت
-                        $data['governorate_name'] = $generationUnit->governorateDetail->label;
-                    }
-                }
-            }
-            
             $subscriber = Subscriber::create($data);
 
             // ربط وحدات التوليد
             if ($request->has('generation_unit_ids') && is_array($request->generation_unit_ids)) {
                 $subscriber->generationUnits()->sync($request->generation_unit_ids);
             }
-
-            // إنشاء قراءة افتتاحية تلقائياً عند إضافة مشترك جديد
-            $openingReading = (float) ($data['opening_reading'] ?? 0);
-            DB::transaction(function () use ($subscriber, $openingReading) {
-                MeterReading::create([
-                    'reading_number'         => MeterReading::generateReadingNumber($subscriber->id),
-                    'subscriber_id'          => $subscriber->id,
-                    'meter_number'           => $subscriber->meter_number ?? '',
-                    'previous_reading'       => $openingReading,
-                    'current_reading'        => $openingReading,
-                    'consumption_kwh'        => 0,
-                    'reading_date'           => $subscriber->subscription_date,
-                    'consumption_period_days'=> 1,
-                    'reading_status'         => MeterReading::determineReadingStatus(0),
-                    'action_status'          => MeterReading::ACTION_STATUS_PENDING,
-                    'created_by'             => auth()->id(),
-                ]);
-            });
 
             return redirect()->route('admin.subscribers.index')
                 ->with('success', "تم إضافة المشترك بنجاح. رقم الاشتراك: {$subscriber->subscription_number}");
@@ -282,7 +281,23 @@ class SubscriberController extends Controller
 
         $subscriber->load(['creator', 'updater', 'generationUnits.operator']);
 
-        return view('admin.subscribers.show', compact('subscriber'));
+        // إحصائيات الفواتير
+        $invoiceStats = [
+            'total' => $subscriber->invoices()->whereNotIn('invoice_status', [0, 4])->count(),
+            'total_amount' => (float) $subscriber->invoices()->whereNotIn('invoice_status', [0, 4])->sum('invoice_amount'),
+            'paid' => (float) \App\Models\Payment::whereIn('invoice_id', $subscriber->invoices()->pluck('id'))->sum('amount_paid'),
+            'unpaid_count' => $subscriber->invoices()->where('invoice_status', 1)->count(),
+            'draft_count' => $subscriber->invoices()->where('invoice_status', 0)->count(),
+        ];
+        $invoiceStats['balance'] = $invoiceStats['total_amount'] - $invoiceStats['paid'];
+
+        // آخر قراءة
+        $lastReading = $subscriber->meterReadings()->latest('reading_date')->first();
+
+        // آخر 5 فواتير
+        $recentInvoices = $subscriber->invoices()->with('payments')->latest()->take(5)->get();
+
+        return view('admin.subscribers.show', compact('subscriber', 'invoiceStats', 'lastReading', 'recentInvoices'));
     }
 
     /**
@@ -423,6 +438,41 @@ class SubscriberController extends Controller
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء حذف المشترك: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Export subscribers to Excel.
+     */
+    public function export(Request $request)
+    {
+        $this->authorize('viewAny', Subscriber::class);
+
+        [$query] = $this->buildFilteredQuery($request);
+        $subscribers = $query->with(['generationUnits.operator'])->get();
+
+        return (new SubscribersExport($subscribers))->download();
+    }
+
+    /**
+     * Get generation units for a specific operator (AJAX).
+     */
+    public function getGenerationUnits(Request $request, Operator $operator): JsonResponse
+    {
+        $generationUnits = $operator->generationUnits()
+            ->select('id', 'name', 'unit_code', 'operator_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn($unit) => [
+                'id'        => $unit->id,
+                'name'      => $unit->name,
+                'unit_code' => $unit->unit_code,
+                'label'     => "{$unit->name} ({$unit->unit_code})",
+            ]);
+
+        return response()->json([
+            'success'          => true,
+            'generation_units' => $generationUnits,
+        ]);
     }
 
     /**

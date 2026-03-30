@@ -12,6 +12,9 @@ class MinimumChargeRulePolicy
         if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
             return true;
         }
+        if ($user->isCompanyOwner() || $user->isEmployee() || $user->isTechnician()) {
+            return true;
+        }
         return $user->hasPermission('minimum_charge_rules.view');
     }
 
@@ -20,6 +23,13 @@ class MinimumChargeRulePolicy
         if ($user->isSuperAdmin() || $user->isEnergyAuthority()) {
             return true;
         }
+
+        // CompanyOwner يعدل قواعد مشغّله فقط
+        if ($user->isCompanyOwner()) {
+            $operatorIds = $user->ownedOperators()->pluck('id')->toArray();
+            return in_array($rule->operator_id, $operatorIds);
+        }
+
         return $user->hasPermission('minimum_charge_rules.update');
     }
 }

@@ -93,11 +93,20 @@ class InvoiceController extends Controller
             });
         }
 
-        $invoices = $query->latest('invoice_date')->latest()->paginate(15);
+        $invoices = $query->latest('invoice_date')->latest()->paginate(200);
 
         if ($request->ajax() || $request->wantsJson()) {
-            $html = view('admin.invoices.partials.list', compact('invoices'))->render();
-            return response()->json(['success' => true, 'html' => $html, 'count' => $invoices->total()]);
+            $page   = (int) $request->input('page', 1);
+            $append = $page > 1;
+            $html   = view('admin.invoices.partials.list', compact('invoices', 'append'))->render();
+            return response()->json([
+                'success'   => true,
+                'html'      => $html,
+                'count'     => $invoices->total(),
+                'has_more'  => $invoices->hasMorePages(),
+                'next_page' => $invoices->hasMorePages() ? $page + 1 : null,
+                'append'    => $append,
+            ]);
         }
 
         $operators  = $canSelectOperator ? Operator::select('id','name')->orderBy('name')->get() : collect();
@@ -196,12 +205,34 @@ class InvoiceController extends Controller
     }
 
     /**
+     * تصدير فاتورة PDF
+     */
+    public function pdf(Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+        $invoice->load(['subscriber.generationUnits.operator', 'meterReading', 'creator', 'updater', 'issuer', 'payments']);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.invoices.print', [
+                'invoice' => $invoice,
+                'isPdf' => true,
+            ])
+            ->setPaper('a4')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        $fileName = 'فاتورة_' . ($invoice->invoice_number ?? 'مسودة') . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
      * نموذج تعديل فاتورة (مسودة فقط)
      */
     public function edit(Invoice $invoice): View|RedirectResponse
     {
         $this->authorize('update', $invoice);
-        $invoice->load(['subscriber', 'meterReading']);
+        $invoice->load(['subscriber.generationUnits', 'meterReading']);
         $activeTariff  = ElectricityTariffPrice::getActivePriceForDate(now());
         $minimumCharge = (float) Setting::get('invoice_minimum_charge', 0);
         return view('admin.invoices.edit', compact('invoice', 'activeTariff', 'minimumCharge'));

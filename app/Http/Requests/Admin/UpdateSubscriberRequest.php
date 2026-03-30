@@ -19,8 +19,9 @@ class UpdateSubscriberRequest extends FormRequest
         
         $rules = [
             'phone' => ['required', 'string', 'regex:/^05\d{8}$/'],
-            'governorate_name' => ['nullable', 'string', 'max:255'],
+            'alt_phone' => ['nullable', 'string', 'regex:/^05\d{8}$/'],
             'address' => ['required', 'string'],
+            'request_date' => ['nullable', 'date', 'before_or_equal:today'],
             'subscription_category' => ['required', 'integer', 'in:1,2,3,4'],
             'phase_type' => ['required', 'integer', 'in:1,2'],
             'subscription_status' => ['required', 'integer', 'in:1,2,3'],
@@ -28,7 +29,9 @@ class UpdateSubscriberRequest extends FormRequest
             'ampere' => ['nullable', 'numeric', 'min:0'],
             'opening_reading' => ['nullable', 'numeric', 'min:0'],
             'service_type' => ['required', 'integer', 'in:1,2,3'],
+            'box_number' => ['nullable', 'string', 'regex:/^\d{4}$/'],
             'is_employee_subscription' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:1000'],
             'generation_unit_ids' => ['required', 'array', 'min:1'],
             'generation_unit_ids.*' => ['exists:generation_units,id'],
         ];
@@ -51,7 +54,11 @@ class UpdateSubscriberRequest extends FormRequest
         $messages = [
             'phone.required' => 'رقم الموبايل مطلوب.',
             'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
+            'alt_phone.regex' => 'رقم الجوال البديل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
             'address.required' => 'عنوان المشترك مطلوب.',
+            'request_date.before_or_equal' => 'تاريخ الطلب لا يمكن أن يكون في المستقبل.',
+            'box_number.regex' => 'رقم الصندوق يجب أن يكون 4 أرقام.',
+            'notes.max' => 'الملاحظات يجب أن لا تتجاوز 1000 حرف.',
             'subscription_category.required' => 'تصنيف الاشتراك مطلوب.',
             'subscription_category.in' => 'تصنيف الاشتراك غير صحيح.',
             'phase_type.required' => 'نوع الفاز مطلوب.',

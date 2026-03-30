@@ -2,167 +2,122 @@
 
 namespace Database\Seeders;
 
-use App\Models\Permission;
 use App\Models\Role as RoleModel;
 use App\Models\User;
 use App\Enums\Role;
-use App\Helpers\UsernameHelper;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Get super admin role
-        $superAdminRole = RoleModel::where('name', 'super_admin')->first();
-
-        $defaultPassword = 'tareq123';
-
-        // 1. Super Admin - طارق البواب
-        $superAdmin1Username = UsernameHelper::generate(Role::SuperAdmin, 'Tareq Elbawab');
-        $superAdmin1 = User::updateOrCreate(
-            ['email' => 'tareq@gazarased.com'],
-            [
-                'name' => 'طارق البواب',
-                'name_en' => 'Tareq Elbawab',
-                'username' => $superAdmin1Username,
-                'password' => Hash::make($defaultPassword),
-                'role' => Role::SuperAdmin,
-                'role_id' => $superAdminRole?->id,
-                'status' => 'active',
-                'phone' => '0592632026',
-            ]
-        );
-        // تعيين الصلاحيات تلقائياً
-        $superAdmin1->assignDefaultPermissions();
-
-        // 2. Super Admin - أدهم أبو شملة
-        $superAdmin2Username = 'sp_ashamla';
-        $superAdmin2 = User::updateOrCreate(
-            ['email' => 'adham@gazarased.com'],
-            [
-                'name' => 'أدهم أبو شملة',
-                'name_en' => 'Adham Abu Shamla',
-                'username' => $superAdmin2Username,
-                'password' => Hash::make($defaultPassword),
-                'role' => Role::SuperAdmin,
-                'role_id' => $superAdminRole?->id,
-                'status' => 'active',
-                'phone' => '0599865194',
-            ]
-        );
-        // تعيين الصلاحيات تلقائياً
-        $superAdmin2->assignDefaultPermissions();
-
-        // 3. Super Admin - فهيم المملوك
-        $superAdmin3Username = UsernameHelper::generate(Role::SuperAdmin, 'Fahim Almalook');
-        $superAdmin3 = User::updateOrCreate(
-            ['email' => 'fahim@gazarased.com'],
-            [
-                'name' => 'فهيم المملوك',
-                'name_en' => 'Fahim Almalook',
-                'username' => $superAdmin3Username,
-                'password' => Hash::make($defaultPassword),
-                'role' => Role::SuperAdmin,
-                'role_id' => $superAdminRole?->id,
-                'status' => 'active',
-                'phone' => '0592409847',
-            ]
-        );
-        // تعيين الصلاحيات تلقائياً
-        $superAdmin3->assignDefaultPermissions();
-
-        // 4. System User - منصة نور (for system messages)
-        $systemUser = User::updateOrCreate(
-            ['username' => 'platform_rased'],
-            [
-                'name' => 'منصة نور',
-                'name_en' => 'Rased Platform',
-                'email' => 'platform@gazarased.com',
-                'username' => 'platform_rased',
-                'password' => Hash::make('system_user_' . uniqid() . '_' . time()), // Random password, cannot login
-                'role' => Role::SuperAdmin, // Use SuperAdmin role for permissions, but prevent login
-                'role_id' => $superAdminRole?->id,
-                'status' => 'active', // Active but cannot login
-                'phone' => null,
-            ]
-        );
-
-        // 5. Energy Authority users (سلطة الطاقة)
-        $energyAuthorityRole = RoleModel::where('name', 'energy_authority')->first();
-        $eaPassword = '12345678';
-        if ($energyAuthorityRole) {
-            // محمد مهدي - ea_mmahdi
-            $eaUser1 = User::updateOrCreate(
-                ['username' => 'ea_mmahdi'],
-                [
-                    'name' => 'محمد مهدي',
-                    'name_en' => 'Mohammad Mahdi',
-                    'email' => 'ea_mmahdi@gazarased.com',
-                    'username' => 'ea_mmahdi',
-                    'password' => Hash::make($eaPassword),
-                    'role' => Role::EnergyAuthority,
-                    'role_id' => $energyAuthorityRole->id,
-                    'status' => 'active',
-                    'phone' => null,
-                ]
-            );
-            $eaUser1->assignDefaultPermissions();
-
-            // أحمد ابو العمرين - ea_ahamreen
-            $eaUser2 = User::updateOrCreate(
-                ['username' => 'ea_ahamreen'],
-                [
-                    'name' => 'أحمد ابو العمرين',
-                    'name_en' => 'Ahmad Abu Alamreen',
-                    'email' => 'ea_ahamreen@gazarased.com',
-                    'username' => 'ea_ahamreen',
-                    'password' => Hash::make($eaPassword),
-                    'role' => Role::EnergyAuthority,
-                    'role_id' => $energyAuthorityRole->id,
-                    'status' => 'active',
-                    'phone' => null,
-                ]
-            );
-            $eaUser2->assignDefaultPermissions();
-        }
-
-        // 6. Company Owner (مشغل) - نداء عامر - op_naamer
+        $superAdminRole   = RoleModel::where('name', 'super_admin')->first();
+        $energyAuthRole   = RoleModel::where('name', 'energy_authority')->first();
         $companyOwnerRole = RoleModel::where('name', 'company_owner')->first();
-        if ($companyOwnerRole) {
-            $coUser = User::updateOrCreate(
-                ['username' => 'op_naamer'],
-                [
-                    'name' => 'نداء عامر',
-                    'name_en' => 'Nidaa Amer',
-                    'email' => 'op_naamer@gazarased.com',
-                    'username' => 'op_naamer',
-                    'password' => Hash::make('12345678'),
-                    'role' => Role::CompanyOwner,
-                    'role_id' => $companyOwnerRole->id,
-                    'status' => 'active',
-                    'phone' => null,
-                ]
+
+        $users = [
+            // Super Admins
+            [
+                'email'    => 'tareq@gazarased.com',
+                'name'     => 'طارق البواب',
+                'name_en'  => 'Tareq Elbawab',
+                'username' => 'sp_telbawab',
+                'phone'    => '0592632026',
+                'password' => '$2y$12$rDMX1aHohFo/oYxLou53OOcfN8.G3kMqqkCPFah6fyC0MycbP/Wwq',
+                'role'     => Role::SuperAdmin,
+                'role_id'  => $superAdminRole?->id,
+            ],
+            [
+                'email'    => 'adham@gazarased.com',
+                'name'     => 'أدهم أبو شملة',
+                'name_en'  => 'Adham Abu Shamla',
+                'username' => 'sp_ashamla',
+                'phone'    => '0599865194',
+                'password' => '$2y$12$pjAVzPIBQPAGxGr3zx5sF.8YyWj2/BcZe7oZmgso7vIEt5Vei/Cu.',
+                'role'     => Role::SuperAdmin,
+                'role_id'  => $superAdminRole?->id,
+            ],
+            [
+                'email'    => 'fahim@gazarased.com',
+                'name'     => 'فهيم المملوك',
+                'name_en'  => 'Fahim Almalook',
+                'username' => 'sp_falmalook',
+                'phone'    => '0592409847',
+                'password' => '$2y$12$o6z2DVuTajH1FYuRftwe7OsX7XMl1/BTMBREVX5mrktU2PlaesCs6',
+                'role'     => Role::SuperAdmin,
+                'role_id'  => $superAdminRole?->id,
+            ],
+            [
+                'email'    => 'sp_msabah@gazarased.com',
+                'name'     => 'ميرفت الصباح',
+                'name_en'  => 'Mervat Al Sabah',
+                'username' => 'sp_msabah',
+                'phone'    => '0597238383',
+                'password' => '$2y$12$2GYVCvdhqbYy8nWo/gEE9uVYSvyt8Ka1Bmdd3AXPvUcUGPdnqLo7G',
+                'role'     => Role::SuperAdmin,
+                'role_id'  => $superAdminRole?->id,
+            ],
+            // System User
+            [
+                'email'    => 'platform@gazarased.com',
+                'name'     => 'منصة نور',
+                'name_en'  => 'Rased Platform',
+                'username' => 'platform_rased',
+                'phone'    => null,
+                'password' => '$2y$12$fg2QSgWKWfOqC/ENncN5MeZpcvVbJ6wmBSitvZVEEZSjKUW1Cfdy2',
+                'role'     => Role::SuperAdmin,
+                'role_id'  => $superAdminRole?->id,
+            ],
+            // Energy Authority
+            [
+                'email'    => 'ea_mmahdi@gazarased.com',
+                'name'     => 'محمد مهدي',
+                'name_en'  => 'Mohammad Mahdi',
+                'username' => 'ea_mmahdi',
+                'phone'    => null,
+                'password' => '$2y$12$0LeMW.Peuu.D6nfSqaIT1OBA9CRcS4fs7e9AweM6PcZPR8io4DHLy',
+                'role'     => Role::EnergyAuthority,
+                'role_id'  => $energyAuthRole?->id,
+            ],
+            [
+                'email'    => 'ea_ahamreen@gazarased.com',
+                'name'     => 'أحمد ابو العمرين',
+                'name_en'  => 'Ahmad Abu Alamreen',
+                'username' => 'ea_ahamreen',
+                'phone'    => null,
+                'password' => '$2y$12$PHMwJPI7PtBkpJMkaDgjIOHCaTQLsPqpHVqYG5WJ.0fV4saDIVnqe',
+                'role'     => Role::EnergyAuthority,
+                'role_id'  => $energyAuthRole?->id,
+            ],
+            // Company Owners
+            [
+                'email'    => 'op_nour1@gazarased.com',
+                'name'     => 'مشغل نور 1',
+                'name_en'  => 'Nour Operator 1',
+                'username' => 'op_nour1',
+                'phone'    => null,
+                'password' => \Illuminate\Support\Facades\Hash::make('12345678'),
+                'role'     => Role::CompanyOwner,
+                'role_id'  => $companyOwnerRole?->id,
+            ],
+        ];
+
+        foreach ($users as $data) {
+            $password = $data['password'];
+            unset($data['password']);
+
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                array_merge($data, [
+                    'password' => $password,
+                    'status'   => 'active',
+                ])
             );
-            $coUser->assignDefaultPermissions();
+
+            $user->assignDefaultPermissions();
+            $this->command->info("✓ {$user->name} ({$user->username})");
         }
 
-        $this->command->info('تم إنشاء المستخدمين بنجاح!');
-        $this->command->info("Super Admin 1 ({$superAdmin1->name}): {$superAdmin1->username} / {$defaultPassword}");
-        $this->command->info("Super Admin 2 ({$superAdmin2->name}): {$superAdmin2->username} / {$defaultPassword}");
-        $this->command->info("Super Admin 3 ({$superAdmin3->name}): {$superAdmin3->username} / {$defaultPassword}");
-        $this->command->info("System User ({$systemUser->name}): {$systemUser->username} (Cannot login - for system messages only)");
-        if (isset($energyAuthorityRole)) {
-            $this->command->info("Energy Authority (محمد مهدي): ea_mmahdi / " . $eaPassword);
-            $this->command->info("Energy Authority (أحمد ابو العمرين): ea_ahamreen / " . $eaPassword);
-        }
-        if (isset($companyOwnerRole)) {
-            $this->command->info("Company Owner (مشغل - نداء عامر): op_naamer / 12345678");
-        }
+        $this->command->info('تم إنشاء/تحديث المستخدمين بنجاح!');
     }
 }

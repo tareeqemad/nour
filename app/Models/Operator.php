@@ -76,6 +76,16 @@ class Operator extends Model
     /**
      * وحدات التوليد التابعة لهذا المشغل
      */
+    /**
+     * إنشاء قواعد الحد الأدنى الافتراضية عند إنشاء مشغل جديد
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $operator) {
+            MinimumChargeRule::seedForOperator($operator->id);
+        });
+    }
+
     public function generationUnits(): HasMany
     {
         return $this->hasMany(GenerationUnit::class);
@@ -105,6 +115,14 @@ class Operator extends Model
     public function complianceSafeties(): HasMany
     {
         return $this->hasMany(ComplianceSafety::class);
+    }
+
+    /**
+     * قواعد الحد الأدنى الخاصة بهذا المشغل
+     */
+    public function minimumChargeRules(): HasMany
+    {
+        return $this->hasMany(MinimumChargeRule::class);
     }
 
     // تم إزالة العلاقة لأن الأسعار الآن عامة لجميع المشغلين (لا يوجد operator_id)

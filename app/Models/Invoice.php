@@ -370,10 +370,11 @@ class Invoice extends Model
             ? self::getEmployeeDiscountRate($date)
             : $currentDiscount;
 
-        // الحد الأدنى من قاعدة البيانات حسب أمبير/فاز الاشتراك
+        // الحد الأدنى من قاعدة البيانات حسب أمبير/فاز الاشتراك والمشغل
         $ampere = intval($subscriber->ampere ?? 0);
         $phase  = $subscriber->phase_type ?? 1;
-        $dbMin  = MinimumChargeRule::getMinCharge($ampere, $phase);
+        $operatorId = $subscriber->generationUnits()->first()?->operator_id ?? 0;
+        $dbMin  = MinimumChargeRule::getMinCharge($ampere, $phase, $operatorId);
         // استخدام القيمة من DB إذا وُجدت، وإلا الاحتفاظ بالقيمة الحالية
         $minCharge = $dbMin > 0 ? $dbMin : $currentMinCharge;
 

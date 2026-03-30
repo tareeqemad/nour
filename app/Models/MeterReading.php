@@ -206,6 +206,6 @@ class MeterReading extends Model
             $seq   = ((int) end($parts)) + 1;
         }
 
-        return $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
+        return $prefix . str_pad($seq, 5, '0', STR_PAD_LEFT);
     }
 }

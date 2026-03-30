@@ -43,15 +43,39 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('subscribers', function (Blueprint $table) {
-            $table->dropColumn(['ampere', 'opening_reading']);
-        });
+        $cols = array_filter(['ampere', 'opening_reading'], fn($c) => Schema::hasColumn('subscribers', $c));
+        if ($cols) {
+            Schema::table('subscribers', function (Blueprint $table) use ($cols) {
+                $table->dropColumn(array_values($cols));
+            });
+        }
+
+        // حذف المكررات قبل إضافة القيود الفريدة
+        foreach (['subscriber_id_number', 'phone', 'meter_number'] as $col) {
+            \DB::statement("
+                DELETE s1 FROM subscribers s1
+                INNER JOIN subscribers s2
+                WHERE s1.id > s2.id AND s1.{$col} = s2.{$col} AND s1.{$col} IS NOT NULL
+            ");
+        }
 
         // إعادة القيود الفريدة
-        Schema::table('subscribers', function (Blueprint $table) {
-            $table->unique('subscriber_id_number', 'unique_subscriber_id_number');
-            $table->unique('phone', 'unique_subscriber_phone');
-            $table->unique('meter_number', 'unique_subscriber_meter_number');
-        });
+        try {
+            Schema::table('subscribers', function (Blueprint $table) {
+                $table->unique('subscriber_id_number', 'unique_subscriber_id_number');
+            });
+        } catch (\Exception $e) {}
+
+        try {
+            Schema::table('subscribers', function (Blueprint $table) {
+                $table->unique('phone', 'unique_subscriber_phone');
+            });
+        } catch (\Exception $e) {}
+
+        try {
+            Schema::table('subscribers', function (Blueprint $table) {
+                $table->unique('meter_number', 'unique_subscriber_meter_number');
+            });
+        } catch (\Exception $e) {}
     }
 };

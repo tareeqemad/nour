@@ -201,28 +201,23 @@
             function calculateConsumption() {
                 const previous = parseFloat($('#previous_reading').val()) || 0;
                 const current = parseFloat($('#current_reading').val()) || 0;
-                
-                if (current >= previous) {
-                    const consumption = current - previous;
-                    $('#consumption_kwh').val(consumption.toFixed(2));
-                    const isAbnormal = consumption <= 0 || (abnormalMaxKwh > 0 && consumption > abnormalMaxKwh);
-                    $('#abnormalAlert').toggleClass('d-none', !isAbnormal);
-                } else {
-                    $('#consumption_kwh').val('');
-                    $('#abnormalAlert').addClass('d-none');
-                }
+                const consumption = current - previous;
+
+                $('#consumption_kwh').val(consumption.toFixed(2));
+                const isAbnormal = consumption <= 0 || (abnormalMaxKwh > 0 && consumption > abnormalMaxKwh);
+                $('#abnormalAlert').toggleClass('d-none', !isAbnormal);
             }
 
             // حساب فترة الاستهلاك عند تغيير التاريخ
             $('#reading_date').on('change', function() {
                 const readingDate = $(this).val();
                 const subscriberId = $('#subscriber_id').val();
-                const currentReadingId = {{ $meterReading->id }};
+                const excludeId = {{ $meterReading->id }};
                 if (readingDate && subscriberId) {
                     $.ajax({
                         url: '{{ route("admin.meter-readings.last-reading") }}',
                         method: 'GET',
-                        data: { subscriber_id: subscriberId },
+                        data: { subscriber_id: subscriberId, exclude_id: excludeId },
                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                         success: function(response) {
                             if (response.success && response.last_reading.reading_date) {
@@ -231,7 +226,7 @@
                                 const diffDays = Math.round((curDate - lastDate) / (1000 * 60 * 60 * 24));
                                 $('#consumption_period_days').val(diffDays > 0 ? diffDays : 1);
                             } else {
-                                $('#consumption_period_days').val(7);
+                                $('#consumption_period_days').val(1);
                             }
                         }
                     });

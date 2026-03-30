@@ -154,28 +154,56 @@ class SubscriberImportController extends Controller
      */
     public function downloadTemplate()
     {
+        // جلب القيم المتاحة من الثوابت
+        $categories = \App\Helpers\ConstantsHelper::get(23);   // تصنيف الاشتراك
+        $phaseTypes = \App\Helpers\ConstantsHelper::get(24);   // نوع الفاز
+        $serviceTypes = \App\Helpers\ConstantsHelper::get(26); // نوع الخدمة
+        $ampereValues = \App\Helpers\ConstantsHelper::get(31); // قيم الأمبير
+
+        $categoryLabels = $categories->pluck('label')->toArray();
+        $phaseLabels = $phaseTypes->pluck('label')->toArray();
+        $serviceLabels = $serviceTypes->pluck('label')->toArray();
+        $ampereLabels = $ampereValues->pluck('label')->toArray();
+
         $headers = [
             'رقم_الهوية',
-            'اسم_المشترك', 
+            'اسم_المشترك',
             'رقم_الموبايل',
+            'رقم_جوال_بديل',
             'العنوان',
+            'رقم_الصندوق',
             'رقم_العداد',
+            'الأمبير',
+            'القراءة_الافتتاحية',
             'تصنيف_الاشتراك',
             'نوع_الفاز',
-            'نوع_الخدمة'
+            'نوع_الخدمة',
+            'اشتراك_موظف',
+            'تاريخ_الطلب',
+            'ملاحظات'
         ];
 
+        $firstCategory = $categoryLabels[0] ?? 'منزلي';
+        $secondCategory = $categoryLabels[1] ?? 'تجاري';
+        $firstPhase = $phaseLabels[0] ?? '1 فاز';
+        $secondPhase = $phaseLabels[1] ?? '3 فاز';
+        $firstService = $serviceLabels[0] ?? 'مولد';
+        $secondService = $serviceLabels[1] ?? 'شبكة';
+        $firstAmpere = $ampereLabels[0] ?? '1 أمبير';
+        $secondAmpere = $ampereLabels[2] ?? '3 أمبير';
+
         $exampleData = [
-            ['402111222', 'أحمد محمد علي', '0591234567', 'غزة - الرمال', 'MTR001', 'منزلي', '1 فاز', 'مولد'],
-            ['402333444', 'محمود خالد سعيد', '0567654321', 'غزة - النصيرات', 'MTR002', 'تجاري', '3 فاز', 'شبكة'],
+            ['402111222', 'أحمد محمد علي', '0591234567', '0562345678', 'غزة - الرمال', '1234', 'MTR001', $firstAmpere, '100', $firstCategory, $firstPhase, $firstService, 'لا', '2026-03-01', 'ملاحظة تجريبية'],
+            ['402333444', 'محمود خالد سعيد', '0567654321', '', 'غزة - النصيرات', '', 'MTR002', $secondAmpere, '0', $secondCategory, $secondPhase, $secondService, 'نعم', '', ''],
         ];
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('بيانات');
         $sheet->setRightToLeft(true);
 
         // إضافة العناوين
-        $columns = range('A', 'H');
+        $columns = range('A', 'O');
         foreach ($headers as $index => $header) {
             $cell = $columns[$index] . '1';
             $sheet->setCellValue($cell, $header);
@@ -202,46 +230,37 @@ class SubscriberImportController extends Controller
             $rowNum++;
         }
 
+        // إضافة Data Validation (dropdown) للأعمدة اللي فيها قيم ثابتة
+        $maxRow = 500; // عدد الصفوف اللي يشتغل عليها الـ dropdown
+        $validations = [
+            'H' => implode(',', $ampereLabels),     // الأمبير
+            'J' => implode(',', $categoryLabels),   // تصنيف الاشتراك
+            'K' => implode(',', $phaseLabels),      // نوع الفاز
+            'L' => implode(',', $serviceLabels),    // نوع الخدمة
+            'M' => 'نعم,لا',                        // اشتراك موظف
+        ];
+
+        foreach ($validations as $col => $list) {
+            $validation = $sheet->getCell("{$col}2")->getDataValidation();
+            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_WARNING);
+            $validation->setAllowBlank(true);
+            $validation->setShowDropDown(true);
+            $validation->setFormula1('"' . $list . '"');
+            $validation->setShowErrorMessage(true);
+            $validation->setErrorTitle('قيمة غير صحيحة');
+            $validation->setError('يرجى اختيار قيمة من القائمة المتاحة');
+
+            // نسخ الـ validation لباقي الصفوف
+            for ($r = 3; $r <= $maxRow; $r++) {
+                $sheet->getCell("{$col}{$r}")->setDataValidation(clone $validation);
+            }
+        }
+
         // ضبط عرض الأعمدة
         foreach ($columns as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
-
-        // إضافة sheet للتعليمات
-        $instructionSheet = $spreadsheet->createSheet();
-        $instructionSheet->setTitle('تعليمات');
-        $instructionSheet->setRightToLeft(true);
-        
-        $instructions = [
-            ['التعليمات والملاحظات'],
-            [''],
-            ['الحقول المطلوبة:'],
-            ['- رقم_الهوية: رقم هوية المشترك (مطلوب، يجب أن يكون فريداً)'],
-            ['- اسم_المشترك: الاسم الكامل للمشترك (مطلوب)'],
-            ['- رقم_الموبايل: يجب أن يبدأ بـ 059 أو 056 (مطلوب، 10 أرقام)'],
-            ['- العنوان: عنوان المشترك (مطلوب)'],
-            ['- رقم_العداد: رقم العداد الكهربائي (مطلوب، يجب أن يكون فريداً)'],
-            [''],
-            ['الحقول الاختيارية:'],
-            ['- تصنيف_الاشتراك: منزلي / تجاري / صناعي / زراعي (الافتراضي: منزلي)'],
-            ['- نوع_الفاز: 1 فاز / 3 فاز (الافتراضي: 1 فاز)'],
-            ['- نوع_الخدمة: مولد / شبكة / مختلط (الافتراضي: مولد)'],
-            [''],
-            ['ملاحظات هامة:'],
-            ['- تأكد من عدم وجود أرقام هوية أو موبايل أو عداد مكررة'],
-            ['- الملف يدعم صيغ: xlsx, xls, csv'],
-            ['- الحد الأقصى لحجم الملف: 5 ميجابايت'],
-        ];
-
-        $row = 1;
-        foreach ($instructions as $instruction) {
-            $instructionSheet->setCellValue('A' . $row, $instruction[0]);
-            if ($row === 1) {
-                $instructionSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-            }
-            $row++;
-        }
-        $instructionSheet->getColumnDimension('A')->setWidth(60);
 
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreMeterReadingRequest;
 use App\Http\Requests\Admin\UpdateMeterReadingRequest;
 use App\Models\AuditLog;
+use App\Models\GenerationUnit;
 use App\Models\Invoice;
 use App\Models\MeterReading;
 use App\Models\Subscriber;
@@ -15,9 +16,77 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class MeterReadingController extends Controller
 {
+    /**
+     * بناء query فلترة القراءات المشترك بين index و export
+     */
+    private function buildIndexQuery(Request $request): array
+    {
+        $user = auth()->user();
+        $query = MeterReading::with(['subscriber', 'creator', 'updater']);
+
+        $currentOperator = null;
+        if ($user->isCompanyOwner()) {
+            $currentOperator = $user->ownedOperators()->first();
+            if ($currentOperator) {
+                $query->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $currentOperator->id));
+            }
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $operators = $user->operators;
+            if ($operators->isNotEmpty()) {
+                $opIds = $operators->pluck('id')->toArray();
+                $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
+                $currentOperator = $operators->first();
+            }
+        }
+
+        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        if ($canSelectOperator && (int) $request->input('operator_id', 0) > 0) {
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $request->operator_id));
+        }
+
+        if ((int) $request->input('subscriber_id', 0) > 0) {
+            $query->where('subscriber_id', $request->subscriber_id);
+        }
+
+        $readingStatus = $request->input('reading_status', '');
+        if ($readingStatus !== '' && in_array($readingStatus, ['1', '2'])) {
+            $query->where('reading_status', $readingStatus);
+        }
+
+        $actionStatus = $request->input('action_status', '');
+        if ($actionStatus !== '' && in_array($actionStatus, ['0', '1', '2'])) {
+            $query->where('action_status', $actionStatus);
+        }
+
+        if ($request->filled('box_number')) {
+            $query->whereHas('subscriber', fn($q) => $q->where('box_number', $request->box_number));
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('reading_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('reading_date', '<=', $request->date_to);
+        }
+
+        $search = $request->input('search', '');
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('reading_number', 'like', "%{$search}%")
+                  ->orWhere('meter_number', 'like', "%{$search}%")
+                  ->orWhereHas('subscriber', fn($q2) => $q2->where('subscription_number', 'like', "%{$search}%")->orWhere('subscriber_name', 'like', "%{$search}%"));
+            });
+        }
+
+        return [$query, $currentOperator, $canSelectOperator];
+    }
+
     /**
      * Display a listing of meter readings.
      */
@@ -25,82 +94,7 @@ class MeterReadingController extends Controller
     {
         $this->authorize('viewAny', MeterReading::class);
 
-        $user = auth()->user();
-        $query = MeterReading::with(['subscriber', 'creator', 'updater']);
-
-        // تحديد المشغل بناءً على دور المستخدم
-        $currentOperator = null;
-        if ($user->isCompanyOwner()) {
-            $currentOperator = $user->ownedOperators()->first();
-            if ($currentOperator) {
-                $operatorIds = [$currentOperator->id];
-                $query->whereHas('subscriber.generationUnits', function($q) use ($operatorIds) {
-                    $q->whereIn('operator_id', $operatorIds);
-                });
-            }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->isNotEmpty()) {
-                $operatorIds = $operators->pluck('id')->toArray();
-                $query->whereHas('subscriber.generationUnits', function($q) use ($operatorIds) {
-                    $q->whereIn('operator_id', $operatorIds);
-                });
-                $currentOperator = $operators->first();
-            }
-        }
-
-        // فلترة حسب المشغل
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
-        if ($canSelectOperator) {
-            $operatorId = (int) $request->input('operator_id', 0);
-            if ($operatorId > 0) {
-                $query->whereHas('subscriber.generationUnits', function($q) use ($operatorId) {
-                    $q->where('operator_id', $operatorId);
-                });
-            }
-        }
-
-        // فلترة حسب المشترك
-        $subscriberId = (int) $request->input('subscriber_id', 0);
-        if ($subscriberId > 0) {
-            $query->where('subscriber_id', $subscriberId);
-        }
-
-        // فلترة حسب حالة القراءة
-        $readingStatus = $request->input('reading_status', '');
-        if ($readingStatus !== '' && in_array($readingStatus, ['1', '2'])) {
-            $query->where('reading_status', $readingStatus);
-        }
-
-        // فلترة حسب حالة الإجراء
-        $actionStatus = $request->input('action_status', '');
-        if ($actionStatus !== '' && in_array($actionStatus, ['0', '1', '2'])) {
-            $query->where('action_status', $actionStatus);
-        }
-
-        // فلترة حسب التاريخ
-        $dateFrom = $request->input('date_from', '');
-        $dateTo   = $request->input('date_to', '');
-        if ($dateFrom) {
-            $query->whereDate('reading_date', '>=', $dateFrom);
-        }
-        if ($dateTo) {
-            $query->whereDate('reading_date', '<=', $dateTo);
-        }
-
-        // البحث
-        $search = $request->input('search', '');
-        if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('reading_number', 'like', "%{$search}%")
-                  ->orWhere('meter_number', 'like', "%{$search}%")
-                  ->orWhereHas('subscriber', function($q) use ($search) {
-                      $q->where('subscription_number', 'like', "%{$search}%")
-                        ->orWhere('subscriber_name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
+        [$query, $currentOperator, $canSelectOperator] = $this->buildIndexQuery($request);
         $meterReadings = $query->latest('reading_date')->latest()->paginate(15);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -128,7 +122,7 @@ class MeterReadingController extends Controller
             })->select('id', 'subscription_number', 'subscriber_name')
               ->orderBy('subscription_number')
               ->get();
-        } elseif ($canSelectOperator && $operatorId > 0) {
+        } elseif ($canSelectOperator && ($operatorId = (int) $request->input('operator_id', 0)) > 0) {
             $subscribers = Subscriber::whereHas('generationUnits', function($q) use ($operatorId) {
                 $q->where('operator_id', $operatorId);
             })->select('id', 'subscription_number', 'subscriber_name')
@@ -142,6 +136,74 @@ class MeterReadingController extends Controller
     /**
      * Show the form for creating a new meter reading.
      */
+    /**
+     * تصدير القراءات إلى Excel حسب الفلاتر
+     */
+    public function export(Request $request)
+    {
+        $this->authorize('viewAny', MeterReading::class);
+
+        [$query] = $this->buildIndexQuery($request);
+        $readings = $query->latest('reading_date')->latest()->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setRightToLeft(true);
+
+        $headers = [
+            'رقم القراءة', 'رقم الاشتراك', 'اسم المشترك', 'رقم الصندوق',
+            'رقم العداد', 'القراءة السابقة', 'القراءة الحالية', 'الاستهلاك (kWh)',
+            'تاريخ القراءة', 'الفترة (يوم)', 'حالة القراءة', 'حالة الإجراء',
+        ];
+        $columns = range('A', 'L');
+
+        foreach ($headers as $idx => $header) {
+            $cell = $columns[$idx] . '1';
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        $row = 2;
+        foreach ($readings as $r) {
+            $readingStatusLabel = $r->reading_status == 1 ? 'طبيعية' : 'غير طبيعية';
+            $actionLabels = [0 => 'غير معتمدة', 1 => 'معتمدة', 2 => 'مفوترة'];
+            $actionLabel = $actionLabels[$r->action_status] ?? '—';
+
+            $sheet->setCellValue('A' . $row, $r->reading_number);
+            $sheet->setCellValue('B' . $row, $r->subscriber?->subscription_number ?? '');
+            $sheet->setCellValue('C' . $row, $r->subscriber?->subscriber_name ?? '');
+            $sheet->setCellValue('D' . $row, $r->subscriber?->box_number ?? '');
+            $sheet->setCellValue('E' . $row, $r->meter_number ?? '');
+            $sheet->setCellValue('F' . $row, $r->previous_reading);
+            $sheet->setCellValue('G' . $row, $r->current_reading);
+            $sheet->setCellValue('H' . $row, $r->consumption_kwh);
+            $sheet->setCellValue('I' . $row, $r->reading_date?->format('Y-m-d') ?? '');
+            $sheet->setCellValue('J' . $row, $r->consumption_period_days);
+            $sheet->setCellValue('K' . $row, $readingStatusLabel);
+            $sheet->setCellValue('L' . $row, $actionLabel);
+
+            foreach ($columns as $col) {
+                $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+            $row++;
+        }
+
+        foreach ($columns as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'قراءات_العدادات_' . date('Y-m-d_His') . '.xlsx';
+        $tempPath = storage_path('app/temp/' . $fileName);
+        if (!file_exists(storage_path('app/temp'))) mkdir(storage_path('app/temp'), 0755, true);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+    }
+
     public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('create', MeterReading::class);
@@ -465,6 +527,158 @@ class MeterReadingController extends Controller
     }
 
     /**
+     * بناء query القراءات حسب الفلاتر (مشترك بين approve و preview)
+     */
+    private function buildFilteredReadingsQuery(Request $request, bool $pendingOnly = true)
+    {
+        $user = auth()->user();
+        $query = MeterReading::with('subscriber')->where('action_status', MeterReading::ACTION_STATUS_PENDING);
+
+        if ($user->isCompanyOwner()) {
+            $opIds = $user->ownedOperators()->pluck('id')->toArray();
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $opIds = $user->operators->pluck('id')->toArray();
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
+        } elseif ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+            $operatorId = (int) $request->input('operator_id', 0);
+            if ($operatorId > 0) {
+                $query->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $operatorId));
+            }
+        }
+
+        if ((int) $request->input('subscriber_id', 0) > 0) {
+            $query->where('subscriber_id', $request->subscriber_id);
+        }
+        if ($request->filled('box_number')) {
+            $query->whereHas('subscriber', fn($q) => $q->where('box_number', $request->box_number));
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('reading_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('reading_date', '<=', $request->date_to);
+        }
+
+        return $query;
+    }
+
+    /**
+     * اعتماد القراءات حسب الفلاتر — خطوة 1: اعتماد الطبيعية + إرجاع غير الطبيعية
+     */
+    public function bulkApproveByFilter(Request $request): JsonResponse
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $user = auth()->user();
+        $query = $this->buildFilteredReadingsQuery($request);
+        $allReadings = $query->get();
+
+        if ($allReadings->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'لا توجد قراءات مطابقة للاعتماد.']);
+        }
+
+        $normal = $allReadings->where('reading_status', MeterReading::READING_STATUS_NORMAL);
+        $abnormal = $allReadings->where('reading_status', MeterReading::READING_STATUS_ABNORMAL);
+
+        // اعتماد الطبيعية
+        $approvedCount = 0;
+        $billedCount = 0;
+
+        foreach ($normal as $reading) {
+            DB::transaction(function () use ($reading, $user, &$approvedCount, &$billedCount) {
+                $reading->update(['action_status' => MeterReading::ACTION_STATUS_APPROVED]);
+                AuditLog::log('approve', $reading, $user,
+                    ['action_status' => MeterReading::ACTION_STATUS_PENDING],
+                    ['action_status' => MeterReading::ACTION_STATUS_APPROVED],
+                    'اعتماد قراءة (جماعي بالفلتر): ' . $reading->reading_number
+                );
+                if (!$reading->invoice()->exists()) {
+                    Invoice::createFromReading($reading, $user->id);
+                    $billedCount++;
+                }
+                $approvedCount++;
+            });
+        }
+
+        // إرجاع غير الطبيعية للمودال
+        $abnormalList = $abnormal->map(fn($r) => [
+            'id' => $r->id,
+            'reading_number' => $r->reading_number,
+            'subscriber_name' => $r->subscriber?->subscriber_name ?? '—',
+            'subscription_number' => $r->subscriber?->subscription_number ?? '—',
+            'consumption_kwh' => (float) $r->consumption_kwh,
+            'reading_date' => $r->reading_date?->format('Y-m-d'),
+        ])->values();
+
+        $message = "تم اعتماد {$approvedCount} قراءة طبيعية وترحيل {$billedCount} منها للفوترة.";
+        if ($abnormal->count() > 0) {
+            $message .= " يوجد {$abnormal->count()} قراءة غير طبيعية تحتاج مراجعة.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'approved' => $approvedCount,
+            'abnormal_count' => $abnormal->count(),
+            'abnormal_readings' => $abnormalList,
+        ]);
+    }
+
+    /**
+     * اعتماد القراءات غير الطبيعية مع الأسباب (جماعي)
+     */
+    public function bulkApproveAbnormal(Request $request): JsonResponse
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $request->validate([
+            'readings' => 'required|array|min:1',
+            'readings.*.id' => 'required|exists:meter_readings,id',
+            'readings.*.reason' => 'required|string|min:5|max:1000',
+        ], [
+            'readings.*.reason.required' => 'سبب الاعتماد مطلوب لكل قراءة غير طبيعية.',
+            'readings.*.reason.min' => 'السبب يجب أن يكون 5 أحرف على الأقل.',
+        ]);
+
+        $user = auth()->user();
+        $approvedCount = 0;
+        $billedCount = 0;
+
+        foreach ($request->readings as $item) {
+            $reading = MeterReading::find($item['id']);
+            if (!$reading || $reading->action_status !== MeterReading::ACTION_STATUS_PENDING) continue;
+
+            DB::transaction(function () use ($reading, $item, $user, &$approvedCount, &$billedCount) {
+                $reading->update([
+                    'action_status' => MeterReading::ACTION_STATUS_APPROVED,
+                    'abnormal_reason' => $item['reason'],
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                ]);
+
+                AuditLog::log('approve', $reading, $user,
+                    ['action_status' => MeterReading::ACTION_STATUS_PENDING],
+                    ['action_status' => MeterReading::ACTION_STATUS_APPROVED, 'abnormal_reason' => $item['reason']],
+                    'اعتماد قراءة غير طبيعية (جماعي): ' . $reading->reading_number . ' — السبب: ' . $item['reason']
+                );
+
+                if (!$reading->invoice()->exists()) {
+                    Invoice::createFromReading($reading, $user->id);
+                    $billedCount++;
+                }
+                $approvedCount++;
+            });
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "تم اعتماد {$approvedCount} قراءة غير طبيعية وترحيل {$billedCount} منها للفوترة.",
+            'approved' => $approvedCount,
+        ]);
+    }
+
+    /**
      * Approve a single abnormal meter reading with a mandatory reason.
      */
     public function approveAbnormal(Request $request, MeterReading $meterReading): JsonResponse
@@ -554,6 +768,219 @@ class MeterReadingController extends Controller
     /**
      * Get last reading for subscriber (AJAX)
      */
+    // ===== كشف القراءات الجماعية =====
+
+    /**
+     * شاشة كشف القراءات الجماعية
+     */
+    public function bulkCreate(): View
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            $generationUnits = GenerationUnit::with('operator:id,name')
+                ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
+        } elseif ($user->isCompanyOwner()) {
+            $operatorIds = $user->ownedOperators()->pluck('id');
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
+                ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
+        } else {
+            $operatorIds = $user->operators()->pluck('operators.id');
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
+                ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
+        }
+
+        return view('admin.meter-readings.bulk-create', compact('generationUnits'));
+    }
+
+    /**
+     * جلب المشتركين للكشف الجماعي (AJAX)
+     */
+    public function bulkCreateFetch(Request $request): JsonResponse
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $request->validate([
+            'generation_unit_id' => 'required_without:box_number|nullable|exists:generation_units,id',
+            'box_number' => 'required_without:generation_unit_id|nullable|string',
+            'reading_date' => 'required|date',
+        ]);
+
+        $query = Subscriber::with('generationUnits')
+            ->where('subscription_status', 1); // نشطين فقط
+
+        if ($request->filled('generation_unit_id')) {
+            $query->whereHas('generationUnits', fn($q) => $q->where('generation_units.id', $request->generation_unit_id));
+        }
+
+        if ($request->filled('box_number')) {
+            $query->where('box_number', $request->box_number);
+        }
+
+        $subscribers = $query->orderBy('box_number')->orderBy('subscription_number')->get();
+
+        $readingDate = $request->reading_date;
+        $rows = [];
+        $seq = 1;
+        $datePrefix = date('Ymd', strtotime($readingDate)) . '-';
+
+        foreach ($subscribers as $sub) {
+            $lastReading = MeterReading::getLastReadingForSubscriber($sub->id);
+
+            // تخطي المشتركين اللي عندهم قراءة بنفس التاريخ أو بعده
+            if ($lastReading && $lastReading->reading_date->format('Y-m-d') >= $readingDate) {
+                continue;
+            }
+
+            $rows[] = [
+                'subscriber_id' => $sub->id,
+                'reading_number' => $datePrefix . str_pad($seq++, 5, '0', STR_PAD_LEFT),
+                'box_number' => $sub->box_number ?? '',
+                'subscription_number' => $sub->subscription_number,
+                'subscriber_name' => $sub->subscriber_name,
+                'meter_number' => $sub->meter_number ?? '',
+                'previous_reading' => $lastReading ? (float) $lastReading->current_reading : (float) ($sub->opening_reading ?? 0),
+                'previous_reading_date' => $lastReading ? $lastReading->reading_date->format('Y-m-d') : null,
+            ];
+        }
+
+        return response()->json(['success' => true, 'rows' => $rows, 'count' => count($rows)]);
+    }
+
+    /**
+     * حفظ القراءات الجماعية
+     */
+    public function bulkCreateStore(Request $request): JsonResponse
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $request->validate([
+            'readings' => 'required|array|min:1',
+            'readings.*.subscriber_id' => 'required|exists:subscribers,id',
+            'readings.*.current_reading' => 'required|numeric|min:0',
+            'readings.*.reading_date' => 'required|date|before_or_equal:today',
+        ]);
+
+        $saved = 0;
+        $errors = [];
+
+        DB::transaction(function () use ($request, &$saved, &$errors) {
+            foreach ($request->readings as $i => $row) {
+                try {
+                    $subscriber = Subscriber::find($row['subscriber_id']);
+                    if (!$subscriber || $subscriber->subscription_status != 1) {
+                        $errors[] = "صف " . ($i + 1) . ": المشترك غير نشط";
+                        continue;
+                    }
+
+                    $lastReading = MeterReading::getLastReadingForSubscriber($subscriber->id);
+                    $previousReading = $lastReading ? (float) $lastReading->current_reading : (float) ($subscriber->opening_reading ?? 0);
+                    $currentReading = (float) $row['current_reading'];
+                    $consumption = $currentReading - $previousReading;
+
+                    // حساب فترة الاستهلاك
+                    $periodDays = 1;
+                    if ($lastReading && $lastReading->reading_date) {
+                        $periodDays = max(1, $lastReading->reading_date->diffInDays($row['reading_date']));
+                    }
+
+                    $readingNumber = MeterReading::generateReadingNumber($subscriber->id);
+
+                    MeterReading::create([
+                        'reading_number' => $readingNumber,
+                        'subscriber_id' => $subscriber->id,
+                        'meter_number' => $subscriber->meter_number ?? '',
+                        'previous_reading' => $previousReading,
+                        'current_reading' => $currentReading,
+                        'consumption_kwh' => $consumption,
+                        'reading_date' => $row['reading_date'],
+                        'consumption_period_days' => $periodDays,
+                        'reading_status' => MeterReading::determineReadingStatus($consumption),
+                        'action_status' => MeterReading::ACTION_STATUS_PENDING,
+                        'created_by' => auth()->id(),
+                    ]);
+
+                    $saved++;
+                } catch (\Exception $e) {
+                    $errors[] = "صف " . ($i + 1) . ": " . $e->getMessage();
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'saved' => $saved,
+            'errors' => $errors,
+            'message' => "تم حفظ {$saved} قراءة بنجاح" . (count($errors) > 0 ? " ({" . count($errors) . "} أخطاء)" : ''),
+        ]);
+    }
+
+    /**
+     * تصدير بيانات الكشف إلى Excel
+     */
+    public function bulkCreateExport(Request $request)
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $rows = $request->input('rows', []);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setRightToLeft(true);
+
+        $headers = ['رقم القراءة', 'رقم الصندوق', 'رقم الاشتراك', 'اسم المشترك', 'القراءة السابقة', 'تاريخها', 'القراءة الحالية', 'تاريخها', 'الاستهلاك'];
+        $columns = range('A', 'I');
+
+        foreach ($headers as $idx => $header) {
+            $cell = $columns[$idx] . '1';
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        $row = 2;
+        $totalConsumption = 0;
+        foreach ($rows as $r) {
+            $consumption = ((float)($r['current_reading'] ?? 0)) - ((float)($r['previous_reading'] ?? 0));
+            $totalConsumption += max(0, $consumption);
+
+            $sheet->setCellValue('A' . $row, $r['reading_number'] ?? '');
+            $sheet->setCellValue('B' . $row, $r['box_number'] ?? '');
+            $sheet->setCellValue('C' . $row, $r['subscription_number'] ?? '');
+            $sheet->setCellValue('D' . $row, $r['subscriber_name'] ?? '');
+            $sheet->setCellValue('E' . $row, $r['previous_reading'] ?? 0);
+            $sheet->setCellValue('F' . $row, $r['previous_reading_date'] ?? '');
+            $sheet->setCellValue('G' . $row, $r['current_reading'] ?? '');
+            $sheet->setCellValue('H' . $row, $r['reading_date'] ?? '');
+            $sheet->setCellValue('I' . $row, $consumption > 0 ? $consumption : '');
+
+            foreach ($columns as $col) {
+                $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+            $row++;
+        }
+
+        // صف الإجمالي
+        $sheet->setCellValue('H' . $row, 'إجمالي الاستهلاك');
+        $sheet->setCellValue('I' . $row, $totalConsumption);
+        $sheet->getStyle('H' . $row . ':I' . $row)->getFont()->setBold(true);
+
+        foreach ($columns as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'كشف_قراءات_' . date('Y-m-d_His') . '.xlsx';
+        $tempPath = storage_path('app/temp/' . $fileName);
+        if (!file_exists(storage_path('app/temp'))) mkdir(storage_path('app/temp'), 0755, true);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+    }
+
     public function getLastReading(Request $request): JsonResponse
     {
         $subscriberId = $request->input('subscriber_id');
@@ -574,8 +1001,15 @@ class MeterReadingController extends Controller
             ]);
         }
 
-        $lastReading = MeterReading::getLastReadingForSubscriber($subscriberId);
-        
+        $excludeId = (int) $request->input('exclude_id', 0);
+        $query = MeterReading::where('subscriber_id', $subscriberId)
+            ->orderBy('reading_date', 'desc')
+            ->orderBy('id', 'desc');
+        if ($excludeId > 0) {
+            $query->where('id', '!=', $excludeId);
+        }
+        $lastReading = $query->first();
+
         return response()->json([
             'success' => true,
             'last_reading' => $lastReading ? [
