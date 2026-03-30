@@ -874,6 +874,21 @@
                         </td>
                         <td style="color:#3b82f6; font-size:13px">{{ number_format($eInvAmt, 2) }} ₪</td>
                     </tr>
+                    @if($eDiscount > 0)
+                    @php
+                        $discountValue = (float)$invoice->consumption_kwh * (float)$invoice->price_per_kwh * ($eDiscount / 100);
+                    @endphp
+                    <tr class="row-success">
+                        <td>
+                            <span class="step-label" style="background:#bbf7d0;color:#16a34a">%</span>
+                            قيمة الخصم ({{ number_format($eDiscount, 0) }}%)
+                            @if($isEmployee)
+                                <div class="cell-desc">خصم موظف شركة</div>
+                            @endif
+                        </td>
+                        <td style="color:#16a34a">-{{ number_format($discountValue, 2) }} ₪</td>
+                    </tr>
+                    @endif
                     <tr class="@if($ePrevBal > 0) row-danger @elseif($ePrevBal < 0) row-success @endif">
                         <td>
                             <span class="step-label">4</span>
