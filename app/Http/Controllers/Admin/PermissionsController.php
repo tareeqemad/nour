@@ -200,13 +200,9 @@ class PermissionsController extends Controller
                 abort(403, 'لا يوجد مشغل مرتبط بك.');
             }
 
-            // المشغل لا يستطيع منح نفسه صلاحيات
-            if ($target->id === $actor->id) {
-                abort(403, 'لا يمكنك منح نفسك صلاحيات.');
-            }
-
-            if (! $target->isEmployee() && ! $target->isTechnician()) {
-                abort(403, 'يمكنك منح صلاحيات للموظفين والفنيين فقط.');
+            // المشغل يستطيع إدارة صلاحياته وصلاحيات موظفيه/فنييه
+            if ($target->id !== $actor->id && ! $target->isEmployee() && ! $target->isTechnician()) {
+                abort(403, 'يمكنك منح صلاحيات لنفسك وللموظفين والفنيين فقط.');
             }
 
             // لازم يكون تابع لنفس المشغل
@@ -269,6 +265,9 @@ class PermissionsController extends Controller
             $groupedUsers['company_owners'] = $users;
 
         } elseif ($authUser->isCompanyOwner()) {
+
+            // إضافة المشغل نفسه في القائمة
+            $groupedUsers['company_owners'] = collect([$authUser]);
 
             if ($operator) {
                 $users = User::query()
