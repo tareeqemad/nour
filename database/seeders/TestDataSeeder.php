@@ -15,33 +15,14 @@ class TestDataSeeder extends Seeder
     {
         $this->command->info('بدء إنشاء بيانات الاختبار...');
 
-        // إنشاء مشغل لـ op_nour1
-        $nour1User = User::where('username', 'op_nour1')->first();
-        if ($nour1User) {
-            Operator::updateOrCreate(
-                ['owner_id' => $nour1User->id],
-                [
-                    'name'               => 'مشغل نور 1',
-                    'owner_id'           => $nour1User->id,
-                    'owner_name'         => $nour1User->name,
-                    'owner_id_number'    => '100000001',
-                    'operator_id_number' => '200000001',
-                    'status'             => 'active',
-                    'is_approved'        => true,
-                    'profile_completed'  => true,
-                ]
-            );
-            $this->command->info("✓ مشغل نور 1 (op_nour1)");
-        }
+        $nourUser = User::where('username', 'op_nour')->first();
 
-        $companyOwnerUser = User::where('username', 'op_nour1')->first();
-
-        if (!$companyOwnerUser) {
-            $this->command->error('يوزر op_nour1 غير موجود، يجب تشغيل UserSeeder أولاً!');
+        if (!$nourUser) {
+            $this->command->error('يوزر op_nour غير موجود، يجب تشغيل UserSeeder أولاً!');
             return;
         }
 
-        // الثوابت
+        // ===== الثوابت =====
         $governorates = ConstantsHelper::get(1);
         $cities       = ConstantsHelper::get(20);
 
@@ -58,48 +39,47 @@ class TestDataSeeder extends Seeder
             return;
         }
 
-        $statusActiveId                     = ConstantsHelper::get(15)->where('code', 'ACTIVE')->first()?->id;
-        $operationSameOwnerId               = ConstantsHelper::get(2)->where('code', 'SAME_OWNER')->first()?->id;
-        $syncAvailableId                    = ConstantsHelper::get(16)->where('code', 'AVAILABLE')->first()?->id;
-        $complianceCompliantId              = ConstantsHelper::get(14)->where('code', 'COMPLIANT')->first()?->id;
-        $generatorStatusActiveId            = ConstantsHelper::get(3)->where('code', 'ACTIVE')->first()?->id;
-        $engineTypePerkinsId                = ConstantsHelper::get(4)->where('code', 'PERKINS')->first()?->id;
-        $injectionSystemMechanicalId        = ConstantsHelper::get(5)->where('code', 'MECHANICAL')->first()?->id;
+        $statusActiveId                        = ConstantsHelper::get(15)->where('code', 'ACTIVE')->first()?->id;
+        $operationSameOwnerId                  = ConstantsHelper::get(2)->where('code', 'SAME_OWNER')->first()?->id;
+        $syncAvailableId                       = ConstantsHelper::get(16)->where('code', 'AVAILABLE')->first()?->id;
+        $complianceCompliantId                 = ConstantsHelper::get(14)->where('code', 'COMPLIANT')->first()?->id;
+        $generatorStatusActiveId               = ConstantsHelper::get(3)->where('code', 'ACTIVE')->first()?->id;
+        $engineTypePerkinsId                   = ConstantsHelper::get(4)->where('code', 'PERKINS')->first()?->id;
+        $injectionSystemMechanicalId           = ConstantsHelper::get(5)->where('code', 'MECHANICAL')->first()?->id;
         $measurementIndicatorAvailableWorkingId = ConstantsHelper::get(6)->where('code', 'AVAILABLE_WORKING')->first()?->id;
-        $technicalConditionGoodId           = ConstantsHelper::get(7)->where('code', 'GOOD')->first()?->id;
-        $controlPanelTypeDeepSeaId          = ConstantsHelper::get(8)->where('code', 'DEEP_SEA')->first()?->id;
-        $controlPanelStatusWorkingId        = ConstantsHelper::get(9)->where('code', 'WORKING')->first()?->id;
+        $technicalConditionGoodId              = ConstantsHelper::get(7)->where('code', 'GOOD')->first()?->id;
+        $controlPanelTypeDeepSeaId             = ConstantsHelper::get(8)->where('code', 'DEEP_SEA')->first()?->id;
+        $controlPanelStatusWorkingId           = ConstantsHelper::get(9)->where('code', 'WORKING')->first()?->id;
 
-        // إنشاء مشغل اختباري
+        // ===== 1. المشغل: مشغل نور غزة 1 =====
         $operator = Operator::updateOrCreate(
-            ['name' => 'وحدة التوليد الاختبارية'],
+            ['owner_id' => $nourUser->id],
             [
-                'name'                => 'وحدة التوليد الاختبارية',
-                'owner_id'            => $companyOwnerUser->id,
-                'owner_name'          => $companyOwnerUser->name,
-                'owner_id_number'     => '123456789',
-                'operator_id_number'  => '987654321',
-                'status'              => 'active',
-                'is_approved'         => true,
-                'profile_completed'   => true,
+                'name'               => 'مشغل نور غزة 1',
+                'owner_id'           => $nourUser->id,
+                'owner_name'         => $nourUser->name,
+                'owner_id_number'    => '100000001',
+                'operator_id_number' => '200000001',
+                'status'             => 'active',
+                'is_approved'        => true,
+                'profile_completed'  => true,
             ]
         );
+        $this->command->info("✓ المشغل: {$operator->name} (op_nour)");
 
-        $this->command->info("✓ المشغل: {$operator->name}");
-
-        // إنشاء وحدة توليد
+        // ===== 2. وحدة التوليد =====
         $governorateCode = $middleGovernorate->code;
         $cityCode        = $middleCity->code;
         $unitNumber      = GenerationUnit::getNextUnitNumberByLocation($governorateCode, $cityCode);
         $unitCode        = "GU-{$governorateCode}-{$cityCode}-{$unitNumber}";
 
         $generationUnit = GenerationUnit::updateOrCreate(
-            ['unit_code' => $unitCode],
+            ['operator_id' => $operator->id, 'name' => 'وحدة توليد نور غزة'],
             [
                 'operator_id'                       => $operator->id,
                 'unit_code'                         => $unitCode,
                 'unit_number'                       => $unitNumber,
-                'name'                              => 'وحدة التوليد الاختبارية',
+                'name'                              => 'وحدة توليد نور غزة',
                 'generators_count'                  => 1,
                 'status_id'                         => $statusActiveId,
                 'owner_name'                        => $operator->owner_name,
@@ -108,10 +88,10 @@ class TestDataSeeder extends Seeder
                 'operator_id_number'                => $operator->operator_id_number,
                 'phone'                             => '0598888888',
                 'phone_alt'                         => '0598888889',
-                'email'                             => 'test@operator.ps',
+                'email'                             => 'nour@operator.ps',
                 'governorate_id'                    => $middleGovernorate->id,
                 'city_id'                           => $middleCity->id,
-                'detailed_address'                  => 'الوسطى - دير البلح - شارع الاختبار - مبنى رقم 1',
+                'detailed_address'                  => 'الوسطى - دير البلح',
                 'latitude'                          => 31.3547,
                 'longitude'                         => 34.3088,
                 'total_capacity'                    => 250,
@@ -122,20 +102,19 @@ class TestDataSeeder extends Seeder
                 'environmental_compliance_status_id'=> $complianceCompliantId,
             ]
         );
-
         $this->command->info("✓ وحدة التوليد: {$unitCode}");
 
-        // إنشاء مولد
+        // ===== 3. المولد =====
         $generatorNumber = Generator::getNextGeneratorNumber($generationUnit->id);
 
         Generator::updateOrCreate(
-            ['generator_number' => $generatorNumber],
+            ['generation_unit_id' => $generationUnit->id, 'name' => 'مولد نور غزة'],
             [
                 'operator_id'              => $operator->id,
                 'generation_unit_id'       => $generationUnit->id,
-                'name'                     => 'مولد الاختبار',
+                'name'                     => 'مولد نور غزة',
                 'generator_number'         => $generatorNumber,
-                'description'              => 'مولد ديزل للاختبار',
+                'description'              => 'مولد ديزل',
                 'status_id'                => $generatorStatusActiveId,
                 'capacity_kva'             => 250,
                 'power_factor'             => 0.8,
@@ -158,8 +137,8 @@ class TestDataSeeder extends Seeder
                 'fuel_tanks_count'         => 0,
             ]
         );
-
         $this->command->info("✓ المولد: {$generatorNumber}");
+
         $this->command->info('تم إنشاء بيانات الاختبار بنجاح!');
     }
 }

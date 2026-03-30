@@ -437,6 +437,7 @@
     <script>
         (function() {
             const listUrl = @json(route('admin.subscribers.index'));
+            const allUnits = @json(($generationUnits ?? collect())->map(fn($u) => ['id' => $u->id, 'operator_id' => $u->operator_id, 'label' => $u->name . ' (' . $u->unit_code . ')'])->values());
             const $wrap = $('#subscribersListWrap');
             const $operatorFilter = $('#operatorFilter');
             const $searchInput = $('#searchInput');
@@ -486,8 +487,9 @@
                 $.ajax({
                     url: listUrl,
                     method: 'GET',
+                    dataType: 'json',
                     data: currentParams({ page: 1 }),
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function(res) {
                         if (res.success) {
                             $wrap.html(res.html);
@@ -502,7 +504,8 @@
                             $clearBtn.toggleClass('d-none', !hasAny);
                         }
                     },
-                    error: function() {
+                    error: function(xhr) {
+                        console.error('Search error:', xhr.status, xhr.responseText);
                         alert('حدث خطأ أثناء تحميل البيانات');
                     },
                     complete: function() {
@@ -524,8 +527,9 @@
                 $.ajax({
                     url: listUrl,
                     method: 'GET',
+                    dataType: 'json',
                     data: currentParams({ page: nextPage }),
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function(res) {
                         if (res.success && res.append) {
                             $('#subscribersBody').append(res.html);
@@ -575,9 +579,9 @@
 
                 if (!operatorId) {
                     // المشغل = "كل المشغلين": أعِد كل الوحدات المحلية
-                    @foreach($generationUnits ?? [] as $unit)
-                        $unitSelect.append('<option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>');
-                    @endforeach
+                    allUnits.forEach(function(u) {
+                        $unitSelect.append($('<option>', { value: u.id, text: u.label, 'data-operator-id': u.operator_id }));
+                    });
                     return;
                 }
 
@@ -642,9 +646,9 @@
                 // أعِد ملء كل الوحدات من جديد
                 var $unitSelect = $('#generationUnitFilter');
                 $unitSelect.empty().append('<option value="">الكل</option>');
-                @foreach($generationUnits ?? [] as $unit)
-                    $unitSelect.append('<option value="{{ $unit->id }}" data-operator-id="{{ $unit->operator_id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>');
-                @endforeach
+                allUnits.forEach(function(u) {
+                    $unitSelect.append($('<option>', { value: u.id, text: u.label, 'data-operator-id': u.operator_id }));
+                });
                 @endif
                 $clearBtn.addClass('d-none');
                 loadSubscribers();

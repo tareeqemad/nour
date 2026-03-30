@@ -91,10 +91,10 @@ class UserSeeder extends Seeder
             ],
             // Company Owners
             [
-                'email'    => 'op_nour1@gazarased.com',
-                'name'     => 'مشغل نور 1',
-                'name_en'  => 'Nour Operator 1',
-                'username' => 'op_nour1',
+                'email'    => 'op_nour@gazarased.com',
+                'name'     => 'مشغل نور غزة 1',
+                'name_en'  => 'Nour Gaza Operator 1',
+                'username' => 'op_nour',
                 'phone'    => null,
                 'password' => \Illuminate\Support\Facades\Hash::make('12345678'),
                 'role'     => Role::CompanyOwner,

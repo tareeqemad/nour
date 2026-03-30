@@ -56,11 +56,56 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('minimum_charge_rules', function (Blueprint $table) {
-            $table->dropForeign(['operator_id']);
-            $table->dropUnique(['operator_id', 'ampere', 'phase_type']);
-            $table->dropColumn('operator_id');
-            $table->unique(['ampere', 'phase_type']);
-        });
+        // حذف الـ foreign key بـ raw SQL (آمن لو مش موجود)
+        $fkExists = DB::select("
+            SELECT COUNT(*) as cnt FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'minimum_charge_rules'
+              AND CONSTRAINT_NAME = 'minimum_charge_rules_operator_id_foreign'
+              AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+        ");
+        if ($fkExists[0]->cnt > 0) {
+            DB::statement('ALTER TABLE minimum_charge_rules DROP FOREIGN KEY minimum_charge_rules_operator_id_foreign');
+        }
+
+        // حذف الـ unique index الجديد
+        $uxExists = DB::select("
+            SELECT COUNT(*) as cnt FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'minimum_charge_rules'
+              AND CONSTRAINT_NAME = 'minimum_charge_rules_operator_id_ampere_phase_type_unique'
+        ");
+        if ($uxExists[0]->cnt > 0) {
+            DB::statement('ALTER TABLE minimum_charge_rules DROP INDEX minimum_charge_rules_operator_id_ampere_phase_type_unique');
+        }
+
+        if (Schema::hasColumn('minimum_charge_rules', 'operator_id')) {
+            // نبقي فقط سجل واحد لكل ampere+phase_type (أقل id)
+            DB::statement("
+                DELETE FROM minimum_charge_rules
+                WHERE id NOT IN (
+                    SELECT min_id FROM (
+                        SELECT MIN(id) as min_id FROM minimum_charge_rules GROUP BY ampere, phase_type
+                    ) as keeper
+                )
+            ");
+
+            Schema::table('minimum_charge_rules', function (Blueprint $table) {
+                $table->dropColumn('operator_id');
+            });
+        }
+
+        // إعادة الـ unique القديم
+        $oldUxExists = DB::select("
+            SELECT COUNT(*) as cnt FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'minimum_charge_rules'
+              AND CONSTRAINT_NAME = 'minimum_charge_rules_ampere_phase_type_unique'
+        ");
+        if ($oldUxExists[0]->cnt == 0) {
+            Schema::table('minimum_charge_rules', function (Blueprint $table) {
+                $table->unique(['ampere', 'phase_type']);
+            });
+        }
     }
 };

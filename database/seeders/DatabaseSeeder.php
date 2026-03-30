@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             TechnicianCivilDefenseSeeder::class, // يوزر فني + يوزر دفاع مدني
             TestUsersSeeder::class,
             CreateDefaultOperatorRolesSeeder::class, // إنشاء أدوار افتراضية للمشغلين
+            MinimumChargeRuleSeeder::class, // قواعد الحد الأدنى لكل مشغل
             // Note: OperatorSeeder, AuthorizedPhoneSeeder, ComplaintSuggestionSeeder, MessageSeeder are not called
             // Only basic seeders (permissions, roles, constants, settings, messages, users) are seeded
         ]);
