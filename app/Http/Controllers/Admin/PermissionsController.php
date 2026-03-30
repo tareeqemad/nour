@@ -108,6 +108,15 @@ class PermissionsController extends Controller
         $actor->loadMissing(['permissions', 'revokedPermissions', 'roleModel.permissions']);
 
         $rolePermissionIds = $actor->roleModel?->permissions->pluck('id')->toArray() ?? [];
+
+        // إذا لم يكن للمستخدم role_id ولكن لديه role enum، نجلب صلاحيات الدور من جدول roles
+        if (empty($rolePermissionIds) && !$actor->role_id && $actor->role) {
+            $roleRecord = Role::where('name', $actor->role->value)->first();
+            if ($roleRecord) {
+                $rolePermissionIds = $roleRecord->permissions()->pluck('permissions.id')->toArray();
+            }
+        }
+
         $directPermissionIds = $actor->permissions->pluck('id')->toArray();
         $revokedPermissionIds = $actor->revokedPermissions->pluck('id')->toArray();
 
@@ -673,6 +682,15 @@ class PermissionsController extends Controller
         $direct = $user->permissions->pluck('id')->toArray();
         $role = $user->roleModel?->permissions->pluck('id')->toArray() ?? [];
         $revoked = $user->revokedPermissions->pluck('id')->toArray();
+
+        // إذا لم يكن للمستخدم role_id ولكن لديه role enum، نجلب صلاحيات الدور من جدول roles
+        if (empty($role) && !$user->role_id && $user->role) {
+            $roleName = $user->role->value;
+            $roleRecord = Role::where('name', $roleName)->first();
+            if ($roleRecord) {
+                $role = $roleRecord->permissions()->pluck('permissions.id')->toArray();
+            }
+        }
 
         // CompanyOwner: رجّع فقط اللي ضمن السقف
         if ($authUser->isCompanyOwner()) {
