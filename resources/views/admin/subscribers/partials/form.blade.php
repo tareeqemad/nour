@@ -86,24 +86,6 @@
     </div>
 
     <div class="col-md-6">
-        <label class="form-label fw-semibold">المحافظة</label>
-        @php
-            $govValue = old('governorate_name', $isEdit ? $subscriber->governorate_name : ($defaultGovernorate ?? ''));
-            $govDisplayName = '';
-            if (!empty($govValue) && is_numeric($govValue)) {
-                $govDetails = \App\Helpers\ConstantsHelper::get(1);
-                $govMatch = $govDetails->firstWhere('value', (string) $govValue);
-                $govDisplayName = $govMatch ? $govMatch->label : $govValue;
-            } else {
-                $govDisplayName = $govValue;
-            }
-        @endphp
-        <input type="hidden" name="governorate_name" value="{{ $govValue }}">
-        <input type="text" class="form-control" value="{{ $govDisplayName }}" readonly
-               style="background-color:#f8f9fa;cursor:not-allowed;">
-    </div>
-
-    <div class="col-md-6">
         <label class="form-label fw-semibold">رقم الصندوق</label>
         <input type="text" name="box_number" class="form-control @error('box_number') is-invalid @enderror"
                value="{{ old('box_number', $isEdit ? $subscriber->box_number : '') }}" maxlength="4"

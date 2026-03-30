@@ -112,10 +112,10 @@
                         </div>
                     @endif
 
-                    @if($subscriber->governorate_name)
+                    @if($subscriber->governorate_display_name !== '-')
                         <div class="subscriber-info-item">
                             <span class="label"><i class="bi bi-map me-1"></i>المحافظة</span>
-                            <span class="value">{{ $subscriber->governorate_name }}</span>
+                            <span class="value">{{ $subscriber->governorate_display_name }}</span>
                         </div>
                     @endif
 
