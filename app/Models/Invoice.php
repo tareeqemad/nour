@@ -337,7 +337,7 @@ class Invoice extends Model
 
         $seq = \DB::selectOne('SELECT LAST_INSERT_ID() AS seq')->seq;
 
-        $invoiceNumber = sprintf('%s-%s%s-%05d', $prefix, $year, $month, (int) $seq);
+        $invoiceNumber = sprintf('%s-%s%s-%07d', $prefix, $year, $month, (int) $seq);
 
         if (static::where('invoice_number', $invoiceNumber)->exists()) {
             throw new \RuntimeException('Duplicate invoice number generated: ' . $invoiceNumber);
