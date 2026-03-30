@@ -301,7 +301,7 @@
                         @if($u->hasPermission('subscriber_accounts.view'))
                         <li class="slide"><a href="{{ route('admin.subscriber-account.index') }}" class="side-menu__item {{ $isActive('admin.subscriber-account.*') }}">حساب المشترك</a></li>
                         @endif
-                        @if($u->isSuperAdmin() || $u->isAdmin())
+                        @if($u->isSuperAdmin() || $u->isAdmin() || $u->isCompanyOwner() || $u->hasPermission('invoice_reports.view'))
                         <li class="slide"><a href="{{ route('admin.invoice-reports.index') }}" class="side-menu__item {{ $isActive('admin.invoice-reports.*') }}">تقارير الفوترة</a></li>
                         @endif
                         @if($u->isSuperAdmin() || $u->isAdmin() || $u->isCompanyOwner() || $u->hasPermission('minimum_charge_rules.view'))

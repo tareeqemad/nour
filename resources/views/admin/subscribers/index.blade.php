@@ -380,16 +380,19 @@
                                             <th class="text-center">الاسم</th>
                                             <th class="text-center">الموبايل</th>
                                             <th class="text-center">العنوان</th>
+                                            <th class="text-center">الصندوق</th>
                                             <th class="text-center">العداد</th>
                                             <th class="text-center">الأمبير</th>
+                                            <th class="text-center">القراءة الافتتاحية</th>
                                             <th class="text-center">التصنيف</th>
                                             <th class="text-center">الفاز</th>
                                             <th class="text-center">الخدمة</th>
                                             <th class="text-center">موظف</th>
+                                            <th class="text-center">تاريخ الاشتراك</th>
                                         </tr>
                                     </thead>
                                     <tbody id="validRowsBody">
-                                        <tr><td colspan="11" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
+                                        <tr><td colspan="14" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -806,7 +809,7 @@
             function renderValidRows() {
                 const $tbody = $('#validRowsBody');
                 if (validRows.length === 0) {
-                    $tbody.html('<tr><td colspan="11" class="text-center text-muted py-4">لا توجد بيانات صالحة</td></tr>');
+                    $tbody.html('<tr><td colspan="14" class="text-center text-muted py-4">لا توجد بيانات صالحة</td></tr>');
                     return;
                 }
 
@@ -818,12 +821,15 @@
                         <td>${row.name || '-'}</td>
                         <td dir="ltr">${row.phone || '-'}</td>
                         <td>${row.address || '-'}</td>
+                        <td>${row.box_number || '-'}</td>
                         <td>${row.meter_number || '-'}</td>
                         <td>${row.ampere_label || '-'}</td>
+                        <td>${row.opening_reading != null ? row.opening_reading : '-'}</td>
                         <td><span class="badge bg-secondary">${row.category_label || '-'}</span></td>
                         <td><span class="badge bg-info">${row.phase_label || '-'}</span></td>
                         <td>${row.service_label || '-'}</td>
                         <td>${row.employee_label || 'لا'}</td>
+                        <td>${row.subscription_date || '-'}</td>
                     </tr>`;
                 });
                 $tbody.html(html);
