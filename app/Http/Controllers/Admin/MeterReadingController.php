@@ -786,7 +786,7 @@ class MeterReadingController extends Controller
 
                     // حساب فترة الاستهلاك
                     $previousDate = $lastReading ? $lastReading->reading_date : $subscriber->subscription_date;
-                    $periodDays = $previousDate ? max(1, \Carbon\Carbon::parse($previousDate)->diffInDays(\Carbon\Carbon::parse($row['reading_date']))) : 1;
+                    $periodDays = $previousDate ? \Carbon\Carbon::parse($previousDate)->diffInDays(\Carbon\Carbon::parse($row['reading_date'])) + 1 : 1;
 
                     $readingNumber = MeterReading::generateReadingNumber($subscriber->id);
 

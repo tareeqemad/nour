@@ -138,9 +138,9 @@ class UpdateMeterReadingRequest extends FormRequest
             }
 
             if ($previousDate && $readingDate) {
-                $days = \Carbon\Carbon::parse($previousDate)->diffInDays(\Carbon\Carbon::parse($readingDate));
+                $days = \Carbon\Carbon::parse($previousDate)->diffInDays(\Carbon\Carbon::parse($readingDate)) + 1;
                 $this->merge([
-                    'consumption_period_days' => max(1, $days),
+                    'consumption_period_days' => $days,
                     'previous_reading_date' => $previousDate instanceof \Carbon\Carbon ? $previousDate->format('Y-m-d') : $previousDate,
                 ]);
             } else {
