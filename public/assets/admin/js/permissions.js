@@ -684,7 +684,7 @@
         if (roleId) data.role_id = roleId;
         if (search) data.search = search;
 
-        $.ajax({
+        return $.ajax({
             url: routes.availablePermissions || (window.PERM && window.PERM.routes && window.PERM.routes.availablePermissions) || '/admin/permissions/available',
             method: 'POST',
             data: data,
@@ -708,7 +708,7 @@
             })
             .fail(xhr => {
                 let errorMsg = 'حدث خطأ أثناء تحميل الصلاحيات المتاحة';
-                
+
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMsg = xhr.responseJSON.message;
                 } else if (xhr.status === 403) {
@@ -716,7 +716,7 @@
                 } else if (xhr.status === 500) {
                     errorMsg = 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً';
                 }
-                
+
                 flash('danger', errorMsg);
             })
             .always(() => setLoading(false));
@@ -731,13 +731,13 @@
 
         setLoading(true);
 
-        // تحميل الصلاحيات المتاحة بناءً على المستخدم المختار
-        loadAvailablePermissions(userId, null, '');
-
-        $.ajax({
-            url: userPermissionsUrl(userId),
-            method: 'GET',
-            dataType: 'json'
+        // تحميل الشجرة أولاً ثم صلاحيات المستخدم لتفادي مشكلة التسابق
+        loadAvailablePermissions(userId, null, '').then(() => {
+            return $.ajax({
+                url: userPermissionsUrl(userId),
+                method: 'GET',
+                dataType: 'json'
+            });
         })
             .done(res => {
                 if (!res.success) {
@@ -761,7 +761,7 @@
             })
             .fail(xhr => {
                 let errorMsg = 'حدث خطأ أثناء تحميل الصلاحيات';
-                
+
                 if (xhr.responseJSON) {
                     if (xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
@@ -778,7 +778,7 @@
                 } else if (xhr.status === 500) {
                     errorMsg = 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً';
                 }
-                
+
                 flash('danger', errorMsg);
                 resetUserContextUI();
             })
