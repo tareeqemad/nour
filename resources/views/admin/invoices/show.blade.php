@@ -260,6 +260,21 @@
                                                 </th>
                                                 <td class="text-end fw-semibold text-primary">{{ number_format($eInvAmt, 2) }} ₪</td>
                                             </tr>
+                                            @if($eDiscount > 0)
+                                            @php
+                                                $discountValue = (float)$invoice->consumption_kwh * (float)$invoice->price_per_kwh * ($eDiscount / 100);
+                                            @endphp
+                                            <tr class="table-success">
+                                                <th class="text-muted">
+                                                    <span class="badge bg-success me-1"><i class="bi bi-percent"></i></span>
+                                                    قيمة الخصم ({{ number_format($eDiscount, 0) }}%)
+                                                    @if($showIsEmployee)
+                                                        <small class="d-block text-muted fw-normal">خصم موظف شركة</small>
+                                                    @endif
+                                                </th>
+                                                <td class="text-end fw-semibold text-success">-{{ number_format($discountValue, 2) }} ₪</td>
+                                            </tr>
+                                            @endif
                                             <tr class="{{ $ePrevBal > 0 ? 'table-danger' : ($ePrevBal < 0 ? 'table-success' : '') }}">
                                                 <th class="text-muted">
                                                     <span class="badge bg-secondary me-1">4</span>
