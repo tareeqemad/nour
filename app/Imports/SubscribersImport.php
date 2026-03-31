@@ -260,8 +260,8 @@ class SubscribersImport
         }
 
         // التحقق من رقم الصندوق
-        if (!empty($data['box_number']) && !preg_match('/^\d{4}$/', $data['box_number'])) {
-            $errors[] = 'رقم الصندوق يجب أن يكون 4 أرقام';
+        if (!empty($data['box_number']) && !preg_match('/^\d{1,4}$/', $data['box_number'])) {
+            $errors[] = 'رقم الصندوق يجب أن يكون من 1 إلى 4 أرقام';
         }
 
         // التحقق من تاريخ الطلب
