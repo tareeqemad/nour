@@ -284,17 +284,6 @@
                     <ul class="slide-menu child1" style="{{ $subsOpen ? 'display:block' : '' }}">
                         <li class="slide"><a href="{{ route('admin.subscribers.index') }}" class="side-menu__item {{ $isActive('admin.subscribers.index') }}">بيانات المشتركين</a></li>
                         <li class="slide"><a href="{{ route('admin.meter-readings.index') }}" class="side-menu__item {{ $isActive('admin.meter-readings.*') }}">قراءات العدادات</a></li>
-                        <li class="slide">
-                            <a href="{{ route('admin.meter-readings.index', ['reading_status' => 2, 'action_status' => 0]) }}" class="side-menu__item">
-                                القراءات غير الطبيعية
-                                @php
-                                    $abnormalCount = \App\Models\MeterReading::where('reading_status', 2)->where('action_status', 0)->count();
-                                @endphp
-                                @if($abnormalCount > 0)
-                                    <span class="badge bg-warning text-dark rounded-pill ms-1">{{ $abnormalCount }}</span>
-                                @endif
-                            </a>
-                        </li>
                         @can('viewAny', App\Models\Invoice::class)
                         <li class="slide"><a href="{{ route('admin.invoices.index') }}" class="side-menu__item {{ $isActive('admin.invoices.*') }}">الفوترة والتحصيل</a></li>
                         @endcan
