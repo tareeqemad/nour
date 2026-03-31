@@ -486,8 +486,8 @@ class MeterReadingController extends Controller
                     'اعتماد قراءة العداد: ' . $reading->reading_number
                 );
 
-                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة
-                if (!$reading->invoice()->exists()) {
+                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة (بدون المحذوفة)
+                if (!$reading->invoice()->whereNull('invoices.deleted_at')->exists()) {
                     Invoice::createFromReading($reading, $user->id);
 
                     AuditLog::log(
@@ -588,7 +588,7 @@ class MeterReadingController extends Controller
                     ['action_status' => MeterReading::ACTION_STATUS_APPROVED],
                     'اعتماد قراءة (جماعي بالفلتر): ' . $reading->reading_number
                 );
-                if (!$reading->invoice()->exists()) {
+                if (!$reading->invoice()->whereNull('invoices.deleted_at')->exists()) {
                     Invoice::createFromReading($reading, $user->id);
                     $billedCount++;
                 }
