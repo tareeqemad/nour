@@ -120,7 +120,16 @@ class InvoiceController extends Controller
                 ->orderBy('subscription_number')->get();
         }
 
-        return view('admin.invoices.index', compact('invoices','operators','subscribers','currentOperator','canSelectOperator'));
+        $activeTariff = ElectricityTariffPrice::getActivePriceForDate(now());
+
+        return view('admin.invoices.index', compact(
+            'invoices',
+            'operators',
+            'subscribers',
+            'currentOperator',
+            'canSelectOperator',
+            'activeTariff'
+        ));
     }
 
     /**
@@ -502,21 +511,39 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Bulk issue all draft invoices
+     * Bulk issue selected draft invoices
      */
     public function bulkIssue(Request $request): JsonResponse
     {
+        $this->authorize('create', Invoice::class);
+
         $request->validate([
             'price_per_kwh' => 'required|numeric|min:0',
             'confirm_minimum_charge' => 'required|boolean',
+            'invoice_ids' => 'nullable|array',
+            'invoice_ids.*' => 'integer',
         ], [
             'price_per_kwh.required' => 'قيمة التعرفة مطلوبة.',
             'confirm_minimum_charge.required' => 'يجب إقرار الحد الأدنى.',
         ]);
 
+        $selectedIds = collect($request->input('invoice_ids', []))
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($selectedIds->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'يرجى تحديد فاتورة واحدة على الأقل للإصدار.',
+            ], 422);
+        }
+
         $user = auth()->user();
         $query = Invoice::where('invoice_status', Invoice::STATUS_DRAFT)
-            ->whereNotNull('meter_reading_id');
+            ->whereNotNull('meter_reading_id')
+            ->whereIn('id', $selectedIds->all());
 
         // Scope by operator for non-admin users
         if ($user->isCompanyOwner()) {
@@ -527,16 +554,15 @@ class InvoiceController extends Controller
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
         }
 
-        $drafts = $query->with(['subscriber', 'meterReading'])->lockForUpdate()->get();
-
-        if ($drafts->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'لا توجد فواتير مسودة للإصدار.']);
-        }
-
         $issuedCount = 0;
         $errors = [];
 
-        DB::transaction(function () use ($drafts, $request, &$issuedCount, &$errors) {
+        $matchedCount = 0;
+
+        DB::transaction(function () use ($query, $request, &$issuedCount, &$errors, &$matchedCount) {
+            $drafts = (clone $query)->with(['subscriber', 'meterReading'])->lockForUpdate()->get();
+            $matchedCount = $drafts->count();
+
             foreach ($drafts as $invoice) {
                 try {
                     // Skip if already issued by another user
@@ -609,6 +635,13 @@ class InvoiceController extends Controller
         });
 
         $message = "تم إصدار {$issuedCount} فاتورة بنجاح.";
+        if ($matchedCount === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لم يتم العثور على فواتير مسودة صالحة ضمن التحديد الحالي.',
+            ], 404);
+        }
+
         if (!empty($errors)) {
             $message .= " مع " . count($errors) . " أخطاء.";
         }

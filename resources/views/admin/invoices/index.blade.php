@@ -27,7 +27,7 @@
                         @endcan
                         --}}
                         @can('create', App\Models\Invoice::class)
-                            <button type="button" class="btn btn-success" id="bulkIssueBtn">
+                            <button type="button" class="btn btn-success" id="bulkIssueBtn" disabled>
                                 <i class="bi bi-check-all me-1"></i>
                                 إصدار الفواتير
                             </button>
@@ -137,14 +137,19 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="bi bi-check-all me-2"></i>إصدار الفواتير دفعة واحدة</h5>
+                <h5 class="modal-title"><i class="bi bi-check-all me-2"></i>إصدار الفواتير المحددة</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
+                    <div class="alert alert-info py-2 small" id="bulkSelectionSummary">
+                        سيتم إصدار <strong id="bulkSelectedCount">0</strong> فاتورة محددة.
+                    </div>
                     <label class="form-label fw-semibold">قيمة التعرفة (سعر الكيلوواط) <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" min="0" id="bulkPricePerKwh" class="form-control" placeholder="مثال: 0.75">
-                    <small class="form-text text-muted">سيتم تطبيق هذه التعرفة على جميع الفواتير</small>
+                    <input type="number" step="1" min="0" id="bulkPricePerKwh" class="form-control" placeholder="مثال: 1" value="{{ old('price_per_kwh', $activeTariff ? (int) round((float) $activeTariff->price_per_kwh) : '') }}">
+                    <small class="form-text text-muted">
+                        القيمة الافتراضية مأخوذة من التعرفة النشطة في شاشة التعرفة، ويمكن تعديلها قبل الإصدار
+                    </small>
                 </div>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="confirmMinCharge">
@@ -154,7 +159,7 @@
                 </div>
                 <div class="alert alert-warning small mb-0">
                     <i class="bi bi-exclamation-triangle me-1"></i>
-                    سيتم إصدار جميع فواتير المسودة دفعة واحدة. هذا الإجراء لا يمكن التراجع عنه.
+                    سيتم إصدار الفواتير التي حددتها فقط. هذا الإجراء لا يمكن التراجع عنه.
                 </div>
             </div>
             <div class="modal-footer">
@@ -216,10 +221,12 @@
     const $search    = $('#searchInput');
     const $searchBtn = $('#searchBtn');
     const $clearBtn  = $('#clearBtn');
+    const defaultBulkPricePerKwh = @json($activeTariff ? (string) ((int) round((float) $activeTariff->price_per_kwh)) : '');
 
     let nextPage = {{ $invoices->hasMorePages() ? 2 : 'null' }};
     let hasMore  = {{ $invoices->hasMorePages() ? 'true' : 'false' }};
     let isLoading = false;
+    const selectedInvoiceIds = new Set();
 
     $subFilter.select2({
         placeholder: 'اختر أو ابحث...', allowClear: true, dir: 'rtl',
@@ -227,6 +234,7 @@
     });
 
     $opFilter.on('change', function () {
+        clearSelection();
         loadSubscribersByOperator($(this).val());
         loadInvoices();
     });
@@ -267,9 +275,46 @@
         });
     }
 
+    function getSelectableInvoices() {
+        return $('.invoice-select-item');
+    }
+
+    function syncSelectionUI() {
+        const $items = getSelectableInvoices();
+
+        $items.each(function () {
+            const id = String($(this).data('invoice-id'));
+            $(this).prop('checked', selectedInvoiceIds.has(id));
+        });
+
+        const selectedCount = selectedInvoiceIds.size;
+        const checkedVisibleCount = $items.filter(':checked').length;
+        const allVisibleChecked = $items.length > 0 && checkedVisibleCount === $items.length;
+
+        $('#selectAllDrafts')
+            .prop('checked', allVisibleChecked)
+            .prop('indeterminate', checkedVisibleCount > 0 && !allVisibleChecked);
+
+        $('#bulkSelectedCount').text(selectedCount);
+        $('#selectedInvoicesSummary').text(
+            selectedCount > 0
+                ? `تم تحديد ${selectedCount} فاتورة للإصدار`
+                : 'لم يتم تحديد أي فاتورة للإصدار'
+        );
+        $('#clearSelectionBtn').toggleClass('d-none', selectedCount === 0);
+        $('#bulkIssueBtn').prop('disabled', selectedCount === 0);
+    }
+
+    function clearSelection() {
+        selectedInvoiceIds.clear();
+        syncSelectionUI();
+    }
+
     // تحميل الصفحة الأولى (يستبدل كل شيء)
     function loadInvoices() {
         if (isLoading) return;
+        selectedInvoiceIds.clear();
+        syncSelectionUI();
         isLoading = true;
         nextPage  = null;
         hasMore   = true;
@@ -288,6 +333,7 @@
                     nextPage = res.next_page;
                     if (!hasMore) $('#scrollLoader').remove();
                     $clearBtn.toggleClass('d-none', !hasFilter(params()));
+                    syncSelectionUI();
                     initTooltips($wrap[0]);
                 }
             },
@@ -316,6 +362,7 @@
                     hasMore  = res.has_more;
                     nextPage = res.next_page;
                     if (!hasMore) $loader.remove();
+                    syncSelectionUI();
                     initTooltips($('#invoicesBody')[0]);
                 }
             },
@@ -336,15 +383,37 @@
     $('.app-content, .main-content, .main-container').on('scroll', checkScroll);
     setInterval(checkScroll, 500);
 
+    $(document).on('change', '.invoice-select-item', function () {
+        const id = String($(this).data('invoice-id'));
+        if ($(this).is(':checked')) selectedInvoiceIds.add(id);
+        else selectedInvoiceIds.delete(id);
+        syncSelectionUI();
+    });
+
+    $(document).on('change', '#selectAllDrafts', function () {
+        const checked = $(this).is(':checked');
+        getSelectableInvoices().each(function () {
+            const id = String($(this).data('invoice-id'));
+            if (checked) selectedInvoiceIds.add(id);
+            else selectedInvoiceIds.delete(id);
+        });
+        syncSelectionUI();
+    });
+
+    $(document).on('click', '#clearSelectionBtn', function () {
+        clearSelection();
+    });
+
     // أحداث الفلاتر
-    $searchBtn.on('click', () => loadInvoices());
-    $search.on('keypress', e => { if (e.which === 13) loadInvoices(); });
-    $subFilter.on('change', () => loadInvoices());
-    $stFilter.on('change', () => loadInvoices());
-    $dfFilter.on('change', () => loadInvoices());
-    $dtFilter.on('change', () => loadInvoices());
+    $searchBtn.on('click', () => { clearSelection(); loadInvoices(); });
+    $search.on('keypress', e => { if (e.which === 13) { clearSelection(); loadInvoices(); } });
+    $subFilter.on('change', () => { clearSelection(); loadInvoices(); });
+    $stFilter.on('change', () => { clearSelection(); loadInvoices(); });
+    $dfFilter.on('change', () => { clearSelection(); loadInvoices(); });
+    $dtFilter.on('change', () => { clearSelection(); loadInvoices(); });
 
     $clearBtn.on('click', function () {
+        clearSelection();
         if (!$opFilter.prop('disabled')) $opFilter.val('');
         $subFilter.val(null).trigger('change.select2');
         $subFilter.find('option:not(:first)').remove();
@@ -354,12 +423,20 @@
 
     // تفعيل tooltips عند أول تحميل
     initTooltips();
+    syncSelectionUI();
 
     // === Bulk Issue ===
     $('#bulkIssueBtn').on('click', function() {
-        $('#bulkPricePerKwh').val('');
+        if (selectedInvoiceIds.size === 0) {
+            if (window.adminNotifications) window.adminNotifications.error('يرجى تحديد فاتورة واحدة على الأقل.');
+            else alert('يرجى تحديد فاتورة واحدة على الأقل.');
+            return;
+        }
+
+        $('#bulkPricePerKwh').val(defaultBulkPricePerKwh);
         $('#confirmMinCharge').prop('checked', false);
         $('#confirmBulkIssue').prop('disabled', true);
+        $('#bulkSelectedCount').text(selectedInvoiceIds.size);
         new bootstrap.Modal('#bulkIssueModal').show();
     });
 
@@ -384,10 +461,12 @@
                 _token: $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val(),
                 price_per_kwh: $('#bulkPricePerKwh').val(),
                 confirm_minimum_charge: 1,
+                invoice_ids: Array.from(selectedInvoiceIds),
             },
             success: function(res) {
                 bootstrap.Modal.getInstance('#bulkIssueModal').hide();
                 if (res.success) {
+                    clearSelection();
                     if (window.adminNotifications) window.adminNotifications.success(res.message);
                     else alert(res.message);
                     if (typeof loadList === 'function') loadList();
