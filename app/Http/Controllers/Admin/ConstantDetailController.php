@@ -80,12 +80,29 @@ class ConstantDetailController extends Controller
             ['table' => 'inspection_violation_cases', 'columns' => ['governorate_id']],
         ];
 
+        // جداول تخزن value بدل id (المشتركين والفوترة)
+        $valueTables = [
+            ['table' => 'subscribers', 'columns' => ['subscription_category', 'phase_type', 'subscription_status', 'service_type']],
+        ];
+
         $usedIn = [];
         foreach ($tables as $item) {
             foreach ($item['columns'] as $column) {
                 if (DB::table($item['table'])->where($column, $constantDetail->id)->exists()) {
                     $usedIn[] = $item['table'];
                     break;
+                }
+            }
+        }
+
+        // فحص الجداول التي تخزن value بدل id
+        if ($constantDetail->value !== null) {
+            foreach ($valueTables as $item) {
+                foreach ($item['columns'] as $column) {
+                    if (DB::table($item['table'])->where($column, $constantDetail->value)->exists()) {
+                        $usedIn[] = $item['table'];
+                        break;
+                    }
                 }
             }
         }
