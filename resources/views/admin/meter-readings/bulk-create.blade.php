@@ -11,7 +11,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
 <style>
-    .bulk-table input[type="number"] { width:110px; text-align:center; }
+    .bulk-table input[type="number"] { width:140px; text-align:center; }
     .bulk-table td { vertical-align:middle; white-space:nowrap; }
     .consumption-cell { font-weight:700; }
     .consumption-cell.negative { color:var(--color-danger,#EF4444); }
