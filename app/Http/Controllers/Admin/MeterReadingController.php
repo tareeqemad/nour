@@ -723,7 +723,11 @@ class MeterReadingController extends Controller
             $query->where('box_number', $request->box_number);
         }
 
-        $subscribers = $query->orderBy('box_number')->orderBy('subscription_number')->get();
+        $subscribers = $query
+            ->orderByRaw("CASE WHEN box_number IS NULL OR box_number = '' THEN 1 ELSE 0 END")
+            ->orderByRaw('CAST(box_number AS UNSIGNED)')
+            ->orderBy('subscription_number')
+            ->get();
 
         $readingDate = $request->reading_date;
         $rows = [];
