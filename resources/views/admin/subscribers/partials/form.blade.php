@@ -89,7 +89,7 @@
         <label class="form-label fw-semibold">رقم الصندوق</label>
         <input type="text" name="box_number" class="form-control @error('box_number') is-invalid @enderror"
                value="{{ old('box_number', $isEdit ? $subscriber->box_number : '') }}" maxlength="4"
-               placeholder="0000" pattern="\d{4}" inputmode="numeric">
+               placeholder="0000" inputmode="numeric">
         @error('box_number')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
