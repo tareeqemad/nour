@@ -564,7 +564,9 @@
 
         if (allPages <= 1) {
             container.innerHTML = total > 0
-                ? `<div class="small text-muted">عرض ${total} طلب</div>` : '';
+                ? `<div class="d-flex justify-content-between align-items-center py-2 px-1 border-top">
+                     <div class="small text-muted"><i class="bi bi-list-check me-1"></i>إجمالي النتائج: <strong>${total}</strong> طلب</div>
+                   </div>` : '';
             return;
         }
 
