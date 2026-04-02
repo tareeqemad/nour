@@ -64,16 +64,16 @@
 
             {{-- ── إحصائيات ── --}}
             <div class="row g-3 mb-3" id="statsRow">
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-lg">
                     <div class="dash-kpi">
                         <div class="dash-kpi-icon kpi-primary"><i class="bi bi-collection"></i></div>
                         <div>
                             <div class="dash-kpi-value" id="statTotal">—</div>
-                            <div class="dash-kpi-label">إجمالي</div>
+                            <div class="dash-kpi-label">إجمالي الصفحة</div>
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-lg">
                     <div class="dash-kpi">
                         <div class="dash-kpi-icon kpi-success"><i class="bi bi-check-circle"></i></div>
                         <div>
@@ -82,7 +82,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-lg">
                     <div class="dash-kpi">
                         <div class="dash-kpi-icon kpi-info"><i class="bi bi-hourglass-split"></i></div>
                         <div>
@@ -91,12 +91,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-lg">
                     <div class="dash-kpi">
                         <div class="dash-kpi-icon kpi-danger"><i class="bi bi-x-circle"></i></div>
                         <div>
                             <div class="dash-kpi-value" id="statReturned">—</div>
                             <div class="dash-kpi-label">مرفوضة</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="dash-kpi">
+                        <div class="dash-kpi-icon" style="background:rgba(25,135,84,.1);color:#198754;"><i class="bi bi-person-check"></i></div>
+                        <div>
+                            <div class="dash-kpi-value" id="statHasAccount">—</div>
+                            <div class="dash-kpi-label">لديهم حساب</div>
                         </div>
                     </div>
                 </div>
@@ -200,7 +209,8 @@
                                     <th style="min-width:110px;">رقم الطلب</th>
                                     <th style="min-width:180px;">اسم مقدم الطلب</th>
                                     <th style="min-width:130px;">رقم الهوية</th>
-                                    <th style="min-width:150px;">الحالة</th>
+                                    <th style="min-width:150px;">حالة الطلب</th>
+                                    <th style="min-width:120px;">حالة الحساب</th>
                                     <th class="d-none d-lg-table-cell" style="min-width:180px;">ملاحظة الحالة</th>
                                     <th class="d-none d-md-table-cell" style="min-width:130px;">تاريخ التقديم</th>
                                     <th class="d-none d-xl-table-cell" style="min-width:130px;">آخر تعديل</th>
@@ -209,7 +219,7 @@
                             </thead>
                             <tbody id="tableBody">
                                 <tr>
-                                    <td colspan="9" class="text-center py-5">
+                                    <td colspan="10" class="text-center py-5">
                                         <div class="spinner-border text-primary" role="status"></div>
                                         <p class="mt-2 text-muted mb-0">جاري تحميل البيانات...</p>
                                     </td>
@@ -433,7 +443,7 @@
         if (!items || items.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                  <td colspan="9" class="text-center py-5 text-muted">
+                  <td colspan="10" class="text-center py-5 text-muted">
                     <i class="bi bi-inbox display-6 d-block mb-2 opacity-25"></i>
                     لا توجد طلبات مطابقة للبحث
                   </td>
@@ -457,6 +467,34 @@
             const name     = escHtml(extractName(pureDataSrc));
             const insAt    = fmtDate(item.inserted_at);
             const chgAt    = fmtDate(item.changed_at);
+            const hasAccount = item.has_account || false;
+            const acctInfo = item.account_info || null;
+
+            // حالة الحساب
+            let accountBadge;
+            if (hasAccount) {
+                const uname = acctInfo?.username || '';
+                accountBadge = `<span class="badge bg-success" title="اسم المستخدم: ${escAttr(uname)}">
+                    <i class="bi bi-person-check me-1"></i>${escHtml(uname)}</span>`;
+            } else if (parseInt(item.app_status, 10) === 100) {
+                accountBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-person-dash me-1"></i>بدون حساب</span>';
+            } else {
+                accountBadge = '<span class="text-muted small">—</span>';
+            }
+
+            // زر إنشاء الحساب
+            let createBtn = '';
+            if (parseInt(item.app_status, 10) === 100) {
+                if (hasAccount) {
+                    createBtn = `<button class="btn btn-sm btn-success" disabled title="تم إنشاء الحساب: ${escAttr(acctInfo?.username || '')}">
+                        <i class="bi bi-check-lg"></i></button>`;
+                } else {
+                    createBtn = `<button onclick="createUserFromRequest('${escAttr(appNo)}')"
+                        class="btn btn-sm btn-outline-success" title="إنشاء حساب مستخدم"
+                        id="btnCreateUser_${escAttr(appNo)}">
+                        <i class="bi bi-person-plus"></i></button>`;
+                }
+            }
 
             return `
             <tr>
@@ -469,6 +507,7 @@
                   ${escHtml(statusTxt)}
                 </span>
               </td>
+              <td>${accountBadge}</td>
               <td class="d-none d-lg-table-cell">${note}</td>
               <td class="d-none d-md-table-cell small text-muted">${insAt}</td>
               <td class="d-none d-xl-table-cell small text-muted">${chgAt}</td>
@@ -482,13 +521,7 @@
                           class="btn btn-sm btn-outline-warning" title="تغيير الحالة">
                     <i class="bi bi-arrow-left-right"></i>
                   </button>
-                  ${parseInt(item.app_status, 10) === 100
-                    ? `<button onclick="createUserFromRequest('${escAttr(appNo)}')"
-                              class="btn btn-sm btn-outline-success" title="إنشاء حساب مستخدم"
-                              id="btnCreateUser_${escAttr(appNo)}">
-                        <i class="bi bi-person-plus"></i>
-                      </button>`
-                    : ''}
+                  ${createBtn}
                 </div>
               </td>
             </tr>`;
@@ -498,28 +531,31 @@
     /* ─── إظهار خطأ في الجدول ──────────────────────────────────── */
     function showTableError(msg) {
         document.getElementById('tableBody').innerHTML = `
-            <tr><td colspan="9" class="text-center py-5 text-danger">
+            <tr><td colspan="10" class="text-center py-5 text-danger">
               <i class="bi bi-exclamation-circle display-6 d-block mb-2"></i>
               ${escHtml(msg)}
             </td></tr>`;
         document.getElementById('paginationContainer').innerHTML = '';
-        document.getElementById('statTotal').textContent = '—';
-        document.getElementById('statDone').textContent  = '—';
-        document.getElementById('statPending').textContent = '—';
-        document.getElementById('statReturned').textContent = '—';
+        document.getElementById('statTotal').textContent      = '—';
+        document.getElementById('statDone').textContent       = '—';
+        document.getElementById('statPending').textContent    = '—';
+        document.getElementById('statReturned').textContent   = '—';
+        document.getElementById('statHasAccount').textContent = '—';
     }
 
     /* ─── إحصائيات ─────────────────────────────────────────────── */
     function updateStats(items) {
         if (!items) return;
-        const done     = items.filter(x => parseInt(x.app_status, 10) === 100).length;
-        const rejected = items.filter(x => parseInt(x.app_status, 10) === 0).length;
-        const pending  = items.filter(x => parseInt(x.app_status, 10) === 1).length;
+        const done       = items.filter(x => parseInt(x.app_status, 10) === 100).length;
+        const rejected   = items.filter(x => parseInt(x.app_status, 10) === 0).length;
+        const pending    = items.filter(x => parseInt(x.app_status, 10) === 1).length;
+        const hasAccount = items.filter(x => x.has_account).length;
 
-        document.getElementById('statTotal').textContent    = items.length;
-        document.getElementById('statDone').textContent     = done;
-        document.getElementById('statPending').textContent  = pending;
-        document.getElementById('statReturned').textContent = rejected;
+        document.getElementById('statTotal').textContent      = items.length;
+        document.getElementById('statDone').textContent       = done;
+        document.getElementById('statPending').textContent    = pending;
+        document.getElementById('statReturned').textContent   = rejected;
+        document.getElementById('statHasAccount').textContent = hasAccount;
     }
 
     /* ─── Pagination ────────────────────────────────────────────── */

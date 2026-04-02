@@ -274,13 +274,27 @@ class PortalRequestController extends Controller
             ];
         }, array_values($items));
 
-        // سجّل البيانات المطبقة بعد التطبيع
-        if (!empty($items)) {
-            $first = $items[0];
-            Log::info('parseListResponse OUTPUT: changed_at=' . json_encode($first['changed_at'] ?? null) .
-                       ', status_note=' . json_encode($first['status_note'] ?? null) .
-                       ', inserted_at=' . json_encode($first['inserted_at'] ?? null));
+        // إضافة حالة الحساب (هل تم إنشاء يوزر لهذا الطلب)
+        $appNos = array_column($items, 'app_no');
+        $processedMap = [];
+        if (!empty($appNos)) {
+            $processedMap = ProcessedPortalRequest::whereIn('app_no', $appNos)
+                ->get()
+                ->keyBy('app_no');
         }
+
+        foreach ($items as &$item) {
+            $record = $processedMap[$item['app_no']] ?? null;
+            $item['has_account'] = $record && $record->status === 'success';
+            $item['account_info'] = $record ? [
+                'status'       => $record->status,
+                'username'     => $record->user ? $record->user->username : null,
+                'user_id'      => $record->user_id,
+                'operator_id'  => $record->operator_id,
+                'processed_at' => $record->processed_at?->format('Y-m-d H:i'),
+            ] : null;
+        }
+        unset($item);
 
         return response()->json([
             'ok'         => true,
