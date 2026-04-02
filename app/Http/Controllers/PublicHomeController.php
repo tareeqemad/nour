@@ -465,6 +465,9 @@ class PublicHomeController extends Controller
             'status' => 'active',
         ]);
 
+        // تعيين الصلاحيات الافتراضية لـ CompanyOwner
+        $user->assignDefaultPermissions();
+
         // التحقق من أن كلمة المرور محفوظة بشكل صحيح
         \Log::info('User created, verifying password', [
             'user_id' => $user->id,

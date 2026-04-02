@@ -279,6 +279,9 @@ class ProcessApprovedPortalRequests extends Command
                     'status'   => 'active',
                 ]);
 
+                // تعيين الصلاحيات الافتراضية
+                $user->assignDefaultPermissions();
+
                 // إنشاء Operator
                 $operator = Operator::create([
                     'name'               => $cleanOperator,
