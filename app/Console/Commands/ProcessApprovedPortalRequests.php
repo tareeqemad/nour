@@ -287,7 +287,7 @@ class ProcessApprovedPortalRequests extends Command
                     'owner_id_number'    => $cleanIdNumber,
                     'phone'              => $cleanPhone ?: null,
                     'status'             => 'active',
-                    'is_approved'        => false,
+                    'is_approved'        => true,
                     'profile_completed'  => false,
                 ]);
 
