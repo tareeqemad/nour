@@ -55,9 +55,9 @@ class UsernameHelper
             $lastName = preg_replace('/[^a-z0-9]/', '', $lastName);
             $usernameBase = $firstChar . $lastName;
         } else {
-            // إذا كان اسم واحد فقط، استخدم أول 8 أحرف
+            // إذا كان اسم واحد فقط أو رقم هوية، استخدمه كاملاً (بحد أقصى 15 حرف)
             $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $cleanedName));
-            $usernameBase = substr($usernameBase, 0, 8);
+            $usernameBase = substr($usernameBase, 0, 15);
         }
         
         // التأكد من أن usernameBase ليس فارغاً
