@@ -20,3 +20,8 @@ Schedule::command('maintenance:check --upcoming')
     ->mondays()
     ->at('08:00')
     ->description('تذكير مسبق للمولدات القريبة من الصيانة');
+
+// جدولة معالجة الطلبات المنفذة من البوابة الرقمية وإنشاء حسابات تلقائياً (كل ساعة)
+Schedule::command('portal:process-approved')
+    ->hourly()
+    ->description('إنشاء حسابات مستخدمين تلقائياً من الطلبات المنفذة على البوابة الرقمية');
