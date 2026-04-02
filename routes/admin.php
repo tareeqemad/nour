@@ -270,6 +270,8 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('portal-requests', [PortalRequestController::class, 'index'])->name('portal-requests.index');
     Route::get('portal-requests/{appId}', [PortalRequestController::class, 'show'])->name('portal-requests.show');
     Route::get('portal-requests/{appId}/change-status', [PortalRequestController::class, 'changeStatus'])->name('portal-requests.change-status');
+    Route::post('portal-requests/{appId}/create-user', [PortalRequestController::class, 'createUser'])->name('portal-requests.create-user');
+    Route::get('portal-requests/{appId}/check-processed', [PortalRequestController::class, 'checkProcessed'])->name('portal-requests.check-processed');
 
     /**
      * System Logs (Super Admin only)

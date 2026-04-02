@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProcessedPortalRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -464,6 +466,82 @@ class PortalRequestController extends Controller
         }
 
         return $date;
+    }
+
+    /**
+     * AJAX – إنشاء حساب مستخدم من طلب بوابة محدد
+     */
+    public function createUser(Request $request, string $appId): JsonResponse
+    {
+        // التحقق من عدم المعالجة المسبقة
+        if (ProcessedPortalRequest::isProcessed($appId)) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'هذا الطلب تم إنشاء حساب له مسبقاً',
+            ]);
+        }
+
+        try {
+            $exitCode = Artisan::call('portal:process-approved', [
+                '--app-no'       => $appId,
+                '--processed-by' => $request->user()?->id,
+            ]);
+
+            $output = Artisan::output();
+
+            if ($exitCode === 0) {
+                $record = ProcessedPortalRequest::where('app_no', $appId)->first();
+                $status = $record?->status ?? 'unknown';
+
+                if ($status === 'success') {
+                    return response()->json([
+                        'ok'      => true,
+                        'message' => 'تم إنشاء حساب المستخدم بنجاح',
+                        'data'    => [
+                            'user_id'     => $record->user_id,
+                            'operator_id' => $record->operator_id,
+                            'notes'       => $record->notes,
+                        ],
+                    ]);
+                }
+
+                return response()->json([
+                    'ok'      => false,
+                    'message' => $record?->notes ?? 'تم تخطي الطلب - ' . $output,
+                ]);
+            }
+
+            return response()->json([
+                'ok'      => false,
+                'message' => 'فشل إنشاء الحساب: ' . trim($output),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('PortalRequestController@createUser: ' . $e->getMessage());
+            return response()->json([
+                'ok'      => false,
+                'message' => 'حدث خطأ أثناء إنشاء الحساب',
+            ]);
+        }
+    }
+
+    /**
+     * AJAX – التحقق من حالة معالجة طلب
+     */
+    public function checkProcessed(Request $request, string $appId): JsonResponse
+    {
+        $record = ProcessedPortalRequest::where('app_no', $appId)->first();
+
+        return response()->json([
+            'ok'        => true,
+            'processed' => $record !== null && $record->status === 'success',
+            'data'      => $record ? [
+                'status'       => $record->status,
+                'notes'        => $record->notes,
+                'processed_at' => $record->processed_at?->format('Y-m-d H:i'),
+                'user_id'      => $record->user_id,
+                'operator_id'  => $record->operator_id,
+            ] : null,
+        ]);
     }
 
     /**

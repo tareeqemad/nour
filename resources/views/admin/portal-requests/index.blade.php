@@ -482,6 +482,13 @@
                           class="btn btn-sm btn-outline-warning" title="تغيير الحالة">
                     <i class="bi bi-arrow-left-right"></i>
                   </button>
+                  ${parseInt(item.app_status, 10) === 100
+                    ? `<button onclick="createUserFromRequest('${escAttr(appNo)}')"
+                              class="btn btn-sm btn-outline-success" title="إنشاء حساب مستخدم"
+                              id="btnCreateUser_${escAttr(appNo)}">
+                        <i class="bi bi-person-plus"></i>
+                      </button>`
+                    : ''}
                 </div>
               </td>
             </tr>`;
@@ -786,6 +793,56 @@
             .replace(/"/g,'&quot;');
     }
     function escAttr(str) { return escHtml(str); }
+
+    /* ─── إنشاء حساب مستخدم من طلب ────────────────────────────── */
+    const createUserUrl = '{{ url("admin/portal-requests") }}/';
+
+    window.createUserFromRequest = function (appNo) {
+        if (!confirm('هل تريد إنشاء حساب مستخدم لهذا الطلب؟\nسيتم إرسال بيانات الدخول عبر SMS.')) {
+            return;
+        }
+
+        const btn = document.getElementById('btnCreateUser_' + appNo);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        }
+
+        fetch(`${createUserUrl}${encodeURIComponent(appNo)}/create-user`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.ok) {
+                notify('success', res.message || 'تم إنشاء الحساب بنجاح');
+                if (btn) {
+                    btn.classList.remove('btn-outline-success');
+                    btn.classList.add('btn-success');
+                    btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+                    btn.disabled = true;
+                    btn.title = 'تم إنشاء الحساب';
+                }
+            } else {
+                notify('error', res.message || 'فشل إنشاء الحساب');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-person-plus"></i>';
+                }
+            }
+        })
+        .catch(() => {
+            notify('error', 'حدث خطأ أثناء الاتصال');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-person-plus"></i>';
+            }
+        });
+    };
 
     /* ─── Event Listeners ───────────────────────────────────────── */
     document.getElementById('btnSearch')?.addEventListener('click', () => loadData(1));
