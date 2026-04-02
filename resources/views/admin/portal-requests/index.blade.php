@@ -172,11 +172,9 @@
                                 <i class="bi bi-list-ol me-1 text-muted"></i>لكل صفحة
                             </label>
                             <select id="filterPerPage" class="form-select">
-                                <option value="10">10</option>
-                                <option value="15" selected>15</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
-                                <option value="99">99</option>
+                                <option value="100" selected>100</option>
                             </select>
                         </div>
 
