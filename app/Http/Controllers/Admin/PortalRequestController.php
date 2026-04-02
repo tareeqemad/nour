@@ -51,7 +51,7 @@ class PortalRequestController extends Controller
     private function ajaxList(Request $request): JsonResponse
     {
         $page        = max(1, (int) $request->query('page', 1));
-        $perPage     = max(5, min(100, (int) $request->query('per_page', 15)));
+        $perPage     = max(5, min(100, (int) $request->query('per_page', 100)));
         $status      = $request->filled('status') ? trim((string) $request->query('status')) : '';
         $date        = $request->filled('date') ? trim((string) $request->query('date')) : '';
         $appNo       = $request->filled('app_no') ? trim((string) $request->query('app_no')) : '';
