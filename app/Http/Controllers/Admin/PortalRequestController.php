@@ -283,16 +283,41 @@ class PortalRequestController extends Controller
                 ->keyBy('app_no');
         }
 
+        // جمع أرقام الهويات للتحقق من وجود حسابات بغض النظر عن رقم الطلب
+        $applicantIds = array_filter(array_unique(array_column($items, 'applicant_id')));
+        $operatorsByIdNumber = [];
+        if (!empty($applicantIds)) {
+            $operatorsByIdNumber = \App\Models\Operator::whereIn('owner_id_number', $applicantIds)
+                ->with('owner:id,username')
+                ->get()
+                ->keyBy('owner_id_number');
+        }
+
         foreach ($items as &$item) {
-            $record = $processedMap[$item['app_no']] ?? null;
-            $item['has_account'] = $record && $record->status === 'success';
-            $item['account_info'] = $record ? [
-                'status'       => $record->status,
-                'username'     => $record->user ? $record->user->username : null,
-                'user_id'      => $record->user_id,
-                'operator_id'  => $record->operator_id,
-                'processed_at' => $record->processed_at?->format('Y-m-d H:i'),
-            ] : null;
+            $record   = $processedMap[$item['app_no']] ?? null;
+            $operator = $operatorsByIdNumber[$item['applicant_id']] ?? null;
+
+            // الحساب موجود إذا: تم المعالجة بنجاح من هذا الطلب، أو رقم الهوية مسجل في النظام
+            $item['has_account'] = ($record && $record->status === 'success') || ($operator !== null);
+            $item['account_info'] = null;
+
+            if ($record && $record->status === 'success') {
+                $item['account_info'] = [
+                    'status'       => $record->status,
+                    'username'     => $record->user ? $record->user->username : null,
+                    'user_id'      => $record->user_id,
+                    'operator_id'  => $record->operator_id,
+                    'processed_at' => $record->processed_at?->format('Y-m-d H:i'),
+                ];
+            } elseif ($operator) {
+                $item['account_info'] = [
+                    'status'       => 'exists',
+                    'username'     => $operator->owner?->username,
+                    'user_id'      => $operator->owner_id,
+                    'operator_id'  => $operator->id,
+                    'processed_at' => null,
+                ];
+            }
         }
         unset($item);
 
