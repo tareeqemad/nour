@@ -62,8 +62,8 @@ class UsernameHelper
         
         // التأكد من أن usernameBase ليس فارغاً
         if (empty($usernameBase)) {
-            // استخدام رقم الهوية كبديل
-            $usernameBase = $fallbackIdNumber ? substr($fallbackIdNumber, -4) : 'user';
+            // استخدام رقم الهوية كاملاً كبديل
+            $usernameBase = $fallbackIdNumber ?: 'user';
         }
         
         // إضافة البادئة

@@ -247,8 +247,9 @@ class ProcessApprovedPortalRequests extends Command
                     ]);
                 }
 
-                // توليد username
-                $username = UsernameHelper::generate(Role::CompanyOwner, $cleanName, $cleanIdNumber);
+                // توليد username - نمرر رقم الهوية كاسم لضمان username واضح
+                // لأن البوابة لا توفر اسم إنجليزي، نستخدم رقم الهوية مباشرة
+                $username = UsernameHelper::generate(Role::CompanyOwner, $cleanIdNumber, $cleanIdNumber);
 
                 // توليد email
                 $email   = $username . '@gazarased.com';
