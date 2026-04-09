@@ -474,6 +474,14 @@ class User extends Authenticatable
             return $operator && $operator->is_approved && $operator->status === 'active';
         }
 
+        // Employee/Technician needs active approved operator
+        if ($this->isEmployee() || $this->isTechnician() || $this->isCivilDefense()) {
+            return $this->operators()
+                ->where('is_approved', true)
+                ->where('status', 'active')
+                ->exists();
+        }
+
         // Users with custom roles linked to operator: check if operator is approved
         if ($this->hasOperatorLinkedCustomRole()) {
             $operator = $this->roleModel->operator;
