@@ -43,7 +43,7 @@ class AdminMiddleware
             ]);
         }
 
-        if (! $user->isSuperAdmin() && ! $user->isAdmin() && ! $user->isEnergyAuthority() && ! $user->isCompanyOwner() && ! $user->isEmployee() && ! $user->isTechnician()) {
+        if (! $user->isSuperAdmin() && ! $user->isAdmin() && ! $user->isEnergyAuthority() && ! $user->isCompanyOwner() && ! $user->isEmployee() && ! $user->isTechnician() && ! $user->isCivilDefense()) {
             abort(403);
         }
 
