@@ -113,11 +113,20 @@ class EnsureOperatorApproved
             }
         }
 
-        if ($user->isEmployee() || $user->isTechnician()) {
-            $hasActiveOperator = $user->operators()
-                ->where('status', 'active')
-                ->exists();
-            
+        if ($user->isEmployee() || $user->isTechnician() || $user->hasOperatorLinkedCustomRole()) {
+            $hasActiveOperator = false;
+
+            if ($user->hasOperatorLinkedCustomRole() && !$user->isEmployee() && !$user->isTechnician()) {
+                // Custom role linked to operator - check operator directly from role
+                $operator = $user->roleModel?->operator;
+                $hasActiveOperator = $operator && $operator->status === 'active';
+            } else {
+                // Employee/Technician - check via pivot table
+                $hasActiveOperator = $user->operators()
+                    ->where('status', 'active')
+                    ->exists();
+            }
+
             if (!$hasActiveOperator) {
                 if ($request->expectsJson()) {
                     return response()->json([
