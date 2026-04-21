@@ -159,7 +159,7 @@ class MeterReading extends Model
 
     /**
      * تحديد حالة القراءة تلقائياً بناءً على قيمة الاستهلاك.
-     * تُعدّ غير طبيعية إذا كانت الاستهلاك <= 0 أو تجاوز الحد الأقصى المضبوط في الإعدادات.
+     * تُعدّ غير طبيعية إذا كانت <= 0 أو تجاوزت الحد الأقصى المضبوط في الإعدادات.
      */
     public static function determineReadingStatus(float $consumptionKwh): int
     {
@@ -173,6 +173,19 @@ class MeterReading extends Model
         }
 
         return self::READING_STATUS_NORMAL;
+    }
+
+    /**
+     * هل القراءة تمنع الاعتماد الجماعي؟
+     * الاستهلاك السالب أو المتجاوز للحد الأقصى يحتاج اعتماد فردي مع سبب.
+     * الاستهلاك الصفري غير طبيعي لكنه مسموح ضمن الاعتماد الجماعي.
+     */
+    public function blocksBulkApproval(): bool
+    {
+        if (!$this->isAbnormal()) {
+            return false;
+        }
+        return (float) $this->consumption_kwh !== 0.0;
     }
 
     /**

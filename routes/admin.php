@@ -363,6 +363,12 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      */
     Route::post('invoices/bulk-issue',       [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkIssue'])->name('invoices.bulk-issue');
     Route::get('invoices/export',            [\App\Http\Controllers\Admin\InvoiceController::class, 'export'])->name('invoices.export');
+
+    // Payment Import Routes (استيراد دفعات من Excel)
+    Route::post('invoices/payments/import/preview',   [\App\Http\Controllers\Admin\PaymentImportController::class, 'preview'])->name('invoices.payments.import.preview');
+    Route::post('invoices/payments/import/execute',   [\App\Http\Controllers\Admin\PaymentImportController::class, 'import'])->name('invoices.payments.import.execute');
+    Route::get('invoices/payments/import/template',   [\App\Http\Controllers\Admin\PaymentImportController::class, 'downloadTemplate'])->name('invoices.payments.import.template');
+
     Route::post('invoices/{invoice}/issue',  [\App\Http\Controllers\Admin\InvoiceController::class, 'issue'])->name('invoices.issue');
     Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Admin\InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::get('invoices/{invoice}/print',   [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');

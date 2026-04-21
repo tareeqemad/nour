@@ -158,6 +158,7 @@ class User extends Authenticatable
         'invoices.update',
         'invoices.delete',
         'invoices.issue',
+        'invoices.import_payments',
         // تقارير الفوترة
         'invoice_reports.view',
         // قواعد الحد الأدنى

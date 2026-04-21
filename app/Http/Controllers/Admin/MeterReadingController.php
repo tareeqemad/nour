@@ -465,8 +465,9 @@ class MeterReadingController extends Controller
                 continue;
             }
 
-            // القراءات غير الطبيعية يجب اعتمادها بشكل منفرد مع ذكر السبب
-            if ($reading->isAbnormal()) {
+            // القراءات غير الطبيعية السالبة/المتجاوزة للحد تحتاج اعتماد فردي مع سبب
+            // الصفرية غير طبيعية لكن مسموح اعتمادها جماعياً
+            if ($reading->blocksBulkApproval()) {
                 $abnormalCount++;
                 continue;
             }
@@ -573,14 +574,16 @@ class MeterReadingController extends Controller
             return response()->json(['success' => false, 'message' => 'لا توجد قراءات مطابقة للاعتماد.']);
         }
 
-        $normal = $allReadings->where('reading_status', MeterReading::READING_STATUS_NORMAL);
-        $abnormal = $allReadings->where('reading_status', MeterReading::READING_STATUS_ABNORMAL);
+        // قابلة للاعتماد الجماعي: الطبيعية + غير الطبيعية الصفرية
+        // تحتاج اعتماد فردي: غير الطبيعية السالبة أو المتجاوزة للحد الأقصى
+        $bulkApprovable = $allReadings->reject(fn($r) => $r->blocksBulkApproval());
+        $abnormal = $allReadings->filter(fn($r) => $r->blocksBulkApproval());
 
-        // اعتماد الطبيعية
+        // اعتماد الطبيعية + الصفرية
         $approvedCount = 0;
         $billedCount = 0;
 
-        foreach ($normal as $reading) {
+        foreach ($bulkApprovable as $reading) {
             DB::transaction(function () use ($reading, $user, &$approvedCount, &$billedCount) {
                 $reading->update(['action_status' => MeterReading::ACTION_STATUS_APPROVED]);
                 AuditLog::log('approve', $reading, $user,
@@ -833,12 +836,35 @@ class MeterReadingController extends Controller
 
         $rows = $request->input('rows', []);
 
+        // جلب بيانات المشتركين الإضافية (للميدانيين) من القاعدة
+        // نستخدم subscription_number كمفتاح لأنه ما يتم إرساله من الواجهة
+        $subscriptionNumbers = collect($rows)->pluck('subscription_number')->filter()->unique()->values();
+        $subscribers = Subscriber::whereIn('subscription_number', $subscriptionNumbers)
+            ->get(['subscription_number', 'subscriber_id_number', 'phone', 'alt_phone', 'address', 'meter_number', 'ampere'])
+            ->keyBy('subscription_number');
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setRightToLeft(true);
 
-        $headers = ['رقم القراءة', 'رقم الصندوق', 'رقم الاشتراك', 'اسم المشترك', 'القراءة السابقة', 'تاريخها', 'القراءة الحالية', 'تاريخها', 'الاستهلاك'];
-        $columns = range('A', 'I');
+        $headers = [
+            'رقم القراءة',
+            'رقم الصندوق',
+            'رقم الاشتراك',
+            'اسم المشترك',
+            'رقم الهوية',
+            'رقم الجوال',
+            'جوال بديل',
+            'العنوان',
+            'رقم العداد',
+            'الأمبير',
+            'القراءة السابقة',
+            'تاريخها',
+            'القراءة الحالية',
+            'تاريخها',
+            'الاستهلاك',
+        ];
+        $columns = range('A', 'O');
 
         foreach ($headers as $idx => $header) {
             $cell = $columns[$idx] . '1';
@@ -855,15 +881,23 @@ class MeterReadingController extends Controller
             $consumption = ((float)($r['current_reading'] ?? 0)) - ((float)($r['previous_reading'] ?? 0));
             $totalConsumption += max(0, $consumption);
 
+            $sub = $subscribers->get($r['subscription_number'] ?? '');
+
             $sheet->setCellValue('A' . $row, $r['reading_number'] ?? '');
             $sheet->setCellValue('B' . $row, $r['box_number'] ?? '');
             $sheet->setCellValue('C' . $row, $r['subscription_number'] ?? '');
             $sheet->setCellValue('D' . $row, $r['subscriber_name'] ?? '');
-            $sheet->setCellValue('E' . $row, $r['previous_reading'] ?? 0);
-            $sheet->setCellValue('F' . $row, $r['previous_reading_date'] ?? '');
-            $sheet->setCellValue('G' . $row, $r['current_reading'] ?? '');
-            $sheet->setCellValue('H' . $row, $r['reading_date'] ?? '');
-            $sheet->setCellValue('I' . $row, $consumption > 0 ? $consumption : '');
+            $sheet->setCellValue('E' . $row, $sub?->subscriber_id_number ?? '');
+            $sheet->setCellValue('F' . $row, $sub?->phone ?? '');
+            $sheet->setCellValue('G' . $row, $sub?->alt_phone ?? '');
+            $sheet->setCellValue('H' . $row, $sub?->address ?? '');
+            $sheet->setCellValue('I' . $row, $sub?->meter_number ?? '');
+            $sheet->setCellValue('J' . $row, $sub?->ampere ? ($sub->ampere . ' A') : '');
+            $sheet->setCellValue('K' . $row, $r['previous_reading'] ?? 0);
+            $sheet->setCellValue('L' . $row, $r['previous_reading_date'] ?? '');
+            $sheet->setCellValue('M' . $row, $r['current_reading'] ?? '');
+            $sheet->setCellValue('N' . $row, $r['reading_date'] ?? '');
+            $sheet->setCellValue('O' . $row, $consumption > 0 ? $consumption : '');
 
             foreach ($columns as $col) {
                 $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -872,9 +906,9 @@ class MeterReadingController extends Controller
         }
 
         // صف الإجمالي
-        $sheet->setCellValue('H' . $row, 'إجمالي الاستهلاك');
-        $sheet->setCellValue('I' . $row, $totalConsumption);
-        $sheet->getStyle('H' . $row . ':I' . $row)->getFont()->setBold(true);
+        $sheet->setCellValue('N' . $row, 'إجمالي الاستهلاك');
+        $sheet->setCellValue('O' . $row, $totalConsumption);
+        $sheet->getStyle('N' . $row . ':O' . $row)->getFont()->setBold(true);
 
         foreach ($columns as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

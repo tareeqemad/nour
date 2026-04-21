@@ -1,10 +1,8 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('title', 'قراءات العدادات')
+@section('title', 'الفوترة والتحصيل')
 
-@php
-    $breadcrumbTitle = 'قراءات العدادات';
-@endphp
+@php $breadcrumbTitle = 'الفوترة والتحصيل'; $invoiceStatuses = \App\Helpers\ConstantsHelper::get(30); @endphp
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
@@ -12,688 +10,820 @@
 @endpush
 
 @section('content')
-    <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
+<input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
 
-    <div class="general-page" id="meterReadingsPage">
-        <div class="row g-3">
-            <div class="col-12">
-                <x-admin.card>
-                    <x-admin.card-header title="قراءات العدادات" icon="bi-speedometer2">
-                        <x-slot:actions>
-                            @can('create', App\Models\MeterReading::class)
-                                <button type="button" id="bulkApproveFilterBtn" class="btn btn-outline-success d-none">
-                                    <i class="bi bi-check-all me-1"></i>
-                                    اعتماد حسب الفلتر
-                                </button>
-                                <button type="button" id="bulkApproveBtn" class="btn btn-outline-secondary d-none">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    اعتماد المحدد
-                                    <span id="bulkApproveCount" class="badge bg-primary text-white ms-1">0</span>
-                                </button>
-                            @endcan
-                            @can('create', App\Models\MeterReading::class)
-                                <a href="{{ route('admin.meter-readings.bulk-create') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-journal-text me-1"></i>
-                                    إضافة قراءات جماعية
-                                </a>
-                                <a href="{{ route('admin.meter-readings.create') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-lg me-1"></i>
-                                    إضافة قراءة جديدة
-                                </a>
-                            @endcan
-                        </x-slot:actions>
-                    </x-admin.card-header>
+<div class="general-page">
+    <div class="row g-3">
+        <div class="col-12">
+            <x-admin.card>
+                <x-admin.card-header title="الفوترة والتحصيل" icon="bi-receipt">
+                    <x-slot:actions>
+                        {{-- Create invoice button hidden
+                        @can('create', App\Models\Invoice::class)
+                            <a href="{{ route('admin.invoices.create') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                إنشاء فاتورة جديدة
+                            </a>
+                        @endcan
+                        --}}
+                        @can('create', App\Models\Invoice::class)
+                            <button type="button" class="btn btn-success" id="bulkIssueBtn" disabled>
+                                <i class="bi bi-check-all me-1"></i>
+                                إصدار الفواتير
+                            </button>
+                        @endcan
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('invoices.import_payments'))
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importPaymentsModal">
+                                <i class="bi bi-upload me-1"></i>
+                                استيراد دفعات
+                            </button>
+                        @endif
+                        <a href="#" id="exportExcelBtn" class="btn btn-outline-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i>
+                            تصدير Excel
+                        </a>
+                    </x-slot:actions>
+                </x-admin.card-header>
 
-                    <div class="card-body pb-4">
-                                @php
-                                    $user = auth()->user();
-                                    $isCompanyOwner = $user->isCompanyOwner();
-                                    $isEmployeeOrTechnician = $user->isEmployee() || $user->isTechnician();
-                                    $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
-                                    $readingStatuses = \App\Helpers\ConstantsHelper::get(28);
-                                    $readingActions  = \App\Helpers\ConstantsHelper::get(29);
-                                @endphp
-                                <div class="row g-3">
+                <div class="card-body pb-4">
+                    @php
+                        $user = auth()->user();
+                        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                    @endphp
+                    <div class="row g-3">
 
-                                    {{-- فلتر المشغل --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-building me-1"></i>
-                                            المشغل
-                                        </label>
-                                        @if($canSelectOperator && isset($operators) && $operators->count() > 0)
-                                            <select id="operatorFilter" class="form-select">
-                                                <option value="">كل المشغلين</option>
-                                                @foreach($operators as $op)
-                                                    <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>
-                                                        {{ $op->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        @elseif(($isCompanyOwner || $isEmployeeOrTechnician) && isset($currentOperator))
-                                            <select id="operatorFilter" class="form-select" disabled>
-                                                <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
-                                            </select>
-                                            <input type="hidden" id="operatorFilterHidden" value="{{ $currentOperator->id }}">
-                                        @else
-                                            <select id="operatorFilter" class="form-select">
-                                                <option value="">كل المشغلين</option>
-                                            </select>
-                                        @endif
-                                    </div>
+                                {{-- المشغل --}}
+                                @if($canSelectOperator && $operators->count())
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">المشغل</label>
+                                    <select id="operatorFilter" class="form-select">
+                                        <option value="">كل المشغلين</option>
+                                        @foreach($operators as $op)
+                                            <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected':'' }}>{{ $op->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @elseif(isset($currentOperator))
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">المشغل</label>
+                                    <select id="operatorFilter" class="form-select" disabled>
+                                        <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
+                                    </select>
+                                    <input type="hidden" id="operatorFilterHidden" value="{{ $currentOperator->id }}">
+                                </div>
+                                @endif
 
-                                    {{-- فلتر المشترك (Select2 مع بحث) --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-person me-1"></i>
-                                            المشترك
-                                        </label>
-                                        <select id="subscriberFilter" class="form-select" style="width:100%">
-                                            <option value="">كل المشتركين</option>
-                                            @if(isset($subscribers) && $subscribers->count() > 0)
-                                                @foreach($subscribers as $sub)
-                                                    <option value="{{ $sub->id }}" {{ request('subscriber_id') == $sub->id ? 'selected' : '' }}>
-                                                        {{ $sub->subscription_number }} - {{ $sub->subscriber_name }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                    </div>
-
-                                    {{-- فلتر حالة القراءة --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-activity me-1"></i>
-                                            حالة القراءة
-                                        </label>
-                                        <select id="readingStatusFilter" class="form-select">
-                                            <option value="">الكل</option>
-                                            @foreach($readingStatuses as $item)
-                                                <option value="{{ $item->value }}" {{ request('reading_status') == $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    {{-- فلتر الإجراء --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-check2-circle me-1"></i>
-                                            إجراء القراءة
-                                        </label>
-                                        <select id="actionStatusFilter" class="form-select">
-                                            <option value="">الكل</option>
-                                            @foreach($readingActions as $item)
-                                                <option value="{{ $item->value }}" {{ request('action_status') === $item->value ? 'selected' : '' }}>{{ $item->label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    {{-- رقم الصندوق --}}
-                                    <div class="col-md-2">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-mailbox me-1"></i>رقم الصندوق
-                                        </label>
-                                        <input type="text" id="boxNumberFilter" class="form-control" placeholder="0000" maxlength="4">
-                                    </div>
-
-                                    {{-- من تاريخ --}}
-                                    <div class="col-md-2">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-event me-1"></i>من تاريخ
-                                        </label>
-                                        <input type="date" id="dateFromFilter" class="form-control" value="{{ request('date_from') }}">
-                                    </div>
-
-                                    {{-- إلى تاريخ --}}
-                                    <div class="col-md-2">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-calendar-event me-1"></i>إلى تاريخ
-                                        </label>
-                                        <input type="date" id="dateToFilter" class="form-control" value="{{ request('date_to') }}">
-                                    </div>
-
-                                    {{-- البحث --}}
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bi bi-search me-1"></i>بحث
-                                        </label>
-                                        <input type="text" id="searchInput" class="form-control" placeholder="رقم القراءة، العداد، الاشتراك، الاسم..." value="{{ request('search') }}">
-                                    </div>
+                                {{-- المشترك --}}
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">المشترك</label>
+                                    <select id="subscriberFilter" class="form-select" style="width:100%">
+                                        <option value="">كل المشتركين</option>
+                                        @foreach($subscribers as $sub)
+                                            <option value="{{ $sub->id }}" {{ request('subscriber_id') == $sub->id ? 'selected':'' }}>
+                                                {{ $sub->subscription_number }} - {{ $sub->subscriber_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
-                                <div class="row g-3 mt-2">
-                                    <div class="col-12 d-flex justify-content-center gap-2">
-                                        <button class="btn btn-primary" type="button" id="searchBtn">
-                                            <i class="bi bi-search me-1"></i>استعلام
-                                        </button>
-                                        <a href="#" id="exportExcelBtn" class="btn btn-outline-success">
-                                            <i class="bi bi-file-earmark-excel me-1"></i>تصدير Excel
-                                        </a>
-                                        <button class="btn btn-outline-secondary d-none" type="button" id="clearBtn" title="تفريغ الحقول">
-                                            <i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ
-                                        </button>
-                                    </div>
+                                {{-- حالة الفاتورة --}}
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold">حالة الفاتورة</label>
+                                    <select id="statusFilter" class="form-select">
+                                        <option value="">الكل</option>
+                                        @foreach($invoiceStatuses as $item)
+                                            <option value="{{ $item->value }}" {{ request('invoice_status') == $item->value ? 'selected':'' }}>{{ $item->label }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
+                                {{-- من تاريخ --}}
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold">من تاريخ</label>
+                                    <input type="date" id="dateFromFilter" class="form-control" value="{{ request('date_from') }}">
+                                </div>
 
-                        <div id="meterReadingsListWrap" class="position-relative">
-                            <div id="mrLoading" class="data-table-loading d-none">
-                                <div class="text-center">
-                                    <div class="spinner-border text-primary" role="status"></div>
-                                    <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                                {{-- إلى تاريخ --}}
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold">إلى تاريخ</label>
+                                    <input type="date" id="dateToFilter" class="form-control" value="{{ request('date_to') }}">
+                                </div>
+
+                                {{-- بحث --}}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">البحث</label>
+                                    <input type="text" id="searchInput" class="form-control" placeholder="رقم الفاتورة، رقم الاشتراك، اسم المشترك..." value="{{ request('search') }}">
                                 </div>
                             </div>
 
-                            @include('admin.meter-readings.partials.list', ['meterReadings' => $meterReadings])
-                        </div>
-                    </div>
-                </x-admin.card>
-            </div>
-        </div>
-    </div>
+                            <div class="row mt-3">
+                                <div class="col-12 d-flex justify-content-center gap-2">
+                                    <button class="btn btn-primary" id="searchBtn"><i class="bi bi-search me-1"></i>بحث</button>
+                                    <button class="btn btn-outline-secondary d-none" id="clearBtn"><i class="bi bi-arrow-counterclockwise me-1"></i>تفريغ</button>
+                                </div>
+                            </div>
 
-    {{-- Modal: اعتماد قراءة غير طبيعية --}}
-    <div class="modal fade" id="approveAbnormalModal" tabindex="-1" aria-labelledby="approveAbnormalModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title" id="approveAbnormalModalLabel">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        اعتماد قراءة غير طبيعية
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-3">
-                        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
-                        <div>
-                            <strong>تنبيه:</strong> هذه القراءة صُنِّفت تلقائياً كغير طبيعية بسبب استهلاك صفري أو سالب أو يتجاوز الحد الأقصى المسموح به.
-                            يجب ذكر سبب موثق لاعتمادها.
+
+                    <div id="invoicesListWrap" class="position-relative">
+                        <div id="invLoading" class="data-table-loading d-none">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <div class="mt-2 text-muted fw-semibold">جاري التحميل...</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">رقم القراءة</label>
-                        <input type="text" class="form-control" id="abnormalReadingNumber" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            سبب الاعتماد <span class="text-danger">*</span>
-                        </label>
-                        <textarea class="form-control" id="abnormalReason" rows="4"
-                            placeholder="اذكر سبباً موثقاً لاعتماد هذه القراءة (مثل: تم التحقق الميداني، عطل في العداد، فترة توقف مسجلة...)"
-                            maxlength="1000"></textarea>
-                        <div class="invalid-feedback" id="abnormalReasonError"></div>
-                        <div class="form-text text-muted"><span id="abnormalReasonCount">0</span>/1000 حرف</div>
+                        @include('admin.invoices.partials.list', ['invoices' => $invoices])
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>
-                        إلغاء
-                    </button>
-                    <button type="button" class="btn btn-warning text-dark" id="confirmAbnormalApprove">
-                        <i class="bi bi-check-circle me-1"></i>
-                        اعتماد القراءة
-                    </button>
+            </x-admin.card>
+        </div>
+    </div>
+</div>
+{{-- Modal: إصدار الفواتير --}}
+<div class="modal fade" id="bulkIssueModal" tabindex="-1" aria-hidden="true" style="display:none">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-all me-2"></i>إصدار الفواتير المحددة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="alert alert-info py-2 small" id="bulkSelectionSummary">
+                        سيتم إصدار <strong id="bulkSelectedCount">0</strong> فاتورة محددة.
+                    </div>
+                    <label class="form-label fw-semibold">قيمة التعرفة (سعر الكيلوواط) <span class="text-danger">*</span></label>
+                    <input type="number" step="1" min="0" id="bulkPricePerKwh" class="form-control" placeholder="مثال: 1" value="{{ old('price_per_kwh', $activeTariff ? (int) round((float) $activeTariff->price_per_kwh) : '') }}">
+                    <small class="form-text text-muted">
+                        القيمة الافتراضية مأخوذة من التعرفة النشطة في شاشة التعرفة، ويمكن تعديلها قبل الإصدار
+                    </small>
                 </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmMinCharge">
+                    <label class="form-check-label fw-semibold" for="confirmMinCharge">
+                        أقر بأن الحد الأدنى للاشتراكات تم إدخاله وتحديثه بشكل صحيح
+                    </label>
+                </div>
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    سيتم إصدار الفواتير التي حددتها فقط. هذا الإجراء لا يمكن التراجع عنه.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" id="confirmBulkIssue" disabled>
+                    <i class="bi bi-check-all me-1"></i>
+                    تأكيد الإصدار
+                </button>
             </div>
         </div>
     </div>
+</div>
+
+{{-- Modal: سبب إلغاء الفاتورة --}}
+<div class="modal fade" id="cancelInvoiceModal" tabindex="-1" aria-hidden="true" style="display:none">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>إلغاء فاتورة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">سيتم إلغاء الفاتورة رقم: <strong id="cancelInvoiceNumber"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">سبب الإلغاء <span class="text-danger">*</span></label>
+                    <textarea id="cancelReason" class="form-control" rows="3" required minlength="5" placeholder="اذكر سبب إلغاء الفاتورة..."></textarea>
+                </div>
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    سيتم إنشاء قيد مالي عكسي في حساب المشترك وتغيير حالة القراءة إلى غير معتمدة.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">تراجع</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelInvoice">
+                    <i class="bi bi-x-circle me-1"></i>
+                    تأكيد الإلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal: استيراد دفعات من Excel --}}
+<div class="modal fade" id="importPaymentsModal" tabindex="-1" aria-hidden="true" style="display:none">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>استيراد دفعات فواتير من Excel</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {{-- تعليمات (ظاهرة دائماً طول ما المودال مفتوح) --}}
+                <div class="alert alert-info alert-permanent small">
+                    <strong>تعليمات:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li><strong>تعريف الفاتورة:</strong> واحد على الأقل من (<code>رقم_الفاتورة</code> / <code>رقم_الاشتراك</code> / <code>رقم_الهوية</code>). الأولوية بنفس الترتيب.</li>
+                        <li><strong>المبلغ</strong> و <strong>تاريخ_الدفع</strong> و <strong>طريقة_الدفع</strong> حقول إجبارية.</li>
+                        <li>يُقبل فقط الفواتير ذات حالة <strong>جديدة</strong>. الفواتير المسددة جزئياً/الملغاة/المسودّات تُرفض.</li>
+                        <li>عند التعريف بالاشتراك/الهوية تُختار <strong>أقدم فاتورة جديدة</strong> للمشترك.</li>
+                        <li>رقم الهوية المكرَّر بين مشتركين يُرفض — استخدم رقم الاشتراك.</li>
+                        <li>المبلغ الزائد عن المتبقي يُسجَّل كرصيد دائن للفاتورة القادمة.</li>
+                    </ul>
+                </div>
+
+                {{-- خطوة 1: رفع الملف --}}
+                <div id="importStep1">
+                    <div class="mb-3">
+                        <a href="{{ route('admin.invoices.payments.import.template') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-download me-1"></i>
+                            تحميل قالب Excel
+                        </a>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">ملف Excel <span class="text-danger">*</span></label>
+                        <input type="file" id="paymentsImportFile" class="form-control" accept=".xlsx,.xls,.csv">
+                        <small class="form-text text-muted">الحد الأقصى 5 ميجابايت (xlsx, xls, csv)</small>
+                    </div>
+                </div>
+
+                {{-- خطوة 2: المعاينة --}}
+                <div id="importStep2" class="d-none">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <div class="card border-success">
+                                <div class="card-body py-2 text-center">
+                                    <div class="text-muted small">صفوف صالحة</div>
+                                    <div class="fs-4 fw-bold text-success" id="paymentsValidCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-danger">
+                                <div class="card-body py-2 text-center">
+                                    <div class="text-muted small">صفوف بها أخطاء</div>
+                                    <div class="fs-4 fw-bold text-danger" id="paymentsErrorCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-primary">
+                                <div class="card-body py-2 text-center">
+                                    <div class="text-muted small">الإجمالي</div>
+                                    <div class="fs-4 fw-bold text-primary" id="paymentsTotalCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs" id="paymentsImportTabs">
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#validRowsTab">الصالحة</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#errorRowsTab">الأخطاء</a></li>
+                    </ul>
+                    <div class="tab-content border border-top-0 p-2" style="max-height: 380px; overflow:auto;">
+                        <div class="tab-pane fade show active" id="validRowsTab">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>رقم الفاتورة</th>
+                                        <th>المشترك</th>
+                                        <th>الإجمالي</th>
+                                        <th>المسدد سابقاً</th>
+                                        <th>المتبقي</th>
+                                        <th>الدفعة</th>
+                                        <th>فائض</th>
+                                        <th>تاريخ الدفع</th>
+                                        <th>الطريقة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentsValidRows"></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade" id="errorRowsTab">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>الصف</th>
+                                        <th>رقم الفاتورة</th>
+                                        <th>رقم الاشتراك</th>
+                                        <th>رقم الهوية</th>
+                                        <th>المبلغ</th>
+                                        <th class="text-danger">الأخطاء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentsErrorRows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="paymentsPreviewBtn">
+                    <i class="bi bi-eye me-1"></i>
+                    معاينة
+                </button>
+                <button type="button" class="btn btn-success d-none" id="paymentsExecuteBtn">
+                    <i class="bi bi-check-lg me-1"></i>
+                    تأكيد التنفيذ
+                </button>
+                <button type="button" class="btn btn-outline-secondary d-none" id="paymentsResetBtn">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    إعادة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script src="{{ asset('assets/admin/libs/select2/select2.min.js') }}"></script>
 <script>
-(function() {
-    const listUrl       = @json(route('admin.meter-readings.index'));
-    const bulkApproveUrl= @json(route('admin.meter-readings.bulk-approve'));
-    const subscribersUrl= @json(route('admin.meter-readings.subscribers-by-operator'));
-    const csrfToken     = document.getElementById('csrfToken').value;
+(function () {
+    const listUrl     = @json(route('admin.invoices.index'));
+    const subsByOpUrl = @json(route('admin.invoices.subscribers-by-operator'));
 
-    const $wrap              = $('#meterReadingsListWrap');
-    const $operatorFilter    = $('#operatorFilter');
-    const $subscriberFilter  = $('#subscriberFilter');
-    const $readingStatusFilter = $('#readingStatusFilter');
-    const $actionStatusFilter  = $('#actionStatusFilter');
-    const $dateFromFilter    = $('#dateFromFilter');
-    const $dateToFilter      = $('#dateToFilter');
-    const $searchInput       = $('#searchInput');
-    const $searchBtn         = $('#searchBtn');
-    const $clearBtn          = $('#clearBtn');
-    const $bulkApproveBtn    = $('#bulkApproveBtn');
-    const $bulkApproveCount  = $('#bulkApproveCount');
+    const $wrap      = $('#invoicesListWrap');
+    const $opFilter  = $('#operatorFilter');
+    const $subFilter = $('#subscriberFilter');
+    const $stFilter  = $('#statusFilter');
+    const $dfFilter  = $('#dateFromFilter');
+    const $dtFilter  = $('#dateToFilter');
+    const $search    = $('#searchInput');
+    const $searchBtn = $('#searchBtn');
+    const $clearBtn  = $('#clearBtn');
+    const defaultBulkPricePerKwh = @json($activeTariff ? (string) ((int) round((float) $activeTariff->price_per_kwh)) : '');
 
-    // تهيئة Select2 لفلتر المشترك
-    $subscriberFilter.select2({
-        placeholder: 'اختر أو ابحث باسم/رقم المشترك...',
-        allowClear: true,
-        dir: 'rtl',
-        language: {
-            noResults: function() { return 'لا توجد نتائج'; },
-            searching: function() { return 'جاري البحث...'; }
-        }
+    let nextPage = {{ $invoices->hasMorePages() ? 2 : 'null' }};
+    let hasMore  = {{ $invoices->hasMorePages() ? 'true' : 'false' }};
+    let isLoading = false;
+    const selectedInvoiceIds = new Set();
+
+    $subFilter.select2({
+        placeholder: 'اختر أو ابحث...', allowClear: true, dir: 'rtl',
+        language: { noResults: () => 'لا توجد نتائج', searching: () => 'جاري البحث...' }
     });
 
-    // عند تغيير المشغل: تحميل مشتركيه
-    $operatorFilter.on('change', function() {
+    $opFilter.on('change', function () {
+        clearSelection();
         loadSubscribersByOperator($(this).val());
-        loadList();
+        loadInvoices();
     });
 
-    function loadSubscribersByOperator(operatorId) {
-        // إعادة تعيين المشتركين
-        $subscriberFilter.val(null).trigger('change.select2');
-        $subscriberFilter.find('option:not(:first)').remove();
-
-        if (!operatorId) {
-            return;
-        }
-
-        $.ajax({
-            url: subscribersUrl,
-            method: 'GET',
-            data: { operator_id: operatorId },
-            success: function(res) {
-                if (res.success && res.subscribers) {
-                    res.subscribers.forEach(function(s) {
-                        $subscriberFilter.append(
-                            new Option(s.subscription_number + ' - ' + s.subscriber_name, s.id, false, false)
-                        );
-                    });
-                    $subscriberFilter.trigger('change.select2');
-                }
+    function loadSubscribersByOperator(opId) {
+        $subFilter.val(null).trigger('change.select2');
+        $subFilter.find('option:not(:first)').remove();
+        if (!opId) return;
+        $.get(subsByOpUrl, { operator_id: opId }, function (res) {
+            if (res.success) {
+                res.subscribers.forEach(s => $subFilter.append(new Option(s.subscription_number + ' - ' + s.subscriber_name, s.id)));
+                $subFilter.trigger('change.select2');
             }
         });
     }
 
-    function getLoading() { return $('#mrLoading'); }
-
-    function setLoading(on) {
-        const $load = getLoading();
-        if (on) {
-            $load.removeClass('d-none');
-            $wrap.find('.table, .pagination, .empty-state').css('visibility', 'hidden');
-        } else {
-            $load.addClass('d-none');
-            $wrap.find('.table, .pagination, .empty-state').css('visibility', 'visible');
-        }
+    function params(extra) {
+        const opId = $opFilter.prop('disabled') ? ($('#operatorFilterHidden').val() || '') : ($opFilter.val() || '');
+        const st   = $stFilter.val();
+        return Object.assign({
+            operator_id:    opId,
+            subscriber_id:  $subFilter.val() || '',
+            invoice_status: (st !== null && st !== '') ? st : '',
+            date_from:      $dfFilter.val() || '',
+            date_to:        $dtFilter.val() || '',
+            search:         $search.val() || '',
+        }, extra || {});
     }
 
-    function currentParams(extra) {
-        let operatorId = $operatorFilter.prop('disabled')
-            ? ($('#operatorFilterHidden').val() || '')
-            : ($operatorFilter.val() || '');
-
-        // action_status: نرسل القيمة كما هي (حتى لو كانت "0")
-        const actionVal = $actionStatusFilter.val();
-
-        const p = {
-            operator_id:    operatorId,
-            subscriber_id:  $subscriberFilter.val() || '',
-            reading_status: $readingStatusFilter.val() || '',
-            action_status:  (actionVal !== null && actionVal !== undefined) ? actionVal : '',
-            box_number:     $('#boxNumberFilter').val() || '',
-            date_from:      $dateFromFilter.val() || '',
-            date_to:        $dateToFilter.val() || '',
-            search:         $searchInput.val() || '',
-        };
-        return Object.assign(p, extra || {});
+    function hasFilter(p) {
+        return !!(p.operator_id || p.subscriber_id || p.invoice_status !== '' || p.date_from || p.date_to || p.search);
     }
 
-    function hasActiveFilter(p) {
-        return !!(p.operator_id || p.subscriber_id || p.reading_status ||
-                  p.action_status !== '' || p.date_from || p.date_to || p.search);
+    function initTooltips(ctx) {
+        (ctx || document).querySelectorAll('[data-bs-toggle="tooltip"]:not(.tooltip-init)').forEach(function (el) {
+            el.classList.add('tooltip-init');
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
     }
 
-    function updateClearBtn() {
-        const p = currentParams();
-        $clearBtn.toggleClass('d-none', !hasActiveFilter(p));
-        // إظهار زر "اعتماد حسب الفلتر" لما يكون فيه فلتر تاريخ أو صندوق
-        const hasApproveFilter = p.date_from || p.date_to || p.box_number;
-        $('#bulkApproveFilterBtn').toggleClass('d-none', !hasApproveFilter);
+    function getSelectableInvoices() {
+        return $('.invoice-select-item');
     }
 
-    function loadList(extra) {
-        const params = currentParams(extra);
-        setLoading(true);
+    function syncSelectionUI() {
+        const $items = getSelectableInvoices();
+
+        $items.each(function () {
+            const id = String($(this).data('invoice-id'));
+            $(this).prop('checked', selectedInvoiceIds.has(id));
+        });
+
+        const selectedCount = selectedInvoiceIds.size;
+        const checkedVisibleCount = $items.filter(':checked').length;
+        const allVisibleChecked = $items.length > 0 && checkedVisibleCount === $items.length;
+
+        $('#selectAllDrafts')
+            .prop('checked', allVisibleChecked)
+            .prop('indeterminate', checkedVisibleCount > 0 && !allVisibleChecked);
+
+        $('#bulkSelectedCount').text(selectedCount);
+        $('#selectedInvoicesSummary').text(
+            selectedCount > 0
+                ? `تم تحديد ${selectedCount} فاتورة للإصدار`
+                : 'لم يتم تحديد أي فاتورة للإصدار'
+        );
+        $('#clearSelectionBtn').toggleClass('d-none', selectedCount === 0);
+        $('#bulkIssueBtn').prop('disabled', selectedCount === 0);
+    }
+
+    function clearSelection() {
+        selectedInvoiceIds.clear();
+        syncSelectionUI();
+    }
+
+    // تحميل الصفحة الأولى (يستبدل كل شيء)
+    function loadInvoices() {
+        if (isLoading) return;
+        selectedInvoiceIds.clear();
+        syncSelectionUI();
+        isLoading = true;
+        nextPage  = null;
+        hasMore   = true;
+
+        $('#invLoading').removeClass('d-none');
+        $wrap.find('.table,.empty-state').css('visibility','hidden');
 
         $.ajax({
-            url: listUrl,
-            method: 'GET',
-            data: params,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            success: function(res) {
+            url: listUrl, method: 'GET', data: params({ page: 1 }),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            success(res) {
                 if (res.success) {
                     $wrap.html(res.html);
-                    $('#meterReadingsCount').text(res.count);
-                    updateClearBtn();
-                    updateBulkApproveBtn();
-                    bindCheckboxEvents();
-                    bindAbnormalBtns();
+                    $('#invoicesCount').text(res.count);
+                    hasMore  = res.has_more;
+                    nextPage = res.next_page;
+                    if (!hasMore) $('#scrollLoader').remove();
+                    $clearBtn.toggleClass('d-none', !hasFilter(params()));
+                    syncSelectionUI();
+                    initTooltips($wrap[0]);
                 }
-                setLoading(false);
             },
-            error: function() { setLoading(false); }
+            complete() {
+                $('#invLoading').addClass('d-none');
+                $wrap.find('.table,.empty-state').css('visibility','visible');
+                isLoading = false;
+            }
         });
     }
 
-    // --- Bulk approve ---
-    function getSelectedIds() {
-        return $wrap.find('.reading-checkbox:checked').map(function() { return $(this).val(); }).get();
-    }
+    // تحميل الصفحة التالية (يلحق بالجدول)
+    function loadMore() {
+        if (isLoading || !hasMore || !nextPage) return;
+        isLoading = true;
 
-    function updateBulkApproveBtn() {
-        const ids = getSelectedIds();
-        $bulkApproveBtn.toggleClass('d-none', ids.length === 0);
-        $('#bulkApproveCount').text(ids.length);
-    }
-
-    function bindCheckboxEvents() {
-        $wrap.find('#selectAllReadings').off('change').on('change', function() {
-            $wrap.find('.reading-checkbox').prop('checked', $(this).is(':checked'));
-            updateBulkApproveBtn();
-        });
-        $wrap.find('.reading-checkbox').off('change').on('change', function() {
-            const total = $wrap.find('.reading-checkbox').length;
-            const checked = $wrap.find('.reading-checkbox:checked').length;
-            $wrap.find('#selectAllReadings')
-                .prop('indeterminate', checked > 0 && checked < total)
-                .prop('checked', checked === total && total > 0);
-            updateBulkApproveBtn();
-        });
-    }
-
-    $bulkApproveBtn.on('click', function() {
-        const ids = getSelectedIds();
-        if (!ids.length) return;
-
-        Swal.fire({
-            title: 'اعتماد القراءات',
-            html: 'هل تريد اعتماد <strong>' + ids.length + '</strong> قراءة وترحيلها لشاشة الفوترة؟',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="bi bi-check-circle me-1"></i>نعم، اعتماد',
-            cancelButtonText: 'إلغاء',
-            reverseButtons: true,
-        }).then((result) => {
-            if (!result.isConfirmed) return;
-
-            $bulkApproveBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> جاري الاعتماد...');
-
-            $.ajax({
-                url: bulkApproveUrl,
-                method: 'POST',
-                data: { ids: ids, _token: csrfToken },
-                success: function(res) {
-                    if (res.success) {
-                        Swal.fire({ icon: 'success', title: 'تم بنجاح', text: res.message, timer: 3000, showConfirmButton: false });
-                        loadList();
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'خطأ', text: res.message });
-                    }
-                },
-                error: function(xhr) {
-                    const msg = xhr.responseJSON?.message || 'حدث خطأ.';
-                    Swal.fire({ icon: 'error', title: 'خطأ', text: msg });
-                },
-                complete: function() {
-                    $bulkApproveBtn.prop('disabled', false)
-                        .html('<i class="bi bi-check-circle me-1"></i> اعتماد المحدد <span class="badge bg-white text-success ms-1" id="bulkApproveCount">0</span>');
-                }
-            });
-        });
-    });
-
-    // --- أحداث الفلاتر ---
-    $searchBtn.on('click', function() { loadList(); });
-    $searchInput.on('keypress', function(e) { if (e.which === 13) loadList(); });
-    $subscriberFilter.on('change', function() { loadList(); });
-    $readingStatusFilter.on('change', function() { updateClearBtn(); });
-    $actionStatusFilter.on('change', function() { updateClearBtn(); });
-    $('#boxNumberFilter').on('input', function() { updateClearBtn(); });
-    $dateFromFilter.on('change', function() { updateClearBtn(); });
-    $dateToFilter.on('change', function() { updateClearBtn(); });
-
-    // Auto-load if page opened with filter params (e.g. from sidebar link)
-    if (hasActiveFilter(currentParams())) {
-        updateClearBtn();
-        loadList();
-    }
-
-    $clearBtn.on('click', function() {
-        $operatorFilter.val('');
-        $subscriberFilter.val(null).trigger('change.select2');
-        $subscriberFilter.find('option:not(:first)').remove();
-        $readingStatusFilter.val('');
-        $actionStatusFilter.val('');
-        $('#boxNumberFilter').val('');
-        $dateFromFilter.val('');
-        $dateToFilter.val('');
-        $searchInput.val('');
-        loadList();
-    });
-
-    // تصدير Excel حسب الفلاتر
-    $('#exportExcelBtn').on('click', function(e) {
-        e.preventDefault();
-        window.location.href = @json(route('admin.meter-readings.export')) + '?' + $.param(currentParams());
-    });
-
-    // اعتماد حسب الفلتر (طبيعية + مودال لغير الطبيعية)
-    $('#bulkApproveFilterBtn').on('click', function() {
-        const p = currentParams();
-        if (!p.date_from && !p.date_to && !p.box_number) {
-            alert('يرجى تحديد تاريخ أو رقم صندوق للاعتماد');
-            return;
-        }
-
-        Swal.fire({
-            title: 'اعتماد حسب الفلتر',
-            html: 'سيتم اعتماد القراءات الطبيعية غير المعتمدة المطابقة للفلاتر.<br>في حال وجود قراءات غير طبيعية ستظهر لك لإدخال الأسباب.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="bi bi-check-all me-1"></i>متابعة',
-            cancelButtonText: 'إلغاء',
-            reverseButtons: true,
-        }).then((result) => {
-            if (!result.isConfirmed) return;
-
-            const $btn = $('#bulkApproveFilterBtn');
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الاعتماد...');
-
-            $.ajax({
-                url: @json(route('admin.meter-readings.bulk-approve-filter')),
-                method: 'POST',
-                data: Object.assign({ _token: csrfToken }, p),
-                success: function(res) {
-                    if (!res.success) {
-                        Swal.fire({ icon: 'error', title: 'خطأ', text: res.message });
-                        return;
-                    }
-
-                    // لو فيه غير طبيعية → عرض المودال
-                    if (res.abnormal_count > 0) {
-                        showAbnormalModal(res.message, res.abnormal_readings);
-                    } else {
-                        Swal.fire({ icon: 'success', title: 'تم بنجاح', text: res.message, timer: 3000, showConfirmButton: false });
-                    }
-                    loadList();
-                },
-                error: function(xhr) {
-                    Swal.fire({ icon: 'error', title: 'خطأ', text: xhr.responseJSON?.message || 'حدث خطأ.' });
-                },
-                complete: function() {
-                    $btn.prop('disabled', false).html('<i class="bi bi-check-all me-1"></i>اعتماد حسب الفلتر');
-                }
-            });
-        });
-    });
-
-    // ===== مودال القراءات غير الطبيعية =====
-    function showAbnormalModal(successMsg, abnormals) {
-        let tableRows = '';
-        abnormals.forEach((r, i) => {
-            tableRows += `<tr>
-                <td class="small">${r.reading_number}</td>
-                <td class="small">${r.subscriber_name}</td>
-                <td class="small">${r.consumption_kwh}</td>
-                <td class="small">${r.reading_date}</td>
-                <td><input type="text" class="form-control form-control-sm abnormal-reason" data-id="${r.id}" placeholder="السبب..."></td>
-            </tr>`;
-        });
-
-        Swal.fire({
-            title: 'قراءات غير طبيعية',
-            html: `
-                <p class="text-success small mb-2"><i class="bi bi-check-circle me-1"></i>${successMsg}</p>
-                <p class="small text-muted mb-2">القراءات التالية غير طبيعية وتحتاج سبب للاعتماد:</p>
-                <div class="mb-2">
-                    <input type="text" id="globalAbnormalReason" class="form-control form-control-sm" placeholder="سبب جماعي لكل القراءات (اختياري)">
-                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="applyGlobalReason">
-                        <i class="bi bi-arrow-down me-1"></i>تطبيق على الكل
-                    </button>
-                </div>
-                <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
-                    <table class="table table-sm table-hover mb-0 text-center">
-                        <thead class="table-light"><tr>
-                            <th>رقم القراءة</th><th>المشترك</th><th>الاستهلاك</th><th>التاريخ</th><th>السبب</th>
-                        </tr></thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                </div>`,
-            width: '750px',
-            showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="bi bi-check-lg me-1"></i>اعتماد غير الطبيعية',
-            cancelButtonText: 'تخطي',
-            reverseButtons: true,
-            didOpen: () => {
-                document.getElementById('applyGlobalReason').addEventListener('click', function() {
-                    const globalReason = document.getElementById('globalAbnormalReason').value;
-                    if (globalReason) {
-                        document.querySelectorAll('.abnormal-reason').forEach(inp => {
-                            if (!inp.value) inp.value = globalReason;
-                        });
-                    }
-                });
-            },
-            preConfirm: () => {
-                const readings = [];
-                let hasEmpty = false;
-                document.querySelectorAll('.abnormal-reason').forEach(inp => {
-                    const reason = inp.value.trim();
-                    if (!reason || reason.length < 5) hasEmpty = true;
-                    readings.push({ id: inp.dataset.id, reason: reason });
-                });
-                if (hasEmpty) {
-                    Swal.showValidationMessage('يرجى إدخال سبب (5 أحرف على الأقل) لكل قراءة');
-                    return false;
-                }
-                return readings;
-            },
-        }).then((result) => {
-            if (!result.isConfirmed || !result.value) return;
-
-            $.ajax({
-                url: @json(route('admin.meter-readings.bulk-approve-abnormal')),
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ readings: result.value, _token: csrfToken }),
-                headers: { 'X-CSRF-TOKEN': csrfToken },
-                success: function(res) {
-                    if (res.success) {
-                        Swal.fire({ icon: 'success', title: 'تم بنجاح', text: res.message, timer: 3000, showConfirmButton: false });
-                        loadList();
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'خطأ', text: res.message });
-                    }
-                },
-                error: function(xhr) {
-                    Swal.fire({ icon: 'error', title: 'خطأ', text: xhr.responseJSON?.message || 'حدث خطأ.' });
-                }
-            });
-        });
-    }
-
-    // Pagination AJAX
-    $(document).on('click', '#meterReadingsListWrap .pagination a', function(e) {
-        e.preventDefault();
-        const href = $(this).attr('href');
-        if (href && href !== '#') {
-            const url = new URL(href, window.location.origin);
-            loadList({ page: url.searchParams.get('page') });
-        }
-    });
-
-    bindCheckboxEvents();
-    updateClearBtn();
-
-    // --- اعتماد القراءات غير الطبيعية ---
-    let currentAbnormalUrl = '';
-
-    function bindAbnormalBtns() {
-        $wrap.find('.approve-abnormal-btn').off('click').on('click', function() {
-            const $btn = $(this);
-            currentAbnormalUrl = $btn.data('url');
-            $('#abnormalReadingNumber').val($btn.data('number'));
-            $('#abnormalReason').val('').removeClass('is-invalid');
-            $('#abnormalReasonError').text('');
-            $('#abnormalReasonCount').text('0');
-            const modal = new bootstrap.Modal(document.getElementById('approveAbnormalModal'));
-            modal.show();
-        });
-    }
-
-    $('#abnormalReason').on('input', function() {
-        $('#abnormalReasonCount').text($(this).val().length);
-        $(this).removeClass('is-invalid');
-    });
-
-    $('#confirmAbnormalApprove').on('click', function() {
-        const reason = $('#abnormalReason').val().trim();
-        if (!reason || reason.length < 5) {
-            $('#abnormalReason').addClass('is-invalid');
-            $('#abnormalReasonError').text('يجب إدخال سبب لا يقل عن 5 أحرف.');
-            return;
-        }
-        const $btn = $(this);
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> جاري الاعتماد...');
+        var $loader = $('#scrollLoader');
+        $loader.show();
 
         $.ajax({
-            url: currentAbnormalUrl,
+            url: listUrl, method: 'GET', data: params({ page: nextPage }),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            success(res) {
+                if (res.success && res.append) {
+                    $('#invoicesBody').append(res.html);
+                    hasMore  = res.has_more;
+                    nextPage = res.next_page;
+                    if (!hasMore) $loader.remove();
+                    syncSelectionUI();
+                    initTooltips($('#invoicesBody')[0]);
+                }
+            },
+            complete() { isLoading = false; }
+        });
+    }
+
+    // Infinite scroll
+    function checkScroll() {
+        if (isLoading || !hasMore || !nextPage) return;
+        var el = document.getElementById('scrollLoader');
+        if (!el) return;
+        var rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 300) loadMore();
+    }
+
+    $(window).on('scroll resize', checkScroll);
+    $('.app-content, .main-content, .main-container').on('scroll', checkScroll);
+    setInterval(checkScroll, 500);
+
+    $(document).on('change', '.invoice-select-item', function () {
+        const id = String($(this).data('invoice-id'));
+        if ($(this).is(':checked')) selectedInvoiceIds.add(id);
+        else selectedInvoiceIds.delete(id);
+        syncSelectionUI();
+    });
+
+    $(document).on('change', '#selectAllDrafts', function () {
+        const checked = $(this).is(':checked');
+        getSelectableInvoices().each(function () {
+            const id = String($(this).data('invoice-id'));
+            if (checked) selectedInvoiceIds.add(id);
+            else selectedInvoiceIds.delete(id);
+        });
+        syncSelectionUI();
+    });
+
+    $(document).on('click', '#clearSelectionBtn', function () {
+        clearSelection();
+    });
+
+    // أحداث الفلاتر
+    $searchBtn.on('click', () => { clearSelection(); loadInvoices(); });
+    $search.on('keypress', e => { if (e.which === 13) { clearSelection(); loadInvoices(); } });
+    $subFilter.on('change', () => { clearSelection(); loadInvoices(); });
+    $stFilter.on('change', () => { clearSelection(); loadInvoices(); });
+    $dfFilter.on('change', () => { clearSelection(); loadInvoices(); });
+    $dtFilter.on('change', () => { clearSelection(); loadInvoices(); });
+
+    $clearBtn.on('click', function () {
+        clearSelection();
+        if (!$opFilter.prop('disabled')) $opFilter.val('');
+        $subFilter.val(null).trigger('change.select2');
+        $subFilter.find('option:not(:first)').remove();
+        $stFilter.val(''); $dfFilter.val(''); $dtFilter.val(''); $search.val('');
+        loadInvoices();
+    });
+
+    // تفعيل tooltips عند أول تحميل
+    initTooltips();
+    syncSelectionUI();
+
+    // === Bulk Issue ===
+    $('#bulkIssueBtn').on('click', function() {
+        if (selectedInvoiceIds.size === 0) {
+            if (window.adminNotifications) window.adminNotifications.error('يرجى تحديد فاتورة واحدة على الأقل.');
+            else alert('يرجى تحديد فاتورة واحدة على الأقل.');
+            return;
+        }
+
+        $('#bulkPricePerKwh').val(defaultBulkPricePerKwh);
+        $('#confirmMinCharge').prop('checked', false);
+        $('#confirmBulkIssue').prop('disabled', true);
+        $('#bulkSelectedCount').text(selectedInvoiceIds.size);
+        new bootstrap.Modal('#bulkIssueModal').show();
+    });
+
+    $('#confirmMinCharge').on('change', function() {
+        var priceOk = parseFloat($('#bulkPricePerKwh').val()) > 0;
+        $('#confirmBulkIssue').prop('disabled', !($(this).is(':checked') && priceOk));
+    });
+    $('#bulkPricePerKwh').on('input', function() {
+        var priceOk = parseFloat($(this).val()) > 0;
+        var checked = $('#confirmMinCharge').is(':checked');
+        $('#confirmBulkIssue').prop('disabled', !(checked && priceOk));
+    });
+
+    $('#confirmBulkIssue').on('click', function() {
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الإصدار...');
+
+        $.ajax({
+            url: "{{ route('admin.invoices.bulk-issue') }}",
             method: 'POST',
-            data: { _token: csrfToken, abnormal_reason: reason },
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val(),
+                price_per_kwh: $('#bulkPricePerKwh').val(),
+                confirm_minimum_charge: 1,
+                invoice_ids: Array.from(selectedInvoiceIds),
+            },
             success: function(res) {
+                bootstrap.Modal.getInstance('#bulkIssueModal').hide();
                 if (res.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('approveAbnormalModal')).hide();
-                    Swal.fire({ icon: 'success', title: 'تم بنجاح', text: res.message, timer: 3000, showConfirmButton: false });
-                    loadList();
+                    clearSelection();
+                    if (window.adminNotifications) window.adminNotifications.success(res.message);
+                    else alert(res.message);
+                    if (typeof loadList === 'function') loadList();
+                    else loadInvoices();
                 } else {
-                    Swal.fire({ icon: 'error', title: 'خطأ', text: res.message });
+                    if (window.adminNotifications) window.adminNotifications.error(res.message);
+                    else alert(res.message);
                 }
             },
             error: function(xhr) {
-                const errors = xhr.responseJSON?.errors;
-                if (errors?.abnormal_reason) {
-                    $('#abnormalReason').addClass('is-invalid');
-                    $('#abnormalReasonError').text(errors.abnormal_reason[0]);
-                } else {
-                    const msg = xhr.responseJSON?.message || 'حدث خطأ.';
-                    Swal.fire({ icon: 'error', title: 'خطأ', text: msg });
-                }
+                var msg = xhr.responseJSON?.message || 'حدث خطأ أثناء إصدار الفواتير';
+                if (window.adminNotifications) window.adminNotifications.error(msg);
+                else alert(msg);
             },
             complete: function() {
-                $btn.prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i> اعتماد القراءة');
+                $btn.prop('disabled', false).html('<i class="bi bi-check-all me-1"></i>تأكيد الإصدار');
             }
         });
     });
 
-    bindAbnormalBtns();
+    // === Import Payments from Excel ===
+    const paymentsPreviewUrl = @json(route('admin.invoices.payments.import.preview'));
+    const paymentsExecuteUrl = @json(route('admin.invoices.payments.import.execute'));
+    let paymentsImportFilePath = null;
+
+    function resetPaymentsImport() {
+        $('#paymentsImportFile').val('');
+        $('#importStep1').removeClass('d-none');
+        $('#importStep2').addClass('d-none');
+        $('#paymentsPreviewBtn').removeClass('d-none').prop('disabled', false).html('<i class="bi bi-eye me-1"></i>معاينة');
+        $('#paymentsExecuteBtn').addClass('d-none').prop('disabled', false);
+        $('#paymentsResetBtn').addClass('d-none');
+        $('#paymentsValidRows').empty();
+        $('#paymentsErrorRows').empty();
+        $('#paymentsValidCount,#paymentsErrorCount,#paymentsTotalCount').text('0');
+        paymentsImportFilePath = null;
+    }
+
+    function formatAmount(v) {
+        var n = parseFloat(v || 0);
+        return isNaN(n) ? '-' : n.toFixed(2);
+    }
+
+    function fillPreviewTables(results) {
+        var $valid = $('#paymentsValidRows').empty();
+        var $errors = $('#paymentsErrorRows').empty();
+
+        (results.valid || []).forEach(function(r) {
+            $valid.append(
+                '<tr>' +
+                '<td>' + r.row_number + '</td>' +
+                '<td>' + (r.invoice_number || '-') + '</td>' +
+                '<td>' + (r.subscription_number || '') + ' - ' + (r.subscriber_name || '') + '</td>' +
+                '<td>' + formatAmount(r.total_amount) + '</td>' +
+                '<td>' + formatAmount(r.already_paid) + '</td>' +
+                '<td>' + formatAmount(r.remaining) + '</td>' +
+                '<td class="fw-bold text-success">' + formatAmount(r.amount_paid) + '</td>' +
+                '<td>' + (parseFloat(r.overpayment) > 0 ? '<span class="text-warning fw-bold">' + formatAmount(r.overpayment) + '</span>' : '-') + '</td>' +
+                '<td>' + (r.payment_date || '-') + '</td>' +
+                '<td>' + (r.method_label || '-') + '</td>' +
+                '</tr>'
+            );
+        });
+
+        (results.errors || []).forEach(function(e) {
+            var errs = (e.errors || []).map(function(x) { return '<li>' + x + '</li>'; }).join('');
+            $errors.append(
+                '<tr>' +
+                '<td>' + e.row_number + '</td>' +
+                '<td>' + (e.data?.invoice_number || '-') + '</td>' +
+                '<td>' + (e.data?.subscription_number || '-') + '</td>' +
+                '<td>' + (e.data?.id_number || '-') + '</td>' +
+                '<td>' + (e.data?.amount_paid != null ? formatAmount(e.data.amount_paid) : '-') + '</td>' +
+                '<td class="text-danger"><ul class="mb-0 ps-3">' + errs + '</ul></td>' +
+                '</tr>'
+            );
+        });
+
+        $('#paymentsValidCount').text(results.valid_count || 0);
+        $('#paymentsErrorCount').text(results.error_count || 0);
+        $('#paymentsTotalCount').text(results.total || 0);
+    }
+
+    $('#importPaymentsModal').on('hidden.bs.modal', resetPaymentsImport);
+
+    $('#paymentsPreviewBtn').on('click', function() {
+        var fileInput = document.getElementById('paymentsImportFile');
+        if (!fileInput.files || !fileInput.files[0]) {
+            var m = 'يرجى اختيار ملف.';
+            if (window.adminNotifications) window.adminNotifications.error(m); else alert(m);
+            return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري المعاينة...');
+
+        var fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        fd.append('_token', $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val());
+
+        $.ajax({
+            url: paymentsPreviewUrl,
+            method: 'POST',
+            data: fd,
+            contentType: false,
+            processData: false,
+            success: function(res) {
+                if (res.success) {
+                    paymentsImportFilePath = res.file_path;
+                    fillPreviewTables(res.results);
+                    $('#importStep1').addClass('d-none');
+                    $('#importStep2').removeClass('d-none');
+                    $btn.addClass('d-none');
+                    $('#paymentsResetBtn').removeClass('d-none');
+                    if ((res.results.valid_count || 0) > 0) {
+                        $('#paymentsExecuteBtn').removeClass('d-none');
+                    }
+                } else {
+                    var m = res.message || 'فشل في المعاينة';
+                    if (window.adminNotifications) window.adminNotifications.error(m); else alert(m);
+                }
+            },
+            error: function(xhr) {
+                var m = xhr.responseJSON?.message || 'حدث خطأ أثناء المعاينة';
+                if (window.adminNotifications) window.adminNotifications.error(m); else alert(m);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-eye me-1"></i>معاينة');
+            }
+        });
+    });
+
+    $('#paymentsResetBtn').on('click', resetPaymentsImport);
+
+    $('#paymentsExecuteBtn').on('click', function() {
+        if (!paymentsImportFilePath) return;
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري التنفيذ...');
+
+        $.ajax({
+            url: paymentsExecuteUrl,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val(),
+                file_path: paymentsImportFilePath,
+            },
+            success: function(res) {
+                if (res.success) {
+                    bootstrap.Modal.getInstance('#importPaymentsModal').hide();
+                    if (window.adminNotifications) window.adminNotifications.success(res.message);
+                    else alert(res.message);
+                    loadInvoices();
+                } else {
+                    var m = res.message || 'فشل التنفيذ';
+                    if (window.adminNotifications) window.adminNotifications.error(m); else alert(m);
+                }
+            },
+            error: function(xhr) {
+                var m = xhr.responseJSON?.message || 'حدث خطأ أثناء التنفيذ';
+                if (window.adminNotifications) window.adminNotifications.error(m); else alert(m);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>تأكيد التنفيذ');
+            }
+        });
+    });
+
+    // === Export Excel ===
+    $('#exportExcelBtn').on('click', function(e) {
+        e.preventDefault();
+        var p = params();
+        window.location.href = "{{ route('admin.invoices.export') }}" + '?' + $.param(p);
+    });
+
+    // === Cancel Invoice (Issued) ===
+    var cancelUrl = '';
+    $(document).on('click', '.cancel-invoice-btn', function() {
+        cancelUrl = $(this).data('url');
+        $('#cancelInvoiceNumber').text($(this).data('number'));
+        $('#cancelReason').val('');
+        new bootstrap.Modal('#cancelInvoiceModal').show();
+    });
+
+    $('#confirmCancelInvoice').on('click', function() {
+        var reason = $('#cancelReason').val().trim();
+        if (reason.length < 5) {
+            alert('يجب ذكر سبب الإلغاء (5 أحرف على الأقل)');
+            return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>جاري الإلغاء...');
+
+        $.ajax({
+            url: cancelUrl,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content') || $('#csrfToken').val(),
+                cancel_reason: reason,
+            },
+            success: function(res) {
+                bootstrap.Modal.getInstance('#cancelInvoiceModal').hide();
+                if (res.success) {
+                    if (window.adminNotifications) window.adminNotifications.success(res.message);
+                    else alert(res.message);
+                    if (typeof loadList === 'function') loadList();
+                    else loadInvoices();
+                } else {
+                    if (window.adminNotifications) window.adminNotifications.error(res.message);
+                    else alert(res.message);
+                }
+            },
+            error: function(xhr) {
+                var msg = xhr.responseJSON?.message || 'حدث خطأ أثناء إلغاء الفاتورة';
+                if (window.adminNotifications) window.adminNotifications.error(msg);
+                else alert(msg);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-x-circle me-1"></i>تأكيد الإلغاء');
+            }
+        });
+    });
 })();
 </script>
 @endpush
