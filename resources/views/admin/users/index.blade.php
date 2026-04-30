@@ -1052,31 +1052,6 @@
                 if(createModalEl) {
                     createModalEl.addEventListener('shown.bs.modal', function(){
                         initOperatorSelect2InModal();
-                        // Select2 على دور الإضافة (مع بحث + تجميع حسب المشغل)
-                        const $createRoleEl = $('#roleSelect');
-                        if($createRoleEl.length && !$createRoleEl.hasClass('select2-hidden-accessible')){
-                            $createRoleEl.select2({
-                                dropdownParent: $('#userCreateModal'),
-                                dir: 'rtl',
-                                width: '100%',
-                                placeholder: 'اختر الدور',
-                                language: 'ar',
-                                minimumResultsForSearch: 6,
-                                templateResult: roleTemplateResult,
-                            });
-                            // الحفاظ على trigger('change') الأصلي للحقول التابعة للدور
-                            $createRoleEl.on('select2:select select2:clear', function(){
-                                $(this).trigger('change');
-                            });
-                        }
-                    });
-
-                    // تنظيف select2 عند إغلاق المودال حتى يعاد إنشاؤه نظيفاً
-                    createModalEl.addEventListener('hidden.bs.modal', function(){
-                        const $createRoleEl = $('#roleSelect');
-                        if($createRoleEl.hasClass('select2-hidden-accessible')){
-                            $createRoleEl.select2('destroy');
-                        }
                     });
                 }
             @endcan
