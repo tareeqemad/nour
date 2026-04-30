@@ -119,7 +119,7 @@
             if (roleSelect && operatorField) {
                 function toggleOperator() {
                     const val = roleSelect.value;
-                    const needOp = (val === '{{ \App\Role::Employee->value }}' || val === '{{ \App\Role::Technician->value }}');
+                    const needOp = (val === '{{ \App\Enums\Role::Employee->value }}' || val === '{{ \App\Enums\Role::Technician->value }}');
 
                     operatorField.style.display = needOp ? '' : 'none';
                     const star = document.getElementById('opReqStar');

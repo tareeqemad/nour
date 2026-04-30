@@ -42,8 +42,8 @@
                             <label class="form-label">الدور</label>
                             <select name="role" class="form-select">
                                 <option value="">الكل</option>
-                                <option value="{{ \App\Role::Employee->value }}" {{ ($roleFilter ?? '') === \App\Role::Employee->value ? 'selected' : '' }}>موظف</option>
-                                <option value="{{ \App\Role::Technician->value }}" {{ ($roleFilter ?? '') === \App\Role::Technician->value ? 'selected' : '' }}>فني</option>
+                                <option value="{{ \App\Enums\Role::Employee->value }}" {{ ($roleFilter ?? '') === \App\Enums\Role::Employee->value ? 'selected' : '' }}>موظف</option>
+                                <option value="{{ \App\Enums\Role::Technician->value }}" {{ ($roleFilter ?? '') === \App\Enums\Role::Technician->value ? 'selected' : '' }}>فني</option>
                             </select>
                         </div>
                         <div class="col-lg-3 d-flex gap-2">

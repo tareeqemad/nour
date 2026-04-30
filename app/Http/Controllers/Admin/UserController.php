@@ -531,6 +531,7 @@ class UserController extends Controller
                 'email' => $u->email,
                 'phone' => $u->phone ?? null,
                 'role' => $u->role?->value ?? (string) $u->getRawOriginal('role'),
+                'role_label' => $u->role_name,
                 'status' => $u->status ?? 'active',
                 'operator' => $operatorName,
                 'operator_id' => $operatorId,

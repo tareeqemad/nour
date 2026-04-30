@@ -3,11 +3,13 @@
     $isCreate = ($mode ?? 'create') === 'create';
 
     $roleMeta = [
-        \App\Role::SuperAdmin->value   => ['label' => 'مدير النظام',      'badge' => 'danger', 'icon' => 'bi-shield-lock'],
-        \App\Role::Admin->value        => ['label' => 'سلطة الطاقة',       'badge' => 'dark',   'icon' => 'bi-lightning-charge'],
-        \App\Role::CompanyOwner->value => ['label' => 'مشغل',             'badge' => 'primary','icon' => 'bi-building'],
-        \App\Role::Employee->value     => ['label' => 'موظف',             'badge' => 'success','icon' => 'bi-person-badge'],
-        \App\Role::Technician->value   => ['label' => 'فني',              'badge' => 'warning','icon' => 'bi-tools'],
+        \App\Enums\Role::SuperAdmin->value      => ['label' => 'مدير النظام',  'badge' => 'danger',  'icon' => 'bi-shield-lock'],
+        \App\Enums\Role::Admin->value           => ['label' => 'مدير',          'badge' => 'dark',    'icon' => 'bi-person-gear'],
+        \App\Enums\Role::EnergyAuthority->value => ['label' => 'سلطة الطاقة',   'badge' => 'info',    'icon' => 'bi-lightning-charge'],
+        \App\Enums\Role::CompanyOwner->value    => ['label' => 'مشغل',          'badge' => 'primary', 'icon' => 'bi-building'],
+        \App\Enums\Role::Employee->value        => ['label' => 'موظف',          'badge' => 'success', 'icon' => 'bi-person-badge'],
+        \App\Enums\Role::Technician->value      => ['label' => 'فني',           'badge' => 'warning', 'icon' => 'bi-tools'],
+        \App\Enums\Role::CivilDefense->value    => ['label' => 'دفاع مدني',     'badge' => 'secondary','icon' => 'bi-shield-shaded'],
     ];
 
     $selectedRole = old('role');
@@ -19,7 +21,7 @@
         }
     }
 
-    $isEmpOrTech = in_array($selectedRole, [\App\Role::Employee->value, \App\Role::Technician->value], true);
+    $isEmpOrTech = in_array($selectedRole, [\App\Enums\Role::Employee->value, \App\Enums\Role::Technician->value], true);
 @endphp
 
 <div class="mb-4">
@@ -97,7 +99,7 @@
                 @endforeach
             </select>
             @if($roleDisabled)
-                <input type="hidden" name="role" value="{{ \App\Role::CompanyOwner->value }}">
+                <input type="hidden" name="role" value="{{ \App\Enums\Role::CompanyOwner->value }}">
             @endif
             <small class="form-text text-muted">{{ $roleHelpText }}</small>
         </div>
