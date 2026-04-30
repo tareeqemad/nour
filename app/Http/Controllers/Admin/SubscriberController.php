@@ -28,21 +28,18 @@ class SubscriberController extends Controller
 
         // تحديد المشغل بناءً على دور المستخدم
         $currentOperator = null;
-        if ($user->isCompanyOwner()) {
-            $currentOperator = $user->ownedOperators()->first();
-            if ($currentOperator) {
-                $query->whereHas('generationUnits', fn($q) => $q->where('operator_id', $currentOperator->id));
-            }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->isNotEmpty()) {
-                $operatorIds = $operators->pluck('id')->toArray();
+        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+
+        if (! $canSelectOperator) {
+            $operatorIds = $user->getScopedOperatorIds();
+            if (! empty($operatorIds)) {
                 $query->whereHas('generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
-                $currentOperator = $operators->first();
+                $currentOperator = Operator::find($operatorIds[0]);
+            } else {
+                // مستخدم غير مرتبط بأي مشغل: لا يرى أي مشترك
+                $query->whereRaw('0 = 1');
             }
         }
-
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
 
         // فلتر المشغل
         if ($canSelectOperator) {
@@ -59,56 +56,48 @@ class SubscriberController extends Controller
         }
 
         // فلتر حالة الاشتراك
-        $status = $request->input('subscription_status', '');
-        if ($status !== '' && in_array($status, ['1', '2', '3'])) {
-            $query->where('subscription_status', $status);
+        if ($request->filled('subscription_status') && in_array($request->input('subscription_status'), ['1', '2', '3'])) {
+            $query->where('subscription_status', $request->input('subscription_status'));
         }
 
         // فلتر تصنيف الاشتراك
-        $category = $request->input('subscription_category', '');
-        if ($category !== '' && in_array($category, ['1', '2', '3', '4'])) {
-            $query->where('subscription_category', $category);
+        if ($request->filled('subscription_category') && in_array($request->input('subscription_category'), ['1', '2', '3', '4'])) {
+            $query->where('subscription_category', $request->input('subscription_category'));
         }
 
         // فلتر نوع الفاز
-        $phase = $request->input('phase_type', '');
-        if ($phase !== '' && in_array($phase, ['1', '2'])) {
-            $query->where('phase_type', $phase);
+        if ($request->filled('phase_type') && in_array($request->input('phase_type'), ['1', '2'])) {
+            $query->where('phase_type', $request->input('phase_type'));
         }
 
         // فلتر نوع الخدمة
-        $service = $request->input('service_type', '');
-        if ($service !== '' && in_array($service, ['1', '2', '3'])) {
-            $query->where('service_type', $service);
+        if ($request->filled('service_type') && in_array($request->input('service_type'), ['1', '2', '3'])) {
+            $query->where('service_type', $request->input('service_type'));
         }
 
         // فلتر الأمبير
-        $ampere = $request->input('ampere', '');
-        if ($ampere !== '') {
-            $query->where('ampere', $ampere);
+        if ($request->filled('ampere')) {
+            $query->where('ampere', $request->input('ampere'));
         }
 
         // فلتر نوع المشترك (موظف / عادي)
-        $isEmployee = $request->input('is_employee', '');
-        if ($isEmployee !== '' && in_array($isEmployee, ['0', '1'])) {
-            $query->where('is_employee_subscription', (bool) $isEmployee);
+        if ($request->filled('is_employee') && in_array($request->input('is_employee'), ['0', '1'])) {
+            $query->where('is_employee_subscription', (bool) $request->input('is_employee'));
         }
 
         // فلتر رقم الاشتراك
-        $subscriptionNumber = $request->input('subscription_number', '');
-        if ($subscriptionNumber !== '') {
-            $query->where('subscription_number', 'like', "%{$subscriptionNumber}%");
+        if ($request->filled('subscription_number')) {
+            $query->where('subscription_number', 'like', "%{$request->input('subscription_number')}%");
         }
 
         // فلتر رقم الصندوق
-        $boxNumber = $request->input('box_number', '');
-        if ($boxNumber !== '') {
-            $query->where('box_number', $boxNumber);
+        if ($request->filled('box_number')) {
+            $query->where('box_number', $request->input('box_number'));
         }
 
         // البحث النصي
-        $search = $request->input('search', '');
-        if ($search) {
+        if ($request->filled('search')) {
+            $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('subscription_number', 'like', "%{$search}%")
                   ->orWhere('subscriber_id_number', 'like', "%{$search}%")
@@ -135,6 +124,7 @@ class SubscriberController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             $page = (int) $request->input('page', 1);
             $append = $page > 1; // append mode for infinite scroll
+
             $html = view('admin.subscribers.partials.list', compact('subscribers', 'append'))->render();
             return response()->json([
                 'success' => true,
@@ -153,10 +143,9 @@ class SubscriberController extends Controller
             ? Operator::select('id', 'name')->orderBy('name')->get()
             : collect();
 
-        // جلب وحدات التوليد
-        if ($user->isSuperAdmin()) {
-            $generationUnits = GenerationUnit::with('operator:id,name')
-                ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
+        // جلب وحدات التوليد (للسوبر أدمن تبدأ فارغة وتُحمّل عبر AJAX بعد اختيار المشغل)
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+            $generationUnits = collect();
         } elseif ($user->isCompanyOwner()) {
             $operatorIds = $user->ownedOperators()->pluck('id');
             $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
@@ -207,17 +196,12 @@ class SubscriberController extends Controller
                 ->with('error', 'ليس لديك صلاحية لإضافة مشتركين.');
         }
 
-        // جلب وحدات التوليد
+        // جلب وحدات التوليد (فقط إذا المشغل محدد، وإلا تُحمّل عبر AJAX)
         $generationUnits = collect();
 
         if ($operator) {
             $generationUnits = $operator->generationUnits()
                 ->select('id', 'name', 'unit_code', 'operator_id')
-                ->orderBy('name')
-                ->get();
-        } elseif ($user->isSuperAdmin()) {
-            $generationUnits = GenerationUnit::select('id', 'name', 'unit_code', 'operator_id')
-                ->with('operator:id,name')
                 ->orderBy('name')
                 ->get();
         }
@@ -241,21 +225,14 @@ class SubscriberController extends Controller
             }
 
             // توليد رقم الاشتراك تلقائياً
-            if (!empty($request->generation_unit_ids) && is_array($request->generation_unit_ids)) {
-                $firstUnitId = $request->generation_unit_ids[0];
-                $phaseType = $data['phase_type'];
-                
-                $data['subscription_number'] = Subscriber::generateSubscriptionNumber($firstUnitId, $phaseType);
-            } else {
-                throw new \Exception('يجب اختيار وحدة توليد واحدة على الأقل لتوليد رقم الاشتراك');
-            }
-            
+            $generationUnitId = $data['generation_unit_id'];
+            $phaseType = $data['phase_type'];
+            $data['subscription_number'] = Subscriber::generateSubscriptionNumber($generationUnitId, $phaseType);
+
             $subscriber = Subscriber::create($data);
 
-            // ربط وحدات التوليد
-            if ($request->has('generation_unit_ids') && is_array($request->generation_unit_ids)) {
-                $subscriber->generationUnits()->sync($request->generation_unit_ids);
-            }
+            // ربط وحدة التوليد
+            $subscriber->generationUnits()->sync([$generationUnitId]);
 
             return redirect()->route('admin.subscribers.index')
                 ->with('success', "تم إضافة المشترك بنجاح. رقم الاشتراك: {$subscriber->subscription_number}");
@@ -327,21 +304,26 @@ class SubscriberController extends Controller
             }
         }
 
-        // جلب وحدات التوليد
+        // جلب وحدات التوليد بناءً على المشغل المرتبط بالمشترك
+        $subscriber->load('generationUnits.operator');
         $generationUnits = collect();
+
         if ($operator) {
             $generationUnits = $operator->generationUnits()
                 ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('name')
                 ->get();
         } elseif ($user->isSuperAdmin()) {
-            $generationUnits = GenerationUnit::select('id', 'name', 'unit_code', 'operator_id')
-                ->with('operator:id,name')
-                ->orderBy('name')
-                ->get();
+            // للسوبر أدمن: نحمّل وحدات المشغل المرتبط بالمشترك
+            $subscriberOperator = $subscriber->generationUnits->first()?->operator;
+            if ($subscriberOperator) {
+                $operator = $subscriberOperator;
+                $generationUnits = $subscriberOperator->generationUnits()
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('name')
+                    ->get();
+            }
         }
-
-        $subscriber->load('generationUnits');
 
         return view('admin.subscribers.edit', compact('subscriber', 'operators', 'generationUnits', 'operator'));
     }
@@ -367,9 +349,9 @@ class SubscriberController extends Controller
 
             $subscriber->update($data);
 
-            // تحديث ربط وحدات التوليد
-            if ($request->has('generation_unit_ids')) {
-                $subscriber->generationUnits()->sync($request->generation_unit_ids ?? []);
+            // تحديث ربط وحدة التوليد
+            if (isset($data['generation_unit_id'])) {
+                $subscriber->generationUnits()->sync([$data['generation_unit_id']]);
             }
 
             return redirect()->route('admin.subscribers.index')
@@ -406,6 +388,17 @@ class SubscriberController extends Controller
     public function destroy(Subscriber $subscriber): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $this->authorize('delete', $subscriber);
+
+        // Check for financial records before deletion
+        if ($subscriber->invoices()->exists() || $subscriber->meterReadings()->exists()) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'لا يمكن حذف مشترك لديه فواتير أو قراءات عدادات. يمكنك تعليق الاشتراك بدلاً من ذلك.',
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'لا يمكن حذف مشترك لديه فواتير أو قراءات عدادات. يمكنك تعليق الاشتراك بدلاً من ذلك.');
+        }
 
         try {
             // حذف العلاقات أولاً

@@ -15,6 +15,7 @@ use App\Models\Subscriber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class InvoiceController extends Controller
@@ -32,23 +33,18 @@ class InvoiceController extends Controller
 
         // تحديد نطاق المشغل
         $currentOperator = null;
-        if ($user->isCompanyOwner()) {
-            $currentOperator = $user->ownedOperators()->first();
-            if ($currentOperator) {
-                $query->whereHas('subscriber.generationUnits', fn($q) =>
-                    $q->where('operator_id', $currentOperator->id));
-            }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->isNotEmpty()) {
-                $ids = $operators->pluck('id')->toArray();
+        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+
+        if (! $canSelectOperator) {
+            $ids = $user->getScopedOperatorIds();
+            if (! empty($ids)) {
                 $query->whereHas('subscriber.generationUnits', fn($q) =>
                     $q->whereIn('operator_id', $ids));
-                $currentOperator = $operators->first();
+                $currentOperator = Operator::find($ids[0]);
+            } else {
+                $query->whereRaw('0 = 1');
             }
         }
-
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
 
         // فلاتر
         if ($canSelectOperator && ($oid = (int) $request->input('operator_id', 0)) > 0) {
@@ -60,7 +56,8 @@ class InvoiceController extends Controller
             $query->where('subscriber_id', $sid);
         }
 
-        if (($st = $request->input('invoice_status', '')) !== '') {
+        if ($request->filled('invoice_status')) {
+            $st = $request->input('invoice_status');
             if ($st === '5') {
                 // متأخرة: جديدة + تجاوزت تاريخ الاستحقاق
                 $query->where('invoice_status', Invoice::STATUS_ISSUED)
@@ -118,7 +115,16 @@ class InvoiceController extends Controller
                 ->orderBy('subscription_number')->get();
         }
 
-        return view('admin.invoices.index', compact('invoices','operators','subscribers','currentOperator','canSelectOperator'));
+        $activeTariff = ElectricityTariffPrice::getActivePriceForDate(now());
+
+        return view('admin.invoices.index', compact(
+            'invoices',
+            'operators',
+            'subscribers',
+            'currentOperator',
+            'canSelectOperator',
+            'activeTariff'
+        ));
     }
 
     /**
@@ -319,9 +325,36 @@ class InvoiceController extends Controller
             }
         }
 
+        // التحقق من أن المشترك نشط
+        $subscriber = $invoice->subscriber;
+        if (!$subscriber || $subscriber->subscription_status != 1) {
+            return redirect()->back()->with('error', 'لا يمكن إصدار فاتورة لمشترك غير نشط.');
+        }
+
+        // التحقق من ارتباط المشترك بوحدة توليد
+        if ($subscriber->generationUnits()->doesntExist()) {
+            return redirect()->back()->with('error', 'المشترك غير مرتبط بوحدة توليد. يرجى ربطه أولاً.');
+        }
+
+        // التحقق من وجود تعرفة نشطة
+        $tariff = ElectricityTariffPrice::getActivePriceForDate(
+            $invoice->invoice_date ? \Carbon\Carbon::parse($invoice->invoice_date) : now()
+        );
+        if (!$tariff) {
+            return redirect()->back()->with('error', 'لا توجد تعرفة كهرباء نشطة. يرجى إضافة تعرفة أولاً.');
+        }
+
         // generateInvoiceNumber() تستخدم INSERT...ON DUPLICATE KEY UPDATE الذرية
         // يجب أن تكون داخل DB::transaction لضمان rollback التسلسل عند الفشل
-        \DB::transaction(function () use ($invoice) {
+        DB::transaction(function () use ($invoice) {
+            // Lock the invoice row and refresh to prevent concurrent issuance
+            $invoice = Invoice::lockForUpdate()->find($invoice->id);
+
+            // Re-check it's still a draft (another user might have issued it)
+            if ($invoice->invoice_status !== Invoice::STATUS_DRAFT) {
+                throw new \Exception('الفاتورة تم إصدارها بالفعل من مستخدم آخر.');
+            }
+
             $old = $invoice->only(['invoice_status', 'previous_balance', 'total_amount']);
 
             $invoiceNumber = $invoice->invoice_number
@@ -387,30 +420,331 @@ class InvoiceController extends Controller
     /**
      * إلغاء فاتورة
      */
-    public function cancel(Invoice $invoice): RedirectResponse|JsonResponse
+    public function cancel(Request $request, Invoice $invoice): RedirectResponse|JsonResponse
     {
         $this->authorize('cancel', $invoice);
 
-        $old = $invoice->only(['invoice_status']);
-
-        // إعادة القراءة إلى معتمدة
-        if ($invoice->meter_reading_id) {
-            MeterReading::where('id', $invoice->meter_reading_id)
-                ->update(['action_status' => MeterReading::ACTION_STATUS_APPROVED]);
+        if (!$invoice->isCancellable()) {
+            $msg = 'لا يمكن إلغاء هذه الفاتورة.';
+            return $request->expectsJson()
+                ? response()->json(['success' => false, 'message' => $msg], 403)
+                : redirect()->back()->with('error', $msg);
         }
 
-        $invoice->update([
-            'invoice_status'  => Invoice::STATUS_CANCELLED,
-            'last_updated_by' => auth()->id(),
+        try {
+            DB::transaction(function () use ($invoice, $request) {
+                $isDraft = $invoice->invoice_status === Invoice::STATUS_DRAFT;
+                $cancelReason = $request->input('cancel_reason', '');
+
+                // Reset reading to PENDING (unapproved) so it can be re-edited
+                if ($invoice->meter_reading_id) {
+                    $reading = $invoice->meterReading;
+                    if ($reading) {
+                        $reading->update(['action_status' => MeterReading::ACTION_STATUS_PENDING]);
+                    }
+                }
+
+                if ($isDraft) {
+                    // Draft: delete the invoice entirely
+                    AuditLog::log(
+                        'delete',
+                        $invoice,
+                        auth()->user(),
+                        $invoice->toArray(),
+                        ['status' => 'deleted', 'reason' => $cancelReason],
+                        "حذف فاتورة مسودة للمشترك رقم {$invoice->subscriber_id}"
+                    );
+
+                    $invoice->forceDelete();
+                } else {
+                    $old = $invoice->only(['invoice_status', 'notes']);
+
+                    // Issued/Overdue: mark as cancelled + create reverse entry
+                    $invoice->update([
+                        'invoice_status' => Invoice::STATUS_CANCELLED,
+                        'last_updated_by' => auth()->id(),
+                        'notes' => trim(($invoice->notes ? $invoice->notes . "\n" : '') . 'سبب الإلغاء: ' . $cancelReason),
+                    ]);
+
+                    // Create reverse financial entry
+                    \App\Models\SubscriberAccountEntry::create([
+                        'subscriber_id' => $invoice->subscriber_id,
+                        'invoice_id' => $invoice->id,
+                        'entry_type' => \App\Models\SubscriberAccountEntry::TYPE_REVERSE,
+                        'amount' => -$invoice->invoice_amount,
+                        'description' => "إلغاء فاتورة رقم {$invoice->invoice_number} - السبب: {$cancelReason}",
+                        'created_by' => auth()->id(),
+                    ]);
+
+                    // Refresh drafts for this subscriber
+                    Invoice::refreshDraftsForSubscriber($invoice->subscriber_id);
+
+                    AuditLog::log(
+                        'update',
+                        $invoice,
+                        auth()->user(),
+                        $old,
+                        ['invoice_status' => Invoice::STATUS_CANCELLED, 'reason' => $cancelReason],
+                        "إلغاء فاتورة رقم {$invoice->invoice_number} - السبب: {$cancelReason}"
+                    );
+                }
+            });
+
+            $msg = $invoice->invoice_status === Invoice::STATUS_DRAFT
+                ? 'تم حذف الفاتورة المسودة بنجاح.'
+                : 'تم إلغاء الفاتورة بنجاح.';
+
+            return $request->expectsJson()
+                ? response()->json(['success' => true, 'message' => $msg])
+                : redirect()->route('admin.invoices.index')->with('success', $msg);
+        } catch (\Exception $e) {
+            $msg = 'حدث خطأ أثناء إلغاء الفاتورة.';
+            return $request->expectsJson()
+                ? response()->json(['success' => false, 'message' => $msg], 500)
+                : redirect()->back()->with('error', $msg);
+        }
+    }
+
+    /**
+     * Bulk issue selected draft invoices
+     */
+    public function bulkIssue(Request $request): JsonResponse
+    {
+        $this->authorize('create', Invoice::class);
+
+        $request->validate([
+            'price_per_kwh' => 'required|numeric|min:0',
+            'confirm_minimum_charge' => 'required|boolean',
+            'invoice_ids' => 'nullable|array',
+            'invoice_ids.*' => 'integer',
+        ], [
+            'price_per_kwh.required' => 'قيمة التعرفة مطلوبة.',
+            'confirm_minimum_charge.required' => 'يجب إقرار الحد الأدنى.',
         ]);
 
-        AuditLog::log('update', $invoice, auth()->user(), $old, ['invoice_status' => Invoice::STATUS_CANCELLED], 'إلغاء فاتورة: ' . $invoice->invoice_number);
+        $selectedIds = collect($request->input('invoice_ids', []))
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values();
 
-        if (request()->ajax()) {
-            return response()->json(['success' => true, 'message' => 'تم إلغاء الفاتورة.']);
+        if ($selectedIds->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'يرجى تحديد فاتورة واحدة على الأقل للإصدار.',
+            ], 422);
         }
 
-        return redirect()->route('admin.invoices.show', $invoice)->with('success', 'تم إلغاء الفاتورة.');
+        $user = auth()->user();
+        $query = Invoice::where('invoice_status', Invoice::STATUS_DRAFT)
+            ->whereNotNull('meter_reading_id')
+            ->whereIn('id', $selectedIds->all());
+
+        // Scope by operator for non-admin users
+        if ($user->isCompanyOwner()) {
+            $operatorIds = $user->ownedOperators()->pluck('id')->toArray();
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $operatorIds = $user->operators()->pluck('operators.id')->toArray();
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
+        }
+
+        $issuedCount = 0;
+        $errors = [];
+
+        $matchedCount = 0;
+
+        DB::transaction(function () use ($query, $request, &$issuedCount, &$errors, &$matchedCount) {
+            $drafts = (clone $query)->with(['subscriber', 'meterReading'])->lockForUpdate()->get();
+            $matchedCount = $drafts->count();
+
+            foreach ($drafts as $invoice) {
+                try {
+                    // Skip if already issued by another user
+                    if ($invoice->invoice_status !== Invoice::STATUS_DRAFT) {
+                        continue;
+                    }
+
+                    $reading = $invoice->meterReading;
+                    if (!$reading || !in_array($reading->action_status, [MeterReading::ACTION_STATUS_APPROVED, MeterReading::ACTION_STATUS_BILLED])) {
+                        $errors[] = "فاتورة المشترك {$invoice->subscriber->subscriber_name}: القراءة غير معتمدة";
+                        continue;
+                    }
+
+                    $subscriber = $invoice->subscriber;
+
+                    if (!$subscriber || $subscriber->subscription_status != 1) {
+                        $errors[] = "المشترك {$subscriber?->subscriber_name}: غير نشط";
+                        continue;
+                    }
+
+                    if ($subscriber->generationUnits()->doesntExist()) {
+                        $errors[] = "المشترك {$subscriber->subscriber_name}: غير مرتبط بوحدة توليد";
+                        continue;
+                    }
+
+                    // Apply subscriber rules fresh
+                    [$discount, $minCharge] = Invoice::applySubscriberRules(
+                        $subscriber,
+                        $invoice->discount_rate,
+                        $invoice->minimum_charge,
+                        $invoice->invoice_date ? \Carbon\Carbon::parse($invoice->invoice_date) : now()
+                    );
+
+                    // Recalculate with fresh previous balance
+                    $prevBalance = Invoice::calculatePreviousBalance($subscriber->id, $invoice->id);
+                    $amounts = Invoice::calculateAmounts(
+                        $invoice->consumption_kwh,
+                        $request->price_per_kwh,
+                        $discount,
+                        $minCharge,
+                        $prevBalance
+                    );
+
+                    // Generate invoice number
+                    $invoiceNumber = Invoice::generateInvoiceNumber();
+
+                    $invoice->update([
+                        'invoice_number' => $invoiceNumber,
+                        'invoice_status' => Invoice::STATUS_ISSUED,
+                        'price_per_kwh' => $request->price_per_kwh,
+                        'discount_rate' => $discount,
+                        'minimum_charge' => $minCharge,
+                        'previous_balance' => $prevBalance,
+                        'invoice_amount' => $amounts['invoice_amount'],
+                        'total_amount' => $amounts['total_amount'],
+                        'issued_by' => auth()->id(),
+                        'issued_at' => now(),
+                        'due_date' => $invoice->due_date ?? now()->addDays(7),
+                        'last_updated_by' => auth()->id(),
+                    ]);
+
+                    // Update reading to BILLED
+                    $reading->update(['action_status' => MeterReading::ACTION_STATUS_BILLED]);
+
+                    $issuedCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "خطأ في فاتورة المشترك {$invoice->subscriber->subscriber_name}: " . $e->getMessage();
+                }
+            }
+        });
+
+        $message = "تم إصدار {$issuedCount} فاتورة بنجاح.";
+        if ($matchedCount === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لم يتم العثور على فواتير مسودة صالحة ضمن التحديد الحالي.',
+            ], 404);
+        }
+
+        if (!empty($errors)) {
+            $message .= " مع " . count($errors) . " أخطاء.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'issued_count' => $issuedCount,
+            'errors' => $errors,
+        ]);
+    }
+
+    /**
+     * Export invoices to Excel based on current filters
+     */
+    public function export(Request $request)
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        // Use same query building as index
+        $user = auth()->user();
+        $query = Invoice::with(['subscriber', 'meterReading', 'creator']);
+
+        // Apply same role-based filtering as index
+        if ($user->isCompanyOwner()) {
+            $opIds = $user->ownedOperators()->pluck('id')->toArray();
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
+        } elseif ($user->isEmployee() || $user->isTechnician()) {
+            $opIds = $user->operators()->pluck('operators.id')->toArray();
+            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
+        }
+
+        // Apply filters
+        if ($request->filled('invoice_status')) {
+            $st = $request->input('invoice_status');
+            if ($st == '5') {
+                // Overdue
+                $query->where('invoice_status', Invoice::STATUS_ISSUED)->where('due_date', '<', now());
+            } else {
+                $query->where('invoice_status', $st);
+            }
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('invoice_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('invoice_date', '<=', $request->date_to);
+        }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhereHas('subscriber', fn($q2) => $q2->where('subscription_number', 'like', "%{$search}%")->orWhere('subscriber_name', 'like', "%{$search}%"));
+            });
+        }
+
+        $invoices = $query->latest('invoice_date')->get();
+
+        // Create Excel
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('الفواتير');
+        $sheet->setRightToLeft(true);
+
+        $headers = ['#', 'رقم الفاتورة', 'رقم الاشتراك', 'اسم المشترك', 'التاريخ', 'الاستهلاك (Kwh)', 'الرصيد السابق', 'مبلغ الفاتورة', 'المبلغ الإجمالي', 'المسدد', 'المتبقي', 'الحالة', 'تاريخ الاستحقاق'];
+
+        $columns = range('A', 'M');
+        foreach ($headers as $i => $header) {
+            $cell = $columns[$i] . '1';
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        }
+
+        $row = 2;
+        foreach ($invoices as $idx => $inv) {
+            $sheet->setCellValue("A{$row}", $idx + 1);
+            $sheet->setCellValue("B{$row}", $inv->invoice_number ?? 'مسودة');
+            $sheet->setCellValue("C{$row}", $inv->subscriber->subscription_number ?? '');
+            $sheet->setCellValue("D{$row}", $inv->subscriber->subscriber_name ?? '');
+            $sheet->setCellValue("E{$row}", $inv->invoice_date?->format('Y-m-d'));
+            $sheet->setCellValue("F{$row}", $inv->consumption_kwh);
+            $sheet->setCellValue("G{$row}", $inv->previous_balance);
+            $sheet->setCellValue("H{$row}", $inv->invoice_amount);
+            $sheet->setCellValue("I{$row}", $inv->total_amount);
+            $sheet->setCellValue("J{$row}", $inv->paidAmount());
+            $sheet->setCellValue("K{$row}", $inv->remainingAmount());
+            $sheet->setCellValue("L{$row}", $inv->status_name);
+            $sheet->setCellValue("M{$row}", $inv->due_date?->format('Y-m-d'));
+            $row++;
+        }
+
+        foreach ($columns as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $fileName = 'فواتير_' . date('Y-m-d') . '.xlsx';
+        $tempPath = storage_path('app/temp/' . $fileName);
+
+        if (!file_exists(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $writer->save($tempPath);
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
     }
 
     /**

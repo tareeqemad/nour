@@ -11,6 +11,7 @@ use App\Helpers\ConstantsHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class ConstantDetailController extends Controller
 {
@@ -68,6 +69,62 @@ class ConstantDetailController extends Controller
      */
     public function destroy(ConstantDetail $constantDetail): RedirectResponse|JsonResponse
     {
+        // التحقق من أن الثابت غير مستخدم في أي جدول
+        $tables = [
+            ['table' => 'generation_units', 'columns' => ['status_id', 'operation_entity_id', 'governorate_id', 'city_id', 'synchronization_available_id', 'environmental_compliance_status_id']],
+            ['table' => 'generators', 'columns' => ['status_id', 'engine_type_id', 'injection_system_id', 'measurement_indicator_id', 'technical_condition_id', 'control_panel_type_id', 'control_panel_status_id']],
+            ['table' => 'fuel_tanks', 'columns' => ['location_id', 'condition_id', 'material_id', 'usage_id', 'measurement_method_id']],
+            ['table' => 'fuel_efficiencies', 'columns' => ['fuel_efficiency_comparison_id', 'energy_efficiency_comparison_id']],
+            ['table' => 'maintenance_records', 'columns' => ['maintenance_type_id', 'next_maintenance_type_id']],
+            ['table' => 'compliance_safeties', 'columns' => ['safety_certificate_status_id']],
+            ['table' => 'inspection_violation_cases', 'columns' => ['governorate_id']],
+        ];
+
+        // جداول تخزن value بدل id (المشتركين والفوترة)
+        $valueTables = [
+            ['table' => 'subscribers', 'columns' => ['subscription_category', 'phase_type', 'subscription_status', 'service_type']],
+        ];
+
+        $usedIn = [];
+        foreach ($tables as $item) {
+            foreach ($item['columns'] as $column) {
+                if (DB::table($item['table'])->where($column, $constantDetail->id)->exists()) {
+                    $usedIn[] = $item['table'];
+                    break;
+                }
+            }
+        }
+
+        // فحص الجداول التي تخزن value بدل id
+        if ($constantDetail->value !== null) {
+            foreach ($valueTables as $item) {
+                foreach ($item['columns'] as $column) {
+                    if (DB::table($item['table'])->where($column, $constantDetail->value)->exists()) {
+                        $usedIn[] = $item['table'];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // التحقق من وجود تفاصيل فرعية
+        if ($constantDetail->children()->count() > 0) {
+            $usedIn[] = 'تفاصيل فرعية';
+        }
+
+        if (!empty($usedIn)) {
+            $message = 'لا يمكن حذف هذا الثابت لأنه مستخدم في سجلات النظام.';
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 403);
+            }
+
+            return redirect()->back()->with('error', $message);
+        }
+
         $constantDetail->delete();
 
         if (request()->ajax()) {

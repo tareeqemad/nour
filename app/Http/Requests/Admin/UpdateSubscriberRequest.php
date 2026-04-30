@@ -29,11 +29,11 @@ class UpdateSubscriberRequest extends FormRequest
             'ampere' => ['nullable', 'numeric', 'min:0'],
             'opening_reading' => ['nullable', 'numeric', 'min:0'],
             'service_type' => ['required', 'integer', 'in:1,2,3'],
-            'box_number' => ['nullable', 'string', 'regex:/^\d{4}$/'],
+            'box_number' => ['nullable', 'string', 'regex:/^\d{1,4}$/'],
             'is_employee_subscription' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'generation_unit_ids' => ['required', 'array', 'min:1'],
-            'generation_unit_ids.*' => ['exists:generation_units,id'],
+            'operator_id' => ['nullable', 'exists:operators,id'],
+            'generation_unit_id' => ['required', 'exists:generation_units,id'],
         ];
         
         // فقط SuperAdmin يمكنه تعديل رقم الاشتراك
@@ -57,7 +57,7 @@ class UpdateSubscriberRequest extends FormRequest
             'alt_phone.regex' => 'رقم الجوال البديل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
             'address.required' => 'عنوان المشترك مطلوب.',
             'request_date.before_or_equal' => 'تاريخ الطلب لا يمكن أن يكون في المستقبل.',
-            'box_number.regex' => 'رقم الصندوق يجب أن يكون 4 أرقام.',
+            'box_number.regex' => 'رقم الصندوق يجب أن يكون من 1 إلى 4 أرقام.',
             'notes.max' => 'الملاحظات يجب أن لا تتجاوز 1000 حرف.',
             'subscription_category.required' => 'تصنيف الاشتراك مطلوب.',
             'subscription_category.in' => 'تصنيف الاشتراك غير صحيح.',
@@ -71,10 +71,8 @@ class UpdateSubscriberRequest extends FormRequest
             'opening_reading.min' => 'قراءة العداد الافتتاحية يجب أن تكون أكبر من أو تساوي صفر.',
             'service_type.required' => 'نوع الخدمة مطلوب.',
             'service_type.in' => 'نوع الخدمة غير صحيح.',
-            'generation_unit_ids.required' => 'يجب اختيار وحدة توليد واحدة على الأقل.',
-            'generation_unit_ids.array' => 'وحدات التوليد يجب أن تكون مصفوفة.',
-            'generation_unit_ids.min' => 'يجب اختيار وحدة توليد واحدة على الأقل.',
-            'generation_unit_ids.*.exists' => 'إحدى وحدات التوليد المحددة غير موجودة.',
+            'generation_unit_id.required' => 'يجب اختيار وحدة توليد.',
+            'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
         ];
         
         // رسائل خاصة برقم الاشتراك (فقط لـ SuperAdmin)
@@ -90,6 +88,7 @@ class UpdateSubscriberRequest extends FormRequest
     {
         $this->merge([
             'meter_number' => $this->meter_number !== '' ? $this->meter_number : null,
+            'is_employee_subscription' => $this->has('is_employee_subscription') ? (bool) $this->is_employee_subscription : false,
         ]);
     }
 }

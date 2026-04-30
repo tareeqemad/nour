@@ -336,7 +336,7 @@ class Operator extends Model
                 'order' => 100,
             ]);
             
-            // إضافة صلاحيات فني المشغل (مشابهة لدور Technician النظامي)
+            // إضافة صلاحيات فني المشغل (صيانة + تشغيل + قراءات)
             $technicianPermissions = $permissions->whereIn('name', [
                 'generation_units.view',
                 'generators.view',
@@ -346,10 +346,23 @@ class Operator extends Model
                 'operation_logs.view',
                 'operation_logs.create',
                 'operation_logs.update',
+                'fuel_efficiencies.view',
+                'fuel_efficiencies.create',
+                'fuel_efficiencies.update',
+                'compliance_safeties.view',
+                'compliance_safeties.create',
+                'compliance_safeties.update',
+                'meter_readings.view',
+                'meter_readings.create',
+                'meter_readings.update',
+                'subscribers.view',
+                'tasks.view',
+                'tasks.create',
+                'tasks.update',
             ])->pluck('id');
             $technicianRole->permissions()->attach($technicianPermissions);
-            
-            // 2. دور المحاسب - صلاحيات عرض التقارير والبيانات المالية
+
+            // 2. دور المحاسب - صلاحيات مالية + عرض بيانات
             $accountantRole = Role::create([
                 'name' => 'accountant_' . $operator->id,
                 'label' => 'محاسب',
@@ -359,9 +372,19 @@ class Operator extends Model
                 'created_by' => $operator->owner_id,
                 'order' => 101,
             ]);
-            
-            // إضافة صلاحيات المحاسب (عرض فقط للتقارير والبيانات المالية)
+
+            // إضافة صلاحيات المحاسب (مالية كاملة + عرض بيانات)
             $accountantPermissions = $permissions->whereIn('name', [
+                'subscribers.view',
+                'meter_readings.view',
+                'invoices.view',
+                'invoices.create',
+                'invoices.update',
+                'invoices.issue',
+                'invoice_reports.view',
+                'subscriber_accounts.view',
+                'minimum_charge_rules.view', 'minimum_charge_rules.update',
+                'electricity_tariff_prices.view',
                 'generation_units.view',
                 'generators.view',
                 'operation_logs.view',

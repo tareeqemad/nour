@@ -62,12 +62,12 @@ class AuthorizedPhoneController extends Controller
         }
 
         // Filter by status
-        if ($isActive !== null && $isActive !== '') {
+        if ($request->filled('is_active')) {
             $query->where('is_active', filter_var($isActive, FILTER_VALIDATE_BOOLEAN));
         }
 
         // Filter by registration status
-        if ($isRegistered !== null && $isRegistered !== '') {
+        if ($request->filled('is_registered')) {
             // البحث عن الأرقام المسجلة من خلال owner في operators
             $registeredPhoneNumbers = \App\Models\User::whereHas('ownedOperators')
                 ->whereNotNull('phone')

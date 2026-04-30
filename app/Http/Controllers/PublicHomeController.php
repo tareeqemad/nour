@@ -472,6 +472,15 @@ class PublicHomeController extends Controller
             'password_check' => \Illuminate\Support\Facades\Hash::check($passwordPlain, $user->password),
         ]);
 
+        // تعيين الصلاحيات الافتراضية للمشغل
+        try {
+            $user->assignDefaultPermissions();
+        } catch (\Exception $e) {
+            \Log::error('Failed to assign default permissions for join-request user: '.$e->getMessage(), [
+                'user_id' => $user->id,
+            ]);
+        }
+
         // إنشاء Operator جديد
         $operator = \App\Models\Operator::create([
             'name' => $cleanOperatorName,

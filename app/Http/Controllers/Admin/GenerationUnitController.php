@@ -44,13 +44,13 @@ class GenerationUnitController extends Controller
         }
 
         // فلترة حسب الحالة (يمكن استخدام status أو status_id)
-        $status = trim((string) $request->input('status', ''));
         $statusId = (int) $request->input('status_id', 0);
-        
+
         if ($statusId > 0) {
             // استخدام status_id مباشرة (إذا أُرسل)
             $query->where('status_id', $statusId);
-        } elseif ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
+        } elseif ($request->filled('status') && in_array($request->input('status'), ['active', 'inactive'], true)) {
+            $status = $request->input('status');
             // استخدام status (active/inactive) - البحث عن status_id المناسب
             // constant_number = 15 لحالة الوحدة
             $statusConstant = \App\Models\ConstantDetail::whereHas('master', function($q) {
@@ -1093,13 +1093,13 @@ class GenerationUnitController extends Controller
 
         // فلترة حسب الحالة (إذا كانت محددة)
         $statusId = (int) $request->input('status_id', 0);
-        $status = trim((string) $request->input('status', ''));
-        
+
         $query = GenerationUnit::where('operator_id', $operatorId);
-        
+
         if ($statusId > 0) {
             $query->where('status_id', $statusId);
-        } elseif ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
+        } elseif ($request->filled('status') && in_array($request->input('status'), ['active', 'inactive'], true)) {
+            $status = $request->input('status');
             $statusConstant = \App\Models\ConstantDetail::whereHas('master', function($q) {
                 $q->where('constant_number', 15);
             })->where('code', strtoupper($status) === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')->first();

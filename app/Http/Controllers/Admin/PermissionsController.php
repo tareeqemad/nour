@@ -108,6 +108,15 @@ class PermissionsController extends Controller
         $actor->loadMissing(['permissions', 'revokedPermissions', 'roleModel.permissions']);
 
         $rolePermissionIds = $actor->roleModel?->permissions->pluck('id')->toArray() ?? [];
+
+        // إذا لم يكن للمستخدم role_id ولكن لديه role enum، نجلب صلاحيات الدور من جدول roles
+        if (empty($rolePermissionIds) && !$actor->role_id && $actor->role) {
+            $roleRecord = Role::where('name', $actor->role->value)->first();
+            if ($roleRecord) {
+                $rolePermissionIds = $roleRecord->permissions()->pluck('permissions.id')->toArray();
+            }
+        }
+
         $directPermissionIds = $actor->permissions->pluck('id')->toArray();
         $revokedPermissionIds = $actor->revokedPermissions->pluck('id')->toArray();
 
@@ -674,6 +683,15 @@ class PermissionsController extends Controller
         $role = $user->roleModel?->permissions->pluck('id')->toArray() ?? [];
         $revoked = $user->revokedPermissions->pluck('id')->toArray();
 
+        // إذا لم يكن للمستخدم role_id ولكن لديه role enum، نجلب صلاحيات الدور من جدول roles
+        if (empty($role) && !$user->role_id && $user->role) {
+            $roleName = $user->role->value;
+            $roleRecord = Role::where('name', $roleName)->first();
+            if ($roleRecord) {
+                $role = $roleRecord->permissions()->pluck('permissions.id')->toArray();
+            }
+        }
+
         // CompanyOwner: رجّع فقط اللي ضمن السقف
         if ($authUser->isCompanyOwner()) {
             $ceiling = $this->companyOwnerCeilingPermissionIds($authUser);
@@ -884,7 +902,6 @@ class PermissionsController extends Controller
             abort(403);
         }
 
-        $term = trim((string) $request->input('q', ''));
         $page = max(1, (int) $request->input('page', 1));
         $perPage = 20;
         $operatorId = (int) $request->input('operator_id', 0);
@@ -898,7 +915,8 @@ class PermissionsController extends Controller
         // إذا تم تحديد operator_id، أضفه مباشرة
         if ($operatorId > 0) {
             $query->where('id', $operatorId);
-        } elseif ($term !== '') {
+        } elseif ($request->filled('q')) {
+            $term = trim((string) $request->input('q'));
             $query->where('name', 'like', "%{$term}%");
         }
 
@@ -927,11 +945,11 @@ class PermissionsController extends Controller
             abort(403);
         }
 
-        $term = trim((string) $request->input('q', ''));
+        $term = $request->filled('q') ? trim((string) $request->input('q')) : '';
         $page = max(1, (int) $request->input('page', 1));
         $perPage = 20;
 
-        $role = trim((string) $request->input('role', '')); // role name (enum) or role_id (custom role)
+        $role = $request->filled('role') ? trim((string) $request->input('role')) : ''; // role name (enum) or role_id (custom role)
         $roleId = (int) $request->input('role_id', 0); // for custom roles
         $operatorId = (int) $request->input('operator_id', 0); // for operator filtering
 
@@ -1045,7 +1063,7 @@ class PermissionsController extends Controller
             }
         }
 
-        if ($term !== '') {
+        if ($request->filled('q')) {
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                     ->orWhere('username', 'like', "%{$term}%")
@@ -1083,7 +1101,7 @@ class PermissionsController extends Controller
             abort(403);
         }
 
-        $term = trim((string) $request->input('q', ''));
+        $term = $request->filled('q') ? trim((string) $request->input('q')) : '';
 
         // SuperAdmin و EnergyAuthority: عرض الأدوار النظامية فقط (من enum)
         $systemRoles = Role::where('is_system', true)
@@ -1104,7 +1122,7 @@ class PermissionsController extends Controller
         })->values();
 
         // Filter by term if provided
-        if ($term !== '') {
+        if ($request->filled('q')) {
             $results = $results->filter(function ($role) use ($term) {
                 return stripos($role['text'], $term) !== false || stripos($role['id'], $term) !== false;
             })->values();

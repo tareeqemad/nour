@@ -15,7 +15,7 @@
                     </th>
                     <th class="fw-semibold">
                         <i class="bi bi-speedometer2 me-1"></i>
-                        رقم العداد
+                        العداد / الصندوق
                     </th>
                     <th class="text-center fw-semibold">
                         <i class="bi bi-arrow-left-right me-1"></i>
@@ -90,6 +90,9 @@
                         </td>
                         <td>
                             <span>{{ $reading->meter_number }}</span>
+                            @if($reading->subscriber->box_number)
+                                <br><small class="text-muted"><i class="bi bi-mailbox me-1"></i>{{ $reading->subscriber->box_number }}</small>
+                            @endif
                         </td>
                         <td class="text-center">
                             <div>
@@ -107,6 +110,9 @@
                             </span>
                         </td>
                         <td class="text-center">
+                            @if($reading->previous_reading_date)
+                                <small class="text-muted">سابق: {{ $reading->previous_reading_date->format('Y-m-d') }}</small><br>
+                            @endif
                             <span>{{ $reading->reading_date->format('Y-m-d') }}</span>
                         </td>
                         <td class="text-center">
@@ -132,17 +138,9 @@
                                 @endcan
 
                                 @if($editable && $isAbnormal)
-                                    @can('create', App\Models\MeterReading::class)
-                                        <button type="button"
-                                            class="btn btn-sm btn-warning approve-abnormal-btn"
-                                            title="اعتماد قراءة غير طبيعية"
-                                            data-id="{{ $reading->id }}"
-                                            data-number="{{ $reading->reading_number }}"
-                                            data-url="{{ route('admin.meter-readings.approve-abnormal', $reading) }}">
-                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                            اعتماد
-                                        </button>
-                                    @endcan
+                                    <span class="text-warning small" title="قراءة غير طبيعية - يجب تعديلها أو حذفها">
+                                        <i class="bi bi-pencil-square me-1"></i>تحتاج تعديل
+                                    </span>
                                 @endif
 
                                 @if($editable)

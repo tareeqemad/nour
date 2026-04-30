@@ -31,9 +31,6 @@ class OperatorController extends Controller
             abort(403);
         }
 
-        $name = trim((string) $request->get('name', ''));
-        $status = trim((string) $request->get('status', ''));
-
         $operatorsQuery = Operator::query()
             ->with('owner')
             ->where('is_approved', false) // فقط غير المعتمدين
@@ -45,7 +42,8 @@ class OperatorController extends Controller
             ]);
 
         // Search by name
-        if ($name !== '') {
+        if ($request->filled('name')) {
+            $name = trim((string) $request->get('name'));
             $operatorsQuery->where(function ($sub) use ($name) {
                 $sub->where('name', 'like', "%{$name}%")
                     ->orWhere('owner_name', 'like', "%{$name}%")
@@ -58,8 +56,8 @@ class OperatorController extends Controller
         }
 
         // Status filter (active/inactive)
-        if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
-            $operatorsQuery->where('status', $status);
+        if ($request->filled('status') && in_array($request->get('status'), ['active', 'inactive'], true)) {
+            $operatorsQuery->where('status', $request->get('status'));
         }
 
         $operators = $operatorsQuery
@@ -79,7 +77,7 @@ class OperatorController extends Controller
 
         return view('admin.operators.pending-approval', [
             'operators' => $operators,
-            'status' => $status,
+            'status' => $request->get('status', ''),
         ]);
     }
 
@@ -91,9 +89,6 @@ class OperatorController extends Controller
         $this->authorize('viewAny', Operator::class);
 
         $authUser = $request->user();
-
-        $name = trim((string) $request->get('name', ''));
-        $status = trim((string) $request->get('status', ''));
 
         $operatorsQuery = Operator::query()
             ->with('owner')
@@ -115,7 +110,8 @@ class OperatorController extends Controller
         }
 
         // Search by name
-        if ($name !== '') {
+        if ($request->filled('name')) {
+            $name = trim((string) $request->get('name'));
             $operatorsQuery->where(function ($sub) use ($name) {
                 $sub->where('name', 'like', "%{$name}%")
                     ->orWhere('unit_name', 'like', "%{$name}%")
@@ -130,8 +126,8 @@ class OperatorController extends Controller
         }
 
         // Status filter (active/inactive)
-        if ($status !== '' && in_array($status, ['active', 'inactive'], true)) {
-            $operatorsQuery->where('status', $status);
+        if ($request->filled('status') && in_array($request->get('status'), ['active', 'inactive'], true)) {
+            $operatorsQuery->where('status', $request->get('status'));
         }
 
         $operators = $operatorsQuery
@@ -150,13 +146,13 @@ class OperatorController extends Controller
         }
 
         // للي مش SuperAdmin و EnergyAuthority: غالبًا رح يكون عنده مشغل واحد
-        $myOperator = (! $authUser->isSuperAdmin() && ! $authUser->isEnergyAuthority() && ! $authUser->isAdmin()) 
-            ? $operators->first() 
+        $myOperator = (! $authUser->isSuperAdmin() && ! $authUser->isEnergyAuthority() && ! $authUser->isAdmin())
+            ? $operators->first()
             : null;
 
         return view('admin.operators.index', [
             'operators' => $operators,
-            'status' => $status,
+            'status' => $request->get('status', ''),
             'myOperator' => $myOperator,
         ]);
     }

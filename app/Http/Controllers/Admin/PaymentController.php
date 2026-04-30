@@ -63,42 +63,55 @@ class PaymentController extends Controller
         }
 
         $amountPaid = (float) $request->amount_paid;
-        $remaining  = $invoice->remainingAmount();
+        $overpayment = 0;
 
-        // احسب الزيادة إن وُجدت
-        $overpayment = max($amountPaid - $remaining, 0);
+        try {
+            DB::transaction(function () use ($request, $invoice, $amountPaid, &$overpayment) {
+                // Lock the invoice to prevent concurrent payments
+                $invoice = Invoice::lockForUpdate()->find($invoice->id);
+                $remaining = $invoice->remainingAmount();
 
-        DB::transaction(function () use ($request, $invoice, $amountPaid, $overpayment) {
-            $payment = Payment::create([
-                'invoice_id'     => $invoice->id,
-                'subscriber_id'  => $invoice->subscriber_id,
-                'payment_date'   => $request->payment_date,
-                'amount_paid'    => $amountPaid,
-                'credit_applied' => 0,
-                'overpayment'    => round($overpayment, 2),
-                'payment_method' => $request->payment_method,
-                'receipt_number' => $request->receipt_number,
-                'notes'          => $request->notes,
-                'created_by'     => auth()->id(),
-            ]);
+                // Validate payment doesn't grossly exceed remaining
+                if ($amountPaid > $remaining * 2 && $remaining > 0) {
+                    throw new \RuntimeException('مبلغ الدفعة يتجاوز الحد المسموح.');
+                }
 
-            // تحديث حالة الفاتورة
-            $invoice->refresh();
-            $invoice->updateStatusFromPayments();
+                // احسب الزيادة إن وُجدت
+                $overpayment = max($amountPaid - $remaining, 0);
 
-            // إعادة احتساب الرصيد السابق لكل مسودة لاحقة لنفس المشترك
-            Invoice::refreshDraftsForSubscriber($invoice->subscriber_id);
+                $payment = Payment::create([
+                    'invoice_id'     => $invoice->id,
+                    'subscriber_id'  => $invoice->subscriber_id,
+                    'payment_date'   => $request->payment_date,
+                    'amount_paid'    => $amountPaid,
+                    'credit_applied' => 0,
+                    'overpayment'    => round($overpayment, 2),
+                    'payment_method' => $request->payment_method,
+                    'receipt_number' => $request->receipt_number,
+                    'notes'          => $request->notes,
+                    'created_by'     => auth()->id(),
+                ]);
 
-            AuditLog::log(
-                'create',
-                $payment,
-                auth()->user(),
-                [],
-                $payment->toArray(),
-                'تسجيل دفعة للفاتورة: ' . ($invoice->invoice_number ?? '#' . $invoice->id)
-                    . ' - المبلغ: ' . number_format($amountPaid, 2)
-            );
-        });
+                // تحديث حالة الفاتورة
+                $invoice->refresh();
+                $invoice->updateStatusFromPayments();
+
+                // إعادة احتساب الرصيد السابق لكل مسودة لاحقة لنفس المشترك
+                Invoice::refreshDraftsForSubscriber($invoice->subscriber_id);
+
+                AuditLog::log(
+                    'create',
+                    $payment,
+                    auth()->user(),
+                    [],
+                    $payment->toArray(),
+                    'تسجيل دفعة للفاتورة: ' . ($invoice->invoice_number ?? '#' . $invoice->id)
+                        . ' - المبلغ: ' . number_format($amountPaid, 2)
+                );
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         $msg = 'تم تسجيل الدفعة بنجاح.';
         if ($overpayment > 0) {
@@ -121,19 +134,36 @@ class PaymentController extends Controller
     /**
      * حذف دفعة (Admin فقط) - مع إعادة حالة الفاتورة
      */
-    public function destroy(Invoice $invoice, Payment $payment): RedirectResponse
+    public function destroy(Request $request, Invoice $invoice, Payment $payment): RedirectResponse
     {
         $this->authorize('delete', $payment);
 
-        DB::transaction(function () use ($invoice, $payment) {
+        $request->validate([
+            'delete_reason' => 'required|string|min:5|max:1000',
+        ], [
+            'delete_reason.required' => 'يجب ذكر سبب حذف الدفعة.',
+            'delete_reason.min' => 'السبب يجب أن يكون 5 أحرف على الأقل.',
+        ]);
+
+        DB::transaction(function () use ($request, $invoice, $payment) {
             AuditLog::log(
                 'delete',
                 $payment,
                 auth()->user(),
                 $payment->toArray(),
-                [],
-                'حذف دفعة للفاتورة: ' . ($invoice->invoice_number ?? '#' . $invoice->id)
+                ['delete_reason' => $request->delete_reason],
+                'حذف دفعة للفاتورة: ' . ($invoice->invoice_number ?? '#' . $invoice->id) . ' - السبب: ' . $request->delete_reason
             );
+
+            // Create reverse financial entry for the full payment amount
+            \App\Models\SubscriberAccountEntry::create([
+                'subscriber_id' => $payment->subscriber_id,
+                'invoice_id' => $payment->invoice_id,
+                'entry_type' => \App\Models\SubscriberAccountEntry::TYPE_REVERSE,
+                'amount' => -$payment->amount_paid,
+                'description' => "حذف دفعة بقيمة " . number_format($payment->amount_paid, 2) . " - إيصال رقم: {$payment->receipt_number} - السبب: {$request->delete_reason}",
+                'created_by' => auth()->id(),
+            ]);
 
             $payment->delete();
 
@@ -154,5 +184,17 @@ class PaymentController extends Controller
         });
 
         return redirect()->route('admin.invoices.show', $invoice)->with('success', 'تم حذف الدفعة وإعادة حالة الفاتورة.');
+    }
+
+    /**
+     * Print payment receipt
+     */
+    public function receipt(Invoice $invoice, Payment $payment)
+    {
+        $payment->load(['invoice.subscriber', 'creator']);
+        $siteName = \App\Models\Setting::get('site_name', 'نور');
+        $logoUrl = asset(\App\Models\Setting::get('site_logo', 'assets/admin/images/brand-logos/nour_logo.png'));
+
+        return view('admin.invoices.payment-receipt', compact('payment', 'invoice', 'siteName', 'logoUrl'));
     }
 }

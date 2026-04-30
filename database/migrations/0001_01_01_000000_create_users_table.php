@@ -6,24 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('name_en')->nullable();
             $table->string('email')->unique();
-            $table->string('username')->unique()->nullable();
+            $table->string('phone')->nullable();
+            $table->string('username')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->timestamp('password_reset_at')->nullable();
             $table->string('role')->default('employee');
             $table->string('status')->default('active');
-            // role_id سيتم إضافته بعد إنشاء جدول roles
+            $table->timestamp('suspended_at')->nullable()->index();
+            $table->text('suspended_reason')->nullable();
+            $table->foreignId('suspended_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('last_activity')->nullable()->index();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+            $table->unsignedBigInteger('role_id')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -42,9 +46,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations. Drop in reverse dependency order (sessions → password_reset_tokens → users).
-     */
     public function down(): void
     {
         Schema::dropIfExists('sessions');

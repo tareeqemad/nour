@@ -3,20 +3,25 @@
         <p class="text-muted small mb-3">
             <i class="bi bi-search me-1"></i>
             نتائج البحث عن: "<strong>{{ $search }}</strong>"
+            <span class="badge bg-primary ms-1">{{ $subscribers->total() }} نتيجة</span>
         </p>
     @endif
 
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="table table-hover table-striped align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="fw-semibold" style="width:50px;">#</th>
+                    <th class="fw-semibold text-center" style="width:50px;">#</th>
                     <th class="fw-semibold">
-                        <i class="bi bi-person me-1"></i>
-                        المشترك
+                        <i class="bi bi-person me-1"></i>المشترك
                     </th>
                     <th class="fw-semibold text-center">رقم الاشتراك</th>
-                    <th class="fw-semibold text-center">رقم الجوال</th>
+                    <th class="fw-semibold text-center">
+                        <i class="bi bi-telephone me-1"></i>الجوال
+                    </th>
+                    <th class="fw-semibold text-center">
+                        <i class="bi bi-speedometer2 me-1"></i>العداد
+                    </th>
                     <th class="fw-semibold text-center">التصنيف</th>
                     <th class="fw-semibold text-center">الحالة</th>
                     <th class="fw-semibold text-end">الإجراءات</th>
@@ -33,21 +38,26 @@
                         };
                     @endphp
                     <tr>
-                        <td>
+                        <td class="text-center">
                             <span class="badge bg-light text-dark">
                                 {{ ($subscribers->currentPage() - 1) * $subscribers->perPage() + $loop->iteration }}
                             </span>
                         </td>
                         <td>
                             <div class="fw-semibold">{{ $sub->subscriber_name }}</div>
-                            <small class="text-muted">
-                                <i class="bi bi-speedometer2 me-1"></i>{{ $sub->meter_number ?? '—' }}
-                            </small>
+                            <small class="text-muted">{{ $sub->subscriber_id_number ?? '' }}</small>
                         </td>
                         <td class="text-center">
                             <code class="text-primary fw-semibold">{{ $sub->subscription_number }}</code>
                         </td>
                         <td class="text-center">{{ $sub->phone ?? '—' }}</td>
+                        <td class="text-center">
+                            @if($sub->meter_number)
+                                <span>{{ $sub->meter_number }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td class="text-center">
                             <span class="badge bg-secondary">{{ $sub->subscription_category_name }}</span>
                         </td>
@@ -56,7 +66,7 @@
                         </td>
                         <td class="text-end">
                             <a href="{{ route('admin.subscriber-account.show', $sub) }}"
-                               class="btn btn-sm btn-primary">
+                               class="btn btn-sm btn-outline-primary" title="عرض الحساب">
                                 <i class="bi bi-person-lines-fill me-1"></i>
                                 عرض الحساب
                             </a>

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProcessedPortalRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -49,11 +51,11 @@ class PortalRequestController extends Controller
     private function ajaxList(Request $request): JsonResponse
     {
         $page        = max(1, (int) $request->query('page', 1));
-        $perPage     = max(5, min(100, (int) $request->query('per_page', 15)));
-        $status      = trim((string) $request->query('status', ''));
-        $date        = trim((string) $request->query('date', ''));
-        $appNo       = trim((string) $request->query('app_no', ''));
-        $applicantId = trim((string) $request->query('applicant_id', ''));
+        $perPage     = max(5, min(100, (int) $request->query('per_page', 100)));
+        $status      = $request->filled('status') ? trim((string) $request->query('status')) : '';
+        $date        = $request->filled('date') ? trim((string) $request->query('date')) : '';
+        $appNo       = $request->filled('app_no') ? trim((string) $request->query('app_no')) : '';
+        $applicantId = $request->filled('applicant_id') ? trim((string) $request->query('applicant_id')) : '';
 
         try {
             // ── 1. بحث برقم طلب محدد ──────────────────────────────────
@@ -272,13 +274,52 @@ class PortalRequestController extends Controller
             ];
         }, array_values($items));
 
-        // سجّل البيانات المطبقة بعد التطبيع
-        if (!empty($items)) {
-            $first = $items[0];
-            Log::info('parseListResponse OUTPUT: changed_at=' . json_encode($first['changed_at'] ?? null) .
-                       ', status_note=' . json_encode($first['status_note'] ?? null) .
-                       ', inserted_at=' . json_encode($first['inserted_at'] ?? null));
+        // إضافة حالة الحساب (هل تم إنشاء يوزر لهذا الطلب)
+        $appNos = array_column($items, 'app_no');
+        $processedMap = [];
+        if (!empty($appNos)) {
+            $processedMap = ProcessedPortalRequest::whereIn('app_no', $appNos)
+                ->get()
+                ->keyBy('app_no');
         }
+
+        // جمع أرقام الهويات للتحقق من وجود حسابات بغض النظر عن رقم الطلب
+        $applicantIds = array_filter(array_unique(array_column($items, 'applicant_id')));
+        $operatorsByIdNumber = [];
+        if (!empty($applicantIds)) {
+            $operatorsByIdNumber = \App\Models\Operator::whereIn('owner_id_number', $applicantIds)
+                ->with('owner:id,username')
+                ->get()
+                ->keyBy('owner_id_number');
+        }
+
+        foreach ($items as &$item) {
+            $record   = $processedMap[$item['app_no']] ?? null;
+            $operator = $operatorsByIdNumber[$item['applicant_id']] ?? null;
+
+            // الحساب موجود إذا: تم المعالجة بنجاح من هذا الطلب، أو رقم الهوية مسجل في النظام
+            $item['has_account'] = ($record && $record->status === 'success') || ($operator !== null);
+            $item['account_info'] = null;
+
+            if ($record && $record->status === 'success') {
+                $item['account_info'] = [
+                    'status'       => $record->status,
+                    'username'     => $record->user ? $record->user->username : null,
+                    'user_id'      => $record->user_id,
+                    'operator_id'  => $record->operator_id,
+                    'processed_at' => $record->processed_at?->format('Y-m-d H:i'),
+                ];
+            } elseif ($operator) {
+                $item['account_info'] = [
+                    'status'       => 'exists',
+                    'username'     => $operator->owner?->username,
+                    'user_id'      => $operator->owner_id,
+                    'operator_id'  => $operator->id,
+                    'processed_at' => null,
+                ];
+            }
+        }
+        unset($item);
 
         return response()->json([
             'ok'         => true,
@@ -464,6 +505,82 @@ class PortalRequestController extends Controller
         }
 
         return $date;
+    }
+
+    /**
+     * AJAX – إنشاء حساب مستخدم من طلب بوابة محدد
+     */
+    public function createUser(Request $request, string $appId): JsonResponse
+    {
+        // التحقق من عدم المعالجة المسبقة
+        if (ProcessedPortalRequest::isProcessed($appId)) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'هذا الطلب تم إنشاء حساب له مسبقاً',
+            ]);
+        }
+
+        try {
+            $exitCode = Artisan::call('portal:process-approved', [
+                '--app-no'       => $appId,
+                '--processed-by' => $request->user()?->id,
+            ]);
+
+            $output = Artisan::output();
+
+            if ($exitCode === 0) {
+                $record = ProcessedPortalRequest::where('app_no', $appId)->first();
+                $status = $record?->status ?? 'unknown';
+
+                if ($status === 'success') {
+                    return response()->json([
+                        'ok'      => true,
+                        'message' => 'تم إنشاء حساب المستخدم بنجاح',
+                        'data'    => [
+                            'user_id'     => $record->user_id,
+                            'operator_id' => $record->operator_id,
+                            'notes'       => $record->notes,
+                        ],
+                    ]);
+                }
+
+                return response()->json([
+                    'ok'      => false,
+                    'message' => $record?->notes ?? 'تم تخطي الطلب - ' . $output,
+                ]);
+            }
+
+            return response()->json([
+                'ok'      => false,
+                'message' => 'فشل إنشاء الحساب: ' . trim($output),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('PortalRequestController@createUser: ' . $e->getMessage());
+            return response()->json([
+                'ok'      => false,
+                'message' => 'حدث خطأ أثناء إنشاء الحساب',
+            ]);
+        }
+    }
+
+    /**
+     * AJAX – التحقق من حالة معالجة طلب
+     */
+    public function checkProcessed(Request $request, string $appId): JsonResponse
+    {
+        $record = ProcessedPortalRequest::where('app_no', $appId)->first();
+
+        return response()->json([
+            'ok'        => true,
+            'processed' => $record !== null && $record->status === 'success',
+            'data'      => $record ? [
+                'status'       => $record->status,
+                'notes'        => $record->notes,
+                'processed_at' => $record->processed_at?->format('Y-m-d H:i'),
+                'user_id'      => $record->user_id,
+                'operator_id'  => $record->operator_id,
+            ] : null,
+        ]);
     }
 
     /**

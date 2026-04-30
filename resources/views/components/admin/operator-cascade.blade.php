@@ -174,8 +174,7 @@
                 @if($generationUnitRequired)<span class="text-danger">*</span>@endif
             </label>
             <select name="generation_unit_id" id="{{ $idPrefix }}generation_unit_id"
-                    class="form-select select2 @error('generation_unit_id') is-invalid @enderror"
-                    data-placeholder="اختر {{ $generationUnitLabel }}"
+                    class="form-select @error('generation_unit_id') is-invalid @enderror"
                     @if($generationUnitRequired) required @endif>
                 <option value="">اختر {{ $generationUnitLabel }}</option>
                 @foreach($generationUnits as $unit)
@@ -198,7 +197,7 @@
                 @if($generatorRequired)<span class="text-danger">*</span>@endif
             </label>
             <select name="generator_id" id="{{ $idPrefix }}generator_id"
-                    class="form-select select2 @error('generator_id') is-invalid @enderror"
+                    class="form-select @error('generator_id') is-invalid @enderror"
                     data-placeholder="اختر {{ $generatorLabel }}"
                     @if($generatorRequired) required @endif
                     disabled>

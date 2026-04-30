@@ -32,21 +32,17 @@ class MeterReadingController extends Controller
         $query = MeterReading::with(['subscriber', 'creator', 'updater']);
 
         $currentOperator = null;
-        if ($user->isCompanyOwner()) {
-            $currentOperator = $user->ownedOperators()->first();
-            if ($currentOperator) {
-                $query->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $currentOperator->id));
-            }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->isNotEmpty()) {
-                $opIds = $operators->pluck('id')->toArray();
+        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+
+        if (! $canSelectOperator) {
+            $opIds = $user->getScopedOperatorIds();
+            if (! empty($opIds)) {
                 $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
-                $currentOperator = $operators->first();
+                $currentOperator = Operator::find($opIds[0]);
+            } else {
+                $query->whereRaw('0 = 1');
             }
         }
-
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
         if ($canSelectOperator && (int) $request->input('operator_id', 0) > 0) {
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $request->operator_id));
         }
@@ -55,14 +51,12 @@ class MeterReadingController extends Controller
             $query->where('subscriber_id', $request->subscriber_id);
         }
 
-        $readingStatus = $request->input('reading_status', '');
-        if ($readingStatus !== '' && in_array($readingStatus, ['1', '2'])) {
-            $query->where('reading_status', $readingStatus);
+        if ($request->filled('reading_status') && in_array($request->input('reading_status'), ['1', '2'])) {
+            $query->where('reading_status', $request->input('reading_status'));
         }
 
-        $actionStatus = $request->input('action_status', '');
-        if ($actionStatus !== '' && in_array($actionStatus, ['0', '1', '2'])) {
-            $query->where('action_status', $actionStatus);
+        if ($request->filled('action_status') && in_array($request->input('action_status'), ['0', '1', '2'])) {
+            $query->where('action_status', $request->input('action_status'));
         }
 
         if ($request->filled('box_number')) {
@@ -75,8 +69,8 @@ class MeterReadingController extends Controller
             $query->whereDate('reading_date', '<=', $request->date_to);
         }
 
-        $search = $request->input('search', '');
-        if ($search) {
+        if ($request->filled('search')) {
+            $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('reading_number', 'like', "%{$search}%")
                   ->orWhere('meter_number', 'like', "%{$search}%")
@@ -248,10 +242,7 @@ class MeterReadingController extends Controller
               ->orderBy('subscription_number')
               ->get();
         } elseif ($user->isSuperAdmin()) {
-            $subscribers = Subscriber::where('subscription_status', 1)
-                ->select('id', 'subscription_number', 'subscriber_name', 'meter_number')
-                ->orderBy('subscription_number')
-                ->get();
+            $subscribers = collect(); // تُحمّل عبر AJAX بعد اختيار المشغل
         }
 
         // إذا تم تحديد مشترك في الطلب
@@ -470,8 +461,9 @@ class MeterReadingController extends Controller
                 continue;
             }
 
-            // القراءات غير الطبيعية يجب اعتمادها بشكل منفرد مع ذكر السبب
-            if ($reading->isAbnormal()) {
+            // القراءات غير الطبيعية السالبة/المتجاوزة للحد تحتاج اعتماد فردي مع سبب
+            // الصفرية غير طبيعية لكن مسموح اعتمادها جماعياً
+            if ($reading->blocksBulkApproval()) {
                 $abnormalCount++;
                 continue;
             }
@@ -491,8 +483,8 @@ class MeterReadingController extends Controller
                     'اعتماد قراءة العداد: ' . $reading->reading_number
                 );
 
-                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة
-                if (!$reading->invoice()->exists()) {
+                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة (بدون المحذوفة)
+                if (!$reading->invoice()->whereNull('invoices.deleted_at')->exists()) {
                     Invoice::createFromReading($reading, $user->id);
 
                     AuditLog::log(
@@ -513,7 +505,7 @@ class MeterReadingController extends Controller
 
         $message = "تم اعتماد {$approvedCount} قراءة وترحيل {$billedCount} منها إلى شاشة الفوترة.";
         if ($abnormalCount > 0) {
-            $message .= " تم تخطي {$abnormalCount} قراءة غير طبيعية (تحتاج اعتماداً منفرداً مع ذكر السبب).";
+            $message .= " تم تخطي {$abnormalCount} قراءة غير طبيعية (تحتاج تعديل أو حذف وإعادة إدخال).";
         }
         if ($skippedCount > 0) {
             $message .= " تم تخطي {$skippedCount} قراءة (معتمدة أو مفوترة مسبقاً).";
@@ -578,14 +570,16 @@ class MeterReadingController extends Controller
             return response()->json(['success' => false, 'message' => 'لا توجد قراءات مطابقة للاعتماد.']);
         }
 
-        $normal = $allReadings->where('reading_status', MeterReading::READING_STATUS_NORMAL);
-        $abnormal = $allReadings->where('reading_status', MeterReading::READING_STATUS_ABNORMAL);
+        // قابلة للاعتماد الجماعي: الطبيعية + غير الطبيعية الصفرية
+        // تحتاج اعتماد فردي: غير الطبيعية السالبة أو المتجاوزة للحد الأقصى
+        $bulkApprovable = $allReadings->reject(fn($r) => $r->blocksBulkApproval());
+        $abnormal = $allReadings->filter(fn($r) => $r->blocksBulkApproval());
 
-        // اعتماد الطبيعية
+        // اعتماد الطبيعية + الصفرية
         $approvedCount = 0;
         $billedCount = 0;
 
-        foreach ($normal as $reading) {
+        foreach ($bulkApprovable as $reading) {
             DB::transaction(function () use ($reading, $user, &$approvedCount, &$billedCount) {
                 $reading->update(['action_status' => MeterReading::ACTION_STATUS_APPROVED]);
                 AuditLog::log('approve', $reading, $user,
@@ -593,7 +587,7 @@ class MeterReadingController extends Controller
                     ['action_status' => MeterReading::ACTION_STATUS_APPROVED],
                     'اعتماد قراءة (جماعي بالفلتر): ' . $reading->reading_number
                 );
-                if (!$reading->invoice()->exists()) {
+                if (!$reading->invoice()->whereNull('invoices.deleted_at')->exists()) {
                     Invoice::createFromReading($reading, $user->id);
                     $billedCount++;
                 }
@@ -613,7 +607,7 @@ class MeterReadingController extends Controller
 
         $message = "تم اعتماد {$approvedCount} قراءة طبيعية وترحيل {$billedCount} منها للفوترة.";
         if ($abnormal->count() > 0) {
-            $message .= " يوجد {$abnormal->count()} قراءة غير طبيعية تحتاج مراجعة.";
+            $message .= " يوجد {$abnormal->count()} قراءة غير طبيعية تحتاج تعديل أو حذف وإعادة إدخال.";
         }
 
         return response()->json([
@@ -621,7 +615,7 @@ class MeterReadingController extends Controller
             'message' => $message,
             'approved' => $approvedCount,
             'abnormal_count' => $abnormal->count(),
-            'abnormal_readings' => $abnormalList,
+            'abnormal_readings' => [], // No longer needed - abnormal readings need editing, not approval
         ]);
     }
 
@@ -630,52 +624,10 @@ class MeterReadingController extends Controller
      */
     public function bulkApproveAbnormal(Request $request): JsonResponse
     {
-        $this->authorize('create', MeterReading::class);
-
-        $request->validate([
-            'readings' => 'required|array|min:1',
-            'readings.*.id' => 'required|exists:meter_readings,id',
-            'readings.*.reason' => 'required|string|min:5|max:1000',
-        ], [
-            'readings.*.reason.required' => 'سبب الاعتماد مطلوب لكل قراءة غير طبيعية.',
-            'readings.*.reason.min' => 'السبب يجب أن يكون 5 أحرف على الأقل.',
-        ]);
-
-        $user = auth()->user();
-        $approvedCount = 0;
-        $billedCount = 0;
-
-        foreach ($request->readings as $item) {
-            $reading = MeterReading::find($item['id']);
-            if (!$reading || $reading->action_status !== MeterReading::ACTION_STATUS_PENDING) continue;
-
-            DB::transaction(function () use ($reading, $item, $user, &$approvedCount, &$billedCount) {
-                $reading->update([
-                    'action_status' => MeterReading::ACTION_STATUS_APPROVED,
-                    'abnormal_reason' => $item['reason'],
-                    'approved_by' => $user->id,
-                    'approved_at' => now(),
-                ]);
-
-                AuditLog::log('approve', $reading, $user,
-                    ['action_status' => MeterReading::ACTION_STATUS_PENDING],
-                    ['action_status' => MeterReading::ACTION_STATUS_APPROVED, 'abnormal_reason' => $item['reason']],
-                    'اعتماد قراءة غير طبيعية (جماعي): ' . $reading->reading_number . ' — السبب: ' . $item['reason']
-                );
-
-                if (!$reading->invoice()->exists()) {
-                    Invoice::createFromReading($reading, $user->id);
-                    $billedCount++;
-                }
-                $approvedCount++;
-            });
-        }
-
         return response()->json([
-            'success' => true,
-            'message' => "تم اعتماد {$approvedCount} قراءة غير طبيعية وترحيل {$billedCount} منها للفوترة.",
-            'approved' => $approvedCount,
-        ]);
+            'success' => false,
+            'message' => 'لا يمكن اعتماد القراءات غير الطبيعية. يجب تعديلها أو حذفها وإعادة إدخالها.',
+        ], 422);
     }
 
     /**
@@ -683,63 +635,10 @@ class MeterReadingController extends Controller
      */
     public function approveAbnormal(Request $request, MeterReading $meterReading): JsonResponse
     {
-        $this->authorize('create', MeterReading::class);
-
-        if (!$meterReading->isApprovable()) {
-            return response()->json(['success' => false, 'message' => 'القراءة معتمدة أو مفوترة مسبقاً.']);
-        }
-
-        if (!$meterReading->isAbnormal()) {
-            return response()->json(['success' => false, 'message' => 'هذه القراءة طبيعية، استخدم الاعتماد الجماعي.']);
-        }
-
-        $request->validate([
-            'abnormal_reason' => 'required|string|min:5|max:1000',
-        ], [
-            'abnormal_reason.required' => 'سبب اعتماد القراءة غير الطبيعية إلزامي.',
-            'abnormal_reason.min'      => 'يجب أن لا يقل السبب عن 5 أحرف.',
-        ]);
-
-        $user = auth()->user();
-
-        DB::transaction(function () use ($meterReading, $request, $user) {
-            $oldValues = ['action_status' => $meterReading->action_status];
-
-            $meterReading->update([
-                'action_status'   => MeterReading::ACTION_STATUS_APPROVED,
-                'abnormal_reason' => $request->input('abnormal_reason'),
-                'approved_by'     => $user->id,
-                'approved_at'     => now(),
-            ]);
-
-            AuditLog::log(
-                'approve',
-                $meterReading,
-                $user,
-                $oldValues,
-                ['action_status' => MeterReading::ACTION_STATUS_APPROVED, 'abnormal_reason' => $request->input('abnormal_reason')],
-                'اعتماد قراءة غير طبيعية: ' . $meterReading->reading_number
-            );
-
-            // ترحيل تلقائي للفوترة
-            if (!$meterReading->invoice()->exists()) {
-                Invoice::createFromReading($meterReading, $user->id);
-
-                AuditLog::log(
-                    'create',
-                    $meterReading,
-                    $user,
-                    [],
-                    [],
-                    'ترحيل قراءة غير طبيعية للفوترة: ' . $meterReading->reading_number
-                );
-            }
-        });
-
         return response()->json([
-            'success' => true,
-            'message' => 'تم اعتماد القراءة غير الطبيعية وترحيلها إلى شاشة الفوترة.',
-        ]);
+            'success' => false,
+            'message' => 'لا يمكن اعتماد قراءة غير طبيعية. يجب تعديل القراءة أو حذفها وإعادة إدخالها بشكل صحيح.',
+        ], 422);
     }
 
     /**
@@ -778,20 +677,25 @@ class MeterReadingController extends Controller
         $this->authorize('create', MeterReading::class);
 
         $user = auth()->user();
+        $operator = null;
+        $operators = collect();
+
         if ($user->isSuperAdmin()) {
-            $generationUnits = GenerationUnit::with('operator:id,name')
-                ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
+            $operators = Operator::select('id', 'name')->orderBy('name')->get();
+            $generationUnits = collect(); // loaded via AJAX after operator selection
         } elseif ($user->isCompanyOwner()) {
+            $operator = $user->ownedOperators()->first();
             $operatorIds = $user->ownedOperators()->pluck('id');
             $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
         } else {
+            $operator = $user->operators()->first();
             $operatorIds = $user->operators()->pluck('operators.id');
             $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
         }
 
-        return view('admin.meter-readings.bulk-create', compact('generationUnits'));
+        return view('admin.meter-readings.bulk-create', compact('generationUnits', 'operators', 'operator'));
     }
 
     /**
@@ -818,7 +722,11 @@ class MeterReadingController extends Controller
             $query->where('box_number', $request->box_number);
         }
 
-        $subscribers = $query->orderBy('box_number')->orderBy('subscription_number')->get();
+        $subscribers = $query
+            ->orderByRaw("CASE WHEN box_number IS NULL OR box_number = '' THEN 1 ELSE 0 END")
+            ->orderByRaw('CAST(box_number AS UNSIGNED)')
+            ->orderBy('subscription_number')
+            ->get();
 
         $readingDate = $request->reading_date;
         $rows = [];
@@ -880,10 +788,8 @@ class MeterReadingController extends Controller
                     $consumption = $currentReading - $previousReading;
 
                     // حساب فترة الاستهلاك
-                    $periodDays = 1;
-                    if ($lastReading && $lastReading->reading_date) {
-                        $periodDays = max(1, $lastReading->reading_date->diffInDays($row['reading_date']));
-                    }
+                    $previousDate = $lastReading ? $lastReading->reading_date : $subscriber->subscription_date;
+                    $periodDays = $previousDate ? \Carbon\Carbon::parse($previousDate)->diffInDays(\Carbon\Carbon::parse($row['reading_date'])) + 1 : 1;
 
                     $readingNumber = MeterReading::generateReadingNumber($subscriber->id);
 
@@ -896,6 +802,7 @@ class MeterReadingController extends Controller
                         'consumption_kwh' => $consumption,
                         'reading_date' => $row['reading_date'],
                         'consumption_period_days' => $periodDays,
+                        'previous_reading_date' => $previousDate ? \Carbon\Carbon::parse($previousDate)->format('Y-m-d') : null,
                         'reading_status' => MeterReading::determineReadingStatus($consumption),
                         'action_status' => MeterReading::ACTION_STATUS_PENDING,
                         'created_by' => auth()->id(),
@@ -925,12 +832,35 @@ class MeterReadingController extends Controller
 
         $rows = $request->input('rows', []);
 
+        // جلب بيانات المشتركين الإضافية (للميدانيين) من القاعدة
+        // نستخدم subscription_number كمفتاح لأنه ما يتم إرساله من الواجهة
+        $subscriptionNumbers = collect($rows)->pluck('subscription_number')->filter()->unique()->values();
+        $subscribers = Subscriber::whereIn('subscription_number', $subscriptionNumbers)
+            ->get(['subscription_number', 'subscriber_id_number', 'phone', 'alt_phone', 'address', 'meter_number', 'ampere'])
+            ->keyBy('subscription_number');
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setRightToLeft(true);
 
-        $headers = ['رقم القراءة', 'رقم الصندوق', 'رقم الاشتراك', 'اسم المشترك', 'القراءة السابقة', 'تاريخها', 'القراءة الحالية', 'تاريخها', 'الاستهلاك'];
-        $columns = range('A', 'I');
+        $headers = [
+            'رقم القراءة',
+            'رقم الصندوق',
+            'رقم الاشتراك',
+            'اسم المشترك',
+            'رقم الهوية',
+            'رقم الجوال',
+            'جوال بديل',
+            'العنوان',
+            'رقم العداد',
+            'الأمبير',
+            'القراءة السابقة',
+            'تاريخها',
+            'القراءة الحالية',
+            'تاريخها',
+            'الاستهلاك',
+        ];
+        $columns = range('A', 'O');
 
         foreach ($headers as $idx => $header) {
             $cell = $columns[$idx] . '1';
@@ -947,15 +877,23 @@ class MeterReadingController extends Controller
             $consumption = ((float)($r['current_reading'] ?? 0)) - ((float)($r['previous_reading'] ?? 0));
             $totalConsumption += max(0, $consumption);
 
+            $sub = $subscribers->get($r['subscription_number'] ?? '');
+
             $sheet->setCellValue('A' . $row, $r['reading_number'] ?? '');
             $sheet->setCellValue('B' . $row, $r['box_number'] ?? '');
             $sheet->setCellValue('C' . $row, $r['subscription_number'] ?? '');
             $sheet->setCellValue('D' . $row, $r['subscriber_name'] ?? '');
-            $sheet->setCellValue('E' . $row, $r['previous_reading'] ?? 0);
-            $sheet->setCellValue('F' . $row, $r['previous_reading_date'] ?? '');
-            $sheet->setCellValue('G' . $row, $r['current_reading'] ?? '');
-            $sheet->setCellValue('H' . $row, $r['reading_date'] ?? '');
-            $sheet->setCellValue('I' . $row, $consumption > 0 ? $consumption : '');
+            $sheet->setCellValue('E' . $row, $sub?->subscriber_id_number ?? '');
+            $sheet->setCellValue('F' . $row, $sub?->phone ?? '');
+            $sheet->setCellValue('G' . $row, $sub?->alt_phone ?? '');
+            $sheet->setCellValue('H' . $row, $sub?->address ?? '');
+            $sheet->setCellValue('I' . $row, $sub?->meter_number ?? '');
+            $sheet->setCellValue('J' . $row, $sub?->ampere ? ($sub->ampere . ' A') : '');
+            $sheet->setCellValue('K' . $row, $r['previous_reading'] ?? 0);
+            $sheet->setCellValue('L' . $row, $r['previous_reading_date'] ?? '');
+            $sheet->setCellValue('M' . $row, $r['current_reading'] ?? '');
+            $sheet->setCellValue('N' . $row, $r['reading_date'] ?? '');
+            $sheet->setCellValue('O' . $row, $consumption > 0 ? $consumption : '');
 
             foreach ($columns as $col) {
                 $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -964,9 +902,9 @@ class MeterReadingController extends Controller
         }
 
         // صف الإجمالي
-        $sheet->setCellValue('H' . $row, 'إجمالي الاستهلاك');
-        $sheet->setCellValue('I' . $row, $totalConsumption);
-        $sheet->getStyle('H' . $row . ':I' . $row)->getFont()->setBold(true);
+        $sheet->setCellValue('N' . $row, 'إجمالي الاستهلاك');
+        $sheet->setCellValue('O' . $row, $totalConsumption);
+        $sheet->getStyle('N' . $row . ':O' . $row)->getFont()->setBold(true);
 
         foreach ($columns as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

@@ -1,7 +1,20 @@
+@php $canBulkIssueSelection = auth()->user()?->can('create', \App\Models\Invoice::class); @endphp
+
 @if(!empty($append))
     {{-- وضع الإلحاق: صفوف فقط --}}
     @foreach($invoices as $i => $invoice)
     <tr>
+        @if($canBulkIssueSelection)
+        <td class="text-center">
+            @if($invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT && $invoice->meter_reading_id)
+                <input type="checkbox"
+                       class="form-check-input invoice-select-item"
+                       value="{{ $invoice->id }}"
+                       data-invoice-id="{{ $invoice->id }}"
+                       aria-label="تحديد الفاتورة">
+            @endif
+        </td>
+        @endif
         <td>{{ ($invoices->currentPage() - 1) * $invoices->perPage() + $loop->iteration }}</td>
         <td>
             <a href="{{ route('admin.invoices.show', $invoice) }}" class="fw-semibold text-decoration-none">
@@ -85,12 +98,22 @@
                 </a>
                 @endcan
                 @can('cancel', $invoice)
-                <button type="button" class="btn btn-sm btn-outline-danger"
-                        data-action="{{ route('admin.invoices.cancel', $invoice) }}"
-                        data-csrf="{{ csrf_token() }}"
-                        onclick="swalCancel(this)" title="إلغاء">
-                    <i class="bi bi-x-circle"></i>
-                </button>
+                    @if($invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT)
+                        <form action="{{ route('admin.invoices.cancel', $invoice) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذه المسودة؟')">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف المسودة">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    @elseif($invoice->invoice_status === \App\Models\Invoice::STATUS_ISSUED)
+                        <button type="button" class="btn btn-sm btn-outline-danger cancel-invoice-btn"
+                            data-id="{{ $invoice->id }}"
+                            data-number="{{ $invoice->invoice_number }}"
+                            data-url="{{ route('admin.invoices.cancel', $invoice) }}"
+                            title="إلغاء الفاتورة">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    @endif
                 @endcan
             </div>
         </td>
@@ -98,16 +121,32 @@
     @endforeach
 @elseif($invoices->count())
     {{-- وضع كامل: الجدول + العداد --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <small class="text-muted">
             <i class="bi bi-receipt me-1"></i>
             إجمالي النتائج: <strong id="invoicesCount">{{ $invoices->total() }}</strong> فاتورة
         </small>
+        @if($canBulkIssueSelection)
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-muted" id="selectedInvoicesSummary">لم يتم تحديد أي فاتورة للإصدار</small>
+            <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="clearSelectionBtn">
+                إلغاء التحديد
+            </button>
+        </div>
+        @endif
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0" id="invoicesTable">
             <thead class="table-light">
                 <tr>
+                    @if($canBulkIssueSelection)
+                    <th class="text-center" style="width: 44px;">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="selectAllDrafts"
+                               aria-label="تحديد كل الفواتير الظاهرة">
+                    </th>
+                    @endif
                     <th>#</th>
                     <th>رقم الفاتورة</th>
                     <th>رقم الاشتراك</th>
@@ -140,6 +179,17 @@
             <tbody id="invoicesBody">
                 @foreach($invoices as $i => $invoice)
                 <tr>
+                    @if($canBulkIssueSelection)
+                    <td class="text-center">
+                        @if($invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT && $invoice->meter_reading_id)
+                            <input type="checkbox"
+                                   class="form-check-input invoice-select-item"
+                                   value="{{ $invoice->id }}"
+                                   data-invoice-id="{{ $invoice->id }}"
+                                   aria-label="تحديد الفاتورة">
+                        @endif
+                    </td>
+                    @endif
                     <td>{{ $invoices->firstItem() + $i }}</td>
                     <td>
                         <a href="{{ route('admin.invoices.show', $invoice) }}" class="fw-semibold text-decoration-none">
@@ -225,12 +275,22 @@
                             </a>
                             @endcan
                             @can('cancel', $invoice)
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    data-action="{{ route('admin.invoices.cancel', $invoice) }}"
-                                    data-csrf="{{ csrf_token() }}"
-                                    onclick="swalCancel(this)" title="إلغاء">
-                                <i class="bi bi-x-circle"></i>
-                            </button>
+                                @if($invoice->invoice_status === \App\Models\Invoice::STATUS_DRAFT)
+                                    <form action="{{ route('admin.invoices.cancel', $invoice) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذه المسودة؟')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف المسودة">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                @elseif($invoice->invoice_status === \App\Models\Invoice::STATUS_ISSUED)
+                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-invoice-btn"
+                                        data-id="{{ $invoice->id }}"
+                                        data-number="{{ $invoice->invoice_number }}"
+                                        data-url="{{ route('admin.invoices.cancel', $invoice) }}"
+                                        title="إلغاء الفاتورة">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                @endif
                             @endcan
                         </div>
                     </td>

@@ -21,7 +21,8 @@
                 <x-admin.card-header title="حساب المشترك" icon="bi-person-lines-fill" />
 
                 <div class="card-body pb-4">
-                    {{-- الفلاتر - صف 1 --}}
+
+                    {{-- الفلاتر --}}
                     <div class="row g-3">
                         @if($canSelectOperator && $operators->count() > 0)
                             <div class="col-md-3">
@@ -65,7 +66,7 @@
 
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-search me-1"></i>بحث
+                                <i class="bi bi-search me-1"></i>بحث عام
                             </label>
                             <input type="text" id="searchInput" class="form-control"
                                    placeholder="الاسم، رقم الاشتراك، الجوال، العداد..."
@@ -132,7 +133,6 @@
 
     $opFilter.on('change', function () {
         loadSubscribersByOperator($(this).val());
-        loadList();
     });
 
     function loadSubscribersByOperator(opId) {

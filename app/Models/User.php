@@ -158,6 +158,7 @@ class User extends Authenticatable
         'invoices.update',
         'invoices.delete',
         'invoices.issue',
+        'invoices.import_payments',
         // تقارير الفوترة
         'invoice_reports.view',
         // قواعد الحد الأدنى
@@ -457,6 +458,33 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all operator IDs this user is scoped to (for data filtering).
+     * Returns empty array for unrestricted roles (SuperAdmin, Admin, EnergyAuthority).
+     * Covers CompanyOwner (owned), Employee/Technician/CustomRole (pivot),
+     * and CustomRole linked directly to an operator via roleModel.
+     */
+    public function getScopedOperatorIds(): array
+    {
+        if ($this->isSuperAdmin() || $this->isAdmin() || $this->isEnergyAuthority()) {
+            return [];
+        }
+
+        $ids = collect();
+
+        if ($this->isCompanyOwner()) {
+            $ids = $ids->merge($this->ownedOperators()->pluck('id'));
+        }
+
+        $ids = $ids->merge($this->operators()->pluck('operators.id'));
+
+        if ($this->hasOperatorLinkedCustomRole() && $this->roleModel?->operator_id) {
+            $ids->push($this->roleModel->operator_id);
+        }
+
+        return $ids->unique()->values()->all();
+    }
+
+    /**
      * Check if operator is approved and active
      * Required for Company Owner to have full access to all permissions
      */
@@ -472,6 +500,14 @@ class User extends Authenticatable
             $operator = $this->ownedOperators()->first();
 
             return $operator && $operator->is_approved && $operator->status === 'active';
+        }
+
+        // Employee/Technician needs active approved operator
+        if ($this->isEmployee() || $this->isTechnician() || $this->isCivilDefense()) {
+            return $this->operators()
+                ->where('is_approved', true)
+                ->where('status', 'active')
+                ->exists();
         }
 
         // Users with custom roles linked to operator: check if operator is approved

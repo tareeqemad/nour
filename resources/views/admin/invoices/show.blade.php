@@ -16,9 +16,7 @@
                         <a href="{{ route('admin.invoices.print', $invoice) }}" class="btn btn-info btn-sm" target="_blank">
                             <i class="bi bi-printer me-1"></i>طباعة
                         </a>
-                        <a href="{{ route('admin.invoices.pdf', $invoice) }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-                        </a>
+                        {{-- زر PDF مخفي مؤقتاً --}}
                         @can('update', $invoice)
                             <a href="{{ route('admin.invoices.edit', $invoice) }}" class="btn btn-warning btn-sm">
                                 <i class="bi bi-pencil me-1"></i>تعديل
@@ -260,6 +258,21 @@
                                                 </th>
                                                 <td class="text-end fw-semibold text-primary">{{ number_format($eInvAmt, 2) }} ₪</td>
                                             </tr>
+                                            @if($eDiscount > 0)
+                                            @php
+                                                $discountValue = (float)$invoice->consumption_kwh * (float)$invoice->price_per_kwh * ($eDiscount / 100);
+                                            @endphp
+                                            <tr class="table-success">
+                                                <th class="text-muted">
+                                                    <span class="badge bg-success me-1"><i class="bi bi-percent"></i></span>
+                                                    قيمة الخصم ({{ number_format($eDiscount, 0) }}%)
+                                                    @if($showIsEmployee)
+                                                        <small class="d-block text-muted fw-normal">خصم موظف شركة</small>
+                                                    @endif
+                                                </th>
+                                                <td class="text-end fw-semibold text-success">-{{ number_format($discountValue, 2) }} ₪</td>
+                                            </tr>
+                                            @endif
                                             <tr class="{{ $ePrevBal > 0 ? 'table-danger' : ($ePrevBal < 0 ? 'table-success' : '') }}">
                                                 <th class="text-muted">
                                                     <span class="badge bg-secondary me-1">4</span>
@@ -416,6 +429,10 @@
                                                 <a href="{{ route('admin.invoices.payments.show', [$invoice, $p]) }}"
                                                    class="btn btn-outline-secondary btn-xs py-0 px-2">
                                                     <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{{ route('admin.invoices.payments.receipt', [$invoice, $p]) }}"
+                                                   class="btn btn-outline-success btn-xs py-0 px-2" title="طباعة إيصال" target="_blank">
+                                                    <i class="bi bi-printer"></i>
                                                 </a>
                                                 @can('delete', $p)
                                                     <button type="button"

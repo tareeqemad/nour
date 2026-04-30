@@ -11,7 +11,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
 <style>
-    .bulk-table input[type="number"] { width:110px; text-align:center; }
+    .bulk-table input[type="number"] { width:140px; text-align:center; }
     .bulk-table td { vertical-align:middle; white-space:nowrap; }
     .consumption-cell { font-weight:700; }
     .consumption-cell.negative { color:var(--color-danger,#EF4444); }
@@ -38,30 +38,64 @@
                 <div class="card-body">
                     {{-- الفلاتر --}}
                     <div class="row g-3">
+                        {{-- المشغل --}}
+                        @if($operator === null)
+                            {{-- SuperAdmin: operator dropdown --}}
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>المشغل <span class="text-danger">*</span>
+                                </label>
+                                <select id="operatorSelect" class="form-select" required>
+                                    <option value="">اختر المشغل</option>
+                                    @foreach($operators as $op)
+                                        <option value="{{ $op->id }}">{{ $op->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @else
+                            {{-- Affiliated user: locked operator --}}
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>المشغل
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
+                                    <input type="text" class="form-control bg-light" value="{{ $operator->name }}" disabled readonly>
+                                </div>
+                                <input type="hidden" id="operatorSelect" value="{{ $operator->id }}">
+                            </div>
+                        @endif
+
+                        {{-- وحدة التوليد --}}
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-lightning-charge me-1"></i>وحدة التوليد <span class="text-danger">*</span>
                             </label>
-                            <select id="unitFilter" class="form-select" required>
-                                <option value="">-- اختر --</option>
-                                @foreach($generationUnits as $unit)
-                                    <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
-                                @endforeach
+                            <select id="unitFilter" class="form-select" required @if($operator === null) disabled @endif>
+                                @if($operator === null)
+                                    <option value="">اختر المشغل أولاً</option>
+                                @else
+                                    <option value="">-- اختر --</option>
+                                    @foreach($generationUnits as $unit)
+                                        <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_code }})</option>
+                                    @endforeach
+                                @endif
                             </select>
                         </div>
+
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-mailbox me-1"></i>رقم الصندوق
                             </label>
                             <input type="text" id="boxFilter" class="form-control" placeholder="0000" maxlength="4">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-calendar3 me-1"></i>تاريخ القراءة الحالية <span class="text-danger">*</span>
                             </label>
                             <input type="date" id="readingDate" class="form-control" value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}" required>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end gap-2">
+                        <div class="col-md-2 d-flex align-items-end gap-2">
                             <button class="btn btn-primary" id="fetchBtn">
                                 <i class="bi bi-search me-1"></i>جلب المشتركين
                             </button>
@@ -135,6 +169,40 @@
     const csrf = $('#csrfToken').val();
 
     let rows = [];
+
+    // ===== تحميل وحدات التوليد عند تغيير المشغل =====
+    $('#operatorSelect').on('change', function() {
+        var operatorId = $(this).val();
+        var $unitSelect = $('#unitFilter');
+
+        $unitSelect.empty();
+
+        if (!operatorId) {
+            $unitSelect.append('<option value="">اختر المشغل أولاً</option>');
+            $unitSelect.prop('disabled', true);
+            return;
+        }
+
+        $unitSelect.append('<option value="">جاري التحميل...</option>');
+        $unitSelect.prop('disabled', true);
+
+        $.ajax({
+            url: '/admin/operators/' + operatorId + '/generation-units',
+            success: function(data) {
+                $unitSelect.empty().append('<option value="">-- اختر وحدة التوليد --</option>');
+                if (data.generation_units) {
+                    data.generation_units.forEach(function(u) {
+                        $unitSelect.append($('<option>', { value: u.id, text: u.label || (u.name + ' (' + u.unit_code + ')') }));
+                    });
+                }
+                $unitSelect.prop('disabled', false);
+            },
+            error: function() {
+                $unitSelect.empty().append('<option value="">خطأ في التحميل</option>');
+                $unitSelect.prop('disabled', true);
+            }
+        });
+    });
 
     // ===== جلب المشتركين =====
     $('#fetchBtn').on('click', function() {

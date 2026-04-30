@@ -22,20 +22,71 @@
                 <i class="bi bi-shield-check me-1"></i>
                 الدور <span class="text-danger">*</span>
             </label>
+            @php
+                // Split roles into: system + general custom + per-operator custom
+                $systemRoleItems = [];
+                $customGeneralItems = [];
+                $customPerOperator = []; // [operatorName => [items...]]
+                foreach ($roles as $r) {
+                    $isArr = is_array($r);
+                    $roleValue = $isArr ? ($r['value'] ?? '') : ($r->value ?? $r->name ?? '');
+                    $roleLabel = $isArr ? ($r['label'] ?? $roleValue) : ($r->label ?? $roleValue);
+                    $isCustom  = $isArr ? ($r['is_custom'] ?? false) : false;
+                    $opName    = $isArr ? ($r['operator_name'] ?? null) : null;
+
+                    $item = [
+                        'value' => $roleValue,
+                        'label' => $roleLabel,
+                        'is_custom' => $isCustom,
+                    ];
+
+                    if (! $isCustom) {
+                        $systemRoleItems[] = $item;
+                    } elseif (empty($opName)) {
+                        $customGeneralItems[] = $item;
+                    } else {
+                        $customPerOperator[$opName][] = $item;
+                    }
+                }
+                ksort($customPerOperator);
+            @endphp
             <select name="role" id="roleSelect" class="form-select" required>
                 <option value="">اختر الدور</option>
-                @foreach($roles as $r)
-                    @php
-                        // Handle both array format (from getRolesForCreate) and object format
-                        $roleValue = is_array($r) ? ($r['value'] ?? '') : ($r->value ?? $r->name ?? '');
-                        $roleLabel = is_array($r) ? ($r['label'] ?? $roleValue) : ($r->label ?? $r->label() ?? $roleValue);
-                        $isCustom = is_array($r) ? ($r['is_custom'] ?? false) : false;
-                    @endphp
-                    <option value="{{ $roleValue }}" 
-                            data-is-custom="{{ $isCustom ? '1' : '0' }}"
-                            {{ (string)$selectedRole === (string)$roleValue ? 'selected' : '' }}>
-                        {{ $roleLabel }}
-                    </option>
+
+                @if(!empty($systemRoleItems))
+                    <optgroup label="الأدوار النظامية">
+                        @foreach($systemRoleItems as $item)
+                            <option value="{{ $item['value'] }}"
+                                    data-is-custom="0"
+                                    {{ (string)$selectedRole === (string)$item['value'] ? 'selected' : '' }}>
+                                {{ $item['label'] }}
+                            </option>
+                        @endforeach
+                    </optgroup>
+                @endif
+
+                @if(!empty($customGeneralItems))
+                    <optgroup label="الأدوار المخصصة - عامة">
+                        @foreach($customGeneralItems as $item)
+                            <option value="{{ $item['value'] }}"
+                                    data-is-custom="1"
+                                    {{ (string)$selectedRole === (string)$item['value'] ? 'selected' : '' }}>
+                                {{ $item['label'] }}
+                            </option>
+                        @endforeach
+                    </optgroup>
+                @endif
+
+                @foreach($customPerOperator as $opName => $items)
+                    <optgroup label="الأدوار المخصصة - {{ $opName }}">
+                        @foreach($items as $item)
+                            <option value="{{ $item['value'] }}"
+                                    data-is-custom="1"
+                                    {{ (string)$selectedRole === (string)$item['value'] ? 'selected' : '' }}>
+                                {{ $item['label'] }}
+                            </option>
+                        @endforeach
+                    </optgroup>
                 @endforeach
             </select>
             <div class="text-danger small mt-1 d-none" data-error-for="role"></div>

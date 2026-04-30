@@ -129,13 +129,15 @@ class UserController extends Controller
         // Company Owner doesn't see system roles in filter (only custom roles)
 
         // Add custom roles based on user permissions
-        $customRoles = \App\Models\Role::getAvailableCustomRoles($user);
+        $customRoles = \App\Models\Role::getAvailableCustomRoles($user)->load('operator:id,name');
 
         foreach ($customRoles as $customRole) {
             $roles[$customRole->name] = [
                 'label' => $customRole->label,
                 'badge' => 'badge-role-custom',
                 'is_custom' => true,
+                'operator_id' => $customRole->operator_id,
+                'operator_name' => $customRole->operator?->name,
             ];
         }
 
@@ -193,12 +195,17 @@ class UserController extends Controller
             ];
         }
 
-        // Add custom roles to array
+        // Add custom roles to array (with operator info for grouping)
+        if ($customRoles->isNotEmpty()) {
+            $customRoles->load('operator:id,name');
+        }
         foreach ($customRoles as $customRole) {
             $roles[] = [
                 'value' => $customRole->name,
                 'label' => $customRole->label,
                 'is_custom' => true,
+                'operator_id' => $customRole->operator_id,
+                'operator_name' => $customRole->operator?->name,
             ];
         }
 

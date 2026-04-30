@@ -456,6 +456,12 @@
     $dateFromFilter.on('change', function() { updateClearBtn(); });
     $dateToFilter.on('change', function() { updateClearBtn(); });
 
+    // Auto-load if page opened with filter params (e.g. from sidebar link)
+    if (hasActiveFilter(currentParams())) {
+        updateClearBtn();
+        loadList();
+    }
+
     $clearBtn.on('click', function() {
         $operatorFilter.val('');
         $subscriberFilter.val(null).trigger('change.select2');

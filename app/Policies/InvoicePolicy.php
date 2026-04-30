@@ -83,7 +83,23 @@ class InvoicePolicy
         if (!$invoice->isCancellable()) {
             return false;
         }
-        return $user->isSuperAdmin() || $user->isAdmin();
+
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return true;
+        }
+
+        // CompanyOwner can only cancel drafts, not issued invoices
+        if ($user->isCompanyOwner() && $invoice->invoice_status === Invoice::STATUS_DRAFT) {
+            // Check operator ownership
+            $subscriber = $invoice->subscriber;
+            if ($subscriber) {
+                $subscriberOperatorIds = $subscriber->generationUnits()->pluck('operator_id')->toArray();
+                $userOperatorIds = $user->ownedOperators()->pluck('id')->toArray();
+                return !empty(array_intersect($subscriberOperatorIds, $userOperatorIds));
+            }
+        }
+
+        return false;
     }
 
     public function viewReports(User $user): bool

@@ -127,7 +127,7 @@
                                         id="payment_method" name="payment_method" required>
                                     @foreach($methodLabels as $value => $label)
                                         <option value="{{ $value }}"
-                                            {{ old('payment_method', 'cash') === $value ? 'selected' : '' }}>
+                                            {{ old('payment_method', 'bank_transfer') === $value ? 'selected' : '' }}>
                                             {{ $label }}
                                         </option>
                                     @endforeach

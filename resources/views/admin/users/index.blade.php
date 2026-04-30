@@ -30,6 +30,19 @@
     // Meta for roles (JS uses it to render badges + labels) - includes all roles
     $roleMeta = array_merge($sortedSystemRoles, $customRoles);
 
+    // Group custom roles for the filter: general (no operator) + per-operator buckets
+    $customRolesGeneral = [];
+    $customRolesByOperator = []; // [operatorName => [roleName => roleData]]
+    foreach ($customRoles as $roleName => $roleData) {
+        $opName = $roleData['operator_name'] ?? null;
+        if (empty($opName)) {
+            $customRolesGeneral[$roleName] = $roleData;
+        } else {
+            $customRolesByOperator[$opName][$roleName] = $roleData;
+        }
+    }
+    ksort($customRolesByOperator);
+
     // Roles allowed in create modal (for backward compatibility)
     $createRoleKeys = $isSuperAdmin ? ['company_owner','admin','employee','technician'] : ['employee','technician'];
 @endphp
@@ -89,13 +102,20 @@
                                         @endforeach
                                     </optgroup>
                                 @endif
-                                @if(!empty($customRoles))
-                                    <optgroup label="الأدوار المخصصة">
-                                        @foreach($customRoles as $roleName => $roleData)
+                                @if(!empty($customRolesGeneral))
+                                    <optgroup label="الأدوار المخصصة - عامة">
+                                        @foreach($customRolesGeneral as $roleName => $roleData)
                                             <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endif
+                                @foreach($customRolesByOperator as $opName => $opRoles)
+                                    <optgroup label="الأدوار المخصصة - {{ $opName }}">
+                                        @foreach($opRoles as $roleName => $roleData)
+                                            <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
                             </select>
                         </div>
 
@@ -844,6 +864,16 @@
 
             // لا نبدأ select2 إلا عند الحاجة (عند اختيار دور "مشغل")
 
+            // ===== Select2: role filter (مع بحث وتجميع حسب المشغل)
+            $roleFilter.select2({
+                dir: 'rtl',
+                width: '100%',
+                placeholder: 'الكل',
+                allowClear: true,
+                language: 'ar',
+                minimumResultsForSearch: 6,
+            });
+
             // ===== Create Modal (AJAX)
             @can('create', App\Models\User::class)
                 const createModalEl = document.getElementById('userCreateModal');
@@ -959,6 +989,30 @@
                 if(createModalEl) {
                     createModalEl.addEventListener('shown.bs.modal', function(){
                         initOperatorSelect2InModal();
+                        // Select2 على دور الإضافة (مع بحث + تجميع حسب المشغل)
+                        const $createRoleEl = $('#roleSelect');
+                        if($createRoleEl.length && !$createRoleEl.hasClass('select2-hidden-accessible')){
+                            $createRoleEl.select2({
+                                dropdownParent: $('#userCreateModal'),
+                                dir: 'rtl',
+                                width: '100%',
+                                placeholder: 'اختر الدور',
+                                language: 'ar',
+                                minimumResultsForSearch: 6,
+                            });
+                            // الحفاظ على trigger('change') الأصلي للحقول التابعة للدور
+                            $createRoleEl.on('select2:select select2:clear', function(){
+                                $(this).trigger('change');
+                            });
+                        }
+                    });
+
+                    // تنظيف select2 عند إغلاق المودال حتى يعاد إنشاؤه نظيفاً
+                    createModalEl.addEventListener('hidden.bs.modal', function(){
+                        const $createRoleEl = $('#roleSelect');
+                        if($createRoleEl.hasClass('select2-hidden-accessible')){
+                            $createRoleEl.select2('destroy');
+                        }
                     });
                 }
             @endcan

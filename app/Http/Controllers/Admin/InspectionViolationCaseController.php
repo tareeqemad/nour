@@ -61,8 +61,8 @@ class InspectionViolationCaseController extends Controller
             $query->where('status', (int) $request->status);
         }
 
-        $search = $request->input('search', '');
-        if ($search !== '') {
+        if ($request->filled('search')) {
+            $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('subscription_number', 'like', "%{$search}%")
                     ->orWhere('subscriber_name', 'like', "%{$search}%")
@@ -263,8 +263,8 @@ class InspectionViolationCaseController extends Controller
         if ($request->filled('status') && in_array($request->status, ['1', '2', '3'])) {
             $query->where('status', (int) $request->status);
         }
-        $search = $request->input('search', '');
-        if ($search !== '') {
+        if ($request->filled('search')) {
+            $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('subscription_number', 'like', "%{$search}%")
                     ->orWhere('subscriber_name', 'like', "%{$search}%")

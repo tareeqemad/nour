@@ -47,8 +47,6 @@ class LogController extends Controller
             ]);
         }
 
-        $search = trim((string) $request->query('search', ''));
-        $level = $request->query('level', ''); // error, warning, info, etc.
         $perPage = max(10, min(100, (int) $request->query('per_page', 50)));
         $page = max(1, (int) $request->query('page', 1));
 
@@ -112,7 +110,8 @@ class LogController extends Controller
         $logs = array_reverse($logs);
 
         // فلترة حسب البحث
-        if ($search !== '') {
+        if ($request->filled('search')) {
+            $search = trim((string) $request->query('search'));
             $logs = array_filter($logs, function ($log) use ($search) {
                 return str_contains(strtolower($log['message']), strtolower($search)) ||
                        str_contains(strtolower($log['context']), strtolower($search)) ||
@@ -121,7 +120,8 @@ class LogController extends Controller
         }
 
         // فلترة حسب المستوى
-        if ($level !== '') {
+        if ($request->filled('level')) {
+            $level = $request->query('level');
             $logs = array_filter($logs, function ($log) use ($level) {
                 return strtolower($log['level']) === strtolower($level);
             });

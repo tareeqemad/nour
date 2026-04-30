@@ -55,15 +55,15 @@ class UsernameHelper
             $lastName = preg_replace('/[^a-z0-9]/', '', $lastName);
             $usernameBase = $firstChar . $lastName;
         } else {
-            // إذا كان اسم واحد فقط، استخدم أول 8 أحرف
+            // إذا كان اسم واحد فقط أو رقم هوية، استخدمه كاملاً (بحد أقصى 15 حرف)
             $usernameBase = strtolower(preg_replace('/[^a-z0-9]/', '', $cleanedName));
-            $usernameBase = substr($usernameBase, 0, 8);
+            $usernameBase = substr($usernameBase, 0, 15);
         }
         
         // التأكد من أن usernameBase ليس فارغاً
         if (empty($usernameBase)) {
-            // استخدام رقم الهوية كبديل
-            $usernameBase = $fallbackIdNumber ? substr($fallbackIdNumber, -4) : 'user';
+            // استخدام رقم الهوية كاملاً كبديل
+            $usernameBase = $fallbackIdNumber ?: 'user';
         }
         
         // إضافة البادئة

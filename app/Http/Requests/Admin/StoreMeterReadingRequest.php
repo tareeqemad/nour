@@ -62,6 +62,7 @@ class StoreMeterReadingRequest extends FormRequest
             'consumption_period_days' => ['required', 'integer', 'min:1'],
             // reading_status يتم تحديده تلقائياً في prepareForValidation
             'reading_status' => ['required', 'integer', 'in:1,2'],
+            'previous_reading_date' => ['nullable', 'date'],
         ];
     }
 
@@ -116,16 +117,23 @@ class StoreMeterReadingRequest extends FormRequest
         if ($this->has('reading_date') && $subscriberId) {
             $readingDate = $this->input('reading_date');
             $lastReading = MeterReading::getLastReadingForSubscriber($subscriberId);
-            
-            if ($lastReading && $lastReading->reading_date) {
-                $lastDate = \Carbon\Carbon::parse($lastReading->reading_date);
-                $currentDate = \Carbon\Carbon::parse($readingDate);
-                $days = $lastDate->diffInDays($currentDate);
+            $previousDate = null;
+
+            if ($lastReading) {
+                $previousDate = $lastReading->reading_date;
+            } else {
+                // First reading - use subscription_date
+                $subscriber = \App\Models\Subscriber::find($subscriberId);
+                $previousDate = $subscriber?->subscription_date;
+            }
+
+            if ($previousDate && $readingDate) {
+                $days = \Carbon\Carbon::parse($previousDate)->diffInDays(\Carbon\Carbon::parse($readingDate)) + 1;
                 $this->merge([
-                    'consumption_period_days' => max(1, $days),
+                    'consumption_period_days' => $days,
+                    'previous_reading_date' => $previousDate instanceof \Carbon\Carbon ? $previousDate->format('Y-m-d') : $previousDate,
                 ]);
             } else {
-                // إذا لم توجد قراءة سابقة (مشترك جديد)، الفترة = 1 يوم
                 $this->merge([
                     'consumption_period_days' => 1,
                 ]);
