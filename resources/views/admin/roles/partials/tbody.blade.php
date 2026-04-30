@@ -42,12 +42,17 @@
         </td>
         <td class="text-center">
             @if($role->is_system)
-                <span class="badge badge-system">
+                <span class="badge badge-system" title="دور مدمج في النظام">
                     <i class="bi bi-shield-check me-1"></i>
                     نظامي
                 </span>
+            @elseif(is_null($role->operator_id))
+                <span class="badge badge-general" title="دور عام يظهر لكل المشغلين">
+                    <i class="bi bi-globe me-1"></i>
+                    عام
+                </span>
             @else
-                <span class="badge badge-custom">
+                <span class="badge badge-custom" title="دور خاص بمشغل واحد">
                     <i class="bi bi-gear me-1"></i>
                     مخصص
                 </span>

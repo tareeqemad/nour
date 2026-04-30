@@ -144,16 +144,17 @@ class SubscriberController extends Controller
             : collect();
 
         // جلب وحدات التوليد (للسوبر أدمن تبدأ فارغة وتُحمّل عبر AJAX بعد اختيار المشغل)
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($canSelectOperator) {
             $generationUnits = collect();
-        } elseif ($user->isCompanyOwner()) {
-            $operatorIds = $user->ownedOperators()->pluck('id');
-            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
-                ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
         } else {
-            $operatorIds = $user->operators()->pluck('operators.id');
-            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
-                ->with('operator:id,name')->select('id', 'name', 'unit_code', 'operator_id')->orderBy('name')->get();
+            $operatorIds = $user->getScopedOperatorIds();
+            $generationUnits = !empty($operatorIds)
+                ? GenerationUnit::whereIn('operator_id', $operatorIds)
+                    ->with('operator:id,name')
+                    ->select('id', 'name', 'unit_code', 'operator_id')
+                    ->orderBy('name')
+                    ->get()
+                : collect();
         }
 
         return view('admin.subscribers.index', compact('subscribers', 'operators', 'currentOperator', 'canSelectOperator', 'generationUnits'));

@@ -36,6 +36,12 @@ class InvoiceReportController extends Controller
             ? Operator::orderBy('name')->get(['id', 'name'])
             : collect();
 
+        // للمستخدم المقيّد بمشغل: نمرّر اسم المشغل للعرض في رأس التقرير
+        $currentOperator = null;
+        if (! $canSelectOperator && ! empty($scopedOperatorIds) && $scopedOperatorIds !== [-1]) {
+            $currentOperator = Operator::find($scopedOperatorIds[0]);
+        }
+
         // ===== closure لبناء الاستعلام الأساسي =====
         $base = function () use ($scopedOperatorIds, $selectedOpId) {
             $q = Invoice::query();
@@ -166,7 +172,14 @@ class InvoiceReportController extends Controller
             ->first();
 
         // === تقرير الإيرادات حسب المشغل ===
-        $revenueByOperator = \App\Models\Operator::select('operators.id', 'operators.name')
+        $operatorsScopeQuery = \App\Models\Operator::select('operators.id', 'operators.name');
+        if (! $canSelectOperator && ! empty($scopedOperatorIds)) {
+            $operatorsScopeQuery->whereIn('id', $scopedOperatorIds);
+        }
+        if ($selectedOpId > 0) {
+            $operatorsScopeQuery->where('id', $selectedOpId);
+        }
+        $revenueByOperator = $operatorsScopeQuery
             ->withCount(['generationUnits as subscriber_count' => function ($q) use ($base) {
                 // Count distinct subscribers through generation units
             }])
@@ -265,7 +278,7 @@ class InvoiceReportController extends Controller
 
         return view('admin.invoice-reports.index', compact(
             'dateFrom', 'dateTo',
-            'operators', 'selectedOpId', 'canSelectOperator',
+            'operators', 'selectedOpId', 'canSelectOperator', 'currentOperator',
             'issuedInPeriod',
             'unpaidInvoices', 'unpaidSummary',
             'overdueInvoices', 'overdueSummary',

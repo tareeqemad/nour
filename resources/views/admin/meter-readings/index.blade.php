@@ -70,7 +70,7 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                        @elseif(($isCompanyOwner || $isEmployeeOrTechnician) && isset($currentOperator))
+                                        @elseif(isset($currentOperator) && $currentOperator)
                                             <select id="operatorFilter" class="form-select" disabled>
                                                 <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
                                             </select>

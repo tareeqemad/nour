@@ -50,6 +50,13 @@
                             @endforeach
                         </select>
                     </div>
+                    @elseif(isset($currentOperator) && $currentOperator)
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">المشغل</label>
+                        <select class="form-select" disabled style="background-color:#f8f9fa;cursor:not-allowed;">
+                            <option selected>{{ $currentOperator->name }}</option>
+                        </select>
+                    </div>
                     @endif
                     <div class="col-md-3">
                         <button type="submit" class="btn btn-primary w-100">
@@ -80,6 +87,8 @@
                 الفترة: {{ $dateFrom }} ← {{ $dateTo }}
                 @if($canSelectOperator && $selectedOpId > 0)
                     &nbsp;|&nbsp; المشغل: {{ $operators->firstWhere('id', $selectedOpId)?->name ?? 'غير محدد' }}
+                @elseif(!$canSelectOperator && isset($currentOperator) && $currentOperator)
+                    &nbsp;|&nbsp; المشغل: {{ $currentOperator->name }}
                 @endif
                 &nbsp;|&nbsp; تاريخ الإصدار: {{ now()->format('Y-m-d') }}
             </p>

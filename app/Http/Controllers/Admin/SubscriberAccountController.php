@@ -27,23 +27,19 @@ class SubscriberAccountController extends Controller
 
         // تحديد نطاق المشغل
         $currentOperator = null;
-        if ($user->isCompanyOwner()) {
-            $currentOperator = $user->ownedOperators()->first();
-            if ($currentOperator) {
+        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+
+        if (! $canSelectOperator) {
+            $operatorIds = $user->getScopedOperatorIds();
+            if (! empty($operatorIds)) {
                 $query->whereHas('generationUnits', fn($q) =>
-                    $q->where('operator_id', $currentOperator->id));
-            }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->isNotEmpty()) {
-                $ids = $operators->pluck('id')->toArray();
-                $query->whereHas('generationUnits', fn($q) =>
-                    $q->whereIn('operator_id', $ids));
-                $currentOperator = $operators->first();
+                    $q->whereIn('operator_id', $operatorIds));
+                $currentOperator = Operator::find($operatorIds[0]);
+            } else {
+                $query->whereRaw('0 = 1');
             }
         }
 
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
         $operators = $canSelectOperator
             ? Operator::orderBy('name')->get()
             : collect();
@@ -81,8 +77,18 @@ class SubscriberAccountController extends Controller
      */
     public function show(Request $request, Subscriber $subscriber): View
     {
-        if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin() && !auth()->user()->isEnergyAuthority() && !auth()->user()->hasPermission('subscriber_accounts.view')) {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isEnergyAuthority() && !$user->hasPermission('subscriber_accounts.view')) {
             abort(403);
+        }
+
+        // منع المستخدمين المرتبطين بمشغل من رؤية مشتركي مشغل آخر
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isEnergyAuthority()) {
+            $operatorIds = $user->getScopedOperatorIds();
+            if (empty($operatorIds) ||
+                ! $subscriber->generationUnits()->whereIn('operator_id', $operatorIds)->exists()) {
+                abort(403);
+            }
         }
 
         $dateFrom = $request->input('date_from', '');

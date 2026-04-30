@@ -50,6 +50,41 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/libs/select2/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/users.css') }}">
+    <style>
+        /* تمييز الأدوار النظامية في قائمة الأدوار */
+        .select2-results__group.role-group-system {
+            background: linear-gradient(90deg, rgba(99,102,241,0.10), rgba(99,102,241,0));
+            color: #6366f1;
+            font-weight: 700;
+            border-right: 3px solid #6366f1;
+            padding-right: 10px;
+        }
+        .select2-results__group.role-group-general {
+            background: linear-gradient(90deg, rgba(14,165,233,0.10), rgba(14,165,233,0));
+            color: #0ea5e9;
+            font-weight: 700;
+            border-right: 3px solid #0ea5e9;
+            padding-right: 10px;
+        }
+        .select2-results__group.role-group-custom {
+            color: #10b981;
+            font-weight: 600;
+            border-right: 3px solid #10b981;
+            padding-right: 10px;
+        }
+        .role-option-system {
+            color: #6366f1;
+            font-weight: 600;
+        }
+        .role-option-system .bi { color: #6366f1; }
+        .role-option-general {
+            color: #0ea5e9;
+            font-weight: 600;
+        }
+        .role-option-general .bi { color: #0ea5e9; }
+        .role-option-custom { color: #495057; }
+        .role-option-custom .bi { color: #10b981; }
+    </style>
 @endpush
 
 @section('content')
@@ -96,23 +131,23 @@
                             <select class="form-select form-select-sm" id="roleFilter">
                                 <option value="">الكل</option>
                                 @if(!empty($sortedSystemRoles))
-                                    <optgroup label="الأدوار النظامية">
+                                    <optgroup label="الأدوار النظامية" data-role-type="system">
                                         @foreach($sortedSystemRoles as $roleName => $roleData)
-                                            <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                            <option value="{{ $roleName }}" data-is-custom="0">{{ $roleData['label'] ?? $roleName }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endif
                                 @if(!empty($customRolesGeneral))
-                                    <optgroup label="الأدوار المخصصة - عامة">
+                                    <optgroup label="الأدوار العامة" data-role-type="general">
                                         @foreach($customRolesGeneral as $roleName => $roleData)
-                                            <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                            <option value="{{ $roleName }}" data-is-custom="1" data-role-kind="general">{{ $roleData['label'] ?? $roleName }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endif
                                 @foreach($customRolesByOperator as $opName => $opRoles)
-                                    <optgroup label="الأدوار المخصصة - {{ $opName }}">
+                                    <optgroup label="الأدوار المخصصة - {{ $opName }}" data-role-type="custom">
                                         @foreach($opRoles as $roleName => $roleData)
-                                            <option value="{{ $roleName }}">{{ $roleData['label'] ?? $roleName }}</option>
+                                            <option value="{{ $roleName }}" data-is-custom="1">{{ $roleData['label'] ?? $roleName }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endforeach
@@ -864,6 +899,33 @@
 
             // لا نبدأ select2 إلا عند الحاجة (عند اختيار دور "مشغل")
 
+            // ===== Select2 templateResult لتمييز الأدوار النظامية عن المخصصة
+            function roleTemplateResult(state) {
+                if (!state.id && state.id !== 0) return state.text;
+                const el = state.element;
+                if (!el) return state.text;
+
+                // Optgroup label
+                if (el.tagName && el.tagName.toLowerCase() === 'optgroup') {
+                    const type = el.getAttribute('data-role-type') || 'custom';
+                    const cls  = type === 'system'  ? 'role-group-system'
+                              : type === 'general' ? 'role-group-general'
+                                                   : 'role-group-custom';
+                    return $('<span class="' + cls + '">' + state.text + '</span>');
+                }
+
+                // Option
+                const isCustom = el.getAttribute('data-is-custom') === '1';
+                const kind     = el.getAttribute('data-role-kind') || (isCustom ? 'custom' : 'system');
+                const cls  = kind === 'system'  ? 'role-option-system'
+                          : kind === 'general' ? 'role-option-general'
+                                               : 'role-option-custom';
+                const icon = kind === 'system'  ? 'bi-shield-check'
+                          : kind === 'general' ? 'bi-globe'
+                                               : 'bi-tag';
+                return $('<span class="' + cls + '"><i class="bi ' + icon + ' me-1"></i>' + $('<div>').text(state.text).html() + '</span>');
+            }
+
             // ===== Select2: role filter (مع بحث وتجميع حسب المشغل)
             $roleFilter.select2({
                 dir: 'rtl',
@@ -872,6 +934,7 @@
                 allowClear: true,
                 language: 'ar',
                 minimumResultsForSearch: 6,
+                templateResult: roleTemplateResult,
             });
 
             // ===== Create Modal (AJAX)
@@ -999,6 +1062,7 @@
                                 placeholder: 'اختر الدور',
                                 language: 'ar',
                                 minimumResultsForSearch: 6,
+                                templateResult: roleTemplateResult,
                             });
                             // الحفاظ على trigger('change') الأصلي للحقول التابعة للدور
                             $createRoleEl.on('select2:select select2:clear', function(){

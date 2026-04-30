@@ -67,7 +67,7 @@
                                             <option value="{{ $op->id }}" {{ request('operator_id') == $op->id ? 'selected' : '' }}>{{ $op->name }}</option>
                                         @endforeach
                                     </select>
-                                @elseif(($isCompanyOwner || $isEmployeeOrTechnician) && isset($currentOperator))
+                                @elseif(isset($currentOperator) && $currentOperator)
                                     <select id="operatorFilter" class="form-select" disabled style="background-color:#f8f9fa;cursor:not-allowed;">
                                         <option value="{{ $currentOperator->id }}" selected>{{ $currentOperator->name }}</option>
                                     </select>

@@ -54,7 +54,7 @@
                 <option value="">اختر الدور</option>
 
                 @if(!empty($systemRoleItems))
-                    <optgroup label="الأدوار النظامية">
+                    <optgroup label="الأدوار النظامية" data-role-type="system">
                         @foreach($systemRoleItems as $item)
                             <option value="{{ $item['value'] }}"
                                     data-is-custom="0"
@@ -66,10 +66,11 @@
                 @endif
 
                 @if(!empty($customGeneralItems))
-                    <optgroup label="الأدوار المخصصة - عامة">
+                    <optgroup label="الأدوار العامة" data-role-type="general">
                         @foreach($customGeneralItems as $item)
                             <option value="{{ $item['value'] }}"
                                     data-is-custom="1"
+                                    data-role-kind="general"
                                     {{ (string)$selectedRole === (string)$item['value'] ? 'selected' : '' }}>
                                 {{ $item['label'] }}
                             </option>
@@ -78,7 +79,7 @@
                 @endif
 
                 @foreach($customPerOperator as $opName => $items)
-                    <optgroup label="الأدوار المخصصة - {{ $opName }}">
+                    <optgroup label="الأدوار المخصصة - {{ $opName }}" data-role-type="custom">
                         @foreach($items as $item)
                             <option value="{{ $item['value'] }}"
                                     data-is-custom="1"
