@@ -48,7 +48,7 @@
                 <div class="card-body pb-4">
                     @php
                         $user = auth()->user();
-                        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                        $canSelectOperator = $user->hasGlobalAccountingAccess();
                     @endphp
                     <div class="row g-3">
 

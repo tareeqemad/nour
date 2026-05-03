@@ -36,32 +36,39 @@ class RoleSeeder extends Seeder
                 'order' => 3,
             ],
             [
+                'name' => 'general_accountant',
+                'label' => 'حسابات عامة',
+                'description' => 'دور نظامي للحسابات العامة - يمكنه متابعة المشتركين والقراءات والفوترة والتحصيل والتقارير على مستوى جميع المشغلين',
+                'is_system' => true,
+                'order' => 4,
+            ],
+            [
                 'name' => 'company_owner',
                 'label' => 'مشغل',
                 'description' => 'مشغل المولدات - يمكنه إدارة بياناته وموظفيه',
                 'is_system' => true,
-                'order' => 4,
+                'order' => 5,
             ],
             [
                 'name' => 'employee',
                 'label' => 'موظف',
                 'description' => 'موظف - يمكنه تعبئة السجلات التشغيلية',
                 'is_system' => true,
-                'order' => 5,
+                'order' => 6,
             ],
             [
                 'name' => 'technician',
                 'label' => 'فني',
                 'description' => 'فني - يمكنه تعبئة سجلات الصيانة',
                 'is_system' => true,
-                'order' => 6,
+                'order' => 7,
             ],
             [
                 'name' => 'civil_defense',
                 'label' => 'دفاع مدني',
                 'description' => 'دفاع مدني - يمكنه تعبئة سجلات الوقاية والسلامة',
                 'is_system' => true,
-                'order' => 7,
+                'order' => 8,
             ],
         ];
 
@@ -192,6 +199,27 @@ class RoleSeeder extends Seeder
                     'inspection_violation_cases.create',
                     'inspection_violation_cases.update',
                     'inspection_violation_cases.delete',
+                ])->pluck('id'));
+
+            } elseif ($role->name === 'general_accountant') {
+                // GeneralAccountant - System-wide accounting role
+                // Can access accounting, billing, subscriber account, and financial reports across all operators.
+                // No delete permissions and no system settings/constants/logs.
+                $role->permissions()->attach($permissions->whereIn('name', [
+                    'guide.view',
+                    'operators.view',
+                    'subscribers.view',
+                    'meter_readings.view',
+                    'invoices.view',
+                    'invoices.create',
+                    'invoices.update',
+                    'invoices.issue',
+                    'invoices.import_payments',
+                    'invoice_reports.view',
+                    'minimum_charge_rules.view',
+                    'employee_discount_rates.view',
+                    'subscriber_accounts.view',
+                    'electricity_tariff_prices.view',
                 ])->pluck('id'));
                 
             } elseif ($role->name === 'company_owner') {

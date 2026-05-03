@@ -12,7 +12,7 @@
 @section('content')
 <div class="general-page">
 
-    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isEnergyAuthority())
+    @if(auth()->user()->hasGlobalAccountingAccess())
         <div class="general-page" id="operatorsPage">
             <div class="row g-3">
                 <div class="col-12">
@@ -256,9 +256,8 @@
         alert(msg);
     }
 
-    // ====== SuperAdmin AJAX only ======
-    const isSuperAdmin = @json(auth()->user()->isSuperAdmin());
-    if (!isSuperAdmin) return;
+    const canUseOperatorFilters = @json(auth()->user()->hasGlobalAccountingAccess());
+    if (!canUseOperatorFilters) return;
 
     const listUrl = @json(route('admin.operators.index'));
     const modalEl = document.getElementById('operatorModal');

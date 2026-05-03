@@ -94,6 +94,7 @@
                                             'super_admin' => 'مدير النظام',
                                             'admin' => 'سلطة الطاقة',
                                             'energy_authority' => 'سلطة الطاقة',
+                                            'general_accountant' => 'حسابات عامة',
                                             'company_owner' => 'مشغل',
                                             'employee' => 'موظف',
                                             'technician' => 'فني',

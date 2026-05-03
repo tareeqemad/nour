@@ -44,7 +44,7 @@
                             $user = auth()->user();
                             $isCompanyOwner = $user->isCompanyOwner();
                             $isEmployeeOrTechnician = $user->isEmployee() || $user->isTechnician();
-                            $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                            $canSelectOperator = $user->hasGlobalAccountingAccess();
                             $subscriptionStatuses   = \App\Helpers\ConstantsHelper::get(25);
                             $subscriptionCategories = \App\Helpers\ConstantsHelper::get(23);
                             $phaseTypes             = \App\Helpers\ConstantsHelper::get(24);
@@ -1020,4 +1020,3 @@
         })();
     </script>
 @endpush
-

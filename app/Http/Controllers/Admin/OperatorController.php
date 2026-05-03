@@ -146,7 +146,7 @@ class OperatorController extends Controller
         }
 
         // للي مش SuperAdmin و EnergyAuthority: غالبًا رح يكون عنده مشغل واحد
-        $myOperator = (! $authUser->isSuperAdmin() && ! $authUser->isEnergyAuthority() && ! $authUser->isAdmin())
+        $myOperator = (! $authUser->hasGlobalAccountingAccess())
             ? $operators->first()
             : null;
 

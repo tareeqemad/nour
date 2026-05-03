@@ -22,6 +22,7 @@ class UsernameHelper
             Role::SuperAdmin => 'sp_',
             Role::Admin => 'a_',
             Role::EnergyAuthority => 'ea_',
+            Role::GeneralAccountant => 'ga_',
             Role::CompanyOwner => 'op_',
             Role::Technician => 't_',
             Role::CivilDefense => 'cd_',

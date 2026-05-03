@@ -13,7 +13,7 @@ class ElectricityTariffPricePolicy
     public function viewAny(User $user): bool
     {
         // السوبر أدمن والأدمن وسلطة الطاقة يمكنهم رؤية كل شيء
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -27,7 +27,7 @@ class ElectricityTariffPricePolicy
     public function view(User $user, ElectricityTariffPrice $tariffPrice): bool
     {
         // السوبر أدمن والأدمن وسلطة الطاقة يمكنهم رؤية كل شيء
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 

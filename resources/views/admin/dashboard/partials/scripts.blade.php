@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
             $user->isSuperAdmin() => 'super_admin',
             $user->isAdmin() => 'admin',
             $user->isEnergyAuthority() => 'energy_authority',
+            $user->isGeneralAccountant() => 'general_accountant',
             $user->isCompanyOwner() => 'company_owner',
             $user->isEmployee() => 'employee',
             $user->isTechnician() => 'technician',

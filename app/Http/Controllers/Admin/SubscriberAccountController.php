@@ -18,16 +18,16 @@ class SubscriberAccountController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
-        if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin() && !auth()->user()->isEnergyAuthority() && !auth()->user()->hasPermission('subscriber_accounts.view')) {
+        $user  = auth()->user();
+        if (! $user->hasGlobalAccountingAccess() && ! $user->hasPermission('subscriber_accounts.view')) {
             abort(403);
         }
 
-        $user  = auth()->user();
         $query = Subscriber::query();
 
         // تحديد نطاق المشغل
         $currentOperator = null;
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
 
         if (! $canSelectOperator) {
             $operatorIds = $user->getScopedOperatorIds();
@@ -78,12 +78,12 @@ class SubscriberAccountController extends Controller
     public function show(Request $request, Subscriber $subscriber): View
     {
         $user = auth()->user();
-        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isEnergyAuthority() && !$user->hasPermission('subscriber_accounts.view')) {
+        if (! $user->hasGlobalAccountingAccess() && ! $user->hasPermission('subscriber_accounts.view')) {
             abort(403);
         }
 
         // منع المستخدمين المرتبطين بمشغل من رؤية مشتركي مشغل آخر
-        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isEnergyAuthority()) {
+        if (! $user->hasGlobalAccountingAccess()) {
             $operatorIds = $user->getScopedOperatorIds();
             if (empty($operatorIds) ||
                 ! $subscriber->generationUnits()->whereIn('operator_id', $operatorIds)->exists()) {

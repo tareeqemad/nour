@@ -12,7 +12,7 @@ class MeterReadingPolicy
      */
     public function viewAny(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -28,7 +28,7 @@ class MeterReadingPolicy
      */
     public function view(User $user, MeterReading $meterReading): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 

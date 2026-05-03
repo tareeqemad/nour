@@ -43,7 +43,7 @@ class AdminMiddleware
             ]);
         }
 
-        if (! $user->isSuperAdmin() && ! $user->isAdmin() && ! $user->isEnergyAuthority() && ! $user->isCompanyOwner() && ! $user->isEmployee() && ! $user->isTechnician() && ! $user->isCivilDefense() && ! $user->hasOperatorLinkedCustomRole()) {
+        if (! $user->isSuperAdmin() && ! $user->isAdmin() && ! $user->isEnergyAuthority() && ! $user->isGeneralAccountant() && ! $user->isCompanyOwner() && ! $user->isEmployee() && ! $user->isTechnician() && ! $user->isCivilDefense() && ! $user->hasOperatorLinkedCustomRole()) {
             abort(403);
         }
 

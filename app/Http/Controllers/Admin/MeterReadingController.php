@@ -32,7 +32,7 @@ class MeterReadingController extends Controller
         $query = MeterReading::with(['subscriber', 'creator', 'updater']);
 
         $currentOperator = null;
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
 
         if (! $canSelectOperator) {
             $opIds = $user->getScopedOperatorIds();
@@ -532,7 +532,7 @@ class MeterReadingController extends Controller
         } elseif ($user->isEmployee() || $user->isTechnician()) {
             $opIds = $user->operators->pluck('id')->toArray();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
-        } elseif ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        } elseif ($user->hasGlobalAccountingAccess()) {
             $operatorId = (int) $request->input('operator_id', 0);
             if ($operatorId > 0) {
                 $query->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $operatorId));

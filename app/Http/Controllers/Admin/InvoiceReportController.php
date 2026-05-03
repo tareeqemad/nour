@@ -15,7 +15,7 @@ class InvoiceReportController extends Controller
         $this->authorize('viewReports', Invoice::class);
 
         $user              = auth()->user();
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
 
         // ===== نطاق المشغل =====
         $scopedOperatorIds = [];   // فارغة = بدون تقييد (سوبر أدمن / أدمن / سلطة الطاقة)

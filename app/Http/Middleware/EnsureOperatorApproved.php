@@ -22,7 +22,7 @@ class EnsureOperatorApproved
         }
 
         // SuperAdmin و Admin و EnergyAuthority دائماً مسموح لهم
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return $next($request);
         }
 
@@ -184,4 +184,3 @@ class EnsureOperatorApproved
             ->with('warning', 'حسابك في انتظار الاعتماد من سلطة الطاقة. يمكنك إضافة وحدات التوليد والمولدات فقط حتى يتم اعتماد حسابك.');
     }
 }
-

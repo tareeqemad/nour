@@ -6,6 +6,7 @@
         \App\Enums\Role::SuperAdmin->value      => ['label' => 'مدير النظام',  'badge' => 'danger',  'icon' => 'bi-shield-lock'],
         \App\Enums\Role::Admin->value           => ['label' => 'مدير',          'badge' => 'dark',    'icon' => 'bi-person-gear'],
         \App\Enums\Role::EnergyAuthority->value => ['label' => 'سلطة الطاقة',   'badge' => 'info',    'icon' => 'bi-lightning-charge'],
+        \App\Enums\Role::GeneralAccountant->value => ['label' => 'حسابات عامة', 'badge' => 'info', 'icon' => 'bi-calculator'],
         \App\Enums\Role::CompanyOwner->value    => ['label' => 'مشغل',          'badge' => 'primary', 'icon' => 'bi-building'],
         \App\Enums\Role::Employee->value        => ['label' => 'موظف',          'badge' => 'success', 'icon' => 'bi-person-badge'],
         \App\Enums\Role::Technician->value      => ['label' => 'فني',           'badge' => 'warning', 'icon' => 'bi-tools'],

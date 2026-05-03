@@ -13,7 +13,7 @@ class SubscriberPolicy
     public function viewAny(User $user): bool
     {
         // SuperAdmin و Admin و EnergyAuthority لديهم جميع الصلاحيات
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -31,7 +31,7 @@ class SubscriberPolicy
      */
     public function view(User $user, Subscriber $subscriber): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 

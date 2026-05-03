@@ -168,6 +168,26 @@ class User extends Authenticatable
         'subscriber_accounts.view',
     ];
 
+    /**
+     * صلاحيات دور الحسابات العامة على مستوى كل المشغلين
+     */
+    private const GENERAL_ACCOUNTANT_PERMISSIONS = [
+        'guide.view',
+        'operators.view',
+        'subscribers.view',
+        'meter_readings.view',
+        'invoices.view',
+        'invoices.create',
+        'invoices.update',
+        'invoices.issue',
+        'invoices.import_payments',
+        'invoice_reports.view',
+        'minimum_charge_rules.view',
+        'employee_discount_rates.view',
+        'subscriber_accounts.view',
+        'electricity_tariff_prices.view',
+    ];
+
     protected $fillable = [
         'name', // اسم المستخدم (العربي) - مثل: "أحمد محمد"
         'name_en', // اسم المستخدم (بالإنجليزية) - مثل: "Ahmad Mohammed" - يستخدم لتوليد username تلقائياً
@@ -327,6 +347,15 @@ class User extends Authenticatable
         return $this->role === Role::CivilDefense;
     }
 
+    public function isGeneralAccountant(): bool
+    {
+        if ($this->role_id) {
+            return $this->roleModel?->name === 'general_accountant';
+        }
+
+        return $this->role === Role::GeneralAccountant;
+    }
+
     public function isAdmin(): bool
     {
         if ($this->role_id) {
@@ -345,6 +374,14 @@ class User extends Authenticatable
         return $this->role === Role::EnergyAuthority;
     }
 
+    public function hasGlobalAccountingAccess(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || $this->isEnergyAuthority()
+            || $this->isGeneralAccountant();
+    }
+
     /**
      * Get the role label (Arabic name) for the user
      */
@@ -360,6 +397,7 @@ class User extends Authenticatable
             Role::SuperAdmin => 'مدير النظام',
             Role::Admin => 'مدير',
             Role::EnergyAuthority => 'سلطة الطاقة',
+            Role::GeneralAccountant => 'حسابات عامة',
             Role::CompanyOwner => 'مشغل',
             Role::Employee => 'موظف',
             Role::Technician => 'فني',
@@ -377,6 +415,7 @@ class User extends Authenticatable
             Role::SuperAdmin->value => 'مدير النظام',
             Role::Admin->value => 'مدير',
             Role::EnergyAuthority->value => 'سلطة الطاقة',
+            Role::GeneralAccountant->value => 'حسابات عامة',
             Role::CompanyOwner->value => 'مشغل',
             Role::Employee->value => 'موظف',
             Role::Technician->value => 'فني',
@@ -407,10 +446,7 @@ class User extends Authenticatable
             return false;
         }
 
-        // System roles are: super_admin, admin, energy_authority, company_owner
-        $systemRoles = ['super_admin', 'admin', 'energy_authority', 'company_owner'];
-
-        return ! in_array($this->roleModel->name, $systemRoles, true);
+        return ! $this->roleModel->is_system;
     }
 
     /**
@@ -465,7 +501,7 @@ class User extends Authenticatable
      */
     public function getScopedOperatorIds(): array
     {
-        if ($this->isSuperAdmin() || $this->isAdmin() || $this->isEnergyAuthority()) {
+        if ($this->hasGlobalAccountingAccess()) {
             return [];
         }
 
@@ -490,8 +526,8 @@ class User extends Authenticatable
      */
     public function hasApprovedOperator(): bool
     {
-        // SuperAdmin and Admin always have access
-        if ($this->isSuperAdmin() || $this->isAdmin() || $this->isEnergyAuthority()) {
+        // System-wide roles always have access without operator approval
+        if ($this->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -737,6 +773,8 @@ class User extends Authenticatable
         return match ($this->role ?? null) {
             Role::SuperAdmin => 'مدير النظام',
             Role::Admin => 'مدير سلطة الطاقة',
+            Role::EnergyAuthority => 'سلطة الطاقة',
+            Role::GeneralAccountant => 'حسابات عامة',
             Role::CompanyOwner => 'صاحب مشغل',
             Role::Employee => 'موظف',
             Role::Technician => 'فني',
@@ -827,6 +865,12 @@ class User extends Authenticatable
             // CompanyOwner: صلاحياته المحددة فقط
             $permissionIds = $allPermissions
                 ->filter(fn ($permission) => in_array($permission->name, self::COMPANY_OWNER_PERMISSIONS, true))
+                ->pluck('id')
+                ->toArray();
+        } elseif ($this->isGeneralAccountant()) {
+            // GeneralAccountant: صلاحيات الحسابات العامة فقط
+            $permissionIds = $allPermissions
+                ->filter(fn ($permission) => in_array($permission->name, self::GENERAL_ACCOUNTANT_PERMISSIONS, true))
                 ->pluck('id')
                 ->toArray();
         }

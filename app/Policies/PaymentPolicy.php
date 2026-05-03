@@ -13,10 +13,13 @@ class PaymentPolicy
      */
     public function viewAny(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
-        return $user->isCompanyOwner() || $user->isEmployee() || $user->isTechnician();
+        return $user->isCompanyOwner()
+            || $user->isEmployee()
+            || $user->isTechnician()
+            || $user->hasPermission('invoices.view');
     }
 
     /**
@@ -24,7 +27,7 @@ class PaymentPolicy
      */
     public function view(User $user, Payment $payment): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -42,10 +45,12 @@ class PaymentPolicy
      */
     public function create(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isGeneralAccountant()) {
             return true;
         }
-        return $user->isCompanyOwner() || $user->isEmployee();
+        return $user->isCompanyOwner()
+            || $user->isEmployee()
+            || $user->hasAnyPermission(['invoices.update', 'invoices.import_payments']);
     }
 
     /**
@@ -62,7 +67,7 @@ class PaymentPolicy
             return false;
         }
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isGeneralAccountant()) {
             return true;
         }
 

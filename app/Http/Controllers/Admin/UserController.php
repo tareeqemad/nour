@@ -148,9 +148,9 @@ class UserController extends Controller
      * Get available roles for create modal (system roles + custom roles based on user authority)
      * 
      * Rules:
-     * - SuperAdmin: يرى الأدوار النظامية فقط (super_admin, admin, energy_authority, company_owner, employee, technician, civil_defense)
-     * - Admin: يرى جميع الأدوار النظامية ما عدا SuperAdmin (admin, energy_authority, company_owner, employee, technician, civil_defense)
-     * - EnergyAuthority: يرى الأدوار النظامية ما عدا SuperAdmin و Admin (energy_authority, company_owner, employee, technician, civil_defense)
+     * - SuperAdmin: يرى الأدوار النظامية فقط
+     * - Admin: يرى جميع الأدوار النظامية ما عدا SuperAdmin وحسابات عامة
+     * - EnergyAuthority: يرى الأدوار النظامية ما عدا SuperAdmin و Admin وحسابات عامة
      * - CompanyOwner: يرى فقط الأدوار المخصصة التابعة لمشغله
      */
     private function getRolesForCreate(User $user): array
@@ -172,17 +172,14 @@ class UserController extends Controller
             $systemRoles = collect();
         } elseif ($user->isSuperAdmin()) {
             // السوبر أدمن: يرى الأدوار النظامية فقط (بدون الأدوار المخصصة)
-            // جميع الأدوار النظامية: super_admin, admin, energy_authority, company_owner, employee, technician, civil_defense
             $customRoles = collect(); // لا أدوار مخصصة للسوبر أدمن
         } elseif ($user->isAdmin()) {
-            // الأدمن: يرى جميع الأدوار النظامية ما عدا SuperAdmin
-            // admin, energy_authority, company_owner, employee, technician, civil_defense
-            $systemRoles = $systemRoles->filter(fn($role) => $role->name !== 'super_admin');
+            // الأدمن: يرى جميع الأدوار النظامية ما عدا SuperAdmin وحسابات عامة
+            $systemRoles = $systemRoles->filter(fn($role) => !in_array($role->name, ['super_admin', 'general_accountant'], true));
             $customRoles = collect(); // Admin لا يرى الأدوار المخصصة في مودال الإنشاء
         } elseif ($user->isEnergyAuthority()) {
-            // سلطة الطاقة: يرى الأدوار النظامية ما عدا SuperAdmin و Admin
-            // energy_authority, company_owner, employee, technician, civil_defense
-            $systemRoles = $systemRoles->filter(fn($role) => !in_array($role->name, ['super_admin', 'admin'], true));
+            // سلطة الطاقة: يرى الأدوار النظامية ما عدا SuperAdmin و Admin وحسابات عامة
+            $systemRoles = $systemRoles->filter(fn($role) => !in_array($role->name, ['super_admin', 'admin', 'general_accountant'], true));
             $customRoles = collect(); // EnergyAuthority لا يرى الأدوار المخصصة في مودال الإنشاء
         }
 
@@ -221,6 +218,7 @@ class UserController extends Controller
             'super_admin' => 'badge-role-sa',
             'admin' => 'badge-role-admin',
             'energy_authority' => 'badge-role-admin',
+            'general_accountant' => 'badge-role-admin',
             'company_owner' => 'badge-role-owner',
             default => 'badge-role-custom',
         };
@@ -588,6 +586,13 @@ class UserController extends Controller
             $roles = collect();
         } elseif ($authUser->isSuperAdmin() || $authUser->isEnergyAuthority()) {
             // SuperAdmin and Energy Authority can see all system roles and custom roles
+            if ($authUser->isEnergyAuthority()) {
+                $roles = $roles->reject(fn (Role $role) => in_array($role, [
+                    Role::SuperAdmin,
+                    Role::Admin,
+                    Role::GeneralAccountant,
+                ], true));
+            }
             $customRoles = \App\Models\Role::getAvailableCustomRoles($authUser);
         }
 
@@ -725,10 +730,10 @@ class UserController extends Controller
         }
         
         // Determine role type
-        $adminSystemRoles = [Role::SuperAdmin->value, Role::Admin->value, Role::EnergyAuthority->value, Role::CompanyOwner->value];
+        $adminSystemRoles = [Role::SuperAdmin->value, Role::Admin->value, Role::EnergyAuthority->value, Role::GeneralAccountant->value, Role::CompanyOwner->value];
         $isAdminSystemRole = $isSystemRoleValue && in_array($roleValue, $adminSystemRoles, true);
         $isEmployeeOrTechnician = $isSystemRoleValue && in_array($roleValue, [Role::Employee->value, Role::Technician->value], true);
-        $isSystemRole = $isSystemRoleValue && ($isAdminSystemRole || $isEmployeeOrTechnician);
+        $isSystemRole = $isSystemRoleValue;
         $isCustomRole = ! $isSystemRoleValue; // If not a system role enum value, it's a custom role
 
         // Check permissions: Company Owner can create Employee, Technician, or custom roles they created
@@ -1058,6 +1063,7 @@ class UserController extends Controller
                 Role::SuperAdmin => 'مدير النظام',
                 Role::Admin => 'مدير',
                 Role::EnergyAuthority => 'سلطة الطاقة',
+                Role::GeneralAccountant => 'حسابات عامة',
                 Role::CompanyOwner => 'مشغل',
                 default => $role->value, // Fallback for custom roles (should not happen if roleModel exists)
             };
@@ -1142,10 +1148,11 @@ class UserController extends Controller
 
         // Get role_id from roles table (system role or custom role)
         $roleValue = $request->validated('role');
-        $adminSystemRoles = [Role::SuperAdmin->value, Role::Admin->value, Role::EnergyAuthority->value, Role::CompanyOwner->value];
+        $adminSystemRoles = [Role::SuperAdmin->value, Role::Admin->value, Role::EnergyAuthority->value, Role::GeneralAccountant->value, Role::CompanyOwner->value];
         $isAdminSystemRole = in_array($roleValue, $adminSystemRoles, true);
         $isEmployeeOrTechnician = in_array($roleValue, [Role::Employee->value, Role::Technician->value], true);
-        $isSystemRole = $isAdminSystemRole || $isEmployeeOrTechnician;
+        $allowedSystemRoles = array_map(fn (Role $role) => $role->value, Role::cases());
+        $isSystemRole = in_array($roleValue, $allowedSystemRoles, true);
 
         $newRole = null;
         $roleModel = null;

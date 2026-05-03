@@ -28,7 +28,7 @@ class SubscriberController extends Controller
 
         // تحديد المشغل بناءً على دور المستخدم
         $currentOperator = null;
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
 
         if (! $canSelectOperator) {
             $operatorIds = $user->getScopedOperatorIds();

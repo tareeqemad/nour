@@ -9,7 +9,7 @@ class MinimumChargeRulePolicy
 {
     public function viewAny(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
         if ($user->isCompanyOwner() || $user->isEmployee() || $user->isTechnician()) {

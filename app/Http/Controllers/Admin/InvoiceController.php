@@ -33,7 +33,7 @@ class InvoiceController extends Controller
 
         // تحديد نطاق المشغل
         $currentOperator = null;
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
 
         if (! $canSelectOperator) {
             $ids = $user->getScopedOperatorIds();

@@ -18,7 +18,7 @@ class MinimumChargeRuleController extends Controller
         $user = auth()->user();
         $operatorId = null;
         $operators = collect();
-        $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
 
         if ($canSelectOperator) {
             $operators = Operator::select('id', 'name')->orderBy('name')->get();

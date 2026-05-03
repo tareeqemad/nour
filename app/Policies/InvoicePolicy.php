@@ -9,7 +9,7 @@ class InvoicePolicy
 {
     public function viewAny(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -23,7 +23,7 @@ class InvoicePolicy
 
     public function view(User $user, Invoice $invoice): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -38,10 +38,12 @@ class InvoicePolicy
 
     public function create(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isGeneralAccountant()) {
             return true;
         }
-        return $user->isCompanyOwner() || $user->isEmployee();
+        return $user->isCompanyOwner()
+            || $user->isEmployee()
+            || $user->hasPermission('invoices.create');
     }
 
     public function update(User $user, Invoice $invoice): bool
@@ -49,10 +51,10 @@ class InvoicePolicy
         if (!$invoice->isEditable()) {
             return false;
         }
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isGeneralAccountant()) {
             return true;
         }
-        if ($user->isCompanyOwner() || $user->isEmployee()) {
+        if ($user->isCompanyOwner() || $user->isEmployee() || $user->hasPermission('invoices.update')) {
             $userOperatorIds = $user->operators()->pluck('operators.id')
                 ->merge($user->ownedOperators()->pluck('id'))->unique();
             $invoiceOperatorIds = $invoice->subscriber->generationUnits()
@@ -75,7 +77,13 @@ class InvoicePolicy
         if (!$invoice->isIssuable()) {
             return false;
         }
-        return $user->isSuperAdmin() || $user->isAdmin() || $user->isCompanyOwner() || $user->isEmployee();
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isGeneralAccountant()) {
+            return true;
+        }
+
+        return $user->isCompanyOwner()
+            || $user->isEmployee()
+            || $user->hasPermission('invoices.issue');
     }
 
     public function cancel(User $user, Invoice $invoice): bool
@@ -104,7 +112,7 @@ class InvoicePolicy
 
     public function viewReports(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
         if ($user->isCompanyOwner() || $user->isEmployee() || $user->isTechnician()) {

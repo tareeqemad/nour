@@ -49,7 +49,7 @@
                                     $user = auth()->user();
                                     $isCompanyOwner = $user->isCompanyOwner();
                                     $isEmployeeOrTechnician = $user->isEmployee() || $user->isTechnician();
-                                    $canSelectOperator = $user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority();
+                                    $canSelectOperator = $user->hasGlobalAccountingAccess();
                                     $readingStatuses = \App\Helpers\ConstantsHelper::get(28);
                                     $readingActions  = \App\Helpers\ConstantsHelper::get(29);
                                 @endphp

@@ -21,6 +21,7 @@ class PermissionsController extends Controller
     use SanitizesInput;
 
     private ?array $cachedTenantAssignablePermissionIds = null;
+    private ?array $cachedGeneralAccountantPermissionIds = null;
 
     /**
      * صلاحيات Tenant اللي مسموح للمشغل يوزعها (حتى لو عنده غيرها بالغلط).
@@ -70,6 +71,30 @@ class PermissionsController extends Controller
         $this->cachedTenantAssignablePermissionIds = $ids;
 
         return $ids;
+    }
+
+    private function generalAccountantPermissionIds(array $actorAvailableIds): array
+    {
+        if ($this->cachedGeneralAccountantPermissionIds === null) {
+            $this->cachedGeneralAccountantPermissionIds = Permission::whereIn('name', [
+                'guide.view',
+                'operators.view',
+                'subscribers.view',
+                'meter_readings.view',
+                'invoices.view',
+                'invoices.create',
+                'invoices.update',
+                'invoices.issue',
+                'invoices.import_payments',
+                'invoice_reports.view',
+                'minimum_charge_rules.view',
+                'employee_discount_rates.view',
+                'subscriber_accounts.view',
+                'electricity_tariff_prices.view',
+            ])->pluck('id')->toArray();
+        }
+
+        return array_values(array_intersect($actorAvailableIds, $this->cachedGeneralAccountantPermissionIds));
     }
 
     /**
@@ -311,6 +336,7 @@ class PermissionsController extends Controller
             'super_admin' => ['label' => 'مدير النظام', 'color' => 'danger', 'icon' => 'bi-shield-check'],
             'admin'       => ['label' => 'مدير', 'color' => 'info', 'icon' => 'bi-person-badge'],
             'energy_authority' => ['label' => 'سلطة الطاقة', 'color' => 'info', 'icon' => 'bi-bank2'],
+            'general_accountant' => ['label' => 'حسابات عامة', 'color' => 'info', 'icon' => 'bi-calculator'],
             'company_owner' => ['label' => 'مشغل', 'color' => 'primary', 'icon' => 'bi-building'],
             'employee'      => ['label' => 'موظف', 'color' => 'success', 'icon' => 'bi-person'],
             'technician'    => ['label' => 'فني', 'color' => 'warning', 'icon' => 'bi-tools'],
@@ -503,6 +529,7 @@ class PermissionsController extends Controller
     {
         return match (true) {
             $targetUser->isSuperAdmin() => $actorAvailableIds,
+            $targetUser->isGeneralAccountant() => $this->generalAccountantPermissionIds($actorAvailableIds),
             $targetUser->isAdmin() || $targetUser->isEnergyAuthority() => $this->excludeSuperAdminOnly($actorAvailableIds),
             $targetUser->isCompanyOwner() => $this->intersectWithTenantAssignable($actorAvailableIds),
             $this->shouldLimitToEmployeeTechnicianPermissions($actor, $targetUser) => $this->filterEmployeeTechnicianPermissions($actorAvailableIds),
@@ -543,6 +570,7 @@ class PermissionsController extends Controller
     {
         return match ($targetRole->name) {
             'super_admin' => $actorAvailableIds,
+            'general_accountant' => $this->generalAccountantPermissionIds($actorAvailableIds),
             'admin', 'energy_authority' => $this->excludeSuperAdminOnly($actorAvailableIds),
             'company_owner' => $this->intersectWithTenantAssignable($actorAvailableIds),
             'employee', 'technician' => $actor->isCompanyOwner() 
@@ -1111,7 +1139,7 @@ class PermissionsController extends Controller
         
         // EnergyAuthority: لا يرى SuperAdmin role
         if ($authUser->isEnergyAuthority()) {
-            $systemRoles = $systemRoles->filter(fn($role) => $role->name !== 'super_admin');
+            $systemRoles = $systemRoles->filter(fn($role) => ! in_array($role->name, ['super_admin', 'general_accountant'], true));
         }
 
         $results = $systemRoles->map(function ($role) {

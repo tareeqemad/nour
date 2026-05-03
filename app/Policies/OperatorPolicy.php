@@ -12,7 +12,7 @@ class OperatorPolicy
      */
     public function viewAny(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 
@@ -30,7 +30,7 @@ class OperatorPolicy
      */
     public function view(User $user, Operator $operator): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return true;
         }
 

@@ -29,7 +29,7 @@ class DashboardService
      */
     public function getOperatorIds($user): ?array
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return null;
         } elseif ($user->isCompanyOwner()) {
             return $user->ownedOperators->pluck('id')->toArray();
@@ -44,7 +44,7 @@ class DashboardService
      */
     public function getGeneratorIds($user, ?array $operatorIds): ?array
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->hasGlobalAccountingAccess()) {
             return null;
         }
         if ($operatorIds) {
@@ -66,7 +66,7 @@ class DashboardService
                 return $this->getSuperAdminStats();
             } elseif ($user->isEnergyAuthority()) {
                 return $this->getEnergyAuthorityStats();
-            } elseif ($user->isAdmin()) {
+            } elseif ($user->isAdmin() || $user->isGeneralAccountant()) {
                 return $this->getAdminStats();
             } elseif ($user->isCompanyOwner()) {
                 return $this->getCompanyOwnerStats($user);
