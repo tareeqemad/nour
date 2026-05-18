@@ -268,6 +268,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      * Submitted Portal Requests (via Palestinian Digital Portal)
      */
     Route::get('portal-requests', [PortalRequestController::class, 'index'])->name('portal-requests.index');
+    Route::get('portal-requests-export', [PortalRequestController::class, 'export'])->name('portal-requests.export');
     Route::get('portal-requests/{appId}', [PortalRequestController::class, 'show'])->name('portal-requests.show');
     Route::get('portal-requests/{appId}/change-status', [PortalRequestController::class, 'changeStatus'])->name('portal-requests.change-status');
     Route::post('portal-requests/{appId}/create-user', [PortalRequestController::class, 'createUser'])->name('portal-requests.create-user');

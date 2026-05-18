@@ -178,9 +178,10 @@ class PaymentsImport
             }
         }
 
-        // إعادة احتساب مسودات كل مشترك تأثَّر (مرة واحدة لكل مشترك)
+        // إعادة احتساب مسودات كل مشترك تأثَّر + توزيع FIFO (مرة واحدة لكل مشترك)
         if (!$this->previewMode) {
             foreach (array_keys($touchedSubscribers) as $subscriberId) {
+                Invoice::reconcileSubscriber((int) $subscriberId);
                 Invoice::refreshDraftsForSubscriber((int) $subscriberId);
             }
         }

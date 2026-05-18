@@ -207,7 +207,7 @@
                             $statItems = [
                                 ['val' => number_format($issuedInPeriod->count ?? 0),          'label' => 'عدد الفواتير الصادرة',   'color' => 'var(--color-primary,#24308F)'],
                                 ['val' => number_format($totalIssuedAmount, 2) . ' ₪',         'label' => 'إجمالي قيمة الفواتير',   'color' => 'var(--color-primary,#24308F)'],
-                                ['val' => number_format($issuedInPeriod->sum_total ?? 0, 2) . ' ₪', 'label' => 'إجمالي المبالغ المطلوبة', 'color' => 'var(--color-primary,#24308F)'],
+                                ['val' => number_format($issuedInPeriod->sum_remaining ?? 0, 2) . ' ₪', 'label' => 'المتبقي من فواتير الفترة',   'color' => 'var(--color-warning-text,#B45309)'],
                                 ['val' => number_format($issuedInPeriod->sum_kwh ?? 0, 1) . ' kWh', 'label' => 'إجمالي الاستهلاك',  'color' => 'var(--color-success-text,#047857)'],
                                 ['val' => $billedSubscribers->count(),                          'label' => 'مشترك مفوتر',            'color' => '#0284C7'],
                                 ['val' => $discountSummary['count'],                            'label' => 'فاتورة بخصم',            'color' => 'var(--color-success-text,#047857)'],
@@ -362,9 +362,9 @@
                                     <th>المشترك</th>
                                     <th class="text-center">التاريخ</th>
                                     <th class="text-center">الحالة</th>
-                                    <th class="text-end">المبلغ الكلي</th>
+                                    <th class="text-end" title="رسوم الاستهلاك في فترة الفاتورة (بدون رصيد سابق)">قيمة الفاتورة</th>
                                     <th class="text-end">المسدد</th>
-                                    <th class="text-end">المتبقي</th>
+                                    <th class="text-end" title="قيمة الفاتورة − المسدد عليها">المتبقي</th>
                                     <th class="no-print"></th>
                                 </tr>
                             </thead>
@@ -381,8 +381,8 @@
                                     <td class="text-center">
                                         <span class="badge bg-{{ $inv->status_badge_class }}">{{ $inv->status_name }}</span>
                                     </td>
-                                    <td class="text-end small">{{ number_format($inv->total_amount, 2) }} ₪</td>
-                                    <td class="text-end small" style="color:var(--color-success-text,#047857);">{{ number_format($inv->payments_sum_amount_paid ?? 0, 2) }} ₪</td>
+                                    <td class="text-end small">{{ number_format($inv->invoice_amount, 2) }} ₪</td>
+                                    <td class="text-end small" style="color:var(--color-success-text,#047857);">{{ number_format($inv->paid_amount ?? 0, 2) }} ₪</td>
                                     <td class="text-end fw-bold small" style="color:var(--color-warning-text,#B45309);">{{ number_format($inv->remaining, 2) }} ₪</td>
                                     <td class="no-print">
                                         <a href="{{ route('admin.invoices.show', $inv) }}" class="btn btn-outline-secondary btn-sm py-0 px-2">
@@ -394,7 +394,7 @@
                             </tbody>
                             <tfoot style="background:var(--color-bg-muted,#F7F9FC);font-weight:700;font-size:0.82rem;">
                                 <tr>
-                                    <td colspan="7" class="text-end">الإجمالي المتبقي:</td>
+                                    <td colspan="7" class="text-end" title="مجموع المتبقي على الفواتير غير المسددة (قيمة الفاتورة − المسدد عليها). الرصيد الصافي للمشترك يظهر في قسم الأرصدة المدينة.">الإجمالي المتبقي:</td>
                                     <td class="text-end" style="color:var(--color-warning-text,#B45309);">{{ number_format($unpaidSummary['total'], 2) }} ₪</td>
                                     <td class="no-print"></td>
                                 </tr>

@@ -590,4 +590,275 @@ class PortalRequestController extends Controller
     {
         return response()->json(['ok' => false, 'message' => $message], $httpCode);
     }
+
+    /**
+     * تصدير الطلبات إلى ملف Excel حسب الفلاتر الحالية
+     */
+    public function export(Request $request)
+    {
+        @set_time_limit(300);
+
+        $status      = $request->filled('status') ? trim((string) $request->query('status')) : '';
+        $date        = $request->filled('date') ? trim((string) $request->query('date')) : '';
+        $appNo       = $request->filled('app_no') ? trim((string) $request->query('app_no')) : '';
+        $applicantId = $request->filled('applicant_id') ? trim((string) $request->query('applicant_id')) : '';
+
+        try {
+            $items = $this->fetchAllForExport($appNo, $applicantId, $status, $date);
+        } catch (\Throwable $e) {
+            Log::error('PortalRequestController@export: ' . $e->getMessage());
+            return back()->with('error', 'حدث خطأ أثناء جلب البيانات للتصدير');
+        }
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('الطلبات المقدمة');
+        $sheet->setRightToLeft(true);
+
+        $headers = [
+            '#',
+            'رقم الطلب',
+            'اسم مقدم الطلب',
+            'رقم الهوية',
+            'حالة الطلب',
+            'حالة الحساب',
+            'اسم المستخدم',
+            'ملاحظة الحالة',
+            'تاريخ التقديم',
+            'آخر تعديل',
+        ];
+
+        $columns = range('A', 'J');
+        foreach ($headers as $i => $header) {
+            $cell = $columns[$i] . '1';
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        }
+
+        $row = 2;
+        foreach ($items as $idx => $item) {
+            $name = $this->extractNameFromPureData($item['pure_data'] ?? null);
+            $accountState = ($item['has_account'] ?? false) ? 'لديه حساب' : 'بدون حساب';
+            $username = $item['account_info']['username'] ?? '';
+
+            $sheet->setCellValue("A{$row}", $idx + 1);
+            $sheet->setCellValueExplicit("B{$row}", (string) ($item['app_no'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("C{$row}", $name);
+            $sheet->setCellValueExplicit("D{$row}", (string) ($item['applicant_id'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("E{$row}", $item['desc_app_status'] ?? ($item['app_status'] ?? ''));
+            $sheet->setCellValue("F{$row}", $accountState);
+            $sheet->setCellValue("G{$row}", $username);
+            $sheet->setCellValue("H{$row}", $item['status_note'] ?? '');
+            $sheet->setCellValue("I{$row}", $item['inserted_at'] ?? '');
+            $sheet->setCellValue("J{$row}", $item['changed_at'] ?? '');
+            $row++;
+        }
+
+        foreach ($columns as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $fileName = 'طلبات_البوابة_' . date('Y-m-d_His') . '.xlsx';
+        $tempPath = storage_path('app/temp/' . $fileName);
+
+        if (!file_exists(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $writer->save($tempPath);
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * جلب جميع الطلبات للتصدير عبر تكرار الصفحات
+     */
+    private function fetchAllForExport(string $appNo, string $applicantId, string $status, string $date): array
+    {
+        $perPage  = 100;
+        $maxPages = 50; // سقف أمان: 5000 طلب كحد أقصى
+        $all      = [];
+
+        // ── بحث برقم طلب محدد ──
+        if ($appNo !== '') {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(30)
+                ->get($this->baseUrl . 'getApp/' . urlencode($appNo));
+
+            if ($res->successful()) {
+                $body    = $res->json();
+                $appData = $body['0'] ?? $body['app'] ?? null;
+                if ($appData) {
+                    $pureData = $appData['pureData'] ?? [];
+                    $statusInfo = $appData['status'] ?? [];
+                    $data = $appData['data'] ?? [];
+
+                    $applicantIdVal = $this->extractFromPureData($pureData, [
+                        'رقم الهوية', 'رقم الهويه', 'رقم هوية مقدم الطلب',
+                    ]);
+                    $insertedAt = $this->extractFromPureData($pureData, [
+                        'تاريخ تقديم الطلب', 'تاريخ التقديم', 'تاريخ الطلب',
+                    ]);
+
+                    $all[] = [
+                        'app_no'          => $appNo,
+                        'ser_no'          => $data['serv_no'] ?? $data['ser_no'] ?? '',
+                        'applicant_id'    => $applicantIdVal ?? '',
+                        'app_status'      => $statusInfo['status'] ?? '',
+                        'desc_app_status' => $statusInfo['desc']   ?? '',
+                        'status_note'     => null,
+                        'inserted_at'     => $this->normalizeDate($insertedAt),
+                        'changed_at'      => null,
+                        'pure_data'       => is_string($pureData) ? $pureData : json_encode($pureData),
+                    ];
+                }
+            }
+        }
+        // ── بحث برقم هوية ──
+        elseif ($applicantId !== '') {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(30)
+                ->get($this->baseUrl . 'getAppsByServiceIDAndIdNo/' . urlencode($applicantId));
+
+            $all = $this->extractItemsFromResponse($res);
+        }
+        // ── فلتر بالحالة (مع pagination) ──
+        elseif ($status !== '') {
+            for ($page = 1; $page <= $maxPages; $page++) {
+                $res = Http::withHeaders($this->headers())
+                    ->timeout(30)
+                    ->get($this->baseUrl . 'getAppsByStatus', [
+                        'status'       => $status,
+                        'page'         => $page,
+                        'countPerPage' => $perPage,
+                    ]);
+
+                $pageItems = $this->extractItemsFromResponse($res);
+                if (empty($pageItems)) break;
+
+                $all = array_merge($all, $pageItems);
+                $allPages = $res->json('apps.pagination.allPages');
+                if ($allPages && $page >= (int) $allPages) break;
+            }
+        }
+        // ── فلتر بالتاريخ ──
+        elseif ($date !== '') {
+            $parts = explode('-', $date);
+            $formatted = count($parts) === 3 ? "{$parts[2]}-{$parts[1]}-{$parts[0]}" : $date;
+            $res = Http::withHeaders($this->headers())
+                ->timeout(30)
+                ->get($this->baseUrl . 'getAppsByDate', ['date' => $formatted]);
+
+            $all = $this->extractItemsFromResponse($res);
+        }
+        // ── الافتراضي: كل الطلبات مع pagination ──
+        else {
+            for ($page = 1; $page <= $maxPages; $page++) {
+                $res = Http::withHeaders($this->headers())
+                    ->timeout(30)
+                    ->get($this->baseUrl . 'getApps', [
+                        'page'         => $page,
+                        'countPerPage' => $perPage,
+                    ]);
+
+                $pageItems = $this->extractItemsFromResponse($res);
+                if (empty($pageItems)) break;
+
+                $all = array_merge($all, $pageItems);
+                $allPages = $res->json('apps.pagination.allPages');
+                if ($allPages && $page >= (int) $allPages) break;
+            }
+        }
+
+        // إضافة حالة الحساب
+        $appNos = array_filter(array_column($all, 'app_no'));
+        $processedMap = [];
+        if (!empty($appNos)) {
+            $processedMap = ProcessedPortalRequest::whereIn('app_no', $appNos)->get()->keyBy('app_no');
+        }
+
+        $applicantIds = array_filter(array_unique(array_column($all, 'applicant_id')));
+        $operatorsByIdNumber = [];
+        if (!empty($applicantIds)) {
+            $operatorsByIdNumber = \App\Models\Operator::whereIn('owner_id_number', $applicantIds)
+                ->with('owner:id,username')->get()->keyBy('owner_id_number');
+        }
+
+        foreach ($all as &$item) {
+            $record   = $processedMap[$item['app_no']] ?? null;
+            $operator = $operatorsByIdNumber[$item['applicant_id']] ?? null;
+
+            $item['has_account'] = ($record && $record->status === 'success') || ($operator !== null);
+            $item['account_info'] = null;
+
+            if ($record && $record->status === 'success') {
+                $item['account_info'] = ['username' => $record->user?->username];
+            } elseif ($operator) {
+                $item['account_info'] = ['username' => $operator->owner?->username];
+            }
+        }
+        unset($item);
+
+        return $all;
+    }
+
+    /**
+     * تطبيع عناصر الاستجابة (مشابه لـ parseListResponse لكن يرجع المصفوفة فقط)
+     */
+    private function extractItemsFromResponse(\Illuminate\Http\Client\Response $res): array
+    {
+        if (!$res->successful()) return [];
+
+        $body = $res->json();
+        if (!($body['status'] ?? false)) return [];
+
+        $items = $body['apps']['data'] ?? [];
+
+        return array_map(function (array $item): array {
+            $pureDataRaw = $item['pure_data'] ?? $item['pureData'] ?? $item['PURE_DATA'] ?? null;
+
+            $applicantId = $this->findField($item, ['applicant_id', 'applicantId', 'APPLICANT_ID', 'id_no', 'ID_NO']);
+            if (empty($applicantId) && !empty($pureDataRaw)) {
+                $applicantId = $this->extractFromPureData($pureDataRaw, [
+                    'رقم الهوية', 'رقم الهويه', 'رقم هوية مقدم الطلب',
+                ]);
+            }
+
+            $insertedAt = $this->findField($item, ['inserted_at', 'insertedAt', 'app_date', 'INSERT_DATE', 'insert_date', 'created_at']);
+            if (empty($insertedAt) && !empty($pureDataRaw)) {
+                $insertedAt = $this->extractFromPureData($pureDataRaw, [
+                    'تاريخ تقديم الطلب', 'تاريخ التقديم', 'تاريخ الطلب',
+                ]);
+            }
+
+            $changedAt  = $this->findField($item, ['changed_at', 'changedAt', 'CHANGE_DATE', 'change_date', 'updated_at', 'last_update']);
+            $statusNote = $this->findField($item, ['status_note', 'statusNote', 'STATUS_NOTE', 'note', 'notes']);
+
+            return [
+                'app_no'          => $this->findField($item, ['app_no', 'appNo', 'APP_NO']) ?? '',
+                'ser_no'          => $this->findField($item, ['ser_no', 'serNo', 'SER_NO', 'serv_no']) ?? '',
+                'applicant_id'    => $applicantId ?? '',
+                'app_status'      => $this->findField($item, ['app_status', 'appStatus', 'APP_STATUS', 'status']) ?? '',
+                'desc_app_status' => $this->findField($item, ['desc_app_status', 'descAppStatus', 'DESC_APP_STATUS', 'status_desc', 'app_status_desc']) ?? '',
+                'status_note'     => $statusNote,
+                'inserted_at'     => $this->normalizeDate($insertedAt),
+                'changed_at'      => $this->normalizeDate($changedAt),
+                'pure_data'       => is_string($pureDataRaw) ? $pureDataRaw : json_encode($pureDataRaw),
+            ];
+        }, array_values($items));
+    }
+
+    /**
+     * استخراج اسم مقدم الطلب من pure_data
+     */
+    private function extractNameFromPureData(mixed $pureData): string
+    {
+        $name = $this->extractFromPureData($pureData, [
+            'الاسم كاملاً', 'الاسم كاملا', 'الاسم الكامل', 'الاسم',
+        ]);
+        return $name ?? '';
+    }
 }

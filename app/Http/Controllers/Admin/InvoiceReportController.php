@@ -57,38 +57,85 @@ class InvoiceReportController extends Controller
         };
 
         // ===== 1. الفواتير الصادرة خلال الفترة =====
+        // sum_invoice  = إجمالي قيمة الفواتير (الرسوم الجديدة فقط)
+        // sum_paid     = ما سُدّد على هذه الفواتير
+        // sum_remaining = المتبقي من رسومها (sum_invoice − sum_paid)
+        // ملاحظة: لا نجمع total_amount لأنه يحوي previous_balance ويسبب تضاعفاً.
         $issuedInPeriod = $base()
             ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL, Invoice::STATUS_PAID])
             ->whereBetween('invoice_date', [$dateFrom, $dateTo])
-            ->selectRaw('
-                COUNT(*) as count,
-                SUM(invoice_amount) as sum_invoice,
-                SUM(total_amount)   as sum_total,
-                SUM(consumption_kwh) as sum_kwh
-            ')
-            ->first();
+            ->withSum('payments', 'amount_paid')
+            ->get();
 
-        // ===== 2. الفواتير غير المسددة =====
+        $sumInvoice = (float) $issuedInPeriod->sum('invoice_amount');
+        $sumPaid    = (float) $issuedInPeriod->sum('payments_sum_amount_paid');
+        $issuedInPeriod = (object) [
+            'count'         => $issuedInPeriod->count(),
+            'sum_invoice'   => $sumInvoice,
+            'sum_paid'      => $sumPaid,
+            'sum_remaining' => max($sumInvoice - $sumPaid, 0),
+            'sum_kwh'       => (float) $issuedInPeriod->sum('consumption_kwh'),
+        ];
+
+        // ===== الأرصدة الفعلية لكل مشترك (مرجع للحسابات أدناه) =====
+        // محسوبة من الفواتير الصادرة ضمن فترة التقرير (يحترم فلتر التاريخ).
+        // الصافي = مجموع invoice_amount (الرسوم الجديدة، بدون previous_balance المتراكم)
+        //         - مجموع المدفوعات على نفس الفواتير
+        // ملاحظة: استخدام total_amount هنا خطأ محاسبي لأنه يحوي previous_balance
+        // الذي يكرّر مديونية الفواتير السابقة عند الجمع.
+        $balances = $base()
+            ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL, Invoice::STATUS_PAID])
+            ->whereBetween('invoice_date', [$dateFrom, $dateTo])
+            ->with(['subscriber:id,subscriber_name,subscription_number'])
+            ->withSum('payments', 'amount_paid')
+            ->get()
+            ->groupBy('subscriber_id')
+            ->map(function ($invoices) {
+                $totalBilled = (float) $invoices->sum('invoice_amount');
+                $totalPaid   = (float) $invoices->sum('payments_sum_amount_paid');
+                $balance     = $totalBilled - $totalPaid;
+                return [
+                    'subscriber'    => $invoices->first()->subscriber,
+                    'total_billed'  => round($totalBilled, 2),
+                    'total_paid'    => round($totalPaid, 2),
+                    'balance'       => round($balance, 2),
+                ];
+            });
+
+        $debitBalances  = $balances->filter(fn($b) => $b['balance'] > 0)->sortByDesc('balance');
+        $creditBalances = $balances->filter(fn($b) => $b['balance'] < 0)->sortBy('balance');
+
+        // ===== 2. الفواتير غير المسددة (داخل فترة التقرير) =====
+        // المتبقي لكل فاتورة = قيمة الفاتورة (invoice_amount) - المسدد عليها مباشرة.
+        // الإجمالي = مجموع متبقي الأسطر (لا نستخدم total_amount لأنه يحوي previous_balance
+        // المتراكم الذي يكرّر مديونية الفواتير السابقة عند الجمع).
         $unpaidInvoices = $base()
             ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL])
+            ->whereBetween('invoice_date', [$dateFrom, $dateTo])
             ->with(['subscriber:id,subscriber_name,subscription_number'])
             ->withSum('payments', 'amount_paid')
             ->orderByDesc('invoice_date')
             ->get()
             ->map(function ($inv) {
-                $inv->remaining = max((float)$inv->total_amount - (float)($inv->payments_sum_amount_paid ?? 0), 0);
+                $paid = (float) ($inv->payments_sum_amount_paid ?? 0);
+                $inv->paid_amount = $paid;
+                $inv->remaining = max((float) $inv->invoice_amount - $paid, 0);
                 return $inv;
             })
-            ->filter(fn($inv) => $inv->remaining > 0);
+            ->filter(fn($inv) => $inv->remaining > 0)
+            ->values();
 
         $unpaidSummary = [
-            'count'  => $unpaidInvoices->count(),
-            'total'  => $unpaidInvoices->sum('remaining'),
+            'count' => $unpaidInvoices->count(),
+            'total' => round($unpaidInvoices->sum('remaining'), 2),
         ];
 
-        // ===== 3. الفواتير المتأخرة =====
+        // ===== 3. الفواتير المتأخرة (داخل فترة التقرير) =====
+        // تعريف "متأخرة": صادرة أو مسددة جزئياً + due_date في الماضي + لها متبقٍ فعلي.
+        // التعريف القديم استثنى STATUS_PARTIAL خطأً (فاتورة مدفوعة جزئياً ومتأخرة الاستحقاق هي متأخرة).
         $overdueInvoices = $base()
-            ->where('invoice_status', Invoice::STATUS_ISSUED)
+            ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL])
+            ->whereBetween('invoice_date', [$dateFrom, $dateTo])
             ->whereNotNull('due_date')
             ->where('due_date', '<', now())
             ->with(['subscriber:id,subscriber_name,subscription_number'])
@@ -96,38 +143,19 @@ class InvoiceReportController extends Controller
             ->orderBy('due_date')
             ->get()
             ->map(function ($inv) {
-                $inv->remaining = max((float)$inv->total_amount - (float)($inv->payments_sum_amount_paid ?? 0), 0);
-                $inv->days_overdue = now()->diffInDays($inv->due_date);
+                $paid = (float) ($inv->payments_sum_amount_paid ?? 0);
+                $inv->paid_amount = $paid;
+                $inv->remaining = max((float) $inv->invoice_amount - $paid, 0);
+                $inv->days_overdue = (int) now()->diffInDays($inv->due_date);
                 return $inv;
-            });
+            })
+            ->filter(fn($inv) => $inv->remaining > 0)
+            ->values();
 
         $overdueSummary = [
             'count' => $overdueInvoices->count(),
-            'total' => $overdueInvoices->sum('remaining'),
+            'total' => round($overdueInvoices->sum('remaining'), 2),
         ];
-
-        // ===== 4. الأرصدة الدائنة والمدينة =====
-        // نحسب لكل مشترك: مجموع فواتيره - مجموع مدفوعاته
-        $balances = $base()
-            ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL, Invoice::STATUS_PAID])
-            ->with(['subscriber:id,subscriber_name,subscription_number'])
-            ->withSum('payments', 'amount_paid')
-            ->get()
-            ->groupBy('subscriber_id')
-            ->map(function ($invoices) {
-                $totalBilled = $invoices->sum('invoice_amount');
-                $totalPaid   = $invoices->sum('payments_sum_amount_paid');
-                $balance     = (float)$totalBilled - (float)$totalPaid;
-                return [
-                    'subscriber'    => $invoices->first()->subscriber,
-                    'total_billed'  => round((float)$totalBilled, 2),
-                    'total_paid'    => round((float)$totalPaid, 2),
-                    'balance'       => round($balance, 2),
-                ];
-            });
-
-        $debitBalances  = $balances->filter(fn($b) => $b['balance'] > 0)->sortByDesc('balance');
-        $creditBalances = $balances->filter(fn($b) => $b['balance'] < 0)->sortBy('balance');
 
         // ===== 5. الخصومات الممنوحة خلال الفترة =====
         $discounts = $base()
@@ -209,10 +237,15 @@ class InvoiceReportController extends Controller
             ->filter(fn($op) => $op->invoice_count > 0 || $op->subscriber_count > 0)
             ->values();
 
-        // === أكبر المتأخرين ===
-        $topDelinquentQuery = \App\Models\Invoice::where('invoice_status', \App\Models\Invoice::STATUS_ISSUED)
+        // === أكبر المتأخرين (داخل فترة التقرير) ===
+        // المتبقي لكل مشترك = مجموع متبقي فواتيره المتأخرة (قيمة الفاتورة - المسدد عليها).
+        // متطابق مع منطق قسم "غير المسددة/المتأخرة" أعلاه.
+        $topDelinquentQuery = \App\Models\Invoice::whereIn('invoice_status', [\App\Models\Invoice::STATUS_ISSUED, \App\Models\Invoice::STATUS_PARTIAL])
+            ->whereBetween('invoice_date', [$dateFrom, $dateTo])
+            ->whereNotNull('due_date')
             ->where('due_date', '<', now())
-            ->with(['subscriber.generationUnits.operator']);
+            ->with(['subscriber.generationUnits.operator'])
+            ->withSum('payments', 'amount_paid');
 
         if ($selectedOpId) {
             $topDelinquentQuery->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $selectedOpId));
@@ -224,7 +257,10 @@ class InvoiceReportController extends Controller
             ->groupBy('subscriber_id')
             ->map(function ($invoices) {
                 $subscriber = $invoices->first()->subscriber;
-                $totalRemaining = $invoices->sum(fn($inv) => max($inv->total_amount - $inv->paidAmount(), 0));
+                $totalRemaining = $invoices->sum(fn($inv) => max(
+                    (float) $inv->invoice_amount - (float) ($inv->payments_sum_amount_paid ?? 0),
+                    0
+                ));
                 $oldestInvoice = $invoices->sortBy('due_date')->first();
                 $daysOverdue = $oldestInvoice->due_date ? (int) now()->diffInDays($oldestInvoice->due_date) : 0;
                 $operatorName = $subscriber->generationUnits->first()?->operator?->name ?? '—';
@@ -239,6 +275,7 @@ class InvoiceReportController extends Controller
                     'days_overdue' => $daysOverdue,
                 ];
             })
+            ->filter(fn($d) => $d->total_remaining > 0)
             ->sortByDesc('total_remaining')
             ->take(20)
             ->values();

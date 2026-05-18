@@ -137,6 +137,71 @@ class Invoice extends Model
     }
 
     /**
+     * توزيع دفعات المشترك على فواتيره بترتيب FIFO (الأقدم أولاً).
+     *
+     * المنطق المحاسبي: إجمالي مدفوعات المشترك يغطي رسوم فواتيره بالتسلسل الزمني.
+     * فلو دفع المشترك مبلغاً يساوي المتراكم على آخر فاتورة (والذي يشمل الـ
+     * previous_balance لكل ما قبلها)، فإن جميع فواتيره السابقة تُغلق محاسبياً.
+     *
+     * يُحدّث حقل invoice_status لكل فاتورة: PAID/PARTIAL/ISSUED حسب التغطية.
+     * المسودات والملغاة لا تُمسّ.
+     *
+     * @return array{updated: int, paid: int, partial: int, issued: int}
+     */
+    public static function reconcileSubscriber(int $subscriberId): array
+    {
+        return DB::transaction(function () use ($subscriberId) {
+            $invoices = static::where('subscriber_id', $subscriberId)
+                ->whereNotIn('invoice_status', [self::STATUS_DRAFT, self::STATUS_CANCELLED])
+                ->orderBy('invoice_date')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            $stats = ['updated' => 0, 'paid' => 0, 'partial' => 0, 'issued' => 0];
+
+            if ($invoices->isEmpty()) {
+                return $stats;
+            }
+
+            // إجمالي مدفوعات هذا المشترك على فواتيره غير المسودات/الملغاة
+            $invoiceIds = $invoices->pluck('id')->all();
+            $pool = (float) Payment::whereIn('invoice_id', $invoiceIds)->sum('amount_paid');
+
+            foreach ($invoices as $invoice) {
+                $charge = (float) $invoice->invoice_amount;
+
+                if ($charge <= 0) {
+                    // فاتورة بدون رسوم جديدة (نادر) → تُعتبر مسددة
+                    $newStatus = self::STATUS_PAID;
+                } elseif ($pool >= $charge) {
+                    $newStatus = self::STATUS_PAID;
+                    $pool -= $charge;
+                } elseif ($pool > 0) {
+                    $newStatus = self::STATUS_PARTIAL;
+                    $pool = 0;
+                } else {
+                    $newStatus = self::STATUS_ISSUED;
+                }
+
+                $stats[match ($newStatus) {
+                    self::STATUS_PAID    => 'paid',
+                    self::STATUS_PARTIAL => 'partial',
+                    self::STATUS_ISSUED  => 'issued',
+                }]++;
+
+                if ((int) $invoice->invoice_status !== $newStatus) {
+                    $invoice->invoice_status = $newStatus;
+                    $invoice->saveQuietly();
+                    $stats['updated']++;
+                }
+            }
+
+            return $stats;
+        });
+    }
+
+    /**
      * بعد تسجيل أو حذف دفعة: أعد احتساب الرصيد السابق وإجمالي كل مسودة
      * مفتوحة للمشترك — هذا يضمن أن أرقام المسودات دائماً محدّثة.
      */

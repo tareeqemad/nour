@@ -701,9 +701,9 @@ class InvoiceController extends Controller
         $sheet->setTitle('الفواتير');
         $sheet->setRightToLeft(true);
 
-        $headers = ['#', 'رقم الفاتورة', 'رقم الاشتراك', 'اسم المشترك', 'التاريخ', 'الاستهلاك (Kwh)', 'الرصيد السابق', 'مبلغ الفاتورة', 'المبلغ الإجمالي', 'المسدد', 'المتبقي', 'الحالة', 'تاريخ الاستحقاق'];
+        $headers = ['#', 'رقم الفاتورة', 'رقم الاشتراك', 'اسم المشترك', 'رقم الجوال', 'التاريخ', 'الاستهلاك (Kwh)', 'الرصيد السابق', 'مبلغ الفاتورة', 'المبلغ الإجمالي', 'المسدد', 'المتبقي', 'الحالة', 'تاريخ الاستحقاق'];
 
-        $columns = range('A', 'M');
+        $columns = range('A', 'N');
         foreach ($headers as $i => $header) {
             $cell = $columns[$i] . '1';
             $sheet->setCellValue($cell, $header);
@@ -719,15 +719,16 @@ class InvoiceController extends Controller
             $sheet->setCellValue("B{$row}", $inv->invoice_number ?? 'مسودة');
             $sheet->setCellValue("C{$row}", $inv->subscriber->subscription_number ?? '');
             $sheet->setCellValue("D{$row}", $inv->subscriber->subscriber_name ?? '');
-            $sheet->setCellValue("E{$row}", $inv->invoice_date?->format('Y-m-d'));
-            $sheet->setCellValue("F{$row}", $inv->consumption_kwh);
-            $sheet->setCellValue("G{$row}", $inv->previous_balance);
-            $sheet->setCellValue("H{$row}", $inv->invoice_amount);
-            $sheet->setCellValue("I{$row}", $inv->total_amount);
-            $sheet->setCellValue("J{$row}", $inv->paidAmount());
-            $sheet->setCellValue("K{$row}", $inv->remainingAmount());
-            $sheet->setCellValue("L{$row}", $inv->status_name);
-            $sheet->setCellValue("M{$row}", $inv->due_date?->format('Y-m-d'));
+            $sheet->setCellValueExplicit("E{$row}", (string) ($inv->subscriber->phone ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("F{$row}", $inv->invoice_date?->format('Y-m-d'));
+            $sheet->setCellValue("G{$row}", $inv->consumption_kwh);
+            $sheet->setCellValue("H{$row}", $inv->previous_balance);
+            $sheet->setCellValue("I{$row}", $inv->invoice_amount);
+            $sheet->setCellValue("J{$row}", $inv->total_amount);
+            $sheet->setCellValue("K{$row}", $inv->paidAmount());
+            $sheet->setCellValue("L{$row}", $inv->remainingAmount());
+            $sheet->setCellValue("M{$row}", $inv->status_name);
+            $sheet->setCellValue("N{$row}", $inv->due_date?->format('Y-m-d'));
             $row++;
         }
 

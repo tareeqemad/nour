@@ -115,6 +115,9 @@
             <x-admin.card>
                 <x-admin.card-header title="الطلبات المقدمة" icon="bi-inbox">
                     <x-slot:actions>
+                        <button type="button" class="btn btn-success btn-sm" id="btnExport" title="تصدير إلى Excel">
+                            <i class="bi bi-file-earmark-excel me-1"></i> تصدير Excel
+                        </button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btnRefresh" title="تحديث">
                             <i class="bi bi-arrow-clockwise me-1"></i> تحديث
                         </button>
@@ -323,6 +326,7 @@
 
     /* ─── إعدادات أساسية ─────────────────────────────────────────── */
     const indexUrl      = '{{ route("admin.portal-requests.index") }}';
+    const exportUrl     = '{{ route("admin.portal-requests.export") }}';
     const showUrlBase   = '{{ url("admin/portal-requests") }}/';
     const changeUrlBase = '{{ url("admin/portal-requests") }}/';
     const csrfToken     = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -883,6 +887,31 @@
     /* ─── Event Listeners ───────────────────────────────────────── */
     document.getElementById('btnSearch')?.addEventListener('click', () => loadData(1));
     document.getElementById('btnRefresh')?.addEventListener('click', () => loadData(currentPage));
+
+    // تصدير إلى Excel بنفس الفلاتر الحالية
+    document.getElementById('btnExport')?.addEventListener('click', function () {
+        const params = new URLSearchParams({
+            app_no:       document.getElementById('filterAppNo')?.value       || '',
+            applicant_id: document.getElementById('filterApplicantId')?.value || '',
+            status:       document.getElementById('filterStatus')?.value      || '',
+            date:         document.getElementById('filterDate')?.value        || '',
+        });
+
+        // إزالة المفاتيح الفارغة
+        for (const [k, v] of [...params]) { if (!v) params.delete(k); }
+
+        const btn = this;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> جاري التصدير...';
+
+        window.location.href = `${exportUrl}?${params.toString()}`;
+
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }, 4000);
+    });
 
     document.getElementById('filterPerPage')?.addEventListener('change', () => loadData(1));
     document.getElementById('filterStatus')?.addEventListener('change', () => loadData(1));

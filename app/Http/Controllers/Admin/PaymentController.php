@@ -92,9 +92,13 @@ class PaymentController extends Controller
                     'created_by'     => auth()->id(),
                 ]);
 
-                // تحديث حالة الفاتورة
+                // تحديث حالة الفاتورة (هذه الفاتورة تحديداً)
                 $invoice->refresh();
                 $invoice->updateStatusFromPayments();
+
+                // توزيع دفعات المشترك FIFO على جميع فواتيره
+                // (يُغلق الفواتير السابقة المغطاة بدفعات لاحقة)
+                Invoice::reconcileSubscriber($invoice->subscriber_id);
 
                 // إعادة احتساب الرصيد السابق لكل مسودة لاحقة لنفس المشترك
                 Invoice::refreshDraftsForSubscriber($invoice->subscriber_id);
@@ -178,6 +182,9 @@ class PaymentController extends Controller
             }
             $invoice->last_updated_by = auth()->id();
             $invoice->save();
+
+            // إعادة توزيع FIFO على فواتير المشترك بعد حذف الدفعة
+            Invoice::reconcileSubscriber($invoice->subscriber_id);
 
             // إعادة احتساب الرصيد السابق لكل مسودة لاحقة
             Invoice::refreshDraftsForSubscriber($invoice->subscriber_id);
