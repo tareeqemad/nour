@@ -74,5 +74,88 @@
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
     });
+
+    // ===== Announcements Carousel =====
+    document.querySelectorAll('[data-carousel]').forEach(initCarousel);
+
+    function initCarousel(root) {
+        const track  = root.querySelector('[data-carousel-track]');
+        const slides = root.querySelectorAll('[data-carousel-slide]');
+        const prev   = root.querySelector('[data-carousel-prev]');
+        const next   = root.querySelector('[data-carousel-next]');
+        const dots   = root.querySelectorAll('[data-carousel-dot]');
+        if (!track || slides.length === 0) return;
+
+        let current = 0;
+        const total = slides.length;
+        const AUTOPLAY_MS = 7000;
+        let autoplayTimer = null;
+
+        const goTo = (index, smooth = true) => {
+            current = (index + total) % total;
+            slides[current].scrollIntoView({
+                behavior: smooth ? 'smooth' : 'auto',
+                block: 'nearest',
+                inline: 'center',
+            });
+            updateDots();
+            updateArrows();
+        };
+
+        const updateDots = () => {
+            dots.forEach((d, i) => d.classList.toggle('is-active', i === current));
+        };
+
+        const updateArrows = () => {
+            if (!prev || !next) return;
+            // مع carousel دائري (loop) لا نعطّل الأسهم؛ نتركها مفعّلة دائماً
+            prev.disabled = false;
+            next.disabled = false;
+        };
+
+        if (prev) prev.addEventListener('click', () => { stopAutoplay(); goTo(current - 1); restartAutoplay(); });
+        if (next) next.addEventListener('click', () => { stopAutoplay(); goTo(current + 1); restartAutoplay(); });
+        dots.forEach((d, i) => d.addEventListener('click', () => { stopAutoplay(); goTo(i); restartAutoplay(); }));
+
+        // مزامنة current مع السكرول اليدوي (سحب / لمس)
+        let scrollDebounce;
+        track.addEventListener('scroll', () => {
+            clearTimeout(scrollDebounce);
+            scrollDebounce = setTimeout(() => {
+                const center = track.scrollLeft + track.clientWidth / 2;
+                let closest = 0, minDist = Infinity;
+                slides.forEach((slide, i) => {
+                    const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
+                    const dist = Math.abs(slideCenter - center);
+                    if (dist < minDist) { minDist = dist; closest = i; }
+                });
+                if (closest !== current) {
+                    current = closest;
+                    updateDots();
+                }
+            }, 100);
+        });
+
+        // ===== Autoplay =====
+        const startAutoplay = () => {
+            if (total <= 1) return;
+            autoplayTimer = setInterval(() => goTo(current + 1), AUTOPLAY_MS);
+        };
+        const stopAutoplay = () => { if (autoplayTimer) clearInterval(autoplayTimer); autoplayTimer = null; };
+        const restartAutoplay = () => { stopAutoplay(); startAutoplay(); };
+
+        // إيقاف عند hover ومتابعة عند المغادرة
+        root.addEventListener('mouseenter', stopAutoplay);
+        root.addEventListener('mouseleave', startAutoplay);
+
+        // إيقاف عند فقد التركيز على الـ tab (لا نضيع موارد)
+        document.addEventListener('visibilitychange', () => {
+            document.hidden ? stopAutoplay() : startAutoplay();
+        });
+
+        // التشغيل الأولي
+        updateArrows();
+        startAutoplay();
+    }
 })();
 

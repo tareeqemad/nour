@@ -263,6 +263,225 @@
     font-weight: 600;
 }
 
+/* ---- Announcements Section ---- */
+.announcements-section {
+    padding: 4rem 0;
+    background: linear-gradient(180deg, #EEF1FE 0%, #E0E7FF 100%);
+    position: relative;
+}
+
+/* فاصل ناعم بدل الخط الأزرق الحاد */
+.announcements-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(36, 48, 143, 0.15), transparent);
+    pointer-events: none;
+}
+
+/* ===== Carousel Wrapper ===== */
+.announcements-carousel {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 4rem; /* مساحة للأسهم */
+}
+
+.announcements-track {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0.5rem 0 1rem;
+}
+.announcements-track::-webkit-scrollbar { display: none; }
+
+.announcements-track > .announcement-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+}
+
+/* ===== Arrow Buttons ===== */
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    transition: background 0.2s, transform 0.2s, color 0.2s;
+    color: var(--primary, #24308F);
+    font-size: 1.1rem;
+}
+.carousel-arrow:hover {
+    background: var(--primary, #24308F);
+    color: #fff;
+    transform: translateY(-50%) scale(1.05);
+}
+.carousel-arrow:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: #fff;
+    color: var(--primary, #24308F);
+    transform: translateY(-50%);
+}
+.carousel-arrow-prev { right: 0; }   /* في RTL "السابق" يمين */
+.carousel-arrow-next { left: 0; }    /* في RTL "التالي" يسار */
+
+/* ===== Dots ===== */
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+}
+.carousel-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #D1D5DB;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, width 0.2s;
+}
+.carousel-dot.is-active {
+    background: var(--primary, #24308F);
+    width: 28px;
+    border-radius: 999px;
+}
+.carousel-dot:hover:not(.is-active) {
+    background: #9CA3AF;
+}
+
+@media (max-width: 640px) {
+    .announcements-carousel { padding: 0 0.5rem; }
+    .carousel-arrow { width: 38px; height: 38px; font-size: 1rem; }
+}
+
+.announcement-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.announcement-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    border-color: #D1D5DB;
+}
+
+.announcement-card.is-featured {
+    border: 1px solid #C7D2FE;
+    box-shadow: 0 6px 24px rgba(36, 48, 143, 0.12);
+}
+
+/* رأس الكارد: شريط رمادي يحوي العنوان (مطابق للشكل المعتمد) */
+.announcement-header {
+    background: #EFEFEF;
+    padding: 0.9rem 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid #E5E7EB;
+    position: relative;
+}
+
+/* الكارد المميز: الهيدر بلون البراند بدل الأصفر */
+.announcement-card.is-featured .announcement-header {
+    background: linear-gradient(135deg, var(--primary, #24308F) 0%, #3B45A8 100%);
+    border-bottom-color: var(--primary, #24308F);
+}
+
+.announcement-card.is-featured .announcement-title {
+    color: #fff;
+}
+
+.announcement-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1F2937;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* شارة "مميز" — Ribbon في ركن العلوي الأيمن (RTL) */
+.announcement-badge {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    background: #F59E0B;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 0;
+    border-end-end-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+    z-index: 2;
+}
+
+.announcement-badge i {
+    font-size: 0.78rem;
+}
+
+/* جسم الكارد */
+.announcement-body {
+    padding: 1.5rem 2rem;
+}
+
+.announcement-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted, #5B6780);
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dashed #E5E7EB;
+}
+
+.announcement-text {
+    color: #1F2937;
+    font-size: 0.98rem;
+    line-height: 2;
+    text-align: justify;
+    white-space: pre-wrap;
+    margin-bottom: 1rem;
+}
+
+.announcement-footer {
+    color: var(--text-muted, #5B6780);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #E5E7EB;
+}
+
+@media (max-width: 640px) {
+    .announcement-body { padding: 1rem 1.25rem; }
+    .announcement-header { padding: 0.75rem 1rem; }
+    .announcement-text { font-size: 0.92rem; line-height: 1.9; }
+}
+
 /* ---- Features Section ---- */
 .features-section {
     padding: 4rem 0;

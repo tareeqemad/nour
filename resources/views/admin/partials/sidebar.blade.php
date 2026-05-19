@@ -435,6 +435,15 @@
                 </li>
                 @endcan
 
+                @can('viewAny', App\Models\Announcement::class)
+                <li class="slide {{ $isActive('admin.announcements.*') }}">
+                    <a href="{{ route('admin.announcements.index') }}" class="side-menu__item {{ $isActive('admin.announcements.*') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18 11v-1l-7 4v-4H6c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1l1 5h2l-1-5h2l7 4v-1c.83 0 1.5-1.12 1.5-2.5S18.83 11 18 11zm2.5 1.5c0 .83-.67 1.5-1.5 1.5v-3c.83 0 1.5.67 1.5 1.5z"/></svg>
+                        <span class="side-menu__label">الإعلانات</span>
+                    </a>
+                </li>
+                @endcan
+
                 {{-- ══════════════════════════════════════
                    الدعم — جميع الأدوار (آخر شي)
                    ══════════════════════════════════════ --}}

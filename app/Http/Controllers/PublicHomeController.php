@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ConstantsHelper;
+use App\Models\Announcement;
 use App\Models\Generator;
 use App\Models\Operator;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,15 @@ class PublicHomeController extends Controller
             'governorates' => ConstantsHelper::get(1),
         ];
 
-        return view('site.index', compact('stats'));
+        // الإعلانات الفعالة: ظاهرة + ضمن النافذة الزمنية، مرتبة (مميز ثم تاريخ النشر تنازلياً)
+        $announcements = Announcement::public()
+            ->orderByDesc('is_featured')
+            ->orderByDesc('announcement_date')
+            ->orderByDesc('id')
+            ->limit(12)
+            ->get();
+
+        return view('site.index', compact('stats', 'announcements'));
     }
 
     /**

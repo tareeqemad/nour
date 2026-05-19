@@ -93,6 +93,31 @@ class Notification extends Model
     }
 
     /**
+     * Send notification to ALL active users.
+     * - status = 'active'
+     * - not soft-deleted
+     * - excludes the system user (platform_rased) since it can't log in
+     */
+    public static function notifyAllActiveUsers(string $type, string $title, string $message, ?string $link = null): void
+    {
+        \App\Models\User::where('status', 'active')
+            ->whereNull('deleted_at')
+            ->where(function ($q) {
+                $q->where('username', '!=', 'platform_rased')
+                  ->orWhereNull('username');
+            })
+            ->where(function ($q) {
+                $q->where('email', '!=', 'platform@gazarased.com')
+                  ->orWhereNull('email');
+            })
+            ->chunkById(500, function ($users) use ($type, $title, $message, $link) {
+                foreach ($users as $user) {
+                    self::createNotification($user->id, $type, $title, $message, $link);
+                }
+            });
+    }
+
+    /**
      * Mark notification as read and set read timestamp
      */
     public function markAsRead(): void

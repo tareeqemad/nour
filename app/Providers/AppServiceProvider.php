@@ -66,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
         PermissionAuditLog::class => PermissionAuditLogPolicy::class,
         \App\Models\MinimumChargeRule::class => MinimumChargeRulePolicy::class,
         \App\Models\EmployeeDiscountRate::class => EmployeeDiscountRatePolicy::class,
+        \App\Models\Announcement::class => \App\Policies\AnnouncementPolicy::class,
     ];
 
     /**

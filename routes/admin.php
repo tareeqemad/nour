@@ -419,4 +419,17 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('inspection-violation-cases/import/preview', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'preview'])->name('inspection-violation-cases.import.preview');
     Route::post('inspection-violation-cases/import/execute', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'import'])->name('inspection-violation-cases.import.execute');
     Route::get('inspection-violation-cases/import/template', [\App\Http\Controllers\Admin\InspectionViolationCaseImportController::class, 'downloadTemplate'])->name('inspection-violation-cases.import.template');
+
+    /**
+     * الإعلانات
+     */
+    Route::get('announcements',                          [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('announcements/create',                   [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])->name('announcements.create');
+    Route::post('announcements',                         [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::get('announcements/{announcement}',           [\App\Http\Controllers\Admin\AnnouncementController::class, 'show'])->name('announcements.show');
+    Route::get('announcements/{announcement}/edit',      [\App\Http\Controllers\Admin\AnnouncementController::class, 'edit'])->name('announcements.edit');
+    Route::put('announcements/{announcement}',           [\App\Http\Controllers\Admin\AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('announcements/{announcement}',        [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    Route::patch('announcements/{announcement}/toggle-visibility', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleVisibility'])->name('announcements.toggle-visibility');
+    Route::patch('announcements/{announcement}/toggle-featured',   [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleFeatured'])->name('announcements.toggle-featured');
 });

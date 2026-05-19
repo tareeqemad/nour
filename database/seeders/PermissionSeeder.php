@@ -157,6 +157,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'inspection_violation_cases.update', 'label' => 'تحديث قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على تحديث القضية', 'order' => 82],
             ['name' => 'inspection_violation_cases.delete', 'label' => 'حذف قضية', 'group' => 'inspection_violation_cases', 'group_label' => 'قضايا التفتيش والتعدي', 'description' => 'القدرة على حذف القضية', 'order' => 83],
 
+            // الإعلانات
+            ['name' => 'announcements.view',   'label' => 'عرض الإعلانات',   'group' => 'announcements', 'group_label' => 'الإعلانات', 'description' => 'القدرة على عرض قائمة الإعلانات في لوحة الإدارة', 'order' => 83],
+            ['name' => 'announcements.create', 'label' => 'إنشاء إعلان',     'group' => 'announcements', 'group_label' => 'الإعلانات', 'description' => 'القدرة على إنشاء إعلان جديد', 'order' => 83],
+            ['name' => 'announcements.update', 'label' => 'تحديث إعلان',     'group' => 'announcements', 'group_label' => 'الإعلانات', 'description' => 'القدرة على تعديل بيانات الإعلان وتمييزه/إخفائه', 'order' => 83],
+            ['name' => 'announcements.delete', 'label' => 'حذف إعلان',       'group' => 'announcements', 'group_label' => 'الإعلانات', 'description' => 'القدرة على حذف الإعلانات', 'order' => 83],
+
             // الفوترة والتحصيل
             ['name' => 'invoices.view', 'label' => 'عرض الفواتير', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على عرض قائمة الفواتير والتحصيل', 'order' => 83],
             ['name' => 'invoices.create', 'label' => 'إنشاء فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على إنشاء فاتورة جديدة', 'order' => 83],

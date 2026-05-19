@@ -46,7 +46,7 @@
             <div class="hero-visual">
                 <div class="hero-cards">
                     <div class="hero-card">
-                        <div class="hero-card-icon blue"><i class="bi bi-buildings"></i></div>
+                        <div class="hero-card-icon blue"><i class="bi bi-building"></i></div>
                         <div class="hero-card-info">
                             <div class="hero-card-val">{{ number_format($stats['total_operators']) }}</div>
                             <div class="hero-card-label">مشغل نشط</div>
@@ -62,7 +62,7 @@
                     <div class="hero-card">
                         <div class="hero-card-icon amber"><i class="bi bi-activity"></i></div>
                         <div class="hero-card-info">
-                            <div class="hero-card-val">{{ number_format($stats['total_capacity'] / 1000, 1) }}K</div>
+                            <div class="hero-card-val">{{ \App\Helpers\GeneralHelper::formatCompactNumber($stats['total_capacity'] ?? 0) }}</div>
                             <div class="hero-card-label">كيلو فولت أمبير (KVA)</div>
                         </div>
                     </div>
@@ -80,7 +80,7 @@
 
         <div class="stats-grid">
             <div class="stat-card animate-on-scroll">
-                <div class="stat-icon"><i class="bi bi-buildings"></i></div>
+                <div class="stat-icon"><i class="bi bi-building"></i></div>
                 <div class="stat-value">{{ number_format($stats['total_operators']) }}</div>
                 <div class="stat-label">مشغل نشط</div>
             </div>
@@ -91,7 +91,7 @@
             </div>
             <div class="stat-card animate-on-scroll">
                 <div class="stat-icon"><i class="bi bi-activity"></i></div>
-                <div class="stat-value">{{ number_format($stats['total_capacity'] / 1000, 1) }}K</div>
+                <div class="stat-value">{{ \App\Helpers\GeneralHelper::formatCompactNumber($stats['total_capacity'] ?? 0) }}</div>
                 <div class="stat-label">كيلو فولت أمبير</div>
             </div>
             <div class="stat-card animate-on-scroll">
@@ -101,6 +101,60 @@
             </div>
         </div>
     </section>
+
+    {{-- ===== Announcements Section ===== --}}
+    @if(($announcements ?? collect())->isNotEmpty())
+    <section class="announcements-section">
+        <div class="container">
+            <h2 class="section-title">الإعلانات</h2>
+            <p class="section-subtitle">آخر التحديثات والإعلانات الرسمية من إدارة المنصة</p>
+        </div>
+
+        <div class="announcements-carousel" data-carousel data-count="{{ $announcements->count() }}">
+            <button type="button" class="carousel-arrow carousel-arrow-prev" aria-label="السابق" data-carousel-prev>
+                <i class="bi bi-chevron-right"></i>
+            </button>
+
+            <div class="announcements-track" data-carousel-track>
+                @foreach($announcements as $ann)
+                    <article class="announcement-card {{ $ann->is_featured ? 'is-featured' : '' }}" data-carousel-slide>
+                        <div class="announcement-header">
+                            <h3 class="announcement-title">{{ $ann->title }}</h3>
+                            @if($ann->is_featured)
+                                <span class="announcement-badge"><i class="bi bi-star-fill"></i> مميز</span>
+                            @endif
+                        </div>
+                        <div class="announcement-body">
+                            <div class="announcement-meta">
+                                <i class="bi bi-calendar3"></i>
+                                <span>{{ $ann->announcement_date?->translatedFormat('d M Y') }}</span>
+                            </div>
+                            <p class="announcement-text">{{ $ann->description }}</p>
+                            <div class="announcement-footer">
+                                <i class="bi bi-clock-history me-1"></i>
+                                ساري من {{ $ann->start_date?->translatedFormat('d M Y') }}
+                                حتى {{ $ann->end_date?->translatedFormat('d M Y') }}
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+
+            <button type="button" class="carousel-arrow carousel-arrow-next" aria-label="التالي" data-carousel-next>
+                <i class="bi bi-chevron-left"></i>
+            </button>
+
+            @if($announcements->count() > 1)
+                <div class="carousel-dots" data-carousel-dots>
+                    @foreach($announcements as $i => $ann)
+                        <button type="button" class="carousel-dot {{ $i === 0 ? 'is-active' : '' }}"
+                                data-carousel-dot="{{ $i }}" aria-label="إعلان رقم {{ $i + 1 }}"></button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </section>
+    @endif
 
     {{-- ===== Features Section ===== --}}
     <section class="features-section">
