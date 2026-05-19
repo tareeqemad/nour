@@ -163,6 +163,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'announcements.update', 'label' => 'تحديث إعلان',     'group' => 'announcements', 'group_label' => 'الإعلانات', 'description' => 'القدرة على تعديل بيانات الإعلان وتمييزه/إخفائه', 'order' => 83],
             ['name' => 'announcements.delete', 'label' => 'حذف إعلان',       'group' => 'announcements', 'group_label' => 'الإعلانات', 'description' => 'القدرة على حذف الإعلانات', 'order' => 83],
 
+            // الطلبات المقدمة (e-services portal)
+            ['name' => 'portal_requests.view',          'label' => 'عرض الطلبات المقدمة', 'group' => 'portal_requests', 'group_label' => 'الطلبات المقدمة', 'description' => 'القدرة على عرض قائمة الطلبات المقدمة والاطلاع على تفاصيلها', 'order' => 83],
+            ['name' => 'portal_requests.change_status', 'label' => 'تغيير حالة الطلب',     'group' => 'portal_requests', 'group_label' => 'الطلبات المقدمة', 'description' => 'القدرة على تغيير حالة الطلب (قبول/رفض/قيد المعالجة)', 'order' => 83],
+            ['name' => 'portal_requests.create_user',   'label' => 'إنشاء حساب من الطلب', 'group' => 'portal_requests', 'group_label' => 'الطلبات المقدمة', 'description' => 'القدرة على إنشاء حساب مستخدم تلقائياً من بيانات الطلب الموافق عليه', 'order' => 83],
+            ['name' => 'portal_requests.export',        'label' => 'تصدير الطلبات',        'group' => 'portal_requests', 'group_label' => 'الطلبات المقدمة', 'description' => 'القدرة على تصدير قائمة الطلبات إلى ملف Excel', 'order' => 83],
+
             // الفوترة والتحصيل
             ['name' => 'invoices.view', 'label' => 'عرض الفواتير', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على عرض قائمة الفواتير والتحصيل', 'order' => 83],
             ['name' => 'invoices.create', 'label' => 'إنشاء فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على إنشاء فاتورة جديدة', 'order' => 83],

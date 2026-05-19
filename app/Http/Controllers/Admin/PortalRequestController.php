@@ -23,6 +23,16 @@ class PortalRequestController extends Controller
     }
 
     /**
+     * Centralised permission gate. Aborts with 403 if the user lacks the
+     * requested permission. SuperAdmin bypasses (handled inside hasPermission).
+     */
+    private function ensure(string $permission): void
+    {
+        $user = auth()->user();
+        abort_unless($user && $user->hasPermission($permission), 403, 'ليس لديك صلاحية لهذا الإجراء.');
+    }
+
+    /**
      * الهيدرز المطلوبة للـ API
      */
     private function headers(): array
@@ -38,6 +48,8 @@ class PortalRequestController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
+        $this->ensure('portal_requests.view');
+
         if ($request->wantsJson() || $request->boolean('ajax')) {
             return $this->ajaxList($request);
         }
@@ -335,6 +347,8 @@ class PortalRequestController extends Controller
      */
     public function show(Request $request, string $appId): JsonResponse
     {
+        $this->ensure('portal_requests.view');
+
         try {
             $res = Http::withHeaders($this->headers())
                 ->timeout(30)
@@ -375,6 +389,8 @@ class PortalRequestController extends Controller
      */
     public function changeStatus(Request $request, string $appId): JsonResponse
     {
+        $this->ensure('portal_requests.change_status');
+
         $request->validate([
             'newStatus' => 'required|string|max:20',
             'note'      => 'nullable|string|max:1000',
@@ -512,6 +528,8 @@ class PortalRequestController extends Controller
      */
     public function createUser(Request $request, string $appId): JsonResponse
     {
+        $this->ensure('portal_requests.create_user');
+
         // التحقق من عدم المعالجة المسبقة
         if (ProcessedPortalRequest::isProcessed($appId)) {
             return response()->json([
@@ -568,6 +586,8 @@ class PortalRequestController extends Controller
      */
     public function checkProcessed(Request $request, string $appId): JsonResponse
     {
+        $this->ensure('portal_requests.view');
+
         $record = ProcessedPortalRequest::where('app_no', $appId)->first();
 
         return response()->json([
@@ -596,6 +616,8 @@ class PortalRequestController extends Controller
      */
     public function export(Request $request)
     {
+        $this->ensure('portal_requests.export');
+
         @set_time_limit(300);
 
         $status      = $request->filled('status') ? trim((string) $request->query('status')) : '';

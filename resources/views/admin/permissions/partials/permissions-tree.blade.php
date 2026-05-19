@@ -5,7 +5,7 @@
             'label' => 'إدارة النظام',
             'icon' => 'bi-gear-wide-connected',
             'color' => '#6366f1',
-            'groups' => ['users', 'operators', 'roles', 'permissions', 'permission_audit_logs', 'activity_logs', 'logs'],
+            'groups' => ['users', 'operators', 'roles', 'permissions', 'permission_audit_logs', 'activity_logs', 'logs', 'portal_requests'],
         ],
         'operations' => [
             'label' => 'إدارة العمليات',
@@ -23,7 +23,7 @@
             'label' => 'التواصل والإشعارات',
             'icon' => 'bi-chat-square-dots',
             'color' => '#3b82f6',
-            'groups' => ['complaints_suggestions', 'notifications', 'messages', 'authorized_phones'],
+            'groups' => ['complaints_suggestions', 'notifications', 'messages', 'authorized_phones', 'announcements'],
         ],
         'settings' => [
             'label' => 'الإعدادات والمحتوى',
@@ -67,6 +67,8 @@
         'welcome_messages' => 'bi-chat-dots-fill',
         'sms_templates' => 'bi-chat-left-text-fill',
         'guide' => 'bi-book-fill',
+        'portal_requests' => 'bi-inbox-fill',
+        'announcements' => 'bi-megaphone-fill',
     ];
 
     // تجميع الصلاحيات حسب الأقسام

@@ -113,11 +113,14 @@
 
             {{-- ── البطاقة الرئيسية ── --}}
             <x-admin.card>
+                @php $u = auth()->user(); @endphp
                 <x-admin.card-header title="الطلبات المقدمة" icon="bi-inbox">
                     <x-slot:actions>
+                        @if($u->hasPermission('portal_requests.export'))
                         <button type="button" class="btn btn-success btn-sm" id="btnExport" title="تصدير إلى Excel">
                             <i class="bi bi-file-earmark-excel me-1"></i> تصدير Excel
                         </button>
+                        @endif
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btnRefresh" title="تحديث">
                             <i class="bi bi-arrow-clockwise me-1"></i> تحديث
                         </button>
@@ -331,6 +334,11 @@
     const changeUrlBase = '{{ url("admin/portal-requests") }}/';
     const csrfToken     = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
+    /* ─── صلاحيات المستخدم (تُحقن من الـ Blade) ─────────────────── */
+    const canChangeStatus = @json($u->hasPermission('portal_requests.change_status'));
+    const canCreateUser   = @json($u->hasPermission('portal_requests.create_user'));
+    const canExport       = @json($u->hasPermission('portal_requests.export'));
+
     let currentPage     = 1;
     let currentAppIdCS  = '';   // app_no المحدد لتغيير الحالة
 
@@ -484,9 +492,9 @@
                 accountBadge = '<span class="text-muted small">—</span>';
             }
 
-            // زر إنشاء الحساب
+            // زر إنشاء الحساب — يحتاج صلاحية portal_requests.create_user
             let createBtn = '';
-            if (parseInt(item.app_status, 10) === 100) {
+            if (canCreateUser && parseInt(item.app_status, 10) === 100) {
                 if (hasAccount) {
                     createBtn = `<button class="btn btn-sm btn-success" disabled title="تم إنشاء الحساب: ${escAttr(acctInfo?.username || '')}">
                         <i class="bi bi-check-lg"></i></button>`;
@@ -497,6 +505,14 @@
                         <i class="bi bi-person-plus"></i></button>`;
                 }
             }
+
+            // زر تغيير الحالة — يحتاج صلاحية portal_requests.change_status
+            const changeStatusBtn = canChangeStatus
+                ? `<button onclick="openChangeStatus('${escAttr(appNo)}')"
+                          class="btn btn-sm btn-outline-warning" title="تغيير الحالة">
+                    <i class="bi bi-arrow-left-right"></i>
+                  </button>`
+                : '';
 
             return `
             <tr>
@@ -519,10 +535,7 @@
                           class="btn btn-sm btn-outline-primary" title="عرض التفاصيل">
                     <i class="bi bi-eye"></i>
                   </button>
-                  <button onclick="openChangeStatus('${escAttr(appNo)}')"
-                          class="btn btn-sm btn-outline-warning" title="تغيير الحالة">
-                    <i class="bi bi-arrow-left-right"></i>
-                  </button>
+                  ${changeStatusBtn}
                   ${createBtn}
                 </div>
               </td>
