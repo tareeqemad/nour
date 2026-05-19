@@ -200,3 +200,54 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 /* End Fix nested sidebar menus */
+
+/* ===== Prevent double form submission =====
+ * On submit:
+ *   - block subsequent submits on the same form
+ *   - disable all submit buttons inside the form and add a spinner
+ *   - if validation fails on the server, the page reloads with the form fresh
+ *     and the protection resets automatically
+ * Forms can opt-out by adding data-allow-multi-submit on the <form> element.
+ */
+document.addEventListener('submit', function (event) {
+    var form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.hasAttribute('data-allow-multi-submit')) return;
+
+    // Already in flight? cancel the duplicate
+    if (form.dataset.submitting === '1') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+    }
+    form.dataset.submitting = '1';
+
+    var buttons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+    buttons.forEach(function (btn) {
+        // Remember original HTML so we can restore it if the browser returns via bfcache
+        if (!btn.dataset.originalHtml) {
+            btn.dataset.originalHtml = btn.innerHTML;
+        }
+        btn.disabled = true;
+        btn.classList.add('is-submitting');
+        if (btn.tagName === 'BUTTON') {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + btn.dataset.originalHtml;
+        }
+    });
+}, true);
+
+// Restore state if the page is re-shown from the browser's bfcache (back button).
+window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) return;
+    document.querySelectorAll('form[data-submitting="1"]').forEach(function (form) {
+        delete form.dataset.submitting;
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (btn) {
+            btn.disabled = false;
+            btn.classList.remove('is-submitting');
+            if (btn.dataset.originalHtml && btn.tagName === 'BUTTON') {
+                btn.innerHTML = btn.dataset.originalHtml;
+            }
+        });
+    });
+});
+/* End Prevent double form submission */

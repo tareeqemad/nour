@@ -15,8 +15,10 @@
                 <x-admin.card>
                     <x-admin.card-header-form title="إضافة إعلان" icon="bi-megaphone" :backRoute="route('admin.announcements.index')" />
                     <div class="card-body p-4">
-                    <form action="{{ route('admin.announcements.store') }}" method="POST">
+                    <form action="{{ route('admin.announcements.store') }}" method="POST" data-prevent-double-submit>
                         @csrf
+                        {{-- مفتاح Idempotency لمنع تكرار الإنشاء عند الـ double-click أو network retry --}}
+                        <input type="hidden" name="_idempotency_key" value="{{ \Illuminate\Support\Str::uuid() }}">
 
                         {{-- Section: محتوى الإعلان --}}
                         <h6 class="text-muted fw-semibold mb-3 pb-2 border-bottom border-1">محتوى الإعلان</h6>

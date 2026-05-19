@@ -10,6 +10,7 @@ use App\Models\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class AnnouncementController extends Controller
@@ -68,11 +69,29 @@ class AnnouncementController extends Controller
 
     public function store(StoreAnnouncementRequest $request): RedirectResponse
     {
+        // ===== حماية ضد التكرار (idempotency) =====
+        // عند الـ double-click أو إعادة الإرسال (network retry / browser back)،
+        // نفس النموذج يأتي بنفس الـ key. نخزّن نتيجة أول طلب لمدة 10 دقائق
+        // ونعيد توجيه أي طلب مكرر إلى نفس النتيجة بدلاً من إنشاء سجل ثانٍ.
+        $idempotencyKey = (string) $request->input('_idempotency_key', '');
+        $cacheKey = $idempotencyKey
+            ? 'announcement_create:' . Auth::id() . ':' . $idempotencyKey
+            : null;
+
+        if ($cacheKey && ($existingId = Cache::get($cacheKey))) {
+            return redirect()->route('admin.announcements.index')
+                ->with('info', 'هذا الإعلان تم إنشاؤه مسبقاً.');
+        }
+
         $data = $request->validated();
         $data['created_by']      = Auth::id();
         $data['last_updated_by'] = Auth::id();
 
         $announcement = Announcement::create($data);
+
+        if ($cacheKey) {
+            Cache::put($cacheKey, $announcement->id, now()->addMinutes(10));
+        }
 
         // إرسال إشعار لكل المستخدمين النشطين عند نشر إعلان ظاهر
         if ($announcement->is_visible) {
