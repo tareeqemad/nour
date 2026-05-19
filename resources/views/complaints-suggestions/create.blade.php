@@ -273,7 +273,7 @@
                 </div>
 
                 <div class="cc-field" id="operator-group" style="display:none;">
-                    <label class="cc-label"><i class="bi bi-buildings"></i> المشغل <span class="req">*</span></label>
+                    <label class="cc-label"><i class="bi bi-building"></i> المشغل <span class="req">*</span></label>
                     <select id="operator_id" name="operator_id" class="cc-select">
                         <option value="">اختر المشغل</option>
                     </select>

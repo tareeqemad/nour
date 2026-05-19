@@ -336,7 +336,7 @@
 
         <div class="st-kpi-grid">
             <div class="st-kpi">
-                <div class="st-kpi-icon blue"><i class="bi bi-buildings"></i></div>
+                <div class="st-kpi-icon blue"><i class="bi bi-building"></i></div>
                 <div class="st-kpi-val">{{ number_format($stats['total_operators']) }}</div>
                 <div class="st-kpi-label">مشغل نشط</div>
             </div>

@@ -17,7 +17,7 @@
             <div class="row g-3">
                 <div class="col-12">
                     <x-admin.card>
-                        <x-admin.card-header title="إدارة المشغلين" icon="bi-buildings">
+                        <x-admin.card-header title="إدارة المشغلين" icon="bi-building">
                         </x-admin.card-header>
 
                         <div class="card-body pb-4">

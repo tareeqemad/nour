@@ -65,6 +65,27 @@ class GeneralHelper
 
         return $query->orderBy('operators.name')->get();
     }
+
+    /**
+     * تنسيق رقم كبير بالاختصارات (K للآلاف، M للملايين)
+     * - أقل من 1,000: يُعرض كاملاً (مثلاً "640")
+     * - 1,000 إلى أقل من 1,000,000: يُعرض بـ K (مثلاً "1.5K")
+     * - 1,000,000 فأكثر: يُعرض بـ M (مثلاً "2.3M")
+     *
+     * @param float|int|null $value
+     * @param int $decimals عدد الخانات العشرية للقيم المختصرة
+     */
+    public static function formatCompactNumber($value, int $decimals = 1): string
+    {
+        $n = (float) ($value ?? 0);
+        if ($n >= 1_000_000) {
+            return number_format($n / 1_000_000, $decimals) . 'M';
+        }
+        if ($n >= 1_000) {
+            return number_format($n / 1_000, $decimals) . 'K';
+        }
+        return number_format($n);
+    }
 }
 
 

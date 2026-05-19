@@ -163,7 +163,7 @@
                             </div>
                             <div class="nour-popup-body">
                                 <div class="nour-popup-row">
-                                    <i class="bi bi-buildings"></i>
+                                    <i class="bi bi-building"></i>
                                     <span class="nour-popup-label">المشغل</span>
                                     <span class="nour-popup-val">${territory.operator_name || 'غير محدد'}</span>
                                 </div>
@@ -292,7 +292,7 @@
                             <div class="nour-popup-body">
                                 ${unit.operator_name ? `
                                     <div class="nour-popup-row">
-                                        <i class="bi bi-buildings"></i>
+                                        <i class="bi bi-building"></i>
                                         <span class="nour-popup-label">المشغل</span>
                                         <span class="nour-popup-val">${unit.operator_name}</span>
                                     </div>
