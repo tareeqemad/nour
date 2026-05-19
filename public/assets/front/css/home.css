@@ -266,7 +266,8 @@
 /* ---- Announcements Section ---- */
 .announcements-section {
     padding: 4rem 0;
-    background: linear-gradient(180deg, #EEF1FE 0%, #E0E7FF 100%);
+    background: #F4F7FF;
+    border-top: 1px solid #DDE6FF;
     position: relative;
 }
 
@@ -274,12 +275,18 @@
 .announcements-section::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(36, 48, 143, 0.15), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(47, 52, 143, 0.18),
+        transparent
+    );
     pointer-events: none;
 }
-
 /* ===== Carousel Wrapper ===== */
 .announcements-carousel {
     position: relative;

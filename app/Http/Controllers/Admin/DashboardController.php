@@ -76,6 +76,18 @@ class DashboardController extends Controller
         $operatorsComparison = null;
         $generationUnitsComparison = null;
 
+        // ===== لوحة الفوترة والتحصيل =====
+        // DISABLED (per request). Re-enable by uncommenting the if-block below
+        // AND the matching @include in resources/views/admin/dashboard.blade.php.
+        // الـ scoping محصّن داخل DashboardService::getBillingDashboard():
+        //   - SuperAdmin/Admin/EnergyAuthority/GeneralAccountant → كل المشغلين
+        //   - CompanyOwner/Employee → مشغله(م) فقط
+        //   - تقني/دفاع مدني → لا يرى القسم أصلاً
+        $billingDashboard = null;
+        // if ($user->hasPermission('invoice_reports.view') || $user->isSuperAdmin()) {
+        //     $billingDashboard = $this->service->getBillingDashboard($operatorIds);
+        // }
+
         return view('admin.dashboard', compact(
             'stats',
             'operationStats',
@@ -90,7 +102,8 @@ class DashboardController extends Controller
             'tasksData',
             'operatorsComparison',
             'generationUnitsComparison',
-            'showEmptyDataHint'
+            'showEmptyDataHint',
+            'billingDashboard'
         ));
     }
 

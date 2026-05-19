@@ -19,6 +19,11 @@
     @include('admin.dashboard.partials.alerts')
     @include('admin.dashboard.partials.empty-data-hint')
 
+    {{-- 2.5 Billing & Collection Overview — DISABLED (per request); re-enable
+         this @include + uncomment the matching block in DashboardController to
+         restore the widget. The partial and service code are intact. --}}
+    {{-- @include('admin.dashboard.partials.billing-overview') --}}
+
     {{-- 3. Charts — always show for non-CivilDefense --}}
     @if(!$user->isCivilDefense())
     <div class="row g-3 mb-3">
