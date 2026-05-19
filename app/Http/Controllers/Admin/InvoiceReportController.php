@@ -56,43 +56,51 @@ class InvoiceReportController extends Controller
             return $q;
         };
 
+        // ╔══════════════════════════════════════════════════════════════════════╗
+        // ║ FIFO-aware paid map: invoice_id => paid_amount (allocated via FIFO)  ║
+        // ║                                                                       ║
+        // ║ يحاكي منطق reconcileSubscriber: لكل مشترك، تُجمع كل دفعاته في pool،  ║
+        // ║ ثم تُصرَف على فواتيره بترتيب التاريخ. هذا التوزيع الفعلي يختلف عن      ║
+        // ║ Payment.invoice_id المسجل (الذي قد يشير لفاتورة لكن المبلغ يُصرَف     ║
+        // ║ على فاتورة أقدم). كل حسابات "المسدد" و"المتبقي" أدناه تستخدم هذا الـ  ║
+        // ║ map لضمان الدقة المحاسبية.                                            ║
+        // ╚══════════════════════════════════════════════════════════════════════╝
+        $paidByInvoice = $this->computeFifoPaidByInvoice($selectedOpId, $scopedOperatorIds);
+
+        // Helper مختصر لقراءة المسدد من الـ map
+        $paid = fn ($inv) => (float) ($paidByInvoice[$inv->id] ?? 0);
+
         // ===== 1. الفواتير الصادرة خلال الفترة =====
         // sum_invoice  = إجمالي قيمة الفواتير (الرسوم الجديدة فقط)
-        // sum_paid     = ما سُدّد على هذه الفواتير
+        // sum_paid     = ما سُدّد على هذه الفواتير (FIFO-aware)
         // sum_remaining = المتبقي من رسومها (sum_invoice − sum_paid)
-        // ملاحظة: لا نجمع total_amount لأنه يحوي previous_balance ويسبب تضاعفاً.
-        $issuedInPeriod = $base()
+        $issuedRaw = $base()
             ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL, Invoice::STATUS_PAID])
             ->whereBetween('invoice_date', [$dateFrom, $dateTo])
-            ->withSum('payments', 'amount_paid')
             ->get();
 
-        $sumInvoice = (float) $issuedInPeriod->sum('invoice_amount');
-        $sumPaid    = (float) $issuedInPeriod->sum('payments_sum_amount_paid');
+        $sumInvoice = (float) $issuedRaw->sum('invoice_amount');
+        $sumPaid    = (float) $issuedRaw->sum(fn ($inv) => $paid($inv));
         $issuedInPeriod = (object) [
-            'count'         => $issuedInPeriod->count(),
+            'count'         => $issuedRaw->count(),
             'sum_invoice'   => $sumInvoice,
             'sum_paid'      => $sumPaid,
             'sum_remaining' => max($sumInvoice - $sumPaid, 0),
-            'sum_kwh'       => (float) $issuedInPeriod->sum('consumption_kwh'),
+            'sum_kwh'       => (float) $issuedRaw->sum('consumption_kwh'),
         ];
 
         // ===== الأرصدة الفعلية لكل مشترك (مرجع للحسابات أدناه) =====
         // محسوبة من الفواتير الصادرة ضمن فترة التقرير (يحترم فلتر التاريخ).
-        // الصافي = مجموع invoice_amount (الرسوم الجديدة، بدون previous_balance المتراكم)
-        //         - مجموع المدفوعات على نفس الفواتير
-        // ملاحظة: استخدام total_amount هنا خطأ محاسبي لأنه يحوي previous_balance
-        // الذي يكرّر مديونية الفواتير السابقة عند الجمع.
+        // الصافي = invoice_amount − FIFO-allocated paid (الدقيق محاسبياً).
         $balances = $base()
             ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL, Invoice::STATUS_PAID])
             ->whereBetween('invoice_date', [$dateFrom, $dateTo])
             ->with(['subscriber:id,subscriber_name,subscription_number'])
-            ->withSum('payments', 'amount_paid')
             ->get()
             ->groupBy('subscriber_id')
-            ->map(function ($invoices) {
+            ->map(function ($invoices) use ($paid) {
                 $totalBilled = (float) $invoices->sum('invoice_amount');
-                $totalPaid   = (float) $invoices->sum('payments_sum_amount_paid');
+                $totalPaid   = (float) $invoices->sum(fn ($inv) => $paid($inv));
                 $balance     = $totalBilled - $totalPaid;
                 return [
                     'subscriber'    => $invoices->first()->subscriber,
@@ -106,20 +114,17 @@ class InvoiceReportController extends Controller
         $creditBalances = $balances->filter(fn($b) => $b['balance'] < 0)->sortBy('balance');
 
         // ===== 2. الفواتير غير المسددة (داخل فترة التقرير) =====
-        // المتبقي لكل فاتورة = قيمة الفاتورة (invoice_amount) - المسدد عليها مباشرة.
-        // الإجمالي = مجموع متبقي الأسطر (لا نستخدم total_amount لأنه يحوي previous_balance
-        // المتراكم الذي يكرّر مديونية الفواتير السابقة عند الجمع).
+        // المتبقي لكل فاتورة = invoice_amount − FIFO paid (الفعلي).
         $unpaidInvoices = $base()
             ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL])
             ->whereBetween('invoice_date', [$dateFrom, $dateTo])
             ->with(['subscriber:id,subscriber_name,subscription_number'])
-            ->withSum('payments', 'amount_paid')
             ->orderByDesc('invoice_date')
             ->get()
-            ->map(function ($inv) {
-                $paid = (float) ($inv->payments_sum_amount_paid ?? 0);
-                $inv->paid_amount = $paid;
-                $inv->remaining = max((float) $inv->invoice_amount - $paid, 0);
+            ->map(function ($inv) use ($paid) {
+                $p = $paid($inv);
+                $inv->paid_amount = $p;
+                $inv->remaining   = max((float) $inv->invoice_amount - $p, 0);
                 return $inv;
             })
             ->filter(fn($inv) => $inv->remaining > 0)
@@ -131,21 +136,19 @@ class InvoiceReportController extends Controller
         ];
 
         // ===== 3. الفواتير المتأخرة (داخل فترة التقرير) =====
-        // تعريف "متأخرة": صادرة أو مسددة جزئياً + due_date في الماضي + لها متبقٍ فعلي.
-        // التعريف القديم استثنى STATUS_PARTIAL خطأً (فاتورة مدفوعة جزئياً ومتأخرة الاستحقاق هي متأخرة).
+        // تعريف "متأخرة": صادرة أو مسددة جزئياً + due_date في الماضي + لها متبقٍ فعلي (FIFO).
         $overdueInvoices = $base()
             ->whereIn('invoice_status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL])
             ->whereBetween('invoice_date', [$dateFrom, $dateTo])
             ->whereNotNull('due_date')
             ->where('due_date', '<', now())
             ->with(['subscriber:id,subscriber_name,subscription_number'])
-            ->withSum('payments', 'amount_paid')
             ->orderBy('due_date')
             ->get()
-            ->map(function ($inv) {
-                $paid = (float) ($inv->payments_sum_amount_paid ?? 0);
-                $inv->paid_amount = $paid;
-                $inv->remaining = max((float) $inv->invoice_amount - $paid, 0);
+            ->map(function ($inv) use ($paid) {
+                $p = $paid($inv);
+                $inv->paid_amount  = $p;
+                $inv->remaining    = max((float) $inv->invoice_amount - $p, 0);
                 $inv->days_overdue = (int) now()->diffInDays($inv->due_date);
                 return $inv;
             })
@@ -199,7 +202,7 @@ class InvoiceReportController extends Controller
             ->selectRaw('SUM(consumption_kwh) as total_kwh, AVG(consumption_kwh) as avg_kwh, COUNT(*) as count')
             ->first();
 
-        // === تقرير الإيرادات حسب المشغل ===
+        // === تقرير الإيرادات حسب المشغل (FIFO-aware) ===
         $operatorsScopeQuery = \App\Models\Operator::select('operators.id', 'operators.name');
         if (! $canSelectOperator && ! empty($scopedOperatorIds)) {
             $operatorsScopeQuery->whereIn('id', $scopedOperatorIds);
@@ -208,19 +211,15 @@ class InvoiceReportController extends Controller
             $operatorsScopeQuery->where('id', $selectedOpId);
         }
         $revenueByOperator = $operatorsScopeQuery
-            ->withCount(['generationUnits as subscriber_count' => function ($q) use ($base) {
-                // Count distinct subscribers through generation units
-            }])
             ->get()
-            ->map(function ($operator) use ($dateFrom, $dateTo) {
+            ->map(function ($operator) use ($dateFrom, $dateTo, $paidByInvoice) {
                 $invoices = \App\Models\Invoice::whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $operator->id))
                     ->whereNotIn('invoice_status', [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_CANCELLED])
                     ->whereBetween('invoice_date', [$dateFrom, $dateTo])
                     ->get();
 
-                $totalBilled = $invoices->sum('invoice_amount');
-                $invoiceIds = $invoices->pluck('id');
-                $totalPaid = \App\Models\Payment::whereIn('invoice_id', $invoiceIds)->sum('amount_paid');
+                $totalBilled = (float) $invoices->sum('invoice_amount');
+                $totalPaid   = (float) $invoices->sum(fn ($inv) => $paidByInvoice[$inv->id] ?? 0);
 
                 $subscriberCount = \App\Models\Subscriber::whereHas('generationUnits', fn($q) => $q->where('operator_id', $operator->id))->count();
 
@@ -237,15 +236,13 @@ class InvoiceReportController extends Controller
             ->filter(fn($op) => $op->invoice_count > 0 || $op->subscriber_count > 0)
             ->values();
 
-        // === أكبر المتأخرين (داخل فترة التقرير) ===
-        // المتبقي لكل مشترك = مجموع متبقي فواتيره المتأخرة (قيمة الفاتورة - المسدد عليها).
-        // متطابق مع منطق قسم "غير المسددة/المتأخرة" أعلاه.
+        // === أكبر المتأخرين (داخل فترة التقرير) — FIFO-aware ===
+        // المتبقي لكل مشترك = مجموع متبقي فواتيره المتأخرة وفق التوزيع الفعلي.
         $topDelinquentQuery = \App\Models\Invoice::whereIn('invoice_status', [\App\Models\Invoice::STATUS_ISSUED, \App\Models\Invoice::STATUS_PARTIAL])
             ->whereBetween('invoice_date', [$dateFrom, $dateTo])
             ->whereNotNull('due_date')
             ->where('due_date', '<', now())
-            ->with(['subscriber.generationUnits.operator'])
-            ->withSum('payments', 'amount_paid');
+            ->with(['subscriber.generationUnits.operator']);
 
         if ($selectedOpId) {
             $topDelinquentQuery->whereHas('subscriber.generationUnits', fn($q) => $q->where('operator_id', $selectedOpId));
@@ -255,10 +252,10 @@ class InvoiceReportController extends Controller
 
         $topDelinquents = $topDelinquentQuery->get()
             ->groupBy('subscriber_id')
-            ->map(function ($invoices) {
+            ->map(function ($invoices) use ($paidByInvoice) {
                 $subscriber = $invoices->first()->subscriber;
                 $totalRemaining = $invoices->sum(fn($inv) => max(
-                    (float) $inv->invoice_amount - (float) ($inv->payments_sum_amount_paid ?? 0),
+                    (float) $inv->invoice_amount - (float) ($paidByInvoice[$inv->id] ?? 0),
                     0
                 ));
                 $oldestInvoice = $invoices->sortBy('due_date')->first();
@@ -280,7 +277,7 @@ class InvoiceReportController extends Controller
             ->take(20)
             ->values();
 
-        // === تقرير الإيرادات الشهري (آخر 12 شهر) ===
+        // === تقرير الإيرادات الشهري (آخر 12 شهر) — FIFO-aware ===
         $monthlyRevenue = collect();
         for ($i = 11; $i >= 0; $i--) {
             $monthStart = now()->subMonths($i)->startOfMonth();
@@ -298,10 +295,7 @@ class InvoiceReportController extends Controller
 
             $monthInvoices = $monthInvoicesQuery->get();
             $monthBilled = $monthInvoices->sum('invoice_amount');
-            $monthInvoiceIds = $monthInvoices->pluck('id');
-            $monthPaid = \App\Models\Payment::whereIn('invoice_id', $monthInvoiceIds)
-                ->whereBetween('payment_date', [$monthStart, $monthEnd])
-                ->sum('amount_paid');
+            $monthPaid = $monthInvoices->sum(fn($inv) => $paidByInvoice[$inv->id] ?? 0);
 
             $monthlyRevenue->push((object)[
                 'month' => $monthLabel,
@@ -325,5 +319,63 @@ class InvoiceReportController extends Controller
             'consumptionPeriod',
             'revenueByOperator', 'topDelinquents', 'monthlyRevenue'
         ));
+    }
+
+    /**
+     * Compute the FIFO-allocated paid amount per invoice for all scoped subscribers.
+     *
+     * Mirrors Invoice::reconcileSubscriber() logic: for each subscriber, sum their
+     * payment pool and drain it across invoices in date order. Returns a map of
+     * [invoice_id => allocated_paid_amount] usable as a substitute for the
+     * (inaccurate) sum of Payment.amount_paid grouped by invoice_id.
+     *
+     * @return array<int, float>
+     */
+    private function computeFifoPaidByInvoice(int $selectedOpId, array $scopedOperatorIds): array
+    {
+        $subscriberQuery = \App\Models\Subscriber::query();
+        if ($selectedOpId > 0) {
+            $subscriberQuery->whereHas('generationUnits', fn($q) => $q->where('operator_id', $selectedOpId));
+        } elseif (!empty($scopedOperatorIds)) {
+            $subscriberQuery->whereHas('generationUnits', fn($q) => $q->whereIn('operator_id', $scopedOperatorIds));
+        }
+
+        $subscriberIds = $subscriberQuery->pluck('id');
+        if ($subscriberIds->isEmpty()) {
+            return [];
+        }
+
+        $allInvoices = \App\Models\Invoice::whereIn('subscriber_id', $subscriberIds)
+            ->whereNotIn('invoice_status', [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_CANCELLED])
+            ->orderBy('subscriber_id')->orderBy('invoice_date')->orderBy('id')
+            ->get(['id', 'subscriber_id', 'invoice_amount']);
+
+        $payments = \App\Models\Payment::whereIn('invoice_id', $allInvoices->pluck('id'))
+            ->select('invoice_id', 'amount_paid')
+            ->get();
+
+        // Build subscriber payment pools from invoice_id -> subscriber_id mapping
+        $invoiceToSubscriber = $allInvoices->pluck('subscriber_id', 'id');
+        $pools = [];
+        foreach ($payments as $p) {
+            $subId = $invoiceToSubscriber[$p->invoice_id] ?? null;
+            if ($subId === null) {
+                continue;
+            }
+            $pools[$subId] = ($pools[$subId] ?? 0) + (float) $p->amount_paid;
+        }
+
+        $paidByInvoice = [];
+        foreach ($allInvoices->groupBy('subscriber_id') as $subId => $invoices) {
+            $pool = (float) ($pools[$subId] ?? 0);
+            foreach ($invoices as $inv) {
+                $charge = (float) $inv->invoice_amount;
+                $allocated = $charge > 0 ? min($pool, $charge) : 0;
+                $pool -= $allocated;
+                $paidByInvoice[$inv->id] = $allocated;
+            }
+        }
+
+        return $paidByInvoice;
     }
 }

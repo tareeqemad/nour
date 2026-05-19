@@ -6,8 +6,11 @@
 
     // ===== حسابات مشتركة =====
     $totalIssuedAmount  = (float)($issuedInPeriod->sum_invoice ?? 0);
-    $totalBilledAll     = $debitBalances->sum('total_billed') + $creditBalances->sum('total_billed');
-    $totalPaidAll       = $debitBalances->sum('total_paid')   + $creditBalances->sum('total_paid');
+    // مصدر موحّد للإجماليات: نفس الأرقام في كاردات "ملخص الفترة".
+    // الحساب من $balances كان يستثني المشتركين بـ balance=0 (مدفوع بالكامل)
+    // فيقلّل البسط والمقام معاً ويعطي نسبة تحصيل أوطأ من الواقع.
+    $totalBilledAll     = (float)($issuedInPeriod->sum_invoice ?? 0);
+    $totalPaidAll       = (float)($issuedInPeriod->sum_paid ?? 0);
     $collectionRate     = $totalBilledAll > 0 ? round(($totalPaidAll / $totalBilledAll) * 100, 1) : 0;
     $netBalance         = round($totalBilledAll - $totalPaidAll, 2);
 
