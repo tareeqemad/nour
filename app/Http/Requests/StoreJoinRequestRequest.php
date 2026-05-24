@@ -84,11 +84,9 @@ class StoreJoinRequestRequest extends FormRequest
             $phone = $this->input('phone');
             $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
 
-            // التحقق من أن الرقم مصرح به
-            if (!AuthorizedPhone::isAuthorized($cleanPhone)) {
-                $validator->errors()->add('phone', 'غير مخول لك بالتسجيل. يرجى التواصل مع الإدارة.');
-                return;
-            }
+            // ملاحظة: تم إلغاء اشتراط أن يكون الرقم ضمن authorized_phones.
+            // الآن أي رقم صالح (regex) يستطيع التقديم، والاعتماد يتم من
+            // سلطة الطاقة عبر شاشة "المشغلون → في انتظار الاعتماد".
 
             // التحقق من أن الرقم غير مسجل مسبقاً
             $existingUser = User::where('phone', $cleanPhone)

@@ -13,6 +13,13 @@ use Illuminate\View\View;
 
 class PortalRequestController extends Controller
 {
+    /**
+     * وضع "للاطلاع فقط" — Portal API يبقى شغّال للعرض (index/show/export)
+     * لكن لا يُسمح بأي إجراء عليه (إنشاء حساب، تغيير حالة). المصدر الفعلي
+     * لطلبات الانضمام هو نموذج /join، ويُعتمد عبر شاشة "في انتظار الاعتماد".
+     */
+    private const PORTAL_API_READ_ONLY = true;
+
     private string $baseUrl;
     private string $token;
 
@@ -54,11 +61,14 @@ class PortalRequestController extends Controller
             return $this->ajaxList($request);
         }
 
-        return view('admin.portal-requests.index');
+        return view('admin.portal-requests.index', [
+            'portalApiReadOnly' => self::PORTAL_API_READ_ONLY,
+        ]);
     }
 
     /**
      * AJAX – جلب قائمة الطلبات
+     * (وضع للاطلاع فقط — البيانات تُجلب من API لكن دون أي إجراء عليها)
      */
     private function ajaxList(Request $request): JsonResponse
     {
@@ -391,6 +401,10 @@ class PortalRequestController extends Controller
     {
         $this->ensure('portal_requests.change_status');
 
+        if (self::PORTAL_API_READ_ONLY) {
+            return $this->errorResponse('شاشة الطلبات للاطلاع فقط — لا يُسمح بتغيير الحالة من هذه الشاشة.');
+        }
+
         $request->validate([
             'newStatus' => 'required|string|max:20',
             'note'      => 'nullable|string|max:1000',
@@ -529,6 +543,13 @@ class PortalRequestController extends Controller
     public function createUser(Request $request, string $appId): JsonResponse
     {
         $this->ensure('portal_requests.create_user');
+
+        if (self::PORTAL_API_READ_ONLY) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'شاشة الطلبات للاطلاع فقط — لإنشاء حساب لمشغل جديد يرجى استخدام نموذج /join وتعتمده سلطة الطاقة من شاشة "في انتظار الاعتماد".',
+            ]);
+        }
 
         // التحقق من عدم المعالجة المسبقة
         if (ProcessedPortalRequest::isProcessed($appId)) {

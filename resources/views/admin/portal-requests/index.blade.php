@@ -62,6 +62,19 @@
     <div class="row g-3">
         <div class="col-12">
 
+            {{-- تنبيه: الشاشة للاطلاع فقط — الإجراءات تتم من شاشة "في انتظار الاعتماد" --}}
+            <div class="alert alert-info d-flex align-items-start gap-2 mb-3" role="alert">
+                <i class="bi bi-info-circle-fill mt-1"></i>
+                <div>
+                    <strong>للاطلاع فقط:</strong>
+                    هذه الشاشة تعرض طلبات البوابة الحكومية للمراجعة دون أي إجراء.
+                    لاعتماد طلبات الانضمام الجديدة وإنشاء حسابات المشغلين، يرجى استخدام
+                    <a href="{{ route('admin.operators.pending-approval') }}" class="alert-link">
+                        <i class="bi bi-hourglass-split me-1"></i>المشغلون → في انتظار الاعتماد
+                    </a>.
+                </div>
+            </div>
+
             {{-- ── إحصائيات ── --}}
             <div class="row g-3 mb-3" id="statsRow">
                 <div class="col-6 col-lg">
@@ -335,8 +348,11 @@
     const csrfToken     = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     /* ─── صلاحيات المستخدم (تُحقن من الـ Blade) ─────────────────── */
-    const canChangeStatus = @json($u->hasPermission('portal_requests.change_status'));
-    const canCreateUser   = @json($u->hasPermission('portal_requests.create_user'));
+    /* وضع للاطلاع فقط: نُخفي أزرار الإجراءات (تغيير الحالة + إنشاء حساب)
+       حتى لو كان للمستخدم صلاحيات. التصدير والعرض يبقيان متاحين. */
+    const portalApiReadOnly = @json($portalApiReadOnly ?? false);
+    const canChangeStatus = portalApiReadOnly ? false : @json($u->hasPermission('portal_requests.change_status'));
+    const canCreateUser   = portalApiReadOnly ? false : @json($u->hasPermission('portal_requests.create_user'));
     const canExport       = @json($u->hasPermission('portal_requests.export'));
 
     let currentPage     = 1;

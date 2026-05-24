@@ -327,13 +327,9 @@ class PublicHomeController extends Controller
         $cleanOwnerIdNumber = \App\Providers\AppServiceProvider::cleanStringStatic($validated['owner_id_number']);
         $cleanOperatorIdNumber = !empty($validated['operator_id_number']) ? \App\Providers\AppServiceProvider::cleanStringStatic($validated['operator_id_number']) : null;
 
-        // التحقق من أن الرقم مصرح به في authorized_phones
-        if (!\App\Models\AuthorizedPhone::isAuthorized($cleanPhone)) {
-            $errorMessage = \App\Providers\AppServiceProvider::cleanStringStatic('غير مخول لك بالتسجيل. يرجى التواصل مع الإدارة.');
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['phone' => $errorMessage]);
-        }
+        // ملاحظة: تم إلغاء اشتراط أن يكون الرقم ضمن authorized_phones.
+        // الآن أي رقم صالح يستطيع التقديم، ويُعتمد الطلب من سلطة الطاقة
+        // عبر شاشة "المشغلون → في انتظار الاعتماد".
 
         // التحقق من أن الرقم غير مسجل مسبقاً كمستخدم (من خلال phone)
         // التحقق من الرقم المنظف مباشرة
