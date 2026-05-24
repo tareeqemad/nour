@@ -70,11 +70,22 @@ class MeterReading extends Model
     }
 
     /**
-     * الفاتورة المرتبطة بهذه القراءة
+     * الفاتورة المرتبطة بهذه القراءة (تشمل الملغاة)
      */
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * الفاتورة الفعّالة المرتبطة بهذه القراءة (تستثني الملغاة).
+     * تُستخدم لتحديد إن كانت القراءة تحتاج فاتورة جديدة بعد
+     * إلغاء فاتورتها السابقة وإعادة اعتمادها.
+     */
+    public function activeInvoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class)
+            ->where('invoice_status', '!=', Invoice::STATUS_CANCELLED);
     }
 
     /**

@@ -433,7 +433,8 @@ class User extends Authenticatable
     {
         return $this->isSuperAdmin()
             || $this->ownsOperator($operator)
-            || $this->operators()->where('operators.id', $operator->id)->exists();
+            || $this->operators()->where('operators.id', $operator->id)->exists()
+            || ($this->hasOperatorLinkedCustomRole() && (int) $this->roleModel?->operator_id === (int) $operator->id);
     }
 
     /**

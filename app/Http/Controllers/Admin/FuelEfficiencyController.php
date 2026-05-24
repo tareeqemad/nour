@@ -47,11 +47,12 @@ class FuelEfficiencyController extends Controller
                         $q->where('operator_id', $operator->id);
                     })->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')->orderBy('generator_number')->get();
                 }
-            } elseif ($user->isEmployee() || $user->isTechnician()) {
-                $operators = $user->operators;
-                $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operators->pluck('id'))
+            } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+                $operatorIds = $user->getScopedOperatorIds();
+                $operators = \App\Models\Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+                $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operatorIds)
                     ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('unit_code')->get();
-                $generators = \App\Models\Generator::whereIn('operator_id', $operators->pluck('id'))
+                $generators = \App\Models\Generator::whereIn('operator_id', $operatorIds)
                     ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')->orderBy('generator_number')->get();
             }
 
@@ -72,10 +73,10 @@ class FuelEfficiencyController extends Controller
                     $q->where('operator_id', $operator->id);
                 });
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            $query->whereHas('generator', function ($q) use ($operators) {
-                $q->whereIn('operator_id', $operators->pluck('id'));
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $query->whereHas('generator', function ($q) use ($operatorIds) {
+                $q->whereIn('operator_id', $operatorIds);
             });
         }
 
@@ -188,16 +189,15 @@ class FuelEfficiencyController extends Controller
                     ->orderBy('generators.generator_number')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators; // إضافة المشغلين للعرض
-            $generationUnits = \App\Models\GenerationUnit::whereHas('operator', function($q) use ($userOperators) {
-                $q->whereIn('operators.id', $userOperators->pluck('id'));
-            })->select('id', 'name', 'unit_code', 'operator_id')
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = \App\Models\Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operatorIds)
+                ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
-            
-            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+
+            $generators = Generator::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();
@@ -236,16 +236,15 @@ class FuelEfficiencyController extends Controller
                     ->orderBy('generators.generator_number')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators;
-            $generationUnits = \App\Models\GenerationUnit::whereHas('operator', function($q) use ($userOperators) {
-                $q->whereIn('operators.id', $userOperators->pluck('id'));
-            })->select('id', 'name', 'unit_code', 'operator_id')
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = \App\Models\Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operatorIds)
+                ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
-            
-            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+
+            $generators = Generator::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();

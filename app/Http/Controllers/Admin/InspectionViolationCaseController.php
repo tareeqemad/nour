@@ -30,9 +30,8 @@ class InspectionViolationCaseController extends Controller
         if ($user->isCompanyOwner()) {
             $operatorIds = $user->ownedOperators()->pluck('id');
             $query->whereIn('operator_id', $operatorIds);
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operatorIds = $user->operators()->pluck('operators.id');
-            $query->whereIn('operator_id', $operatorIds);
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $query->whereIn('operator_id', $user->getScopedOperatorIds());
         }
 
         if (($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) && $request->filled('operator_id')) {
@@ -107,10 +106,10 @@ class InspectionViolationCaseController extends Controller
                     ->orderBy('unit_code')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators;
-            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
@@ -234,9 +233,8 @@ class InspectionViolationCaseController extends Controller
         if ($user->isCompanyOwner()) {
             $operatorIds = $user->ownedOperators()->pluck('id');
             $query->whereIn('operator_id', $operatorIds);
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operatorIds = $user->operators()->pluck('operators.id');
-            $query->whereIn('operator_id', $operatorIds);
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $query->whereIn('operator_id', $user->getScopedOperatorIds());
         }
         if (($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority()) && $request->filled('operator_id')) {
             $query->where('operator_id', (int) $request->operator_id);

@@ -483,8 +483,9 @@ class MeterReadingController extends Controller
                     'اعتماد قراءة العداد: ' . $reading->reading_number
                 );
 
-                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة (بدون المحذوفة)
-                if (!$reading->invoice()->whereNull('invoices.deleted_at')->exists()) {
+                // ترحيل تلقائي للفوترة: إنشاء فاتورة مسودة إذا لم تكن موجودة
+                // (نتجاهل الملغاة والمحذوفة - فالقراءة قد تكون أُعيد اعتمادها بعد إلغاء فاتورتها)
+                if (!$reading->activeInvoice()->exists()) {
                     Invoice::createFromReading($reading, $user->id);
 
                     AuditLog::log(
@@ -529,8 +530,9 @@ class MeterReadingController extends Controller
         if ($user->isCompanyOwner()) {
             $opIds = $user->ownedOperators()->pluck('id')->toArray();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $opIds = $user->operators->pluck('id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $opIds = $user->getScopedOperatorIds();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
         } elseif ($user->hasGlobalAccountingAccess()) {
             $operatorId = (int) $request->input('operator_id', 0);
@@ -587,7 +589,7 @@ class MeterReadingController extends Controller
                     ['action_status' => MeterReading::ACTION_STATUS_APPROVED],
                     'اعتماد قراءة (جماعي بالفلتر): ' . $reading->reading_number
                 );
-                if (!$reading->invoice()->whereNull('invoices.deleted_at')->exists()) {
+                if (!$reading->activeInvoice()->exists()) {
                     Invoice::createFromReading($reading, $user->id);
                     $billedCount++;
                 }

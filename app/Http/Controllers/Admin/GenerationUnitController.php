@@ -38,9 +38,9 @@ class GenerationUnitController extends Controller
             if ($operator) {
                 $query->where('operator_id', $operator->id);
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operatorIds = $user->operators()->pluck('operators.id');
-            $query->whereIn('operator_id', $operatorIds);
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $query->whereIn('operator_id', $user->getScopedOperatorIds());
         }
 
         // فلترة حسب الحالة (يمكن استخدام status أو status_id)
@@ -73,9 +73,9 @@ class GenerationUnitController extends Controller
             if ($operator) {
                 $operatorId = $operator->id;
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            // للموظفين: أول مشغل مرتبط بهم
-            $firstOperator = $user->operators()->first();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $firstOperator = $user->getAffiliatedOperator();
             if ($firstOperator) {
                 $operatorId = $firstOperator->id;
             }
@@ -114,8 +114,9 @@ class GenerationUnitController extends Controller
         // للمشغل والموظفين: المشغل تلقائي
         if ($user->isCompanyOwner()) {
             $currentOperator = $user->ownedOperators()->first();
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $currentOperator = $user->operators()->first();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $currentOperator = $user->getAffiliatedOperator();
         } elseif ($user->isSuperAdmin() || $user->isAdmin() || $user->isEnergyAuthority() || $user->isCivilDefense()) {
             // للأدوار الأخرى: جلب جميع المشغلين
             $operators = Operator::select('id', 'name')
@@ -1080,8 +1081,9 @@ class GenerationUnitController extends Controller
                     'generation_units' => []
                 ], 403);
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperatorIds = $user->operators()->pluck('operators.id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $userOperatorIds = $user->getScopedOperatorIds();
             if (!in_array($operatorId, $userOperatorIds)) {
                 return response()->json([
                     'success' => false,
@@ -1159,8 +1161,8 @@ class GenerationUnitController extends Controller
             ]);
         }
 
-        // Allow Employee and Technician to access operators they belong to
-        if (($user->isEmployee() || $user->isTechnician()) && $user->belongsToOperator($operator)) {
+        // Allow Employee, Technician, and custom-role users to access operators they belong to
+        if ($user->isAffiliatedWithOperator() && $user->belongsToOperator($operator)) {
             return response()->json([
                 'success' => true,
                 'operator' => [
@@ -1203,8 +1205,9 @@ class GenerationUnitController extends Controller
             if ($operator) {
                 $operatorId = $operator->id;
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operator = $user->operators()->first();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operator = $user->getAffiliatedOperator();
             if ($operator) {
                 $operatorId = $operator->id;
             }

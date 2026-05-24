@@ -32,9 +32,8 @@ class ComplianceSafetyController extends Controller
             if ($operator) {
                 $query->where('operator_id', $operator->id);
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            $query->whereIn('operator_id', $operators->pluck('id'));
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $query->whereIn('operator_id', $user->getScopedOperatorIds());
         }
 
         // Filter by operator
@@ -136,14 +135,14 @@ class ComplianceSafetyController extends Controller
                     ->orderBy('generators.generator_number')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators;
-            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
-            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+            $generators = Generator::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();
@@ -179,14 +178,14 @@ class ComplianceSafetyController extends Controller
                     ->orderBy('generators.generator_number')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators;
-            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
-            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+            $generators = Generator::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();
@@ -327,14 +326,14 @@ class ComplianceSafetyController extends Controller
                     ->orderBy('generators.generator_number')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators;
-            $generationUnits = GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generationUnits = GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
-            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+            $generators = Generator::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();

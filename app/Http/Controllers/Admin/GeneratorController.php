@@ -48,11 +48,12 @@ class GeneratorController extends Controller
             if ($currentOperator) {
                 $query->where('operator_id', $currentOperator->id);
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->isNotEmpty()) {
-                $query->whereIn('operator_id', $operators->pluck('id'));
-                $currentOperator = $operators->first();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $opIds = $user->getScopedOperatorIds();
+            if (!empty($opIds)) {
+                $query->whereIn('operator_id', $opIds);
+                $currentOperator = $user->getAffiliatedOperator();
             }
         }
 
@@ -710,8 +711,8 @@ class GeneratorController extends Controller
         elseif ($user->isCompanyOwner() && $user->ownsOperator($operator)) {
             // Continue to fetch generation units
         }
-        // Allow Employee and Technician to access operators they belong to
-        elseif (($user->isEmployee() || $user->isTechnician()) && $user->belongsToOperator($operator)) {
+        // Allow Employee, Technician, and custom-role users to access operators they belong to
+        elseif ($user->isAffiliatedWithOperator() && $user->belongsToOperator($operator)) {
             // Continue to fetch generation units
         }
         // Otherwise, check standard authorization
@@ -810,8 +811,9 @@ class GeneratorController extends Controller
                     'generators' => []
                 ], 403);
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperatorIds = $user->operators()->pluck('operators.id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $userOperatorIds = $user->getScopedOperatorIds();
             if (empty($userOperatorIds) || !in_array($generationUnit->operator_id, $userOperatorIds)) {
                 return response()->json([
                     'success' => false,

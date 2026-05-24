@@ -29,8 +29,8 @@ class MinimumChargeRuleController extends Controller
         } elseif ($user->isCompanyOwner()) {
             $operator = $user->ownedOperators()->first();
             $operatorId = $operator?->id;
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operator = $user->operators()->first();
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operator = $user->getAffiliatedOperator();
             $operatorId = $operator?->id;
         }
 

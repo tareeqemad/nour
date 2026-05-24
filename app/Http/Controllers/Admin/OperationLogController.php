@@ -46,11 +46,13 @@ class OperationLogController extends Controller
                         $q->where('operator_id', $operator->id);
                     })->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')->orderBy('generator_number')->get();
                 }
-            } elseif ($user->isEmployee() || $user->isTechnician()) {
-                $operators = $user->operators;
-                $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operators->pluck('id'))
+            } elseif ($user->isAffiliatedWithOperator()) {
+                // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+                $operatorIds = $user->getScopedOperatorIds();
+                $operators = \App\Models\Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+                $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operatorIds)
                     ->select('id', 'name', 'unit_code', 'operator_id')->orderBy('unit_code')->get();
-                $generators = \App\Models\Generator::whereIn('operator_id', $operators->pluck('id'))
+                $generators = \App\Models\Generator::whereIn('operator_id', $operatorIds)
                     ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')->orderBy('generator_number')->get();
             }
 
@@ -65,9 +67,9 @@ class OperationLogController extends Controller
             if ($operator) {
                 $query->where('operator_id', $operator->id);
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            $query->whereIn('operator_id', $operators->pluck('id'));
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $query->whereIn('operator_id', $user->getScopedOperatorIds());
         }
 
 
@@ -270,15 +272,15 @@ class OperationLogController extends Controller
                     ->orderBy('unit_code')
                     ->get();
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $userOperators = $user->operators;
-            $operators = $userOperators; // إضافة المشغلين للعرض
-            $generators = Generator::whereIn('operator_id', $userOperators->pluck('id'))
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = Operator::whereIn('id', $operatorIds)->select('id', 'name')->orderBy('name')->get();
+            $generators = Generator::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'generator_number', 'operator_id', 'generation_unit_id')
                 ->orderBy('generator_number')
                 ->get();
-            
-            $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $userOperators->pluck('id'))
+
+            $generationUnits = \App\Models\GenerationUnit::whereIn('operator_id', $operatorIds)
                 ->select('id', 'name', 'unit_code', 'operator_id')
                 ->orderBy('unit_code')
                 ->get();
@@ -311,11 +313,11 @@ class OperationLogController extends Controller
                 // تحميل المولدات تلقائياً
                 $generators = $operator->generators;
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
-            if ($operators->count() === 1) {
-                // إذا كان موظف تابع لمشغل واحد، نحمل وحدات التوليد والمولدات تلقائياً
-                $operator = $operators->first();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operator = $user->getAffiliatedOperator();
+            if ($operator) {
+                $operators = collect([$operator]);
                 $generationUnits = $operator->generationUnits;
                 $generators = $operator->generators;
             }
@@ -447,10 +449,11 @@ class OperationLogController extends Controller
                 // تحميل المولدات تلقائياً
                 $generators = $operator->generators;
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operators = $user->operators;
+        } elseif ($user->isAffiliatedWithOperator()) { // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
+            $operators = Operator::whereIn('id', $operatorIds)->orderBy('name')->get();
             if ($operators->count() === 1) {
-                // إذا كان موظف تابع لمشغل واحد، نحمل وحدات التوليد والمولدات تلقائياً
+                // إذا كان المستخدم تابع لمشغل واحد، نحمل وحدات التوليد والمولدات تلقائياً
                 $operator = $operators->first();
                 $generationUnits = $operator->generationUnits;
                 $generators = $operator->generators;

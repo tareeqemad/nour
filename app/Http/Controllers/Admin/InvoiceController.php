@@ -137,9 +137,10 @@ class InvoiceController extends Controller
         $user = auth()->user();
 
         // جلب القراءات المعتمدة وغير المفوترة
+        // نتجاهل الفواتير الملغاة - فالقراءة قد تكون أُعيد اعتمادها بعد إلغاء فاتورتها
         $readingQuery = MeterReading::with('subscriber')
             ->where('action_status', MeterReading::ACTION_STATUS_APPROVED)
-            ->whereDoesntHave('invoice');
+            ->whereDoesntHave('activeInvoice');
 
         if ($user->isCompanyOwner()) {
             $op = $user->ownedOperators()->first();
@@ -147,8 +148,9 @@ class InvoiceController extends Controller
                 $readingQuery->whereHas('subscriber.generationUnits', fn($q) =>
                     $q->where('operator_id', $op->id));
             }
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $ids = $user->operators()->pluck('operators.id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $ids = $user->getScopedOperatorIds();
             if ($ids) {
                 $readingQuery->whereHas('subscriber.generationUnits', fn($q) =>
                     $q->whereIn('operator_id', $ids));
@@ -544,8 +546,9 @@ class InvoiceController extends Controller
         if ($user->isCompanyOwner()) {
             $operatorIds = $user->ownedOperators()->pluck('id')->toArray();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $operatorIds = $user->operators()->pluck('operators.id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $operatorIds = $user->getScopedOperatorIds();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $operatorIds));
         }
 
@@ -664,8 +667,9 @@ class InvoiceController extends Controller
         if ($user->isCompanyOwner()) {
             $opIds = $user->ownedOperators()->pluck('id')->toArray();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
-        } elseif ($user->isEmployee() || $user->isTechnician()) {
-            $opIds = $user->operators()->pluck('operators.id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator()) {
+            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
+            $opIds = $user->getScopedOperatorIds();
             $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
         }
 

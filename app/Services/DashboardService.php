@@ -33,8 +33,9 @@ class DashboardService
             return null;
         } elseif ($user->isCompanyOwner()) {
             return $user->ownedOperators->pluck('id')->toArray();
-        } elseif ($user->isEmployee() || $user->isTechnician() || $user->isCivilDefense()) {
-            return $user->operators->pluck('id')->toArray();
+        } elseif ($user->isAffiliatedWithOperator() || $user->isCivilDefense()) {
+            // يشمل: Employee, Technician, CivilDefense, وأي دور مخصص (custom role) مرتبط بمشغل
+            return $user->getScopedOperatorIds();
         }
         return [];
     }
@@ -70,7 +71,8 @@ class DashboardService
                 return $this->getAdminStats();
             } elseif ($user->isCompanyOwner()) {
                 return $this->getCompanyOwnerStats($user);
-            } elseif ($user->isEmployee() || $user->isTechnician()) {
+            } elseif ($user->isAffiliatedWithOperator()) {
+                // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
                 return $this->getEmployeeStats($user);
             } elseif ($user->isCivilDefense()) {
                 return $this->getCivilDefenseStats($user);
@@ -776,8 +778,9 @@ class DashboardService
                 $unitIds = GenerationUnit::whereIn('operator_id', $opIds)->pluck('id');
                 $query->whereIn('generation_unit_id', $unitIds);
             })
-            ->when($user->isEmployee() || $user->isTechnician() || $user->isCivilDefense(), function ($query) use ($user) {
-                $opIds = $user->operators->pluck('id');
+            ->when($user->isAffiliatedWithOperator() || $user->isCivilDefense(), function ($query) use ($user) {
+                // يشمل: Employee, Technician, CivilDefense, وأي دور مخصص (custom role) مرتبط بمشغل
+                $opIds = $user->getScopedOperatorIds();
                 $unitIds = GenerationUnit::whereIn('operator_id', $opIds)->pluck('id');
                 $query->whereIn('generation_unit_id', $unitIds);
             })
