@@ -102,6 +102,14 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::delete('settings/{setting}', [SettingsController::class, 'destroy'])->name('settings.destroy');
 
     /**
+     * Database Backups (SuperAdmin only — checked inside controller)
+     */
+    Route::get('backups',                            [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
+    Route::post('backups',                           [\App\Http\Controllers\Admin\BackupController::class, 'store'])->name('backups.store');
+    Route::get('backups/{filename}/download',        [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('backups.download');
+    Route::delete('backups/{filename}',              [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backups.destroy');
+
+    /**
      * Constants (SuperAdmin only via Policy)
      */
     Route::resource('constants', ConstantMasterController::class);
