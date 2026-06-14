@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateSubscriberRequest extends FormRequest
 {
@@ -14,10 +13,9 @@ class UpdateSubscriberRequest extends FormRequest
 
     public function rules(): array
     {
-        $subscriberId = $this->route('subscriber')->id ?? null;
-        $user = $this->user();
-        
         $rules = [
+            'subscriber_id_number' => ['required', 'string', 'max:255'],
+            'subscriber_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'regex:/^05\d{8}$/'],
             'alt_phone' => ['nullable', 'string', 'regex:/^05\d{8}$/'],
             'address' => ['required', 'string'],
@@ -35,23 +33,15 @@ class UpdateSubscriberRequest extends FormRequest
             'operator_id' => ['nullable', 'exists:operators,id'],
             'generation_unit_id' => ['required', 'exists:generation_units,id'],
         ];
-        
-        // فقط SuperAdmin يمكنه تعديل رقم الاشتراك
-        if ($user->isSuperAdmin()) {
-            $rules['subscription_number'] = [
-                'required', 
-                'string', 
-                'max:255', 
-                Rule::unique('subscribers', 'subscription_number')->ignore($subscriberId)
-            ];
-        }
-        
+
         return $rules;
     }
 
     public function messages(): array
     {
         $messages = [
+            'subscriber_id_number.required' => 'رقم هوية المشترك مطلوب.',
+            'subscriber_name.required' => 'اسم المشترك مطلوب.',
             'phone.required' => 'رقم الموبايل مطلوب.',
             'phone.regex' => 'رقم الموبايل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
             'alt_phone.regex' => 'رقم الجوال البديل يجب أن يكون 10 أرقام ويبدأ بـ 05.',
@@ -74,13 +64,7 @@ class UpdateSubscriberRequest extends FormRequest
             'generation_unit_id.required' => 'يجب اختيار وحدة توليد.',
             'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',
         ];
-        
-        // رسائل خاصة برقم الاشتراك (فقط لـ SuperAdmin)
-        if ($this->user()->isSuperAdmin()) {
-            $messages['subscription_number.required'] = 'رقم الاشتراك مطلوب.';
-            $messages['subscription_number.unique'] = 'رقم الاشتراك موجود مسبقاً.';
-        }
-        
+
         return $messages;
     }
 

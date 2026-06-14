@@ -42,11 +42,17 @@ class StoreGeneratorRequest extends FormRequest
 
     public function rules(): array
     {
+        $user = $this->user();
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'generator_number' => ['nullable', 'string', 'max:255', 'unique:generators'],
-            // operator_id سيتم أخذه من المستخدم في الـ controller لضمان السلامة
-            // 'operator_id' => ['nullable', 'exists:operators,id'],
+            // SuperAdmin يختار المشغل من النموذج؛ باقي المستخدمين يُحدَّد المشغل من حسابهم في الـ controller
+            'operator_id' => [
+                Rule::requiredIf(fn () => $user->isSuperAdmin()),
+                'nullable',
+                'exists:operators,id',
+            ],
             'generation_unit_id' => ['required', 'exists:generation_units,id'],
             'description' => ['nullable', 'string'],
             'status_id' => ['required', 'exists:constant_details,id'],
@@ -124,6 +130,7 @@ class StoreGeneratorRequest extends FormRequest
         return [
             'name.required' => 'اسم المولد مطلوب.',
             'generator_number.unique' => 'رقم المولد هذا مستخدم بالفعل.',
+            'operator_id.required' => 'يجب اختيار المشغل.',
             'operator_id.exists' => 'المشغل المحدد غير موجود.',
             'generation_unit_id.required' => 'وحدة التوليد مطلوبة.',
             'generation_unit_id.exists' => 'وحدة التوليد المحددة غير موجودة.',

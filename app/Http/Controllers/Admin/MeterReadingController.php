@@ -90,6 +90,7 @@ class MeterReadingController extends Controller
 
         [$query, $currentOperator, $canSelectOperator] = $this->buildIndexQuery($request);
         $meterReadings = $query->latest('reading_date')->latest()->paginate(15);
+        MeterReading::markFirstReadings($meterReadings);
 
         if ($request->ajax() || $request->wantsJson()) {
             $html = view('admin.meter-readings.partials.list', compact('meterReadings'))->render();
@@ -139,6 +140,7 @@ class MeterReadingController extends Controller
 
         [$query] = $this->buildIndexQuery($request);
         $readings = $query->latest('reading_date')->latest()->get();
+        MeterReading::markFirstReadings($readings);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -170,10 +172,10 @@ class MeterReadingController extends Controller
             $sheet->setCellValue('B' . $row, $r->subscriber?->subscription_number ?? '');
             $sheet->setCellValue('C' . $row, $r->subscriber?->subscriber_name ?? '');
             $sheet->setCellValue('D' . $row, $r->subscriber?->box_number ?? '');
-            $sheet->setCellValue('E' . $row, $r->meter_number ?? '');
-            $sheet->setCellValue('F' . $row, $r->previous_reading);
+            $sheet->setCellValue('E' . $row, $r->getDisplayMeterNumber());
+            $sheet->setCellValue('F' . $row, $r->getDisplayPreviousReading());
             $sheet->setCellValue('G' . $row, $r->current_reading);
-            $sheet->setCellValue('H' . $row, $r->consumption_kwh);
+            $sheet->setCellValue('H' . $row, $r->getDisplayConsumptionKwh());
             $sheet->setCellValue('I' . $row, $r->reading_date?->format('Y-m-d') ?? '');
             $sheet->setCellValue('J' . $row, $r->consumption_period_days);
             $sheet->setCellValue('K' . $row, $readingStatusLabel);
@@ -302,6 +304,7 @@ class MeterReadingController extends Controller
         $this->authorize('view', $meterReading);
 
         $meterReading->load(['subscriber.generationUnits.operator', 'creator', 'updater']);
+        MeterReading::markFirstReadings([$meterReading]);
 
         return view('admin.meter-readings.show', compact('meterReading'));
     }
@@ -607,9 +610,9 @@ class MeterReadingController extends Controller
             'reading_date' => $r->reading_date?->format('Y-m-d'),
         ])->values();
 
-        $message = "تم اعتماد {$approvedCount} قراءة طبيعية وترحيل {$billedCount} منها للفوترة.";
+        $message = "تم اعتماد {$approvedCount} قراءة وترحيل {$billedCount} منها للفوترة.";
         if ($abnormal->count() > 0) {
-            $message .= " يوجد {$abnormal->count()} قراءة غير طبيعية تحتاج تعديل أو حذف وإعادة إدخال.";
+            $message .= " يوجد {$abnormal->count()} قراءة غير طبيعية (استهلاك سالب أو متجاوز للحد) تحتاج تعديلاً قبل الاعتماد.";
         }
 
         return response()->json([

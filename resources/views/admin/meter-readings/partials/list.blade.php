@@ -52,6 +52,7 @@
                     @php
                         $editable = $reading->isEditable();
                         $isAbnormal = $reading->isAbnormal();
+                        $canBulkApprove = $reading->canBulkApprove();
                         $actionStatusClass = match($reading->action_status) {
                             0 => 'bg-secondary',
                             1 => 'bg-success',
@@ -65,12 +66,12 @@
                         };
                     @endphp
                     <tr class="{{ $isAbnormal && $editable ? 'table-warning' : '' }}">
-                        {{-- خانة التحديد: تظهر للقراءات الطبيعية غير المعتمدة فقط --}}
+                        {{-- خانة التحديد: الطبيعية + غير الطبيعية باستهلاك صفري --}}
                         <td class="text-center">
-                            @if($editable && !$isAbnormal)
+                            @if($canBulkApprove)
                                 <input type="checkbox" class="form-check-input reading-checkbox" value="{{ $reading->id }}">
                             @elseif($editable && $isAbnormal)
-                                <span class="text-warning fs-6" title="قراءة غير طبيعية — تحتاج اعتماداً منفرداً مع ذكر السبب"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                                <span class="text-warning fs-6" title="قراءة غير طبيعية — يجب تعديلها أو حذفها قبل الاعتماد"><i class="bi bi-exclamation-triangle-fill"></i></span>
                             @else
                                 <span class="text-muted" title="{{ $reading->action_status_name }}">—</span>
                             @endif
@@ -89,24 +90,34 @@
                             </div>
                         </td>
                         <td>
-                            <span>{{ $reading->meter_number }}</span>
+                            @php $displayMeter = $reading->getDisplayMeterNumber(); @endphp
+                            @if($displayMeter !== '')
+                                <span>{{ $displayMeter }}</span>
+                            @endif
                             @if($reading->subscriber->box_number)
                                 <br><small class="text-muted"><i class="bi bi-mailbox me-1"></i>{{ $reading->subscriber->box_number }}</small>
                             @endif
                         </td>
                         <td class="text-center">
+                            @php
+                                $displayPrevious = $reading->getDisplayPreviousReading();
+                                $displayConsumption = $reading->getDisplayConsumptionKwh();
+                            @endphp
                             <div>
                                 <small class="text-muted">سابق: </small>
-                                <span class="fw-medium">{{ number_format($reading->previous_reading, 2) }}</span>
+                                <span class="fw-medium">{{ number_format($displayPrevious, 2) }}</span>
+                                @if($reading->isFirstForSubscriber() && (float) $reading->previous_reading === 0.0 && $reading->subscriber->opening_reading)
+                                    <br><small class="text-muted">(افتتاحية)</small>
+                                @endif
                                 <br>
                                 <small class="text-muted">حالي: </small>
                                 <span class="fw-bold text-primary">{{ number_format($reading->current_reading, 2) }}</span>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span class="badge {{ $reading->consumption_kwh < 0 ? 'bg-danger' : 'bg-info' }} px-3 py-2">
+                            <span class="badge {{ $displayConsumption < 0 ? 'bg-danger' : 'bg-info' }} px-3 py-2">
                                 <i class="bi bi-lightning-charge me-1"></i>
-                                {{ number_format($reading->consumption_kwh, 2) }}
+                                {{ number_format($displayConsumption, 2) }}
                             </span>
                         </td>
                         <td class="text-center">
@@ -137,7 +148,7 @@
                                     </a>
                                 @endcan
 
-                                @if($editable && $isAbnormal)
+                                @if($editable && $isAbnormal && $reading->blocksBulkApproval())
                                     <span class="text-warning small" title="قراءة غير طبيعية - يجب تعديلها أو حذفها">
                                         <i class="bi bi-pencil-square me-1"></i>تحتاج تعديل
                                     </span>

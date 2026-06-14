@@ -242,24 +242,19 @@ class GeneratorController extends Controller
         
         if ($authUser->isSuperAdmin()) {
             // SuperAdmin يمكنه اختيار أي مشغل من الـ form
-            if (!empty($data['operator_id'])) {
-                $operator = \App\Models\Operator::find($data['operator_id']);
+            $operatorId = $data['operator_id'] ?? $request->input('operator_id');
+            if (!empty($operatorId)) {
+                $operator = \App\Models\Operator::find($operatorId);
                 if (!$operator) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->with('error', 'المشغل المحدد غير موجود.');
+                    return $this->generatorFormError($request, 'المشغل المحدد غير موجود.');
                 }
             } else {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'يجب اختيار المشغل.');
+                return $this->generatorFormError($request, 'يجب اختيار المشغل.');
             }
         } elseif ($authUser->isCompanyOwner()) {
             $operator = $authUser->ownedOperators()->first();
             if (!$operator) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'لا يوجد مشغل مرتبط بحسابك.');
+                return $this->generatorFormError($request, 'لا يوجد مشغل مرتبط بحسابك.');
             }
         } elseif ($authUser->hasPermission('generators.create') || $authUser->isTechnician()) {
             // المستخدم التابع لمشغل (Employee أو Technician)
@@ -268,14 +263,10 @@ class GeneratorController extends Controller
             } elseif ($authUser->ownedOperators()->exists()) {
                 $operator = $authUser->ownedOperators()->first();
             } else {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'لا يوجد مشغل مرتبط بحسابك.');
+                return $this->generatorFormError($request, 'لا يوجد مشغل مرتبط بحسابك.');
             }
         } else {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'ليس لديك صلاحية لإضافة مولدات.');
+            return $this->generatorFormError($request, 'ليس لديك صلاحية لإضافة مولدات.');
         }
 
         // تعيين operator_id من المستخدم (للسلامة)
@@ -283,32 +274,24 @@ class GeneratorController extends Controller
 
         // التحقق من وجود generation_unit_id
         if (empty($data['generation_unit_id'])) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'يجب اختيار وحدة التوليد.');
+            return $this->generatorFormError($request, 'يجب اختيار وحدة التوليد.');
         }
 
         // التحقق من أن عدد المولدات لم يتجاوز العدد المطلوب
         $generationUnit = \App\Models\GenerationUnit::find($data['generation_unit_id']);
         if (!$generationUnit) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'وحدة التوليد المحددة غير موجودة.');
+            return $this->generatorFormError($request, 'وحدة التوليد المحددة غير موجودة.');
         }
 
         // التحقق من أن وحدة التوليد تنتمي للمشغل الصحيح (للسلامة)
         if ($generationUnit->operator_id !== $operator->id) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'وحدة التوليد المحددة لا تنتمي للمشغل الخاص بك.');
+            return $this->generatorFormError($request, 'وحدة التوليد المحددة لا تنتمي للمشغل الخاص بك.');
         }
 
         $currentCount = $generationUnit->generators()->count();
         $maxCount = $generationUnit->generators_count;
         if ($maxCount > 0 && $currentCount >= $maxCount) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "لقد وصلت إلى الحد الأقصى لعدد المولدات في هذه الوحدة ({$maxCount}).");
+            return $this->generatorFormError($request, "لقد وصلت إلى الحد الأقصى لعدد المولدات في هذه الوحدة ({$maxCount}).");
         }
 
         // التحقق من أن مجموع قدرات المولدات لا يتجاوز إجمالي القدرة لوحدة التوليد
@@ -322,9 +305,7 @@ class GeneratorController extends Controller
                 $remaining = (int)($generationUnit->total_capacity - $currentTotalCapacity);
                 $newTotalCapacityInt = (int)$newTotalCapacity;
                 $totalCapacityInt = (int)$generationUnit->total_capacity;
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', "مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
+                return $this->generatorFormError($request, "مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
             }
         }
 
@@ -334,9 +315,7 @@ class GeneratorController extends Controller
         if (empty($data['generator_number'])) {
             $data['generator_number'] = Generator::getNextGeneratorNumber($data['generation_unit_id']);
             if (!$data['generator_number']) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'تعذر توليد رقم المولد. تأكد من أن وحدة التوليد لديها unit_code وأن عدد المولدات لم يتجاوز 99.');
+                return $this->generatorFormError($request, 'تعذر توليد رقم المولد. تأكد من أن وحدة التوليد لديها unit_code وأن عدد المولدات لم يتجاوز 99.');
             }
         }
 
@@ -975,5 +954,22 @@ class GeneratorController extends Controller
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء نقل المولد: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * إرجاع خطأ نموذج المولد بصيغة JSON للطلبات AJAX أو redirect للطلبات العادية.
+     */
+    private function generatorFormError(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 422);
+        }
+
+        return redirect()->back()
+            ->withInput()
+            ->with('error', $message);
     }
 }

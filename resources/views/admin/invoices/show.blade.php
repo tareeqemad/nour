@@ -459,33 +459,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-function swalDeletePayment(btn) {
-    Swal.fire({
-        title: 'حذف الدفعة',
-        text: 'هل أنت متأكد من حذف هذه الدفعة؟ سيتم إعادة حالة الفاتورة تلقائياً.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'نعم، احذف',
-        cancelButtonText: 'إلغاء',
-    }).then(result => {
-        if (!result.isConfirmed) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = btn.dataset.action;
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = btn.dataset.csrf;
-        const method = document.createElement('input');
-        method.type = 'hidden'; method.name = '_method'; method.value = 'DELETE';
-        form.appendChild(csrf);
-        form.appendChild(method);
-        document.body.appendChild(form);
-        form.submit();
-    });
-}
-</script>
-@endpush

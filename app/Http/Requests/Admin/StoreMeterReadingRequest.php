@@ -98,7 +98,26 @@ class StoreMeterReadingRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $subscriberId = $this->input('subscriber_id');
-        
+
+        // للقراءة الأولى: استخدم القراءة الافتتاحية كقراءة سابقة
+        if ($subscriberId) {
+            $subscriber = Subscriber::find($subscriberId);
+            $lastReading = MeterReading::getLastReadingForSubscriber((int) $subscriberId);
+
+            if (!$lastReading && $subscriber && $subscriber->opening_reading !== null) {
+                $this->merge(['previous_reading' => (float) $subscriber->opening_reading]);
+            }
+
+            // تصحيح رقم العداد إذا خُزّنت القراءة الافتتاحية بالخطأ مكانه
+            if ($subscriber) {
+                $meter = trim((string) ($this->input('meter_number') ?? ''));
+                $opening = $subscriber->opening_reading;
+                if ($meter === '' || ($opening !== null && $meter !== '' && (float) $meter === (float) $opening)) {
+                    $this->merge(['meter_number' => $subscriber->meter_number ?? '']);
+                }
+            }
+        }
+
         // حساب قيمة الاستهلاك تلقائياً (يمكن أن تكون سالبة أو صفر)
         if ($this->has('previous_reading') && $this->has('current_reading')) {
             $previous = (float) $this->input('previous_reading');

@@ -18,26 +18,33 @@
     </div>
 
     @if($isEdit)
-        {{-- حقول للقراءة فقط في وضع التعديل --}}
         <div class="col-md-6">
             <label class="form-label fw-semibold">رقم الاشتراك</label>
             <input type="text" class="form-control" value="{{ $subscriber->subscription_number }}" readonly style="background-color:#f8f9fa;cursor:not-allowed;">
-            <input type="hidden" name="subscription_number" value="{{ $subscriber->subscription_number }}">
         </div>
         <div class="col-md-6">
-            <label class="form-label fw-semibold">رقم هوية المشترك</label>
-            <input type="text" class="form-control" value="{{ $subscriber->subscriber_id_number }}" readonly style="background-color:#f8f9fa;cursor:not-allowed;">
+            <label class="form-label fw-semibold">رقم هوية المشترك <span class="text-danger">*</span></label>
+            <input type="text" name="subscriber_id_number" id="subscriber_id_number"
+                   class="form-control @error('subscriber_id_number') is-invalid @enderror"
+                   value="{{ old('subscriber_id_number', $subscriber->subscriber_id_number) }}" maxlength="9" inputmode="numeric" required>
+            @error('subscriber_id_number')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <div id="idFeedback" class="form-text d-none"></div>
         </div>
         <div class="col-md-6">
-            <label class="form-label fw-semibold">اسم المشترك</label>
-            <input type="text" class="form-control" value="{{ $subscriber->subscriber_name }}" readonly style="background-color:#f8f9fa;cursor:not-allowed;">
+            <label class="form-label fw-semibold">اسم المشترك <span class="text-danger">*</span></label>
+            <input type="text" name="subscriber_name" class="form-control @error('subscriber_name') is-invalid @enderror"
+                   value="{{ old('subscriber_name', $subscriber->subscriber_name) }}" required>
+            @error('subscriber_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
         <div class="col-md-6">
             <label class="form-label fw-semibold">تاريخ الاشتراك</label>
             <input type="text" class="form-control" value="{{ $subscriber->subscription_date?->format('Y-m-d') }}" readonly style="background-color:#f8f9fa;cursor:not-allowed;">
         </div>
     @else
-        {{-- حقول قابلة للإدخال في وضع الإضافة --}}
         <div class="col-md-6">
             <label class="form-label fw-semibold">رقم هوية المشترك <span class="text-danger">*</span></label>
             <input type="text" name="subscriber_id_number" id="subscriber_id_number"

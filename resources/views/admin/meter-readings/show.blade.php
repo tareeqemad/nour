@@ -54,7 +54,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted">رقم العداد</label>
-                                <div class="form-control-plaintext">{{ $meterReading->meter_number }}</div>
+                                <div class="form-control-plaintext">{{ $meterReading->getDisplayMeterNumber() ?: '—' }}</div>
                             </div>
 
                             {{-- بيانات القراءة --}}
@@ -68,7 +68,10 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted">القراءة السابقة</label>
                                 <div class="form-control-plaintext">
-                                    <span class="fw-medium">{{ number_format($meterReading->previous_reading, 2) }}</span>
+                                    <span class="fw-medium">{{ number_format($meterReading->getDisplayPreviousReading(), 2) }}</span>
+                                    @if($meterReading->isFirstForSubscriber() && (float) $meterReading->previous_reading === 0.0 && $meterReading->subscriber->opening_reading)
+                                        <small class="text-muted d-block">(قراءة افتتاحية)</small>
+                                    @endif
                                 </div>
                             </div>
 
@@ -84,7 +87,7 @@
                                 <div class="form-control-plaintext">
                                     <span class="badge bg-info px-3 py-2">
                                         <i class="bi bi-lightning-charge me-1"></i>
-                                        {{ number_format($meterReading->consumption_kwh, 2) }}
+                                        {{ number_format($meterReading->getDisplayConsumptionKwh(), 2) }}
                                     </span>
                                 </div>
                             </div>

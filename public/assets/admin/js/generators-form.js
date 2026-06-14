@@ -234,7 +234,7 @@
                     'Accept': 'application/json'
                 },
                 success: function (response) {
-                    if (response.success) {
+                    if (response && response.success) {
                         var msg = response.message || (config.isEdit ? '\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0648\u0644\u062F \u0628\u0646\u062C\u0627\u062D' : '\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0645\u0648\u0644\u062F \u0628\u0646\u062C\u0627\u062D');
                         if (typeof window.showToast === 'function') {
                             window.showToast(msg, 'success');
@@ -244,6 +244,18 @@
                         setTimeout(function () {
                             window.location.href = config.redirectUrl;
                         }, 500);
+                        return;
+                    }
+
+                    $submitBtn.prop('disabled', false);
+                    $submitBtn.html(originalText);
+                    var unexpectedMsg = (response && response.message) || '\u062D\u062F\u062B \u062E\u0637\u0623 \u0623\u062B\u0646\u0627\u0621 \u062D\u0641\u0638 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A';
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(unexpectedMsg, 'error');
+                    } else if (window.adminNotifications && typeof window.adminNotifications.error === 'function') {
+                        window.adminNotifications.error(unexpectedMsg);
+                    } else {
+                        alert(unexpectedMsg);
                     }
                 },
                 error: function (xhr) {
@@ -282,6 +294,15 @@
                             window.adminNotifications.error(errorMessage, '\u062A\u062D\u0642\u0642 \u0645\u0646 \u0627\u0644\u0623\u062E\u0637\u0627\u0621');
                         } else {
                             console.error('Validation errors:', errorMessages);
+                        }
+                    } else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message && !xhr.responseJSON.errors) {
+                        var businessErrorMsg = xhr.responseJSON.message;
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(businessErrorMsg, 'error', '\u062A\u062D\u0642\u0642 \u0645\u0646 \u0627\u0644\u0623\u062E\u0637\u0627\u0621');
+                        } else if (window.adminNotifications && typeof window.adminNotifications.error === 'function') {
+                            window.adminNotifications.error(businessErrorMsg, '\u062A\u062D\u0642\u0642 \u0645\u0646 \u0627\u0644\u0623\u062E\u0637\u0627\u0621');
+                        } else {
+                            alert(businessErrorMsg);
                         }
                     } else {
                         var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) || '\u062D\u062F\u062B \u062E\u0637\u0623 \u0623\u062B\u0646\u0627\u0621 \u062D\u0641\u0638 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A';

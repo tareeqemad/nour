@@ -313,6 +313,76 @@
         }
     };
 
+    /**
+     * حذف دفعة مع إلزام إدخال سبب الحذف (للاستخدام في صفحات الفواتير والدفعات)
+     */
+    window.swalDeletePayment = function (btn) {
+        if (typeof Swal === 'undefined') {
+            console.error('SweetAlert2 is required for swalDeletePayment');
+            return;
+        }
+
+        Swal.fire({
+            title: 'حذف الدفعة',
+            html: '<p class="text-muted mb-3">هل أنت متأكد من حذف هذه الدفعة؟ سيتم إعادة حالة الفاتورة تلقائياً وإنشاء قيد مالي عكسي.</p>',
+            input: 'textarea',
+            inputLabel: 'سبب الحذف',
+            inputPlaceholder: 'اذكر سبب حذف الدفعة (5 أحرف على الأقل)...',
+            inputAttributes: {
+                'aria-label': 'سبب حذف الدفعة',
+                'maxlength': 1000,
+                'rows': 3
+            },
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'نعم، احذف',
+            cancelButtonText: 'إلغاء',
+            reverseButtons: true,
+            focusConfirm: false,
+            preConfirm: function (reason) {
+                var trimmed = (reason || '').trim();
+                if (!trimmed) {
+                    Swal.showValidationMessage('يجب ذكر سبب حذف الدفعة.');
+                    return false;
+                }
+                if (trimmed.length < 5) {
+                    Swal.showValidationMessage('السبب يجب أن يكون 5 أحرف على الأقل.');
+                    return false;
+                }
+                return trimmed;
+            }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = btn.dataset.action;
+
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = btn.dataset.csrf;
+
+            var method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+
+            var reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'delete_reason';
+            reasonInput.value = result.value;
+
+            form.appendChild(csrf);
+            form.appendChild(method);
+            form.appendChild(reasonInput);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    };
+
     // جعل GeneralHelpers متاحاً بشكل عام
     window.GeneralHelpers = GeneralHelpers;
 

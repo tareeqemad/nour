@@ -23,7 +23,30 @@
       "Bash(npx next:*)",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -h 127.0.0.1 -P 3306 nour -e \"SELECT name, label, \\\\`group\\\\`, group_label, description, \\\\`order\\\\` FROM permissions ORDER BY \\\\`order\\\\`, id;\")",
-      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -h 127.0.0.1 nour -e \"SELECT subscriber_id_number, COUNT\\(*\\) as cnt FROM subscribers GROUP BY subscriber_id_number HAVING cnt > 1 LIMIT 5;\")"
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -h 127.0.0.1 nour -e \"SELECT subscriber_id_number, COUNT\\(*\\) as cnt FROM subscribers GROUP BY subscriber_id_number HAVING cnt > 1 LIMIT 5;\")",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; $app->make\\(Illuminate\\\\Contracts\\\\Console\\\\Kernel::class\\)->bootstrap\\(\\); var_dump\\(class_exists\\(App\\\\Models\\\\Announcement::class\\), class_exists\\(App\\\\Policies\\\\AnnouncementPolicy::class\\), class_exists\\(App\\\\Http\\\\Controllers\\\\Admin\\\\AnnouncementController::class\\), method_exists\\(App\\\\Models\\\\Notification::class, '\\\\''notifyAllActiveUsers'\\\\''\\)\\);')",
+      "Bash(grep -E \"bundle|min\\\\.css|min\\\\.js$\")",
+      "Bash(ls -lh \"C:/Users/PC/Downloads/u209790577_raseddb.sql\" 2>&1)",
+      "Bash(grep -E \"CREATE TABLE \\\\`\\(announcements|users|operators|invoices|generators\\)\\\\`\" \"C:/Users/PC/Downloads/u209790577_raseddb.sql\")",
+      "Bash(where mysql *)",
+      "Read(//c/xampp/mysql/bin/**)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root nour)",
+      "Bash(grep -E \"\\\\\\\\.bi-building|\\\\\\\\.bi-buildings|\\\\\\\\.bi-bank|\\\\\\\\.bi-shop|\\\\\\\\.bi-factory\" \"C:/Users/PC/Desktop/nour/public/assets/admin/icon-fonts/bootstrap-icons/icons/font/bootstrap-icons.css\")",
+      "Bash(php -r ' *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "PowerShell(php -l \"C:\\\\Users\\\\PC\\\\Desktop\\\\nour\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\MaintenanceRecordController.php\")",
+      "PowerShell(php -l \"C:\\\\Users\\\\PC\\\\Desktop\\\\nour\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\ComplianceSafetyController.php\")",
+      "PowerShell(php -l \"C:\\\\Users\\\\PC\\\\Desktop\\\\nour\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\FuelEfficiencyController.php\")",
+      "PowerShell(php -l \"C:\\\\Users\\\\PC\\\\Desktop\\\\nour\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\InspectionViolationCaseController.php\")",
+      "PowerShell(php -l \"C:\\\\Users\\\\PC\\\\Desktop\\\\nour\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\MinimumChargeRuleController.php\")",
+      "PowerShell(php -l \"C:\\\\Users\\\\PC\\\\Desktop\\\\nour\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\OperationLogController.php\")",
+      "Bash(php -l app/Http/Controllers/Admin/PortalRequestController.php)",
+      "Bash(cd \"/c/Users/PC/Desktop/nour\" && cat config/database.php | head -45)",
+      "Bash(composer show *)",
+      "Read(//c/c/Users/PC/Desktop/nour/storage/app/backups/**)",
+      "Bash(cd \"/c/Users/PC/Desktop/nour\" && rm storage/app/backups/backup_2026-05-24_175832.sql && ls storage/app/backups/)"
     ]
   }
 }

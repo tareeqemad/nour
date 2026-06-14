@@ -188,7 +188,7 @@ class MeterReading extends Model
 
     /**
      * هل القراءة تمنع الاعتماد الجماعي؟
-     * الاستهلاك السالب أو المتجاوز للحد الأقصى يحتاج اعتماد فردي مع سبب.
+     * الاستهلاك السالب أو المتجاوز للحد الأقصى يحتاج تعديلاً قبل الاعتماد.
      * الاستهلاك الصفري غير طبيعي لكنه مسموح ضمن الاعتماد الجماعي.
      */
     public function blocksBulkApproval(): bool
@@ -197,6 +197,98 @@ class MeterReading extends Model
             return false;
         }
         return (float) $this->consumption_kwh !== 0.0;
+    }
+
+    /**
+     * هل يمكن تحديدها واعتمادها من شاشة القائمة؟
+     */
+    public function canBulkApprove(): bool
+    {
+        return $this->isApprovable() && !$this->blocksBulkApproval();
+    }
+
+    /**
+     * تحديد القراءة الأولى لكل مشترك ضمن مجموعة (لتجنب استعلامات متكررة).
+     */
+    public static function markFirstReadings(iterable $readings): void
+    {
+        $subscriberIds = collect($readings)->pluck('subscriber_id')->unique()->filter()->values();
+        if ($subscriberIds->isEmpty()) {
+            return;
+        }
+
+        $firstIds = static::whereIn('subscriber_id', $subscriberIds)
+            ->orderBy('reading_date')
+            ->orderBy('id')
+            ->get(['id', 'subscriber_id'])
+            ->groupBy('subscriber_id')
+            ->map(fn ($group) => $group->first()->id);
+
+        foreach ($readings as $reading) {
+            $reading->setAttribute(
+                'is_first_reading',
+                $firstIds->get($reading->subscriber_id) === $reading->id
+            );
+        }
+    }
+
+    /**
+     * هل هذه أول قراءة مسجّلة للمشترك؟
+     */
+    public function isFirstForSubscriber(): bool
+    {
+        if (array_key_exists('is_first_reading', $this->attributes)) {
+            return (bool) $this->attributes['is_first_reading'];
+        }
+
+        $firstId = static::where('subscriber_id', $this->subscriber_id)
+            ->orderBy('reading_date')
+            ->orderBy('id')
+            ->value('id');
+
+        return $firstId === $this->id;
+    }
+
+    /**
+     * القراءة السابقة للعرض: للقراءة الأولى تُستخدم القراءة الافتتاحية إن وُجدت.
+     */
+    public function getDisplayPreviousReading(): float
+    {
+        $previous = (float) $this->previous_reading;
+        if ($previous > 0) {
+            return $previous;
+        }
+
+        $opening = $this->subscriber?->opening_reading;
+        if ($opening !== null && (float) $opening > 0 && $this->isFirstForSubscriber()) {
+            return (float) $opening;
+        }
+
+        return $previous;
+    }
+
+    /**
+     * الاستهلاك للعرض محسوباً من القراءة السابقة المعروضة.
+     */
+    public function getDisplayConsumptionKwh(): float
+    {
+        return round((float) $this->current_reading - $this->getDisplayPreviousReading(), 2);
+    }
+
+    /**
+     * رقم العداد للعرض (يصحّح الخلط الشائع بين القراءة الافتتاحية ورقم العداد).
+     */
+    public function getDisplayMeterNumber(): string
+    {
+        $subscriberMeter = trim((string) ($this->subscriber?->meter_number ?? ''));
+        $meter = trim((string) ($this->meter_number ?? ''));
+        $opening = $this->subscriber?->opening_reading;
+
+        if ($opening !== null && $meter !== '' && (float) $meter === (float) $opening) {
+            return $subscriberMeter;
+        }
+
+        return $meter !== '' ? $meter : $subscriberMeter;
     }
 
     /**

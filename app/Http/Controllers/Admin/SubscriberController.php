@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSubscriberRequest;
 use App\Http\Requests\Admin\UpdateSubscriberRequest;
 use App\Exports\SubscribersExport;
+use App\Models\AuditLog;
 use App\Models\MeterReading;
 use App\Models\Subscriber;
 use App\Models\GenerationUnit;
@@ -235,6 +236,15 @@ class SubscriberController extends Controller
             // ربط وحدة التوليد
             $subscriber->generationUnits()->sync([$generationUnitId]);
 
+            AuditLog::log(
+                'create',
+                $subscriber,
+                auth()->user(),
+                [],
+                $subscriber->fresh()->toArray(),
+                'إضافة مشترك جديد: ' . $subscriber->subscriber_name . ' (' . $subscriber->subscription_number . ')'
+            );
+
             return redirect()->route('admin.subscribers.index')
                 ->with('success', "تم إضافة المشترك بنجاح. رقم الاشتراك: {$subscriber->subscription_number}");
         } catch (\Exception $e) {
@@ -339,21 +349,32 @@ class SubscriberController extends Controller
         try {
             $user = auth()->user();
             $data = $request->validated();
-            
-            // المشغل لا يمكنه تعديل رقم الاشتراك
-            if (!$user->isSuperAdmin()) {
-                unset($data['subscription_number']);
-            }
+            unset($data['subscription_number'], $data['subscription_date']);
 
-            // تسجيل من قام بالتحديث
+            $subscriber->load('generationUnits');
+            $oldValues = $subscriber->toArray();
+            $oldValues['generation_unit_id'] = $subscriber->generationUnits->first()?->id;
+
             $data['last_updated_by'] = $user->id;
 
             $subscriber->update($data);
 
-            // تحديث ربط وحدة التوليد
             if (isset($data['generation_unit_id'])) {
                 $subscriber->generationUnits()->sync([$data['generation_unit_id']]);
             }
+
+            $subscriber->refresh();
+            $newValues = $subscriber->toArray();
+            $newValues['generation_unit_id'] = $subscriber->generationUnits->first()?->id;
+
+            AuditLog::log(
+                'update',
+                $subscriber,
+                $user,
+                $oldValues,
+                $newValues,
+                'تعديل بيانات المشترك: ' . $subscriber->subscriber_name . ' (' . $subscriber->subscription_number . ')'
+            );
 
             return redirect()->route('admin.subscribers.index')
                 ->with('success', 'تم تحديث بيانات المشترك بنجاح.');
