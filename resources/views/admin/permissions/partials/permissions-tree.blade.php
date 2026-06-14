@@ -5,7 +5,7 @@
             'label' => 'إدارة النظام',
             'icon' => 'bi-gear-wide-connected',
             'color' => '#6366f1',
-            'groups' => ['users', 'operators', 'roles', 'permissions', 'permission_audit_logs', 'activity_logs', 'logs', 'portal_requests'],
+            'groups' => ['users', 'operators', 'roles', 'permissions', 'permission_audit_logs', 'activity_logs', 'logs', 'portal_requests', 'portal_archive'],
         ],
         'operations' => [
             'label' => 'إدارة العمليات',
@@ -68,6 +68,7 @@
         'sms_templates' => 'bi-chat-left-text-fill',
         'guide' => 'bi-book-fill',
         'portal_requests' => 'bi-inbox-fill',
+        'portal_archive' => 'bi-archive-fill',
         'announcements' => 'bi-megaphone-fill',
     ];
 

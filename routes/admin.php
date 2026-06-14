@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuthorizedPhoneController;
 use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\PortalRequestController;
+use App\Http\Controllers\Admin\PortalArchiveController;
 use App\Http\Controllers\Admin\PermissionAuditLogController;
 use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RoleController;
@@ -281,6 +282,12 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('portal-requests/{appId}/change-status', [PortalRequestController::class, 'changeStatus'])->name('portal-requests.change-status');
     Route::post('portal-requests/{appId}/create-user', [PortalRequestController::class, 'createUser'])->name('portal-requests.create-user');
     Route::get('portal-requests/{appId}/check-processed', [PortalRequestController::class, 'checkProcessed'])->name('portal-requests.check-processed');
+
+    /**
+     * Portal Requests Archive (نسخة محلية مخزّنة من جدول portal_requests)
+     */
+    Route::get('portal-archive', [PortalArchiveController::class, 'index'])->name('portal-archive.index');
+    Route::get('portal-archive/{appNo}', [PortalArchiveController::class, 'show'])->name('portal-archive.show');
 
     /**
      * System Logs (Super Admin only)

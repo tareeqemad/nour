@@ -169,6 +169,9 @@ class PermissionSeeder extends Seeder
             ['name' => 'portal_requests.create_user',   'label' => 'إنشاء حساب من الطلب', 'group' => 'portal_requests', 'group_label' => 'الطلبات المقدمة', 'description' => 'القدرة على إنشاء حساب مستخدم تلقائياً من بيانات الطلب الموافق عليه', 'order' => 83],
             ['name' => 'portal_requests.export',        'label' => 'تصدير الطلبات',        'group' => 'portal_requests', 'group_label' => 'الطلبات المقدمة', 'description' => 'القدرة على تصدير قائمة الطلبات إلى ملف Excel', 'order' => 83],
 
+            // أرشيف الطلبات (نسخة محلية مخزّنة من جدول portal_requests)
+            ['name' => 'portal_archive.view',           'label' => 'عرض أرشيف الطلبات',   'group' => 'portal_archive', 'group_label' => 'أرشيف الطلبات', 'description' => 'القدرة على عرض الأرشيف المحلي لطلبات البوابة المخزّنة محلياً (جدول portal_requests)', 'order' => 83],
+
             // الفوترة والتحصيل
             ['name' => 'invoices.view', 'label' => 'عرض الفواتير', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على عرض قائمة الفواتير والتحصيل', 'order' => 83],
             ['name' => 'invoices.create', 'label' => 'إنشاء فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على إنشاء فاتورة جديدة', 'order' => 83],

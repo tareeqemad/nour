@@ -145,6 +145,16 @@
                 </li>
                 @endif
 
+                {{-- أرشيف الطلبات (محلي) — يعتمد على صلاحية portal_archive.view --}}
+                @if($u->hasPermission('portal_archive.view'))
+                <li class="slide {{ $isActive('admin.portal-archive.*') }}">
+                    <a href="{{ route('admin.portal-archive.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+                        <span class="side-menu__label">أرشيف الطلبات (محلي)</span>
+                    </a>
+                </li>
+                @endif
+
                 {{-- إعدادات النظام — SuperAdmin --}}
                 @if($u->isSuperAdmin())
                 @php
