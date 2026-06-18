@@ -179,6 +179,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'invoices.delete', 'label' => 'حذف فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على حذف الفاتورة', 'order' => 83],
             ['name' => 'invoices.issue', 'label' => 'إصدار فاتورة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على إصدار الفواتير', 'order' => 83],
             ['name' => 'invoices.import_payments', 'label' => 'استيراد دفعات من Excel', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على رفع ملف Excel لتسجيل دفعات الفواتير بشكل جماعي', 'order' => 84],
+            ['name' => 'payments.delete', 'label' => 'حذف دفعة', 'group' => 'invoices', 'group_label' => 'الفوترة والتحصيل', 'description' => 'القدرة على حذف دفعة مسجّلة (يُسجَّل قيد عكسي وتُعاد حالة الفاتورة تلقائياً)', 'order' => 84],
 
             // تقارير الفوترة والتحصيل
             ['name' => 'invoice_reports.view', 'label' => 'عرض تقارير الفاتورة', 'group' => 'invoice_reports', 'group_label' => 'تقارير الفوترة', 'description' => 'القدرة على عرض تقارير وإحصائيات الفوترة والتحصيل', 'order' => 84],

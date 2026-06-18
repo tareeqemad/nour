@@ -81,10 +81,28 @@ class PaymentPolicy
     }
 
     /**
-     * حذف دفعة - SuperAdmin/Admin فقط
+     * حذف دفعة - SuperAdmin/Admin دائماً، أو من يملك صلاحية payments.delete ضمن نطاقه
      */
     public function delete(User $user, Payment $payment): bool
     {
-        return $user->isSuperAdmin() || $user->isAdmin();
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return true;
+        }
+
+        if (!$user->hasPermission('payments.delete')) {
+            return false;
+        }
+
+        if ($user->hasGlobalAccountingAccess()) {
+            return true;
+        }
+
+        $userOperatorIds = $user->operators()->pluck('operators.id')
+            ->merge($user->ownedOperators()->pluck('id'))->unique();
+
+        $invoiceOperatorIds = $payment->invoice->subscriber->generationUnits()
+            ->pluck('operator_id')->unique();
+
+        return $userOperatorIds->intersect($invoiceOperatorIds)->isNotEmpty();
     }
 }
