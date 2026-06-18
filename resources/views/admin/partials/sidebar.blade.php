@@ -268,6 +268,10 @@
                         || $u->can('viewAny', App\Models\OperationLog::class)
                         || $u->can('viewAny', App\Models\MaintenanceRecord::class)
                         || $u->can('viewAny', App\Models\ComplianceSafety::class)
+                        || $u->can('viewAny', App\Models\Invoice::class)
+                        || $u->hasPermission('invoice_reports.view')
+                        || $u->hasPermission('subscriber_accounts.view')
+                        || $u->hasPermission('minimum_charge_rules.view')
                     );
                     // لكن المولدات ووحدات التوليد تظهر حتى بدون اعتماد
                     if (!$showOpsCategory && ($u->can('viewAny', App\Models\GenerationUnit::class) || $u->can('viewAny', App\Models\Generator::class))) {
@@ -281,7 +285,15 @@
 
                 {{-- بيانات المشتركين (CompanyOwner يحتاج اعتماد) --}}
                 @if(!$u->isCompanyOwner() || $u->hasApprovedOperator())
-                @can('viewAny', App\Models\Subscriber::class)
+                @php
+                    $canSubscribers    = $u->can('viewAny', App\Models\Subscriber::class);
+                    $canInvoices       = $u->can('viewAny', App\Models\Invoice::class);
+                    $canSubAccount     = $u->hasPermission('subscriber_accounts.view');
+                    $canInvoiceReports = $u->isSuperAdmin() || $u->isAdmin() || $u->isCompanyOwner() || $u->hasPermission('invoice_reports.view');
+                    $canMinCharge      = $u->isSuperAdmin() || $u->isAdmin() || $u->isCompanyOwner() || $u->hasPermission('minimum_charge_rules.view');
+                    $showSubsMenu      = $canSubscribers || $canInvoices || $canSubAccount || $canInvoiceReports || $canMinCharge;
+                @endphp
+                @if($showSubsMenu)
                 @php
                     $subsOpen = $isOpen('admin.subscribers.*') || $isOpen('admin.meter-readings.*') || $isOpen('admin.invoices.*') || $isOpen('admin.subscriber-account.*') || $isOpen('admin.invoice-reports.*') || $isOpen('admin.minimum-charge-rules.*');
                     $subsActive = $isActive('admin.subscribers.*') || $isActive('admin.meter-readings.*') || $isActive('admin.invoices.*') || $isActive('admin.subscriber-account.*') || $isActive('admin.invoice-reports.*') || $isActive('admin.minimum-charge-rules.*');
@@ -293,23 +305,25 @@
                         <span class="side-menu__label">إدارة بيانات المشتركين</span>
                     </a>
                     <ul class="slide-menu child1" style="{{ $subsOpen ? 'display:block' : '' }}">
+                        @if($canSubscribers)
                         <li class="slide"><a href="{{ route('admin.subscribers.index') }}" class="side-menu__item {{ $isActive('admin.subscribers.index') }}">بيانات المشتركين</a></li>
                         <li class="slide"><a href="{{ route('admin.meter-readings.index') }}" class="side-menu__item {{ $isActive('admin.meter-readings.*') }}">قراءات العدادات</a></li>
-                        @can('viewAny', App\Models\Invoice::class)
+                        @endif
+                        @if($canInvoices)
                         <li class="slide"><a href="{{ route('admin.invoices.index') }}" class="side-menu__item {{ $isActive('admin.invoices.*') }}">الفوترة والتحصيل</a></li>
-                        @endcan
-                        @if($u->hasPermission('subscriber_accounts.view'))
+                        @endif
+                        @if($canSubAccount)
                         <li class="slide"><a href="{{ route('admin.subscriber-account.index') }}" class="side-menu__item {{ $isActive('admin.subscriber-account.*') }}">حساب المشترك</a></li>
                         @endif
-                        @if($u->isSuperAdmin() || $u->isAdmin() || $u->isCompanyOwner() || $u->hasPermission('invoice_reports.view'))
+                        @if($canInvoiceReports)
                         <li class="slide"><a href="{{ route('admin.invoice-reports.index') }}" class="side-menu__item {{ $isActive('admin.invoice-reports.*') }}">تقارير الفوترة</a></li>
                         @endif
-                        @if($u->isSuperAdmin() || $u->isAdmin() || $u->isCompanyOwner() || $u->hasPermission('minimum_charge_rules.view'))
+                        @if($canMinCharge)
                         <li class="slide"><a href="{{ route('admin.minimum-charge-rules.index') }}" class="side-menu__item {{ $isActive('admin.minimum-charge-rules.*') }}">قواعد الحد الأدنى</a></li>
                         @endif
                     </ul>
                 </li>
-                @endcan
+                @endif
                 @endif
 
                 {{-- وحدات التوليد --}}
