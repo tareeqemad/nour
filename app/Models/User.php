@@ -285,8 +285,9 @@ class User extends Authenticatable
      */
     public function canLogin(): bool
     {
-        // عضو فريق بدون حساب مستخدم لا يمكنه الدخول
-        if (! $this->has_login_account) {
+        // عضو فريق بدون حساب مستخدم لا يمكنه الدخول.
+        // نتحقق صراحةً من false فقط، حتى لا يُقفل الدخول إن كان العمود غير موجود/قيمته null (fail-open).
+        if ($this->has_login_account === false) {
             return false;
         }
 
