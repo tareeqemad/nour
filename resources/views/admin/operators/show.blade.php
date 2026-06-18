@@ -27,6 +27,21 @@
         transform: translateY(-2px);
     }
 
+    a.stat-card {
+        color: inherit;
+        cursor: pointer;
+    }
+
+    a.stat-card:hover {
+        color: inherit;
+    }
+
+    .stat-card-hint {
+        font-size: 0.75rem;
+        color: #3b82f6;
+        margin-top: 0.25rem;
+    }
+
     .stat-icon {
         width: 56px;
         height: 56px;
@@ -94,6 +109,12 @@
 @endpush
 
 @section('content')
+    @php
+        $operationLogsParams = ['operator_id' => $operator->id];
+        if ($operator->generationUnits->count() === 1) {
+            $operationLogsParams['generation_unit_id'] = $operator->generationUnits->first()->id;
+        }
+    @endphp
     <div class="general-page">
         <div class="row g-3">
             {{-- Header Card with Summary --}}
@@ -127,48 +148,52 @@
                     <div class="card-body">
                         <div class="row g-3 mb-4">
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
+                                <a href="{{ route('admin.generation-units.index', ['operator_id' => $operator->id]) }}" target="_blank" rel="noopener" class="stat-card" title="عرض وحدات التوليد في تبويب جديد">
                                     <div class="stat-icon bg-primary">
                                         <i class="bi bi-building"></i>
                                     </div>
                                     <div class="stat-content">
                                         <div class="stat-label">وحدات التوليد</div>
                                         <div class="stat-value">{{ $operator->generation_units_count ?? 0 }}</div>
+                                        <div class="stat-card-hint">اضغط للعرض</div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
+                                <a href="{{ route('admin.generators.index', ['operator_id' => $operator->id]) }}" target="_blank" rel="noopener" class="stat-card" title="عرض المولدات في تبويب جديد">
                                     <div class="stat-icon bg-info">
                                         <i class="bi bi-lightning-charge"></i>
                                     </div>
                                     <div class="stat-content">
                                         <div class="stat-label">عدد المولدات</div>
                                         <div class="stat-value">{{ $operator->generators_count ?? 0 }}</div>
+                                        <div class="stat-card-hint">اضغط للعرض</div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
+                                <a href="{{ route('admin.operators.employees', $operator) }}" target="_blank" rel="noopener" class="stat-card" title="عرض الموظفين في تبويب جديد">
                                     <div class="stat-icon bg-success">
                                         <i class="bi bi-people"></i>
                                     </div>
                                     <div class="stat-content">
                                         <div class="stat-label">عدد الموظفين</div>
                                         <div class="stat-value">{{ $operator->users_count ?? 0 }}</div>
+                                        <div class="stat-card-hint">اضغط للعرض</div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card">
+                                <a href="{{ route('admin.operation-logs.index', $operationLogsParams) }}" target="_blank" rel="noopener" class="stat-card" title="عرض سجلات التشغيل في تبويب جديد">
                                     <div class="stat-icon bg-warning">
                                         <i class="bi bi-journal-text"></i>
                                     </div>
                                     <div class="stat-content">
                                         <div class="stat-label">سجلات التشغيل</div>
                                         <div class="stat-value">{{ $operator->operation_logs_count ?? 0 }}</div>
+                                        <div class="stat-card-hint">اضغط للعرض</div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                             <div class="col-md-3 col-sm-6">
                                 <div class="stat-card">
@@ -195,7 +220,6 @@
                     </x-admin.card-header-form>
                     <div class="card-body">
                         <div class="row g-3">
-                            {{-- Basic Information --}}
                             <div class="col-md-6">
                                 <div class="info-item">
                                     <label class="info-label">اسم المشغل</label>
@@ -204,8 +228,26 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="info-item">
-                                    <label class="info-label">البريد الإلكتروني</label>
-                                    <div class="info-value">{{ $operator->email ?? '—' }}</div>
+                                    <label class="info-label">رقم المشغل</label>
+                                    <div class="info-value">{{ $operator->unit_number ?? '—' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">رقم هوية المشغل</label>
+                                    <div class="info-value">{{ $operator->operator_id_number ?? '—' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">اسم المالك</label>
+                                    <div class="info-value">{{ $operator->owner_name ?? '—' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">رقم هوية المالك</label>
+                                    <div class="info-value">{{ $operator->owner_id_number ?? '—' }}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -214,74 +256,13 @@
                                     <div class="info-value">{{ $operator->phone ?? '—' }}</div>
                                 </div>
                             </div>
-                            @if($operator->phone_alt)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">رقم الهاتف البديل</label>
-                                        <div class="info-value">{{ $operator->phone_alt }}</div>
-                                    </div>
-                                </div>
-                            @endif
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <label class="info-label">اسم الوحدة</label>
-                                    <div class="info-value">{{ $operator->unit_name ?? '—' }}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <label class="info-label">رقم الوحدة</label>
-                                    <div class="info-value">{{ $operator->unit_number ?? '—' }}</div>
-                                </div>
-                            </div>
-                            @if($operator->unit_code)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">رمز الوحدة</label>
-                                        <div class="info-value">{{ $operator->unit_code }}</div>
-                                    </div>
-                                </div>
-                            @endif
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <label class="info-label">المحافظة</label>
-                                    <div class="info-value">{{ $operator->getGovernorateLabel() ?? '—' }}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="info-item">
-                                    <label class="info-label">المدينة</label>
-                                    <div class="info-value">{{ $operator->getCityName() ?? '—' }}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <div class="info-item">
-                                    <label class="info-label">العنوان التفصيلي</label>
-                                    <div class="info-value">{{ $operator->detailed_address ?? ($operator->address ?? '—') }}</div>
-                                </div>
-                            </div>
-                            @if($operator->latitude && $operator->longitude)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">خط العرض</label>
-                                        <div class="info-value">{{ $operator->latitude }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">خط الطول</label>
-                                        <div class="info-value">{{ $operator->longitude }}</div>
-                                    </div>
-                                </div>
-                            @endif
 
-                            {{-- Owner Information --}}
-                            <div class="col-12 mt-3">
-                                <h6 class="fw-bold text-muted mb-3">معلومات المالك</h6>
+                            <div class="col-12 mt-2">
+                                <h6 class="fw-bold text-muted mb-3">حساب المالك</h6>
                             </div>
                             <div class="col-md-6">
                                 <div class="info-item">
-                                    <label class="info-label">صاحب المشغل</label>
+                                    <label class="info-label">صاحب الحساب</label>
                                     <div class="info-value">
                                         @if($operator->owner)
                                             {{ $operator->owner->name }}
@@ -292,116 +273,44 @@
                                     </div>
                                 </div>
                             </div>
-                            @if($operator->owner_name)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">اسم المالك</label>
-                                        <div class="info-value">{{ $operator->owner_name }}</div>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">البريد الإلكتروني</label>
+                                    <div class="info-value">{{ $operator->owner?->email ?? '—' }}</div>
                                 </div>
-                            @endif
-                            @if($operator->owner_id_number)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">رقم هوية المالك</label>
-                                        <div class="info-value">{{ $operator->owner_id_number }}</div>
-                                    </div>
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <h6 class="fw-bold text-muted mb-3">الحالة والاعتماد</h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <label class="info-label">الحالة</label>
+                                    <div class="info-value">{{ $operator->status === 'active' ? 'فعال' : 'غير فعال' }}</div>
                                 </div>
-                            @endif
-                            @if($operator->operator_id_number)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">رقم هوية المشغل</label>
-                                        <div class="info-value">{{ $operator->operator_id_number }}</div>
-                                    </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <label class="info-label">الاعتماد</label>
+                                    <div class="info-value">{{ $operator->is_approved ? 'معتمد' : 'غير معتمد' }}</div>
                                 </div>
-                            @endif
-                            @if($operator->operation_entity)
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <label class="info-label">اكتمال الملف</label>
+                                    <div class="info-value">{{ $operator->isProfileComplete() ? 'مكتمل' : 'غير مكتمل' }}</div>
+                                </div>
+                            </div>
+                            @if($operator->territory_radius_km)
                                 <div class="col-md-6">
                                     <div class="info-item">
-                                        <label class="info-label">جهة التشغيل</label>
-                                        <div class="info-value">
-                                            {{ $operator->operation_entity === 'same_owner' ? 'نفس المالك' : 'طرف آخر' }}
-                                        </div>
+                                        <label class="info-label">نصف قطر المنطقة (كم)</label>
+                                        <div class="info-value">{{ number_format($operator->territory_radius_km, 2) }}</div>
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- Technical Information --}}
-                            @if($operator->total_capacity || $operator->generators_count || $operator->synchronization_available !== null)
-                                <div class="col-12 mt-3">
-                                    <h6 class="fw-bold text-muted mb-3">المعلومات الفنية</h6>
-                                </div>
-                                @if($operator->total_capacity)
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <label class="info-label">القدرة الإجمالية (KVA)</label>
-                                            <div class="info-value">{{ number_format($operator->total_capacity, 2) }}</div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if($operator->generators_count !== null)
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <label class="info-label">عدد المولدات المسموح</label>
-                                            <div class="info-value">{{ $operator->generators_count }}</div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if($operator->synchronization_available !== null)
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <label class="info-label">مزامنة المولدات</label>
-                                            <div class="info-value">
-                                                {{ $operator->synchronization_available ? 'متوفرة' : 'غير متوفرة' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if($operator->max_synchronization_capacity)
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <label class="info-label">قدرة المزامنة القصوى (KVA)</label>
-                                            <div class="info-value">{{ number_format($operator->max_synchronization_capacity, 2) }}</div>
-                                        </div>
-                                    </div>
-                                @endif
-                            @endif
-
-                            {{-- Beneficiaries Information --}}
-                            @if($operator->beneficiaries_count || $operator->beneficiaries_description)
-                                <div class="col-12 mt-3">
-                                    <h6 class="fw-bold text-muted mb-3">معلومات المستفيدين</h6>
-                                </div>
-                                @if($operator->beneficiaries_count)
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <label class="info-label">عدد المستفيدين</label>
-                                            <div class="info-value">{{ $operator->beneficiaries_count }}</div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if($operator->beneficiaries_description)
-                                    <div class="col-md-12">
-                                        <div class="info-item">
-                                            <label class="info-label">وصف المستفيدين</label>
-                                            <div class="info-value">{{ $operator->beneficiaries_description }}</div>
-                                        </div>
-                                    </div>
-                                @endif
-                            @endif
-
-                            @if($operator->environmental_compliance_status)
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <label class="info-label">حالة الامتثال البيئي</label>
-                                        <div class="info-value">{{ $operator->environmental_compliance_status }}</div>
-                                    </div>
-                                </div>
-                            @endif
-
-                            {{-- Dates --}}
-                            <div class="col-12 mt-3">
+                            <div class="col-12 mt-2">
                                 <h6 class="fw-bold text-muted mb-3">التواريخ</h6>
                             </div>
                             <div class="col-md-6">
@@ -416,6 +325,18 @@
                                     <div class="info-value">{{ $operator->updated_at->format('Y-m-d H:i') }}</div>
                                 </div>
                             </div>
+
+                            @if($operator->generationUnits->count() > 0)
+                                <div class="col-12 mt-3">
+                                    <h6 class="fw-bold text-muted mb-3">تفاصيل وحدات التوليد</h6>
+                                    <p class="text-muted small mb-3">
+                                        البيانات التفصيلية (الموقع، القدرات، المستفيدين...) مُخزّنة ضمن كل وحدة توليد.
+                                    </p>
+                                    @foreach($operator->generationUnits as $generationUnit)
+                                        @include('admin.operators.partials.generation-unit-info', ['generationUnit' => $generationUnit])
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </x-admin.card>
@@ -423,6 +344,44 @@
 
             {{-- Sidebar: Generation Units List --}}
             <div class="col-12 col-lg-4">
+                <x-admin.card class="mb-3">
+                    <x-admin.card-header-form title="مرفقات المشغل" icon="bi-paperclip">
+                        @if($operator->attachments_count > 0)
+                            <span class="badge bg-primary">{{ $operator->attachments_count }}</span>
+                        @endif
+                    </x-admin.card-header-form>
+                    <div class="card-body">
+                        @if($operator->attachments->isEmpty())
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                لا توجد مرفقات لهذا المشغل.
+                            </div>
+                        @else
+                            <div class="list-group list-group-flush">
+                                @foreach($operator->attachments as $attachment)
+                                    <div class="list-group-item px-0 d-flex align-items-center justify-content-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="fw-semibold">{{ $attachment->name }}</div>
+                                            <div class="small text-muted">
+                                                {{ $attachment->original_filename ?? '—' }}
+                                                <span class="mx-1">•</span>
+                                                {{ $attachment->size_for_humans }}
+                                            </div>
+                                            @if($attachment->uploader)
+                                                <div class="small text-muted">أضيف بواسطة: {{ $attachment->uploader->name }}</div>
+                                            @endif
+                                        </div>
+                                        <a href="{{ route('admin.operators.attachments.download', $attachment) }}" class="btn btn-sm btn-outline-primary flex-shrink-0">
+                                            <i class="bi bi-download me-1"></i>
+                                            تحميل
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </x-admin.card>
+
                 <x-admin.card>
                     <x-admin.card-header-form title="وحدات التوليد" icon="bi-lightning-charge">
                         @if($operator->generation_units_count > 0)
@@ -444,7 +403,13 @@
                                             <div class="flex-grow-1">
                                                 <div class="fw-semibold d-flex align-items-center gap-2">
                                                     <i class="bi bi-building"></i>
-                                                    {{ $unit->name }}
+                                                    @can('view', $unit)
+                                                        <a href="{{ route('admin.generation-units.show', $unit) }}" target="_blank" rel="noopener" class="text-decoration-none">
+                                                            {{ $unit->name }}
+                                                        </a>
+                                                    @else
+                                                        {{ $unit->name }}
+                                                    @endcan
                                                 </div>
                                                 @if($unit->unit_code)
                                                     <small class="text-muted">
@@ -477,14 +442,14 @@
                                                                 <small class="text-muted">{{ $generator->generator_number }}</small>
                                                             @endif
                                                         </div>
-                                                        <a href="{{ route('admin.generators.show', $generator) }}" class="btn btn-xs btn-outline-primary" title="عرض التفاصيل">
+                                                        <a href="{{ route('admin.generators.show', $generator) }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-primary" title="عرض التفاصيل">
                                                             <i class="bi bi-eye"></i>
                                                         </a>
                                                     </div>
                                                 @endforeach
                                                 @if($unit->generators()->count() > $unit->generators->count())
                                                     <div class="text-center mt-2">
-                                                        <a href="{{ route('admin.generators.index', ['generation_unit_id' => $unit->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                        <a href="{{ route('admin.generators.index', ['generation_unit_id' => $unit->id, 'operator_id' => $operator->id]) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
                                                             عرض جميع المولدات ({{ $unit->generators()->count() }})
                                                         </a>
                                                     </div>

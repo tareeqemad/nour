@@ -274,63 +274,6 @@
         </div>
     </div>
 
-    {{-- User Credentials Modal --}}
-    <div class="modal fade" id="userCredentialsModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-success">
-                        <i class="bi bi-check-circle-fill me-1"></i>
-                        بيانات الدخول للمستخدم الجديد
-                    </h5>
-                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body pt-2">
-                    <div class="alert alert-warning small mb-3">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        احفظ هذه البيانات الآن — لن تُعرض كلمة المرور مجدداً.
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold mb-1">
-                            <i class="bi bi-person me-1"></i> اسم المستخدم
-                        </label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="credUsername" readonly>
-                            <button type="button" class="btn btn-outline-secondary cred-copy-btn" data-target="credUsername" title="نسخ">
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold mb-1">
-                            <i class="bi bi-key me-1"></i> كلمة المرور
-                        </label>
-                        <div class="input-group">
-                            <input type="text" class="form-control font-monospace" id="credPassword" readonly>
-                            <button type="button" class="btn btn-outline-secondary cred-copy-btn" data-target="credPassword" title="نسخ">
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mb-1 d-none" id="credPhoneRow">
-                        <div class="alert alert-info small mb-0">
-                            <i class="bi bi-phone me-1"></i>
-                            تم إرسال البيانات على رقم الجوال: <strong id="credPhone"></strong>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
-                        <i class="bi bi-check-lg me-1"></i> تم
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- Suspend User Modal --}}
     <div class="modal fade" id="suspendUserModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -956,45 +899,6 @@
 
             // لا نبدأ select2 إلا عند الحاجة (عند اختيار دور "مشغل")
 
-            // ===== مودال بيانات الدخول للمستخدم الجديد
-            const credentialsModalEl = document.getElementById('userCredentialsModal');
-            const credentialsModal = credentialsModalEl ? new bootstrap.Modal(credentialsModalEl) : null;
-
-            function showCredentialsModal(resp){
-                if(!credentialsModal) return;
-                if(!resp || (!resp.username && !resp.password)) return;
-                $('#credUsername').val(resp.username || '');
-                $('#credPassword').val(resp.password || '');
-                if(resp.phone){
-                    $('#credPhone').text(resp.phone);
-                    $('#credPhoneRow').removeClass('d-none');
-                } else {
-                    $('#credPhoneRow').addClass('d-none');
-                }
-                credentialsModal.show();
-            }
-
-            // أزرار النسخ
-            $(document).on('click', '.cred-copy-btn', function(){
-                const targetId = $(this).data('target');
-                const $input = $('#' + targetId);
-                if(!$input.length) return;
-                const value = $input.val();
-                const $btn = $(this);
-                const finish = () => {
-                    const $icon = $btn.find('i');
-                    $icon.removeClass('bi-clipboard').addClass('bi-check-lg text-success');
-                    setTimeout(() => $icon.removeClass('bi-check-lg text-success').addClass('bi-clipboard'), 1500);
-                };
-                if(navigator.clipboard && window.isSecureContext){
-                    navigator.clipboard.writeText(value).then(finish).catch(() => {
-                        $input.select(); document.execCommand('copy'); finish();
-                    });
-                } else {
-                    $input.select(); document.execCommand('copy'); finish();
-                }
-            });
-
             // ===== Select2 templateResult لتمييز الأدوار النظامية عن المخصصة
             function roleTemplateResult(state) {
                 if (!state.id && state.id !== 0) return state.text;
@@ -1121,10 +1025,9 @@
                         dataType: 'json',
                         data: $createForm.serialize(),
                         success: function(resp){
-                            notify('success', 'تم إنشاء المستخدم بنجاح');
+                            notify('success', (resp && resp.message) ? resp.message : 'تم إنشاء المستخدم بنجاح');
                             if(createModal) createModal.hide();
                             loadUsers(1);
-                            showCredentialsModal(resp);
                         },
                         error: function(xhr){
                             if(xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors){

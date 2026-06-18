@@ -18,6 +18,12 @@
                 <div class="col-12">
                     <x-admin.card>
                         <x-admin.card-header title="إدارة المشغلين" icon="bi-building">
+                            <x-slot:actions>
+                                <a href="{{ route('admin.operators.export', request()->only(['name', 'status'])) }}" class="btn btn-success" id="btnOperatorsExport">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>
+                                    تصدير Excel
+                                </a>
+                            </x-slot:actions>
                         </x-admin.card-header>
 
                         <div class="card-body pb-4">
@@ -260,6 +266,7 @@
     if (!canUseOperatorFilters) return;
 
     const listUrl = @json(route('admin.operators.index'));
+    const exportUrl = @json(route('admin.operators.export'));
     const modalEl = document.getElementById('operatorModal');
     const modal = new bootstrap.Modal(modalEl);
     const deleteModalEl = document.getElementById('operatorDeleteModal');
@@ -290,7 +297,21 @@
         }, extra);
     }
 
+    function syncExportLink() {
+        const url = new URL(exportUrl, window.location.origin);
+        const params = currentParams();
+
+        Object.keys(params).forEach(function (key) {
+            if (params[key]) {
+                url.searchParams.set(key, params[key]);
+            }
+        });
+
+        $('#btnOperatorsExport').attr('href', url.toString());
+    }
+
     function loadList(extra = {}) {
+        syncExportLink();
         setLoading(true);
         $.ajax({
             url: listUrl,
@@ -601,10 +622,12 @@
     // Update clear button visibility on input change
     $('#opNameFilter').on('input', toggleClearBtn);
     $('#opStatus').on('change', toggleClearBtn);
+    $('#opNameFilter, #opStatus').on('input change', syncExportLink);
 
     // initial
     wireListEvents();
     toggleClearBtn();
+    syncExportLink();
 
 })();
 </script>

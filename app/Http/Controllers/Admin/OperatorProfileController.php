@@ -7,9 +7,11 @@ use App\Helpers\ConstantsHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOperatorProfileRequest;
 use App\Models\GenerationUnit;
+use App\Models\OperatorAttachment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class OperatorProfileController extends Controller
@@ -44,6 +46,8 @@ class OperatorProfileController extends Controller
         }
 
         // جلب وحدات التوليد للمشغل
+        $operator->load(['attachments.uploader']);
+
         $generationUnits = $operator->generationUnits()
             ->with('statusDetail')
             ->withCount('generators as actual_generators_count')
@@ -121,5 +125,68 @@ class OperatorProfileController extends Controller
         }
 
         return redirect()->route('admin.operators.profile')->with('success', $msg);
+    }
+
+    public function storeAttachment(Request $request): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (! $user->isCompanyOwner()) {
+            abort(403);
+        }
+
+        $operator = $user->ownedOperators()->firstOrFail();
+
+        $validated = $request->validate([
+            'attachment_name' => ['required', 'string', 'max:255'],
+            'attachment_file' => ['required', 'file', 'max:20480'],
+        ], [
+            'attachment_name.required' => 'اسم المرفق مطلوب.',
+            'attachment_file.required' => 'ملف المرفق مطلوب.',
+            'attachment_file.max' => 'حجم الملف يجب أن لا يتجاوز 20MB.',
+        ]);
+
+        $file = $validated['attachment_file'];
+        $path = $file->store('operator-attachments/' . $operator->id, 'public');
+
+        $operator->attachments()->create([
+            'uploaded_by' => $user->id,
+            'name' => $validated['attachment_name'],
+            'file_path' => $path,
+            'original_filename' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        return redirect()->route('admin.operators.profile')
+            ->with('success', 'تمت إضافة المرفق بنجاح.');
+    }
+
+    public function downloadAttachment(OperatorAttachment $attachment)
+    {
+        $this->authorize('view', $attachment->operator);
+
+        if (! Storage::disk('public')->exists($attachment->file_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->download(
+            $attachment->file_path,
+            $attachment->original_filename ?: $attachment->name
+        );
+    }
+
+    public function destroyAttachment(OperatorAttachment $attachment): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (! $user->isCompanyOwner() || ! $user->ownsOperator($attachment->operator)) {
+            abort(403);
+        }
+
+        $attachment->delete();
+
+        return redirect()->route('admin.operators.profile')
+            ->with('success', 'تم حذف المرفق بنجاح.');
     }
 }

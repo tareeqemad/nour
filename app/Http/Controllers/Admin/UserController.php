@@ -1017,20 +1017,6 @@ class UserController extends Controller
             );
         }
 
-        // Return message with login credentials (always auto-generated now)
-        $message = "تم إنشاء المستخدم بنجاح ✅\n";
-        $message .= "اسم المستخدم: {$username}\n";
-        $message .= "كلمة المرور: {$plainPassword}";
-        if ($user->phone) {
-            $message .= "\n(تم إرسالها على رقم الجوال)";
-        }
-
-        return $this->jsonOrRedirect($request, true, $message, [
-            'username' => $username,
-            'password' => $plainPassword,
-            'phone' => $user->phone,
-        ]);
-
         return $this->jsonOrRedirect($request, true, 'تم إنشاء المستخدم بنجاح.');
     }
 

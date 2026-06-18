@@ -149,6 +149,9 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::get('operators/profile', [OperatorProfileController::class, 'show'])->name('operators.profile');
     Route::get('operators/{operator}/profile', [OperatorProfileController::class, 'show'])->name('operators.profile.show');
     Route::put('operators/profile', [OperatorProfileController::class, 'update'])->name('operators.profile.update');
+    Route::post('operators/profile/attachments', [OperatorProfileController::class, 'storeAttachment'])->name('operators.profile.attachments.store');
+    Route::get('operators/attachments/{attachment}/download', [OperatorProfileController::class, 'downloadAttachment'])->name('operators.attachments.download');
+    Route::delete('operators/attachments/{attachment}', [OperatorProfileController::class, 'destroyAttachment'])->name('operators.attachments.destroy');
 
     Route::get('operators/next-unit-number/{governorate}', [OperatorUnitNumberController::class, 'getNextUnitNumber'])->name('operators.next-unit-number');
     Route::post('operators/generate-unit-code', [OperatorUnitNumberController::class, 'generateUnitCode'])->name('operators.generate-unit-code');
@@ -160,6 +163,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     /**
      * Operators
      */
+    Route::get('operators/export', [OperatorController::class, 'export'])->name('operators.export');
     Route::post('operators/{operator}/toggle-status', [OperatorController::class, 'toggleStatus'])->name('operators.toggle-status');
     Route::post('operators/{operator}/toggle-approval', [OperatorController::class, 'toggleApproval'])->name('operators.toggle-approval');
     Route::get('operators/pending-approval', [OperatorController::class, 'pendingApproval'])->name('operators.pending-approval');

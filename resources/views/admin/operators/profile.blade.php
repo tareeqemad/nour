@@ -137,6 +137,91 @@
             </div>
         </div>
 
+        @if($operator)
+            <div class="col-12">
+                <x-admin.card>
+                    <x-admin.card-header title="مرفقات المشغل" icon="bi-paperclip">
+                    </x-admin.card-header>
+                    <div class="card-body">
+                        @if(auth()->user()->isCompanyOwner())
+                            <form action="{{ route('admin.operators.profile.attachments.store') }}" method="POST" enctype="multipart/form-data" class="row g-3 align-items-end mb-4">
+                                @csrf
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold">اسم المرفق <span class="text-danger">*</span></label>
+                                    <input type="text" name="attachment_name" class="form-control @error('attachment_name') is-invalid @enderror" value="{{ old('attachment_name') }}" required>
+                                    @error('attachment_name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold">إضافة المرفق <span class="text-danger">*</span></label>
+                                    <input type="file" name="attachment_file" class="form-control @error('attachment_file') is-invalid @enderror" required>
+                                    @error('attachment_file')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-upload me-1"></i>
+                                        إضافة
+                                    </button>
+                                </div>
+                            </form>
+                        @endif
+
+                        @if($operator->attachments->isEmpty())
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox d-block mb-2" style="font-size: 2.5rem; color: #cbd5e1;"></i>
+                                لا توجد مرفقات لهذا المشغل.
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>اسم المرفق</th>
+                                            <th>اسم الملف</th>
+                                            <th>الحجم</th>
+                                            <th>تاريخ الإضافة</th>
+                                            <th class="text-end">الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($operator->attachments as $attachment)
+                                            <tr>
+                                                <td class="fw-semibold">{{ $attachment->name }}</td>
+                                                <td>{{ $attachment->original_filename ?? '—' }}</td>
+                                                <td>{{ $attachment->size_for_humans }}</td>
+                                                <td>{{ $attachment->created_at?->format('Y-m-d H:i') }}</td>
+                                                <td class="text-end">
+                                                    <div class="d-flex justify-content-end gap-2">
+                                                        <a href="{{ route('admin.operators.attachments.download', $attachment) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-download me-1"></i>
+                                                            تحميل
+                                                        </a>
+                                                        @if(auth()->user()->isCompanyOwner())
+                                                            <form action="{{ route('admin.operators.attachments.destroy', $attachment) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذا المرفق؟');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                    <i class="bi bi-trash me-1"></i>
+                                                                    حذف
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </x-admin.card>
+            </div>
+        @endif
+
         {{-- Divider between sections --}}
         <div class="col-12">
             <div class="section-divider-container">
@@ -491,4 +576,3 @@
 
 </script>
 @endpush
-

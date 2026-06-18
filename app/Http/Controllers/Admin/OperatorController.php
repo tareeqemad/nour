@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\OperatorsExport;
+use App\Helpers\GeneralHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOperatorRequest;
 use App\Models\Notification;
@@ -17,6 +19,49 @@ use Illuminate\View\View;
 
 class OperatorController extends Controller
 {
+    private function buildFilteredQuery(Request $request)
+    {
+        $authUser = $request->user();
+
+        $operatorsQuery = Operator::query()
+            ->with('owner')
+            ->withCount([
+                'generationUnits',
+                'generators',
+                'attachments',
+                'users as employees_count' => function ($q) {
+                    $q->whereIn('role', [Role::Employee, Role::Technician]);
+                },
+            ]);
+
+        if ($authUser->isCompanyOwner()) {
+            $operatorsQuery->where('owner_id', $authUser->id);
+        } elseif ($authUser->isEmployee() || $authUser->isTechnician()) {
+            $operatorIds = $authUser->operators()->pluck('operators.id');
+            $operatorsQuery->whereIn('id', $operatorIds);
+        }
+
+        if ($request->filled('name')) {
+            $name = trim((string) $request->get('name'));
+            $operatorsQuery->where(function ($sub) use ($name) {
+                $sub->where('name', 'like', "%{$name}%")
+                    ->orWhere('unit_number', 'like', "%{$name}%")
+                    ->orWhereHas('owner', function ($oq) use ($name) {
+                        $oq->where('name', 'like', "%{$name}%")
+                           ->orWhere('username', 'like', "%{$name}%")
+                           ->orWhere('email', 'like', "%{$name}%")
+                           ->orWhere('phone', 'like', "%{$name}%");
+                    });
+            });
+        }
+
+        if ($request->filled('status') && in_array($request->get('status'), ['active', 'inactive'], true)) {
+            $operatorsQuery->where('status', $request->get('status'));
+        }
+
+        return $operatorsQuery;
+    }
+
     /**
      * عرض المشغلين الذين يحتاجون إلى اعتماد (للسلطة الطاقة فقط)
      */
@@ -90,45 +135,7 @@ class OperatorController extends Controller
 
         $authUser = $request->user();
 
-        $operatorsQuery = Operator::query()
-            ->with('owner')
-            ->withCount([
-                'generationUnits',
-                'users as employees_count' => function ($q) {
-                    // غالبًا جدول pivot operator_user فيه فقط موظفين/فنيين
-                    // ومع ذلك نخليه فلترة احتياطية حسب enum القديم
-                    $q->whereIn('role', [Role::Employee, Role::Technician]);
-                },
-            ]);
-
-        // Scope حسب الدور
-        if ($authUser->isCompanyOwner()) {
-            $operatorsQuery->where('owner_id', $authUser->id);
-        } elseif ($authUser->isEmployee() || $authUser->isTechnician()) {
-            $operatorIds = $authUser->operators()->pluck('operators.id');
-            $operatorsQuery->whereIn('id', $operatorIds);
-        }
-
-        // Search by name
-        if ($request->filled('name')) {
-            $name = trim((string) $request->get('name'));
-            $operatorsQuery->where(function ($sub) use ($name) {
-                $sub->where('name', 'like', "%{$name}%")
-                    ->orWhere('unit_name', 'like', "%{$name}%")
-                    ->orWhere('email', 'like', "%{$name}%")
-                    ->orWhereHas('owner', function ($oq) use ($name) {
-                        $oq->where('name', 'like', "%{$name}%")
-                           ->orWhere('username', 'like', "%{$name}%")
-                           ->orWhere('email', 'like', "%{$name}%")
-                           ->orWhere('phone', 'like', "%{$name}%");
-                    });
-            });
-        }
-
-        // Status filter (active/inactive)
-        if ($request->filled('status') && in_array($request->get('status'), ['active', 'inactive'], true)) {
-            $operatorsQuery->where('status', $request->get('status'));
-        }
+        $operatorsQuery = $this->buildFilteredQuery($request);
 
         $operators = $operatorsQuery
             ->latest()
@@ -155,6 +162,17 @@ class OperatorController extends Controller
             'status' => $request->get('status', ''),
             'myOperator' => $myOperator,
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        $this->authorize('viewAny', Operator::class);
+
+        $operators = $this->buildFilteredQuery($request)
+            ->latest()
+            ->get();
+
+        return (new OperatorsExport($operators))->download();
     }
 
     /**
@@ -376,10 +394,16 @@ class OperatorController extends Controller
         $operator->load([
             'owner',
             'generationUnits.statusDetail',
+            'generationUnits.governorateDetail',
+            'generationUnits.cityDetail',
+            'generationUnits.operationEntityDetail',
+            'generationUnits.synchronizationAvailableDetail',
+            'generationUnits.environmentalComplianceStatusDetail',
             'generationUnits.generators' => function ($q) {
                 $q->latest()->take(5);
             },
             'users',
+            'attachments.uploader',
             'operationLogs' => function ($q) {
                 $q->latest()->take(5);
             },
@@ -390,6 +414,7 @@ class OperatorController extends Controller
             'generators',
             'users',
             'operationLogs',
+            'attachments',
         ]);
 
         return view('admin.operators.show', compact('operator'));

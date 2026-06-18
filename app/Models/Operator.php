@@ -112,6 +112,11 @@ class Operator extends Model
         return $this->hasMany(OperationLog::class);
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(OperatorAttachment::class);
+    }
+
     public function complianceSafeties(): HasMany
     {
         return $this->hasMany(ComplianceSafety::class);
