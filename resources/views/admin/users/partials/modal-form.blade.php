@@ -269,12 +269,15 @@ document.addEventListener('DOMContentLoaded', function() {
             companyOwnerWarning.style.display = isCompanyOwnerRole ? '' : 'none';
         }
 
-        // إظهار/إخفاء حقل المشغل (للسوبر أدمن وسلطة الطاقة عند إضافة CompanyOwner)
+        // إظهار حقل المشغل: للسوبر أدمن/سلطة الطاقة عند إضافة CompanyOwner (إلزامي)،
+        // أو عند اختيار دور مخصص عام (اختياري — لربط المستخدم بمشغل إن رغب)
         if (operatorField) {
-            const shouldShowOperatorField = isCompanyOwnerRole && (authUserIsSuperAdmin || {{ $authUser->isEnergyAuthority() ? 'true' : 'false' }});
-            operatorField.style.display = shouldShowOperatorField ? '' : 'none';
+            const isPrivileged = authUserIsSuperAdmin || {{ $authUser->isEnergyAuthority() ? 'true' : 'false' }};
+            const showForOwner = isCompanyOwnerRole && isPrivileged;
+            const showForCustom = isCustomRoleOpt && isPrivileged;
+            operatorField.style.display = (showForOwner || showForCustom) ? '' : 'none';
             if (operatorSelect) {
-                operatorSelect.required = shouldShowOperatorField;
+                operatorSelect.required = showForOwner; // إلزامي للمشغّل فقط، اختياري للدور العام
             }
         }
     }

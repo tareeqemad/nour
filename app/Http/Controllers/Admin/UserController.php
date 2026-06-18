@@ -171,8 +171,12 @@ class UserController extends Controller
             // لا أدوار نظامية للمشغل - فقط الأدوار المخصصة
             $systemRoles = collect();
         } elseif ($user->isSuperAdmin()) {
-            // السوبر أدمن: يرى الأدوار النظامية فقط (بدون الأدوار المخصصة)
-            $customRoles = collect(); // لا أدوار مخصصة للسوبر أدمن
+            // السوبر أدمن: الأدوار النظامية + الأدوار العامة (operator_id = null) لإسنادها لأي مستخدم
+            $customRoles = \App\Models\Role::where('is_system', false)
+                ->whereNull('operator_id')
+                ->orderBy('order')
+                ->orderBy('name')
+                ->get();
         } elseif ($user->isAdmin()) {
             // الأدمن: يرى جميع الأدوار النظامية ما عدا SuperAdmin وحسابات عامة
             $systemRoles = $systemRoles->filter(fn($role) => !in_array($role->name, ['super_admin', 'general_accountant'], true));
@@ -804,14 +808,14 @@ class UserController extends Controller
                     return $this->jsonOrRedirect($request, false, 'لا يوجد مشغل مرتبط بحسابك. أكمل ملف المشغل أولاً.');
                 }
             } else {
-                // Energy Authority or SuperAdmin creating user with custom role: need to select operator
+                // Energy Authority / SuperAdmin مع دور عام (operator_id = null): المشغل اختياري
+                // إن حُدِّد مشغل نربط المستخدم به، وإلا يبقى الدور عاماً دون ربط مشغل
                 $operatorId = (int) $request->input('operator_id');
-                if (! $operatorId) {
-                    return $this->jsonOrRedirect($request, false, 'اختر المشغل لربط المستخدم.');
-                }
-                $operator = Operator::find($operatorId);
-                if (! $operator) {
-                    return $this->jsonOrRedirect($request, false, 'المشغل المحدد غير موجود.');
+                if ($operatorId) {
+                    $operator = Operator::find($operatorId);
+                    if (! $operator) {
+                        return $this->jsonOrRedirect($request, false, 'المشغل المحدد غير موجود.');
+                    }
                 }
             }
         }

@@ -57,6 +57,15 @@ class StoreUserRequest extends FormRequest
             ];
         }
 
+        // ✅ السوبر أدمن: يُسمح له بإسناد الأدوار المخصصة العامة (operator_id = null) إضافةً للأدوار النظامية
+        if ($actor && $actor->isSuperAdmin()) {
+            $generalCustomNames = \App\Models\Role::where('is_system', false)
+                ->whereNull('operator_id')
+                ->pluck('name')
+                ->all();
+            $allowedRoles = array_values(array_unique(array_merge($allowedRoles, $generalCustomNames)));
+        }
+
         $role = (string) $this->input('role');
 
         // تحديد ما إذا كان operator_id مطلوب (لـ CompanyOwner فقط)

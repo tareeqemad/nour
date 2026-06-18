@@ -44,6 +44,14 @@ class UpdateUserRequest extends FormRequest
             }
         }
 
+        // ✅ السوبر أدمن: يُسمح له بالأدوار المخصصة العامة (operator_id = null) إضافةً للنظامية
+        if ($actor && $actor->isSuperAdmin()) {
+            $allowedRoles = array_values(array_unique(array_merge(
+                $allowedRoles,
+                \App\Models\Role::where('is_system', false)->whereNull('operator_id')->pluck('name')->all()
+            )));
+        }
+
         $role = (string) $this->input('role');
         $needOperator = ($actor && $actor->isSuperAdmin())
             && in_array($role, [Role::Employee->value, Role::Technician->value], true);
