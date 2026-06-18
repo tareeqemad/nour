@@ -22,7 +22,15 @@ class InvoiceReportController extends Controller
         if (! $canSelectOperator) {
             $scopedOperatorIds = $user->getScopedOperatorIds();
             if (empty($scopedOperatorIds)) {
-                $scopedOperatorIds = [-1]; // مستخدم غير مرتبط بأي مشغل: لا يرى شيء
+                // مستخدم غير مرتبط بأي مشغل:
+                // - يملك صلاحية التقارير (مراقب عام) → يرى تقارير كل المشغلين مع إمكانية الفلترة
+                // - غير ذلك → لا يرى شيء
+                if ($user->hasPermission('invoice_reports.view')) {
+                    $canSelectOperator = true;
+                    $scopedOperatorIds = [];
+                } else {
+                    $scopedOperatorIds = [-1];
+                }
             }
         }
 
