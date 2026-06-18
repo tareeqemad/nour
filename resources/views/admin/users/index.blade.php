@@ -421,9 +421,13 @@
             }
 
             function roleBadge(roleKey, roleLabelFromServer){
-                const meta = ROLE_META[roleKey] || {label: roleLabelFromServer || roleKey, badge: ''};
-                const label = meta.label || roleLabelFromServer || roleKey;
-                const cls = meta.badge ? meta.badge : 'badge-soft';
+                const meta = ROLE_META[roleKey] || {};
+                // عنوان الدور القادم من السيرفر (role_name) هو المصدر الموثوق:
+                // يعالج الأدوار المخصصة التي تُخزَّن بعمود role = employee احتياطياً
+                const label = roleLabelFromServer || meta.label || roleKey;
+                // دور مخصص = العنوان من السيرفر يختلف عن عنوان الدور النظامي
+                const isCustom = roleLabelFromServer && meta.label && roleLabelFromServer !== meta.label;
+                const cls = isCustom ? 'badge-role-custom' : (meta.badge ? meta.badge : 'badge-soft');
                 return `<span class="badge-soft ${escapeHtml(cls)}">${escapeHtml(label)}</span>`;
             }
 

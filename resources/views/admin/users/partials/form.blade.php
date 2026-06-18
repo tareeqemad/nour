@@ -13,10 +13,13 @@
         \App\Enums\Role::CivilDefense->value    => ['label' => 'دفاع مدني',     'badge' => 'secondary','icon' => 'bi-shield-shaded'],
     ];
 
+    $customRoles = $customRoles ?? collect();
+
     $selectedRole = old('role');
     if ($selectedRole === null) {
         if (!$isCreate && isset($user)) {
-            $selectedRole = $user->role?->value;
+            // لصاحب دور مخصص: استخدم اسم الدور المخصص (وإلا قيمة الـ enum النظامية)
+            $selectedRole = $user->roleModel?->name ?? $user->role?->value;
         } elseif (!empty($defaultRole)) {
             $selectedRole = $defaultRole;
         }
@@ -98,6 +101,15 @@
                         {{ $meta['label'] }}
                     </option>
                 @endforeach
+                @if($customRoles->isNotEmpty())
+                    <optgroup label="الأدوار المخصصة">
+                        @foreach($customRoles as $cr)
+                            <option value="{{ $cr->name }}" {{ (string)old('role', $selectedRole) === (string)$cr->name ? 'selected' : '' }}>
+                                {{ $cr->label }}
+                            </option>
+                        @endforeach
+                    </optgroup>
+                @endif
             </select>
             @if($roleDisabled)
                 <input type="hidden" name="role" value="{{ \App\Enums\Role::CompanyOwner->value }}">

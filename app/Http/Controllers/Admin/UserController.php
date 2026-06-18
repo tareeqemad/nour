@@ -624,7 +624,7 @@ class UserController extends Controller
             ]);
         }
 
-        return view('admin.users.edit', compact('user', 'roles', 'operators', 'operatorLocked', 'userOperators'));
+        return view('admin.users.edit', compact('user', 'roles', 'customRoles', 'operators', 'operatorLocked', 'userOperators'));
     }
 
     public function show(User $user): View
@@ -1176,23 +1176,21 @@ class UserController extends Controller
             $newRole = Role::from($roleValue);
             $roleModel = \App\Models\Role::findByName($newRole->value);
         } else {
-            // Custom role: get role_id from request
+            // Custom role: استخدم role_id إن وُجد، وإلا ابحث بالاسم (مثل شاشة الإنشاء)
             $roleId = (int) $request->input('role_id');
-            if ($roleId) {
-                $roleModel = \App\Models\Role::find($roleId);
-                if (! $roleModel || $roleModel->is_system) {
-                    return $this->jsonOrRedirect($request, false, 'الدور المحدد غير موجود أو غير صالح.');
-                }
-                // For custom roles, we still need a Role enum value for backward compatibility
-                // Use the role name as the enum value
-                try {
-                    $newRole = Role::from($roleModel->name);
-                } catch (\ValueError $e) {
-                    // Custom role name doesn't match enum, use a fallback
-                    $newRole = Role::CompanyOwner; // Fallback
-                }
-            } else {
-                return $this->jsonOrRedirect($request, false, 'يجب تحديد الدور.');
+            $roleModel = $roleId
+                ? \App\Models\Role::find($roleId)
+                : \App\Models\Role::where('name', $roleValue)->where('is_system', false)->first();
+
+            if (! $roleModel || $roleModel->is_system) {
+                return $this->jsonOrRedirect($request, false, 'الدور المحدد غير موجود أو غير صالح.');
+            }
+
+            // قيمة enum احتياطية لعمود role (Employee مثل شاشة الإنشاء)
+            try {
+                $newRole = Role::from($roleModel->name);
+            } catch (\ValueError $e) {
+                $newRole = Role::Employee;
             }
         }
 
