@@ -71,10 +71,8 @@ class PaymentController extends Controller
                 $invoice = Invoice::lockForUpdate()->find($invoice->id);
                 $remaining = $invoice->remainingAmount();
 
-                // Validate payment doesn't grossly exceed remaining
-                if ($amountPaid > $remaining * 2 && $remaining > 0) {
-                    throw new \RuntimeException('مبلغ الدفعة يتجاوز الحد المسموح.');
-                }
+                // لا يوجد حد أقصى لمبلغ الدفعة — يُسمح بأي قيمة حتى لو تجاوزت المتبقي
+                // (الزيادة تُسجَّل كرصيد دائن وتُوزَّع FIFO على الفواتير القادمة)
 
                 // احسب الزيادة إن وُجدت
                 $overpayment = max($amountPaid - $remaining, 0);
