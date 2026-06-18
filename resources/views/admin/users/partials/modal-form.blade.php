@@ -127,15 +127,40 @@
             </div>
         </div>
 
+        {{-- خيار: عضو فريق بدون حساب مستخدم (يظهر للأدوار الميدانية فقط) --}}
+        <div class="col-12" id="noLoginField" style="display: none;">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="no_login_account" value="1" id="noLoginAccount"
+                       {{ old('no_login_account') ? 'checked' : '' }}>
+                <label class="form-check-label fw-semibold" for="noLoginAccount">
+                    عضو فريق بدون حساب مستخدم
+                </label>
+            </div>
+            <div class="help small text-muted mt-1">
+                <i class="bi bi-info-circle me-1"></i>
+                يُضاف ضمن الفريق فقط (للاستفادة منه في المهام والتقارير) — بدون حساب دخول ولا رسالة SMS، ورقم الجوال اختياري.
+            </div>
+        </div>
+
+        {{-- المسمى الوظيفي (يظهر عند تفعيل "بدون حساب") --}}
+        <div class="col-12" id="jobTitleField" style="display: none;">
+            <label class="form-label fw-semibold">
+                <i class="bi bi-person-vcard me-1"></i>
+                المسمى الوظيفي
+            </label>
+            <input name="job_title" class="form-control" value="{{ old('job_title', $user->job_title ?? '') }}" placeholder="فني، مشرف، مراقب، عامل...">
+            <div class="text-danger small mt-1 d-none" data-error-for="job_title"></div>
+        </div>
+
         {{-- رقم الجوال --}}
         <div class="col-12" id="phoneField" style="display: none;">
             <label class="form-label fw-semibold">
                 <i class="bi bi-phone me-1"></i>
-                رقم الجوال <span class="text-danger">*</span>
+                رقم الجوال <span class="text-danger" id="phoneRequiredStar">*</span>
             </label>
             <input name="phone" class="form-control" value="{{ old('phone', $user->phone ?? '') }}" placeholder="059xxxxxxx أو 056xxxxxxx" maxlength="10" required>
             <div class="text-danger small mt-1 d-none" data-error-for="phone"></div>
-            <div class="help small text-muted mt-1">
+            <div class="help small text-muted mt-1" id="phoneHelp">
                 <i class="bi bi-info-circle me-1"></i>
                 سيتم توليد اسم المستخدم وكلمة المرور تلقائياً وإرسالهما عبر SMS إلى هذا الرقم
             </div>
@@ -187,9 +212,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const operatorField = document.getElementById('operatorField');
     const companyOwnerWarning = document.getElementById('companyOwnerWarning');
     const operatorSelect = document.getElementById('operatorSelect');
-    
+    const noLoginField = document.getElementById('noLoginField');
+    const noLoginAccount = document.getElementById('noLoginAccount');
+    const jobTitleField = document.getElementById('jobTitleField');
+    const phoneInput = phoneField ? phoneField.querySelector('input[name="phone"]') : null;
+    const phoneRequiredStar = document.getElementById('phoneRequiredStar');
+    const phoneHelp = document.getElementById('phoneHelp');
+
     const authUserIsSuperAdmin = {{ $authUser->isSuperAdmin() ? 'true' : 'false' }};
     const isCreate = {{ $isCreate ? 'true' : 'false' }};
+
+    // حالة "عضو فريق بدون حساب": يُخفي/يُظهر المسمى الوظيفي ويجعل الجوال اختيارياً
+    function updateNoLoginState() {
+        const noLogin = noLoginField && noLoginField.style.display !== 'none'
+                        && noLoginAccount && noLoginAccount.checked;
+
+        if (jobTitleField) jobTitleField.style.display = noLogin ? '' : 'none';
+        if (phoneInput) phoneInput.required = !noLogin;
+        if (phoneRequiredStar) phoneRequiredStar.style.display = noLogin ? 'none' : '';
+        if (phoneHelp) phoneHelp.style.display = noLogin ? 'none' : '';
+    }
 
     function updateFormFields() {
         const selectedRole = roleSelect ? roleSelect.value : '';
@@ -202,6 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (phoneField) phoneField.style.display = 'none';
             if (operatorField) operatorField.style.display = 'none';
             if (companyOwnerWarning) companyOwnerWarning.style.display = 'none';
+            if (noLoginField) noLoginField.style.display = 'none';
+            if (jobTitleField) jobTitleField.style.display = 'none';
+            if (noLoginAccount) noLoginAccount.checked = false;
+            updateNoLoginState();
             return;
         }
 
@@ -209,6 +255,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (nameField) nameField.style.display = '';
         if (nameEnField) nameEnField.style.display = '';
         if (phoneField) phoneField.style.display = '';
+
+        // خيار "بدون حساب" يظهر للأدوار الميدانية فقط (موظف/فني/دور مخصص)
+        const selOpt = roleSelect.options[roleSelect.selectedIndex];
+        const isCustomRoleOpt = selOpt ? selOpt.getAttribute('data-is-custom') === '1' : false;
+        const isFieldRole = isCustomRoleOpt || selectedRole === 'employee' || selectedRole === 'technician';
+        if (noLoginField) noLoginField.style.display = isFieldRole ? '' : 'none';
+        if (!isFieldRole && noLoginAccount) noLoginAccount.checked = false;
+        updateNoLoginState();
 
         // إظهار/إخفاء تحذير المشغل
         if (companyOwnerWarning) {
@@ -223,6 +277,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 operatorSelect.required = shouldShowOperatorField;
             }
         }
+    }
+
+    if (noLoginAccount) {
+        noLoginAccount.addEventListener('change', updateNoLoginState);
     }
 
     if (roleSelect) {

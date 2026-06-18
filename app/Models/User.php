@@ -194,6 +194,8 @@ class User extends Authenticatable
         'email',
         'username', // اسم المستخدم للدخول - مثل: "sp_ahmad" أو "ad_mohammed"
         'password',
+        'has_login_account', // هل للعضو حساب دخول (false = عضو فريق بدون حساب)
+        'job_title', // المسمى الوظيفي (فني، مشرف، مراقب، عامل...)
         'phone', // رقم جوال المستخدم
         'role',
         'role_id',
@@ -215,6 +217,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'has_login_account' => 'boolean',
             'role' => Role::class,
             'suspended_at' => 'datetime',
             'last_activity' => 'datetime',
@@ -282,6 +285,11 @@ class User extends Authenticatable
      */
     public function canLogin(): bool
     {
+        // عضو فريق بدون حساب مستخدم لا يمكنه الدخول
+        if (! $this->has_login_account) {
+            return false;
+        }
+
         // System user (platform_rased) cannot login
         if ($this->isSystemUser()) {
             return false;

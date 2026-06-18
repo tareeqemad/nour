@@ -58,16 +58,21 @@ class StoreUserRequest extends FormRequest
         }
 
         $role = (string) $this->input('role');
-        
+
         // تحديد ما إذا كان operator_id مطلوب (لـ CompanyOwner فقط)
         $needOperatorForCompanyOwner = $actor && $actor->isSuperAdmin()
             && $role === Role::CompanyOwner->value;
 
+        // عضو فريق بدون حساب مستخدم → رقم الجوال اختياري ولا تُولّد بيانات دخول
+        $noLogin = $this->boolean('no_login_account');
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'name_en' => ['required', 'string', 'max:255'],
+            'no_login_account' => ['nullable', 'boolean'],
+            'job_title' => ['nullable', 'string', 'max:100'],
             'phone' => [
-                'required',
+                $noLogin ? 'nullable' : 'required',
                 'string',
                 'max:20',
                 'regex:/^0(59|56)\d{7}$/',
@@ -105,9 +110,10 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'name' => is_string($this->name) ? trim($this->name) : $this->name,
             'name_en' => is_string($this->name_en) ? trim($this->name_en) : $this->name_en,
-            'phone' => is_string($this->phone) ? preg_replace('/[^0-9]/', '', trim($this->phone)) : $this->phone,
+            'phone' => is_string($this->phone) ? (preg_replace('/[^0-9]/', '', trim($this->phone)) ?: null) : $this->phone,
             'username' => is_string($this->username) ? trim($this->username) : $this->username,
             'email' => is_string($this->email) ? trim($this->email) : $this->email,
+            'job_title' => is_string($this->job_title) ? trim($this->job_title) : $this->job_title,
         ]);
     }
 }

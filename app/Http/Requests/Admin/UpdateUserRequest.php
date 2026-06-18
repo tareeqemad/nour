@@ -48,13 +48,17 @@ class UpdateUserRequest extends FormRequest
         $needOperator = ($actor && $actor->isSuperAdmin())
             && in_array($role, [Role::Employee->value, Role::Technician->value], true);
 
+        // عضو فريق بدون حساب مستخدم → الجوال/اسم المستخدم/الإيميل اختيارية
+        $isNoLogin = $user && ! $user->has_login_account;
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'name_en' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:10', 'regex:/^(059|056)\d{7}$/'],
+            'job_title' => ['nullable', 'string', 'max:100'],
+            'phone' => [$isNoLogin ? 'nullable' : 'required', 'string', 'max:10', 'regex:/^(059|056)\d{7}$/'],
 
             'username' => [
-                'required',
+                $isNoLogin ? 'nullable' : 'required',
                 'string',
                 'max:50',
                 // ✅ تجاهل الـ soft deletes (اختياري بس مهم)
@@ -64,7 +68,7 @@ class UpdateUserRequest extends FormRequest
             ],
 
             'email' => [
-                'required',
+                $isNoLogin ? 'nullable' : 'required',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')

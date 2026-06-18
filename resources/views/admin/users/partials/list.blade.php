@@ -145,8 +145,19 @@
                     <tbody>
                     @forelse(($employees ?? collect()) as $emp)
                         <tr>
-                            <td class="fw-semibold">{{ $emp->name }}</td>
-                            <td>{{ $emp->username }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ $emp->name }}</div>
+                                @if($emp->job_title)
+                                    <div class="text-muted small"><i class="bi bi-person-vcard me-1"></i>{{ $emp->job_title }}</div>
+                                @endif
+                            </td>
+                            <td>
+                                @if($emp->has_login_account)
+                                    {{ $emp->username }}
+                                @else
+                                    <span class="badge bg-secondary">بدون حساب</span>
+                                @endif
+                            </td>
                             <td>{{ $emp->email }}</td>
                             <td><x-admin.badge type="success">{{ $emp->role_name ?? '-' }}</x-admin.badge></td>
                             <td><span class="text-muted">{{ optional($emp->created_at)->format('Y-m-d') }}</span></td>

@@ -736,6 +736,10 @@ class UserController extends Controller
         $isSystemRole = $isSystemRoleValue;
         $isCustomRole = ! $isSystemRoleValue; // If not a system role enum value, it's a custom role
 
+        // عضو فريق بدون حساب مستخدم — متاح فقط للأدوار الميدانية (موظف/فني/دور مخصص)
+        $noLogin = $request->boolean('no_login_account') && ($isEmployeeOrTechnician || $isCustomRole);
+        $jobTitle = $request->filled('job_title') ? trim((string) $request->input('job_title')) : null;
+
         // Check permissions: Company Owner can create Employee, Technician, or custom roles they created
         // Company Owner cannot create admin roles (SuperAdmin, Admin, EnergyAuthority, CompanyOwner)
         if ($authUser->isCompanyOwner() && $isAdminSystemRole) {
@@ -829,35 +833,42 @@ class UserController extends Controller
             }
         }
 
-        // Generate username using name_en (English name) for proper username generation
-        $nameToUse = $nameEn ?: $name;
-        // For custom roles, use a fallback role enum value for username generation
-        $roleForUsername = $role ?? Role::Employee; // Use Employee as fallback for custom roles
-        $username = \App\Helpers\UsernameHelper::generate($roleForUsername, $nameToUse);
+        if ($noLogin) {
+            // عضو فريق بدون حساب مستخدم — بلا اسم مستخدم/كلمة مرور/بريد مُولّد
+            $username = null;
+            $email = $request->validated('email') ?: null;
+            $plainPassword = null;
+        } else {
+            // Generate username using name_en (English name) for proper username generation
+            $nameToUse = $nameEn ?: $name;
+            // For custom roles, use a fallback role enum value for username generation
+            $roleForUsername = $role ?? Role::Employee; // Use Employee as fallback for custom roles
+            $username = \App\Helpers\UsernameHelper::generate($roleForUsername, $nameToUse);
 
-        // Auto-generate password (8 random characters)
-        $password = \Illuminate\Support\Str::random(8);
-        $password = preg_replace('/[^a-zA-Z0-9]/', '', $password);
-        if (strlen($password) < 6) {
+            // Auto-generate password (8 random characters)
             $password = \Illuminate\Support\Str::random(8);
             $password = preg_replace('/[^a-zA-Z0-9]/', '', $password);
-        }
-        if (strlen($password) < 8) {
-            $password = str_pad($password, 8, \Illuminate\Support\Str::random(1), STR_PAD_RIGHT);
-        }
+            if (strlen($password) < 6) {
+                $password = \Illuminate\Support\Str::random(8);
+                $password = preg_replace('/[^a-zA-Z0-9]/', '', $password);
+            }
+            if (strlen($password) < 8) {
+                $password = str_pad($password, 8, \Illuminate\Support\Str::random(1), STR_PAD_RIGHT);
+            }
 
-        $plainPassword = $password;
+            $plainPassword = $password;
 
-        // ============================================
-        // Step 4: Generate unique email if not provided
-        // ============================================
-        $email = $request->validated('email');
-        if (! $email) {
-            $email = $username.'@gazarased.com';
-            $counter = 1;
-            while (User::where('email', $email)->whereNull('deleted_at')->exists()) {
-                $email = $username.'_'.$counter.'@gazarased.com';
-                $counter++;
+            // ============================================
+            // Step 4: Generate unique email if not provided
+            // ============================================
+            $email = $request->validated('email');
+            if (! $email) {
+                $email = $username.'@gazarased.com';
+                $counter = 1;
+                while (User::where('email', $email)->whereNull('deleted_at')->exists()) {
+                    $email = $username.'_'.$counter.'@gazarased.com';
+                    $counter++;
+                }
             }
         }
 
@@ -874,7 +885,9 @@ class UserController extends Controller
             'phone' => $request->validated('phone'),
             'username' => $username,
             'email' => $email,
-            'password' => Hash::make($plainPassword),
+            'password' => Hash::make($plainPassword ?? \Illuminate\Support\Str::random(40)),
+            'has_login_account' => ! $noLogin,
+            'job_title' => $jobTitle,
             'role' => $roleForDb, // Use enum value (Employee as fallback for custom roles)
             'role_id' => $roleModel?->id, // Custom role ID (null for system roles)
         ]);
@@ -975,7 +988,7 @@ class UserController extends Controller
         // SMS is automatically sent when user is created (if phone is provided)
         // Contains: Welcome message, Role name, Username, Password, Login link
         // ============================================
-        if ($user->phone) {
+        if (! $noLogin && $user->phone) {
             try {
                 $this->sendUserCredentialsSMS($user->phone, $user->name, $username, $plainPassword, $roleForDb, $roleModel);
             } catch (\Exception $e) {
@@ -989,22 +1002,25 @@ class UserController extends Controller
             }
         }
 
-        // ============================================
-        // Step 8: Assign default permissions automatically
-        // ============================================
-        try {
-            $user->assignDefaultPermissions();
-        } catch (\Exception $e) {
-            \Log::error('Failed to assign default permissions for user: '.$e->getMessage());
-        }
+        // عضو فريق بدون حساب: لا صلاحيات افتراضية ولا رسائل ترحيب (لا يدخل النظام)
+        if (! $noLogin) {
+            // ============================================
+            // Step 8: Assign default permissions automatically
+            // ============================================
+            try {
+                $user->assignDefaultPermissions();
+            } catch (\Exception $e) {
+                \Log::error('Failed to assign default permissions for user: '.$e->getMessage());
+            }
 
-        // ============================================
-        // Step 9: Create 3 default welcome messages for new user
-        // ============================================
-        try {
-            $user->createDefaultMessages();
-        } catch (\Exception $e) {
-            \Log::error('Failed to create default messages for user: '.$e->getMessage());
+            // ============================================
+            // Step 9: Create 3 default welcome messages for new user
+            // ============================================
+            try {
+                $user->createDefaultMessages();
+            } catch (\Exception $e) {
+                \Log::error('Failed to create default messages for user: '.$e->getMessage());
+            }
         }
 
         // Notify super admins when a new user is created (except if creator is SuperAdmin)
@@ -1017,7 +1033,11 @@ class UserController extends Controller
             );
         }
 
-        return $this->jsonOrRedirect($request, true, 'تم إنشاء المستخدم بنجاح.');
+        return $this->jsonOrRedirect(
+            $request,
+            true,
+            $noLogin ? 'تمت إضافة عضو الفريق بنجاح (بدون حساب دخول).' : 'تم إنشاء المستخدم بنجاح.'
+        );
     }
 
     /**
@@ -1193,12 +1213,18 @@ class UserController extends Controller
             $newUsername = $user->username;
         }
 
+        // عضو فريق بدون حساب: يبقى بلا اسم مستخدم/بريد دخول
+        if (! $user->has_login_account) {
+            $newUsername = null;
+        }
+
         $data = [
             'name' => $newName,
             'name_en' => $nameEn,
             'username' => $newUsername,
-            'email' => $request->validated('email'),
+            'email' => $user->has_login_account ? $request->validated('email') : null,
             'phone' => $request->validated('phone'),
+            'job_title' => $request->filled('job_title') ? trim((string) $request->input('job_title')) : null,
             'role' => $newRole,
             'role_id' => $roleModel?->id,
         ];
