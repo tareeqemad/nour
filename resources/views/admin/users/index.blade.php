@@ -84,6 +84,27 @@
         .role-option-general .bi { color: #0ea5e9; }
         .role-option-custom { color: #495057; }
         .role-option-custom .bi { color: #10b981; }
+
+        /* مواءمة حقول الفلترة مع قائمة الدور (Select2): نفس الارتفاع والزوايا والحدود */
+        #usersPage #nameFilter,
+        #usersPage #usernameFilter {
+            border-radius: 8px;
+            border-color: #e5e7eb;
+        }
+        #usersPage .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        #usersPage .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            font-size: 0.875rem;
+        }
+        #usersPage .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px !important;
+        }
     </style>
 @endpush
 
@@ -118,17 +139,17 @@
                     <div class="row g-2 align-items-end">
                         <div class="col-md-4 col-lg-3">
                             <label class="form-label small fw-semibold mb-1">الاسم</label>
-                            <input type="text" class="form-control form-control-sm" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
+                            <input type="text" class="form-control" id="nameFilter" placeholder="ابحث بالاسم..." autocomplete="off">
                         </div>
 
                         <div class="col-md-4 col-lg-3">
                             <label class="form-label small fw-semibold mb-1">اسم المستخدم</label>
-                            <input type="text" class="form-control form-control-sm" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
+                            <input type="text" class="form-control" id="usernameFilter" placeholder="ابحث باسم المستخدم..." autocomplete="off">
                         </div>
 
                         <div class="col-md-4 col-lg-3">
                             <label class="form-label small fw-semibold mb-1">الدور</label>
-                            <select class="form-select form-select-sm" id="roleFilter">
+                            <select class="form-select" id="roleFilter">
                                 <option value="">الكل</option>
                                 @if(!empty($sortedSystemRoles))
                                     <optgroup label="الأدوار النظامية" data-role-type="system">
@@ -157,7 +178,7 @@
                         @if($isSuperAdmin)
                             <div class="col-md-4 col-lg-3 d-none" id="operatorFilterWrap">
                                 <label class="form-label small fw-semibold mb-1">المشغل</label>
-                                <select class="form-select form-select-sm" id="operatorFilter">
+                                <select class="form-select" id="operatorFilter">
                                     <option value="">اختر المشغل</option>
                                 </select>
                             </div>
