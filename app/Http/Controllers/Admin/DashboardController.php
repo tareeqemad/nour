@@ -35,6 +35,15 @@ class DashboardController extends Controller
             }
         }
 
+        // مستخدم بلا لوحة تحكم خاصة بدوره (مثل "مراقب عام") لكنه يملك صلاحية التقارير
+        // → وجّهه مباشرة لتقارير الفوترة (مكان عمله) بدل لوحة فارغة
+        $hasRoleDashboard = $user->isSuperAdmin() || $user->isEnergyAuthority() || $user->isAdmin()
+            || $user->isGeneralAccountant() || $user->isCompanyOwner()
+            || $user->isAffiliatedWithOperator() || $user->isCivilDefense();
+        if (! $hasRoleDashboard && $user->hasPermission('invoice_reports.view')) {
+            return redirect()->route('admin.invoice-reports.index');
+        }
+
         // تحديد النطاق حسب نوع المستخدم
         $operatorIds = $this->service->getOperatorIds($user);
         $generatorIds = $this->service->getGeneratorIds($user, $operatorIds);
