@@ -350,6 +350,106 @@
 .inv-row-print:disabled { opacity: 0.6; cursor: not-allowed; }
 .inv-row-print .inv-mini-spin { border-color: rgba(36,48,143,0.3); border-top-color: #24308F; }
 
+/* ===== Payment buttons ===== */
+.inv-row-actions { display: inline-flex; gap: 0.4rem; flex-wrap: wrap; }
+.inv-row-pay {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: #fff; border: none;
+    font-family: 'Tajawal', sans-serif; font-size: 0.76rem; font-weight: 700;
+    padding: 0.3rem 0.85rem; border-radius: 0.45rem; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; transition: filter 0.15s;
+}
+.inv-row-pay:hover { filter: brightness(1.08); }
+.inv-pay-all {
+    margin-top: 1rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: #fff; border: none; border-radius: 0.6rem;
+    font-family: 'Tajawal', sans-serif; font-size: 1rem; font-weight: 800;
+    padding: 0.7rem 1.85rem; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(5,150,105,0.28);
+    transition: transform 0.12s, box-shadow 0.2s, filter 0.2s;
+}
+.inv-pay-all:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(5,150,105,0.34); filter: brightness(1.05); }
+.inv-pay-all i { font-size: 1.1rem; }
+
+/* ===== Payment modal ===== */
+.inv-pay-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(17,24,107,0.55); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; padding: 1rem;
+    animation: inv-fade 0.2s ease;
+}
+.inv-pay-overlay[hidden] { display: none; }
+@keyframes inv-fade { from { opacity: 0; } to { opacity: 1; } }
+.inv-pay-modal {
+    background: #fff; border-radius: 1rem; width: 100%; max-width: 440px;
+    max-height: 92vh; overflow-y: auto; position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.3); padding: 1.5rem;
+    animation: inv-rise 0.28s ease both;
+}
+.inv-pay-close {
+    position: absolute; top: 0.75rem; left: 0.85rem;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #F1F4F8; border: none; color: #5B6780;
+    font-size: 1.35rem; line-height: 1; cursor: pointer; transition: background 0.15s;
+}
+.inv-pay-close:hover { background: #E5E7EB; color: #1F2937; }
+.inv-pay-demo {
+    background: #FEF3C7; color: #92400E; border-radius: 0.5rem;
+    padding: 0.55rem 0.85rem; font-size: 0.8rem; font-weight: 700;
+    display: flex; align-items: center; gap: 0.4rem; margin: 0.5rem 0 1rem;
+}
+.inv-pay-head { font-size: 1.15rem; font-weight: 900; color: #1F2937; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+.inv-pay-head i { color: #24308F; }
+.inv-pay-summary { background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 0.7rem; padding: 1rem; margin-bottom: 1.1rem; }
+.inv-pay-srow { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.25rem 0; color: #5B6780; font-weight: 600; }
+.inv-pay-srow b { color: #1F2937; font-weight: 800; }
+.inv-pay-amount-box { display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem; padding-top: 0.7rem; border-top: 1px dashed #D9E0EA; }
+.inv-pay-amount-label { font-size: 0.85rem; color: #5B6780; font-weight: 700; }
+.inv-pay-amount { font-size: 1.5rem; font-weight: 900; color: #059669; }
+.inv-pay-section-label { font-size: 0.82rem; font-weight: 700; color: #3B4863; margin-bottom: 0.6rem; }
+.inv-pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+.inv-pay-method {
+    border: 1.5px solid #D9E0EA; background: #fff; border-radius: 0.7rem; padding: 0.85rem 0.5rem;
+    cursor: pointer; font-family: 'Tajawal', sans-serif; transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+}
+.inv-pay-method i { font-size: 1.35rem; color: #24308F; }
+.inv-pay-method span { font-size: 0.85rem; font-weight: 800; color: #1F2937; }
+.inv-pay-method small { font-size: 0.68rem; color: #98A2B3; font-weight: 600; }
+.inv-pay-method.active { border-color: #24308F; background: #EEF2FF; box-shadow: 0 0 0 3px rgba(36,48,143,0.08); }
+.inv-pay-fields { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1.1rem; }
+.inv-pf { display: flex; flex-direction: column; gap: 0.3rem; }
+.inv-pf label { font-size: 0.78rem; font-weight: 700; color: #3B4863; }
+.inv-pf input {
+    height: 42px; padding: 0 0.8rem; border: 1.5px solid #D9E0EA; border-radius: 0.5rem;
+    font-family: 'Tajawal', sans-serif; font-size: 0.9rem; color: #1F2937; outline: none; transition: border-color 0.15s;
+}
+.inv-pf input:focus { border-color: #24308F; box-shadow: 0 0 0 3px rgba(36,48,143,0.08); }
+.inv-pay-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.inv-pay-confirm {
+    width: 100%; height: 50px; border: none; border-radius: 0.6rem;
+    background: linear-gradient(135deg, #10B981, #059669); color: #fff;
+    font-family: 'Tajawal', sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    box-shadow: 0 6px 16px rgba(5,150,105,0.28); transition: filter 0.2s;
+}
+.inv-pay-confirm:hover:not(:disabled) { filter: brightness(1.06); }
+.inv-pay-confirm:disabled { opacity: 0.7; cursor: not-allowed; }
+.inv-pay-err { margin-top: 0.7rem; font-size: 0.82rem; color: #DC2626; font-weight: 700; text-align: center; }
+.inv-pay-err[hidden] { display: none; }
+.inv-pay-success { text-align: center; padding: 1rem 0.5rem; }
+.inv-pay-success-icon i { font-size: 3.5rem; color: #10B981; }
+.inv-pay-success-title { font-size: 1.2rem; font-weight: 900; color: #1F2937; margin: 0.5rem 0 0.25rem; }
+.inv-pay-success-amount { font-size: 1.8rem; font-weight: 900; color: #059669; margin-bottom: 0.5rem; }
+.inv-pay-success-ref { font-size: 0.85rem; color: #5B6780; font-weight: 600; margin-bottom: 0.85rem; }
+.inv-pay-success-ref b { color: #1F2937; font-family: monospace; }
+.inv-pay-success-note { background: #FEF3C7; color: #92400E; border-radius: 0.5rem; padding: 0.7rem 0.9rem; font-size: 0.8rem; font-weight: 600; line-height: 1.6; margin-bottom: 1rem; }
+.inv-pay-done { background: #24308F; color: #fff; border: none; border-radius: 0.55rem; padding: 0.6rem 2rem; font-family: 'Tajawal', sans-serif; font-size: 0.95rem; font-weight: 800; cursor: pointer; }
+.inv-pay-done:hover { background: #2330B3; }
+@media (max-width: 480px) { .inv-pay-methods { grid-template-columns: 1fr; } }
+
 .inv-badge--paid { background: #D1FAE5; color: #047857; }
 .inv-badge--partial { background: #FEF3C7; color: #92400E; }
 .inv-badge--due { background: #DBEAFE; color: #1D4ED8; }
@@ -562,6 +662,55 @@
 
 </div>
 
+{{-- ===== شاشة الدفع (وضع تجريبي — لا تمسّ أي عملية محاسبية) ===== --}}
+<div class="inv-pay-overlay" id="invPayOverlay" hidden>
+    <div class="inv-pay-modal" role="dialog" aria-modal="true" aria-labelledby="invPayTitle">
+        <button type="button" class="inv-pay-close" id="invPayClose" aria-label="إغلاق">&times;</button>
+        <div class="inv-pay-demo"><i class="bi bi-tools"></i> وضع تجريبي — لن يتم خصم أي مبلغ فعلي</div>
+        <div class="inv-pay-head" id="invPayTitle"><i class="bi bi-credit-card-2-front"></i> إتمام الدفع</div>
+
+        {{-- نموذج الدفع --}}
+        <div id="invPayForm">
+            <div class="inv-pay-summary">
+                <div class="inv-pay-srow"><span>المشترك</span><b id="payName">—</b></div>
+                <div class="inv-pay-srow"><span>المرجع</span><b id="payRef">—</b></div>
+                <div class="inv-pay-amount-box">
+                    <span class="inv-pay-amount-label">المبلغ المطلوب</span>
+                    <span class="inv-pay-amount"><span id="payAmount">0.00</span> ₪</span>
+                </div>
+            </div>
+
+            <div class="inv-pay-section-label">اختر طريقة الدفع</div>
+            <div class="inv-pay-methods" id="payMethods">
+                <button type="button" class="inv-pay-method active" data-method="jawwalpay">
+                    <i class="bi bi-wallet2"></i><span>محفظة جوال</span><small>JawwalPay</small>
+                </button>
+                <button type="button" class="inv-pay-method" data-method="palpay">
+                    <i class="bi bi-wallet-fill"></i><span>محفظة بال باي</span><small>PalPay</small>
+                </button>
+            </div>
+
+            <div class="inv-pay-fields" id="payFields"></div>
+
+            <button type="button" class="inv-pay-confirm" id="payConfirm">
+                <span class="inv-spinner" id="paySpinner"></span>
+                <span id="payConfirmText"><i class="bi bi-shield-lock"></i> تأكيد الدفع</span>
+            </button>
+            <div class="inv-pay-err" id="payErr" hidden></div>
+        </div>
+
+        {{-- نجاح وهمي --}}
+        <div id="invPaySuccess" hidden class="inv-pay-success">
+            <div class="inv-pay-success-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="inv-pay-success-title">تمت محاكاة الدفع بنجاح</div>
+            <div class="inv-pay-success-amount"><span id="paySuccessAmount"></span> ₪</div>
+            <div class="inv-pay-success-ref">رقم العملية التجريبية: <b id="paySuccessRef"></b></div>
+            <div class="inv-pay-success-note"><i class="bi bi-info-circle"></i> وضع تجريبي فقط — لم يتم خصم أي مبلغ ولم تتأثر فاتورتك. سيتم ربط بوابة الدفع (جوال باي / بال باي) لاحقاً.</div>
+            <button type="button" class="inv-pay-done" id="invPayDone">تم</button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -574,9 +723,11 @@
     const SEARCH_URL = "{{ route('subscriber-invoices.search') }}";
     const EXPORT_URL = "{{ route('subscriber-invoices.export') }}";
     const PRINT_LINK_URL = "{{ route('subscriber-invoices.print-link') }}";
+    const PAY_URL = "{{ route('subscriber-invoices.pay') }}";
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const SITE_NAME = @json($siteName ?? 'نور');
     let lastQuery = null;
+    let currentSubscriber = null;
 
     const form        = document.getElementById('invForm');
     const submitBtn   = document.getElementById('invSubmit');
@@ -776,6 +927,7 @@
     function renderResults(d) {
         const s = d.summary;
         const sub = d.subscriber;
+        currentSubscriber = sub;
         const hasDue = s.net_balance > 0;
 
         let html = '';
@@ -801,6 +953,7 @@
                 + '<div class="inv-balance-label"><i class="bi bi-exclamation-circle-fill"></i> إجمالي المبلغ المستحق عليك</div>'
                 + '<div class="inv-balance-amount">' + fmt(s.net_balance) + '<span class="inv-balance-cur">₪</span></div>'
                 + '<div class="inv-balance-note">يشمل جميع فواتيرك غير المسددة حتى تاريخه</div>'
+                + '<button type="button" class="inv-pay-all" data-scope="all" data-amount="' + s.net_balance + '" data-ref="إجمالي الرصيد المستحق"><i class="bi bi-credit-card-2-front"></i> ادفع المستحقات</button>'
                 + '</div>';
         } else {
             html += '<div class="inv-balance inv-balance--clear">'
@@ -837,7 +990,7 @@
                 + '</div>'
                 + '<div class="inv-table-scroll"><table class="inv-table"><thead><tr>'
                 + '<th>رقم الفاتورة</th><th>تاريخ الفاتورة</th><th>الاستهلاك (ك.و.س)</th>'
-                + '<th>قيمة الفاتورة</th><th>المتبقي</th><th>تاريخ الاستحقاق</th><th>الحالة</th><th>طباعة</th>'
+                + '<th>قيمة الفاتورة</th><th>المتبقي</th><th>تاريخ الاستحقاق</th><th>الحالة</th><th>إجراءات</th>'
                 + '</tr></thead><tbody>';
 
             d.invoices.forEach(function (inv) {
@@ -852,7 +1005,10 @@
                     + '<td data-label="المتبقي">' + remCell + '</td>'
                     + '<td data-label="تاريخ الاستحقاق">' + esc(inv.due_date || '—') + '</td>'
                     + '<td data-label="الحالة"><span class="inv-badge inv-badge--' + inv.status_key + '">' + esc(inv.status_label) + '</span></td>'
-                    + '<td data-label="طباعة"><button type="button" class="inv-row-print" data-id="' + inv.id + '"><i class="bi bi-printer"></i> طباعة</button></td>'
+                    + '<td data-label="إجراءات"><div class="inv-row-actions">'
+                    + (inv.remaining > 0 ? '<button type="button" class="inv-row-pay" data-scope="invoice" data-id="' + inv.id + '" data-amount="' + inv.remaining + '" data-ref="' + esc(inv.invoice_number) + '"><i class="bi bi-credit-card"></i> ادفع</button>' : '')
+                    + '<button type="button" class="inv-row-print" data-id="' + inv.id + '"><i class="bi bi-printer"></i> طباعة</button>'
+                    + '</div></td>'
                     + '</tr>';
             });
 
@@ -926,8 +1082,10 @@
     // ---------- Per-invoice print ----------
     // تفويض الحدث: صندوق النتائج ثابت بينما الجدول يُعاد بناؤه
     resultsBox.addEventListener('click', function (e) {
-        const btn = e.target.closest('.inv-row-print');
-        if (btn) openInvoicePrint(btn);
+        const printBtn = e.target.closest('.inv-row-print');
+        if (printBtn) { openInvoicePrint(printBtn); return; }
+        const payBtn = e.target.closest('.inv-pay-all, .inv-row-pay');
+        if (payBtn) openPayment(payBtn);
     });
 
     async function openInvoicePrint(btn) {
@@ -973,6 +1131,110 @@
             btn.innerHTML = original;
         }
     }
+
+    // ---------- Payment screen (demo / mock — no accounting impact) ----------
+    const payOverlay     = document.getElementById('invPayOverlay');
+    const payFormEl      = document.getElementById('invPayForm');
+    const paySuccessEl   = document.getElementById('invPaySuccess');
+    const payMethodsEl   = document.getElementById('payMethods');
+    const payFieldsEl    = document.getElementById('payFields');
+    const payConfirmBtn  = document.getElementById('payConfirm');
+    const paySpinner     = document.getElementById('paySpinner');
+    const payConfirmText = document.getElementById('payConfirmText');
+    const payErr         = document.getElementById('payErr');
+    let payCtx = null;
+    let payMethod = 'jawwalpay';
+
+    function payFieldsFor(method) {
+        const phone = (lastQuery && lastQuery.phone) ? esc(lastQuery.phone) : '';
+        const label = method === 'palpay' ? 'رقم محفظة بال باي (الجوال)' : 'رقم محفظة جوال (الجوال)';
+        return '<div class="inv-pf"><label>' + label + '</label>'
+            + '<input type="text" inputmode="numeric" maxlength="10" placeholder="05xxxxxxxx" value="' + phone + '"></div>';
+    }
+
+    function paySelectMethod(m) {
+        payMethod = m;
+        payMethodsEl.querySelectorAll('.inv-pay-method').forEach(function (b) {
+            b.classList.toggle('active', b.dataset.method === m);
+        });
+        payFieldsEl.innerHTML = payFieldsFor(m);
+    }
+
+    payMethodsEl.addEventListener('click', function (e) {
+        const b = e.target.closest('.inv-pay-method');
+        if (b) paySelectMethod(b.dataset.method);
+    });
+
+    function openPayment(btn) {
+        if (!lastQuery) return;
+        payCtx = {
+            scope:     btn.dataset.scope,
+            invoiceId: btn.dataset.id || null,
+            amount:    parseFloat(btn.dataset.amount) || 0,
+            ref:       btn.dataset.ref || '—',
+        };
+        payFormEl.hidden = false;
+        paySuccessEl.hidden = true;
+        payErr.hidden = true;
+        payErr.textContent = '';
+        document.getElementById('payName').textContent = (currentSubscriber && currentSubscriber.name) || '—';
+        document.getElementById('payRef').textContent = payCtx.ref;
+        document.getElementById('payAmount').textContent = fmt(payCtx.amount);
+        paySelectMethod('jawwalpay');
+        payOverlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePayment() {
+        payOverlay.hidden = true;
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('invPayClose').addEventListener('click', closePayment);
+    document.getElementById('invPayDone').addEventListener('click', closePayment);
+    payOverlay.addEventListener('click', function (e) { if (e.target === payOverlay) closePayment(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !payOverlay.hidden) closePayment(); });
+
+    payConfirmBtn.addEventListener('click', async function () {
+        if (!lastQuery || !payCtx) return;
+        payErr.hidden = true;
+        payConfirmBtn.disabled = true;
+        paySpinner.style.display = 'inline-block';
+        payConfirmText.textContent = 'جاري المعالجة...';
+        try {
+            const res = await fetch(PAY_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': CSRF,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(Object.assign({}, lastQuery, {
+                    scope: payCtx.scope,
+                    invoice_id: payCtx.invoiceId,
+                    method: payMethod,
+                })),
+            });
+            const body = await res.json().catch(function () { return {}; });
+            if (!res.ok || !body.ok) {
+                payErr.textContent = body.message || 'تعذّرت معالجة الدفع. يرجى المحاولة مرة أخرى.';
+                payErr.hidden = false;
+                return;
+            }
+            document.getElementById('paySuccessAmount').textContent = fmt(body.amount);
+            document.getElementById('paySuccessRef').textContent = body.transaction_ref || '—';
+            payFormEl.hidden = true;
+            paySuccessEl.hidden = false;
+        } catch (e) {
+            payErr.textContent = 'تعذّر الاتصال بالخادم. يرجى المحاولة مرة أخرى.';
+            payErr.hidden = false;
+        } finally {
+            payConfirmBtn.disabled = false;
+            paySpinner.style.display = 'none';
+            payConfirmText.innerHTML = '<i class="bi bi-shield-lock"></i> تأكيد الدفع';
+        }
+    });
 
     // Focus first field on load
     document.getElementById('subscription_number').focus();

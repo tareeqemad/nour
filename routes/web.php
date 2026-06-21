@@ -53,6 +53,10 @@ Route::post('/my-invoices/print-link', [\App\Http\Controllers\SubscriberInvoiceC
 Route::get('/my-invoices/invoice/{invoice}/print', [\App\Http\Controllers\SubscriberInvoiceController::class, 'invoicePrint'])
     ->middleware('throttle:60,1')
     ->name('subscriber-invoices.invoice-print');
+// دفع تجريبي (Mock) — لا يمسّ المحاسبة؛ يُستبدل لاحقاً بربط بوابة الدفع
+Route::post('/my-invoices/pay', [\App\Http\Controllers\SubscriberInvoiceController::class, 'paymentProcess'])
+    ->middleware('throttle:20,1')
+    ->name('subscriber-invoices.pay');
 
 // QR Code Public Routes
 Route::get('/qr/generation-unit/{code}', [\App\Http\Controllers\PublicQrController::class, 'generationUnit'])->name('qr.generation-unit');

@@ -148,6 +148,69 @@ class SubscriberInvoiceController extends Controller
         HTML;
     }
 
+    /**
+     * معالجة دفع (وضع تجريبي / Mock) — لا يمسّ المحاسبة إطلاقاً.
+     *
+     * يتحقق من هوية المشترك ويعيد احتساب المبلغ من السيرفر (لا يثق بقيمة العميل)،
+     * لكنه لا ينشئ أي Payment ولا يغيّر حالة الفاتورة أو الأرصدة. يُرجع نجاحاً وهمياً.
+     *
+     * عند الربط الفعلي ببوابة الدفع، تُستبدل خطوة الـ mock بإنشاء معاملة لدى
+     * البوابة وإعادة التوجيه، ويُكتب Payment فقط داخل callback البوابة بعد التحقق.
+     */
+    public function paymentProcess(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'subscription_number' => ['required', 'string', 'max:255'],
+            'id_number'           => ['required', 'string', 'max:255'],
+            'phone'               => ['required', 'string', 'max:30'],
+            'scope'               => ['required', 'in:all,invoice'],
+            'invoice_id'          => ['nullable', 'required_if:scope,invoice', 'integer'],
+            'method'              => ['nullable', 'string', 'max:30'],
+        ]);
+
+        // resolveInvoiceData بدون فترة → كل الفواتير مع المتبقي لكل واحدة + الرصيد الصافي
+        $data = $this->resolveInvoiceData($validated);
+
+        if ($data === null) {
+            return response()->json(['ok' => false, 'message' => 'تعذّر التحقق من البيانات.'], 422);
+        }
+
+        if ($validated['scope'] === 'all') {
+            $amount    = (float) $data['summary']['net_balance'];
+            $reference = 'إجمالي الرصيد المستحق';
+        } else {
+            $invoice = $data['invoices']->firstWhere('id', (int) $validated['invoice_id']);
+            if (! $invoice) {
+                return response()->json(['ok' => false, 'message' => 'الفاتورة غير متاحة.'], 404);
+            }
+            $amount    = (float) $invoice['remaining'];
+            $reference = $invoice['invoice_number'];
+        }
+
+        if ($amount <= 0) {
+            return response()->json(['ok' => false, 'message' => 'لا يوجد مبلغ مستحق للدفع.'], 422);
+        }
+
+        // ============================================================
+        // 🔌 نقطة الربط ببوابة الدفع (JawwalPay / PalPay) — لاحقاً:
+        //    1) أنشئ معاملة لدى البوابة بالمبلغ $amount.
+        //    2) أعد توجيه المستخدم لصفحة البوابة (أو أعد رابطها).
+        //    3) في callback البوابة (route منفصل) وبعد التحقق من التوقيع:
+        //         - أنشئ App\Models\Payment (هذا هو المكان الوحيد المحاسبي)
+        //         - استدعِ Invoice::reconcileSubscriber(...) لإعادة التسوية.
+        //    حتى ذلك الحين: وضع تجريبي — لا يُكتب أي شيء محاسبي هنا.
+        // ============================================================
+
+        return response()->json([
+            'ok'              => true,
+            'demo'            => true,
+            'amount'          => round($amount, 2),
+            'reference'       => $reference,
+            'method'          => $validated['method'] ?? null,
+            'transaction_ref' => 'DEMO-' . strtoupper(\Illuminate\Support\Str::random(10)),
+        ]);
+    }
+
     // ===================== Internals =====================
 
     /**
