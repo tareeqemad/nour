@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\Subscriber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -74,7 +75,107 @@ class SubscriberInvoiceController extends Controller
         return $this->buildExcel($data);
     }
 
+    /**
+     * بعد التحقق من ملكية المشترك للفاتورة، يُرجع رابطاً موقّعاً مؤقتاً (5 دقائق)
+     * لصفحة طباعة الفاتورة الرسمية. الطباعة من المتصفح تعرض العربية بشكل صحيح
+     * (على عكس DomPDF الذي لا يدعم تشكيل الحروف).
+     */
+    public function invoicePrintLink(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'subscription_number' => ['required', 'string', 'max:255'],
+            'id_number'           => ['required', 'string', 'max:255'],
+            'phone'               => ['required', 'string', 'max:30'],
+            'invoice_id'          => ['required', 'integer'],
+        ]);
+
+        $invoice = $this->authenticateInvoice($validated);
+
+        if (! $invoice) {
+            return response()->json(['message' => 'الفاتورة غير متاحة أو البيانات غير صحيحة.'], 404);
+        }
+
+        $url = URL::temporarySignedRoute(
+            'subscriber-invoices.invoice-print',
+            now()->addMinutes(5),
+            ['invoice' => $invoice->id]
+        );
+
+        return response()->json(['url' => $url]);
+    }
+
+    /**
+     * صفحة طباعة الفاتورة الرسمية (نفس قالب الإدارة) — محمية بتوقيع مؤقت.
+     *
+     * نتحقق من التوقيع داخل الدالة (بدل middleware('signed')) لنُرجع رسالة نظيفة
+     * عند انتهاء الصلاحية، إذ أن صفحة الخطأ الافتراضية تعتمد على مستخدم مسجّل.
+     */
+    public function invoicePrint(Request $request, Invoice $invoice)
+    {
+        if (! $request->hasValidSignature()) {
+            return response($this->expiredLinkPage(), 403)
+                ->header('Content-Type', 'text/html; charset=utf-8');
+        }
+
+        // دفاع إضافي ضد المسودات/الملغاة
+        if (in_array($invoice->invoice_status, [Invoice::STATUS_DRAFT, Invoice::STATUS_CANCELLED], true)) {
+            return response($this->expiredLinkPage('هذه الفاتورة غير متاحة للطباعة.'), 404)
+                ->header('Content-Type', 'text/html; charset=utf-8');
+        }
+
+        $invoice->load(['subscriber.generationUnits.operator', 'meterReading', 'creator', 'updater', 'issuer', 'payments']);
+
+        return view('admin.invoices.print', ['invoice' => $invoice, 'publicPrint' => true]);
+    }
+
+    /**
+     * صفحة بسيطة مستقلة لرابط منتهٍ/غير صالح (لا تعتمد على layout الإدارة).
+     */
+    private function expiredLinkPage(string $message = 'انتهت صلاحية رابط الطباعة أو أنه غير صالح.'): string
+    {
+        $msg = e($message);
+
+        return <<<HTML
+        <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>رابط غير صالح</title>
+        <style>body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#F8FAFC;display:flex;
+        align-items:center;justify-content:center;min-height:100vh;margin:0;color:#1F2937}
+        .box{background:#fff;border:1px solid #E5E7EB;border-top:3px solid #24308F;border-radius:14px;
+        padding:2.5rem 2rem;text-align:center;max-width:420px;box-shadow:0 8px 30px rgba(17,24,107,.08)}
+        .box h1{font-size:1.25rem;margin:0 0 .5rem;color:#24308F}.box p{color:#5B6780;font-weight:600;margin:0}</style>
+        </head><body><div class="box"><h1>⏱️ {$msg}</h1>
+        <p>يرجى العودة إلى صفحة «فواتيري» وفتح الفاتورة من جديد.</p></div></body></html>
+        HTML;
+    }
+
     // ===================== Internals =====================
+
+    /**
+     * يصادق المشترك بالحقول الثلاثة ويتحقق أن الفاتورة المطلوبة تخصّه
+     * (وليست مسودة/ملغاة). يُرجع الفاتورة أو null.
+     */
+    private function authenticateInvoice(array $v): ?Invoice
+    {
+        $phone = preg_replace('/\s+/', '', trim($v['phone']));
+
+        $subscriber = Subscriber::query()
+            ->where('subscription_number', trim($v['subscription_number']))
+            ->where('subscriber_id_number', trim($v['id_number']))
+            ->where(function ($q) use ($phone) {
+                $q->where('phone', $phone)->orWhere('alt_phone', $phone);
+            })
+            ->first();
+
+        if (! $subscriber) {
+            return null;
+        }
+
+        return Invoice::query()
+            ->where('id', $v['invoice_id'])
+            ->where('subscriber_id', $subscriber->id)
+            ->whereNotIn('invoice_status', [Invoice::STATUS_DRAFT, Invoice::STATUS_CANCELLED])
+            ->first();
+    }
 
     /**
      * قواعد التحقق المشتركة بين البحث والتصدير.
@@ -188,6 +289,7 @@ class SubscriberInvoiceController extends Controller
                 }
 
                 return [
+                    'id'              => $inv->id,
                     'invoice_number'  => $inv->invoice_number ?: '—',
                     'invoice_date'    => optional($inv->invoice_date)->format('Y-m-d'),
                     'due_date'        => optional($inv->due_date)->format('Y-m-d'),

@@ -329,6 +329,27 @@
     font-weight: 800;
     white-space: nowrap;
 }
+/* Per-invoice print button */
+.inv-row-print {
+    background: #fff;
+    border: 1.5px solid #C7CDDB;
+    color: #24308F;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.3rem 0.8rem;
+    border-radius: 0.45rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.inv-row-print:hover:not(:disabled) { background: #EEF2FF; border-color: #24308F; }
+.inv-row-print:disabled { opacity: 0.6; cursor: not-allowed; }
+.inv-row-print .inv-mini-spin { border-color: rgba(36,48,143,0.3); border-top-color: #24308F; }
+
 .inv-badge--paid { background: #D1FAE5; color: #047857; }
 .inv-badge--partial { background: #FEF3C7; color: #92400E; }
 .inv-badge--due { background: #DBEAFE; color: #1D4ED8; }
@@ -552,6 +573,7 @@
 
     const SEARCH_URL = "{{ route('subscriber-invoices.search') }}";
     const EXPORT_URL = "{{ route('subscriber-invoices.export') }}";
+    const PRINT_LINK_URL = "{{ route('subscriber-invoices.print-link') }}";
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const SITE_NAME = @json($siteName ?? 'نور');
     let lastQuery = null;
@@ -815,7 +837,7 @@
                 + '</div>'
                 + '<div class="inv-table-scroll"><table class="inv-table"><thead><tr>'
                 + '<th>رقم الفاتورة</th><th>تاريخ الفاتورة</th><th>الاستهلاك (ك.و.س)</th>'
-                + '<th>قيمة الفاتورة</th><th>المتبقي</th><th>تاريخ الاستحقاق</th><th>الحالة</th>'
+                + '<th>قيمة الفاتورة</th><th>المتبقي</th><th>تاريخ الاستحقاق</th><th>الحالة</th><th>طباعة</th>'
                 + '</tr></thead><tbody>';
 
             d.invoices.forEach(function (inv) {
@@ -830,6 +852,7 @@
                     + '<td data-label="المتبقي">' + remCell + '</td>'
                     + '<td data-label="تاريخ الاستحقاق">' + esc(inv.due_date || '—') + '</td>'
                     + '<td data-label="الحالة"><span class="inv-badge inv-badge--' + inv.status_key + '">' + esc(inv.status_label) + '</span></td>'
+                    + '<td data-label="طباعة"><button type="button" class="inv-row-print" data-id="' + inv.id + '"><i class="bi bi-printer"></i> طباعة</button></td>'
                     + '</tr>';
             });
 
@@ -894,6 +917,57 @@
             setTimeout(() => URL.revokeObjectURL(url), 1500);
         } catch (e) {
             showAlert('تعذّر الاتصال بالخادم أثناء التصدير. حاول مرة أخرى.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
+
+    // ---------- Per-invoice print ----------
+    // تفويض الحدث: صندوق النتائج ثابت بينما الجدول يُعاد بناؤه
+    resultsBox.addEventListener('click', function (e) {
+        const btn = e.target.closest('.inv-row-print');
+        if (btn) openInvoicePrint(btn);
+    });
+
+    async function openInvoicePrint(btn) {
+        if (!lastQuery) return;
+        const invoiceId = btn.dataset.id;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="inv-mini-spin"></span> فتح...';
+
+        // افتح التبويب فوراً ضمن إيماءة المستخدم (تفادياً لحظر النوافذ المنبثقة)
+        const win = window.open('', '_blank');
+
+        try {
+            const res = await fetch(PRINT_LINK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': CSRF,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(Object.assign({}, lastQuery, { invoice_id: invoiceId })),
+            });
+            if (!res.ok) {
+                if (win) win.close();
+                showAlert(res.status === 429
+                    ? 'لقد قمت بعدد كبير من المحاولات. يرجى الانتظار دقيقة ثم المحاولة مجدداً.'
+                    : 'تعذّر فتح الفاتورة. يرجى المحاولة مرة أخرى.');
+                return;
+            }
+            const body = await res.json();
+            if (win) {
+                win.location = body.url;
+            } else {
+                // في حال حُظرت النافذة المنبثقة
+                window.open(body.url, '_blank');
+            }
+        } catch (e) {
+            if (win) win.close();
+            showAlert('تعذّر الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
         } finally {
             btn.disabled = false;
             btn.innerHTML = original;

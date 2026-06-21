@@ -47,6 +47,12 @@ Route::post('/my-invoices/search', [\App\Http\Controllers\SubscriberInvoiceContr
 Route::post('/my-invoices/export', [\App\Http\Controllers\SubscriberInvoiceController::class, 'export'])
     ->middleware('throttle:15,1')
     ->name('subscriber-invoices.export');
+Route::post('/my-invoices/print-link', [\App\Http\Controllers\SubscriberInvoiceController::class, 'invoicePrintLink'])
+    ->middleware('throttle:30,1')
+    ->name('subscriber-invoices.print-link');
+Route::get('/my-invoices/invoice/{invoice}/print', [\App\Http\Controllers\SubscriberInvoiceController::class, 'invoicePrint'])
+    ->middleware('throttle:60,1')
+    ->name('subscriber-invoices.invoice-print');
 
 // QR Code Public Routes
 Route::get('/qr/generation-unit/{code}', [\App\Http\Controllers\PublicQrController::class, 'generationUnit'])->name('qr.generation-unit');
