@@ -63,6 +63,7 @@
                 <li><a href="{{ route('front.stats') }}" class="nav-link {{ request()->routeIs('front.stats') ? 'active' : '' }}">الإحصائيات</a></li>
                 <li><a href="{{ route('front.about') }}" class="nav-link {{ request()->routeIs('front.about') ? 'active' : '' }}">من نحن</a></li>
                 <li><a href="{{ route('front.join') }}" class="nav-link {{ request()->routeIs('front.join') ? 'active' : '' }}">طلب الانضمام</a></li>
+                <li><a href="{{ route('subscriber-invoices.index') }}" class="nav-link {{ request()->routeIs('subscriber-invoices.*') ? 'active' : '' }}">فواتيري</a></li>
                 <li><a href="{{ route('complaints-suggestions.index') }}" class="nav-link {{ request()->routeIs('complaints-suggestions.*') ? 'active' : '' }}">الشكاوي والمقترحات</a></li>
             </ul>
         </div>

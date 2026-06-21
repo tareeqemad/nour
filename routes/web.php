@@ -39,6 +39,15 @@ Route::get('/complaints-suggestions/operators/by-governorate/{governorate}', [\A
 Route::get('/complaints-suggestions/generators', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getGeneratorsByLocation'])->name('complaints-suggestions.generators');
 Route::get('/complaints-suggestions/generators-by-operator', [\App\Http\Controllers\ComplaintSuggestionController::class, 'getGeneratorsByOperator'])->name('complaints-suggestions.generators-by-operator');
 
+// Subscriber Invoice Inquiry (public — استعلام المشترك عن فواتيره)
+Route::get('/my-invoices', [\App\Http\Controllers\SubscriberInvoiceController::class, 'index'])->name('subscriber-invoices.index');
+Route::post('/my-invoices/search', [\App\Http\Controllers\SubscriberInvoiceController::class, 'search'])
+    ->middleware('throttle:15,1')
+    ->name('subscriber-invoices.search');
+Route::post('/my-invoices/export', [\App\Http\Controllers\SubscriberInvoiceController::class, 'export'])
+    ->middleware('throttle:15,1')
+    ->name('subscriber-invoices.export');
+
 // QR Code Public Routes
 Route::get('/qr/generation-unit/{code}', [\App\Http\Controllers\PublicQrController::class, 'generationUnit'])->name('qr.generation-unit');
 Route::get('/qr/generator/{code}', [\App\Http\Controllers\PublicQrController::class, 'generator'])->name('qr.generator');
