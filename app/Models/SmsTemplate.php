@@ -54,6 +54,24 @@ class SmsTemplate extends Model
                 'task_url' => 'https://gazarased.com/admin/tasks/5',
                 'login_url' => 'https://gazarased.com/login',
             ],
+            'op_status_preliminary' => [
+                'name' => 'أحمد', 'operator_name' => 'مشغل غزة', 'note' => 'يرجى إكمال البيانات خلال أسبوع',
+                'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
+            ],
+            'op_status_needs_edit' => [
+                'name' => 'أحمد', 'operator_name' => 'مشغل غزة', 'note' => 'يرجى رفع صورة الهوية',
+                'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
+            ],
+            'op_status_rejected' => [
+                'name' => 'أحمد', 'operator_name' => 'مشغل غزة', 'note' => 'نقص في الوثائق المطلوبة', 'site_name' => 'نور',
+            ],
+            'op_status_cancelled' => [
+                'name' => 'أحمد', 'operator_name' => 'مشغل غزة', 'note' => 'بناءً على طلبكم', 'site_name' => 'نور',
+            ],
+            'op_status_licensed' => [
+                'name' => 'أحمد', 'operator_name' => 'مشغل غزة', 'note' => 'رقم الرخصة: 12345',
+                'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
+            ],
         ];
     }
 
@@ -91,7 +109,11 @@ class SmsTemplate extends Model
         
         // إزالة أي placeholders غير مستبدلة
         $message = preg_replace('/\{[^}]+\}/', '', $message);
-        
+
+        // تنظيف المسافات الزائدة الناتجة عن متغيرات فارغة (مثل ملاحظة فارغة)
+        $message = preg_replace('/[ \t]{2,}/', ' ', $message);
+        $message = preg_replace('/ *\n */', "\n", $message);
+
         // التأكد من أن الرسالة لا تتجاوز الحد الأقصى (160 حرف لرسائل SMS)
         if (mb_strlen($message) > $this->max_length) {
             $message = mb_substr($message, 0, $this->max_length - 3) . '...';

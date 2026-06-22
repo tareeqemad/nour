@@ -35,6 +35,7 @@ class Operator extends Model
         // الحالة
         'status', // active/inactive
         'is_approved', // معتمد/غير معتمد
+        'license_status', // حالة الترخيص (دورة حياة الطلب بعد الاعتماد)
         'profile_completed', // اكتمال الملف الشخصي
         
         // المنطقة الجغرافية
@@ -48,6 +49,50 @@ class Operator extends Model
             'is_approved' => 'boolean',
             'territory_radius_km' => 'decimal:2',
         ];
+    }
+
+    // ===== حالات الترخيص (دورة حياة الطلب بعد الاعتماد) =====
+    const LICENSE_PENDING     = 'pending';     // قيد المراجعة
+    const LICENSE_PRELIMINARY = 'preliminary'; // موافقة مبدئية
+    const LICENSE_NEEDS_EDIT  = 'needs_edit';  // مُرجَع للتعديل
+    const LICENSE_REJECTED    = 'rejected';    // مرفوض
+    const LICENSE_CANCELLED   = 'cancelled';   // ملغى
+    const LICENSE_LICENSED    = 'licensed';    // حاصل على رخصة
+
+    /**
+     * كل حالات الترخيص مع تسمياتها العربية.
+     *
+     * @return array<string, string>
+     */
+    public static function licenseStatuses(): array
+    {
+        return [
+            self::LICENSE_PENDING     => 'قيد المراجعة',
+            self::LICENSE_PRELIMINARY => 'موافقة مبدئية',
+            self::LICENSE_NEEDS_EDIT  => 'مُرجَع للتعديل',
+            self::LICENSE_REJECTED    => 'مرفوض',
+            self::LICENSE_CANCELLED   => 'ملغى',
+            self::LICENSE_LICENSED    => 'حاصل على رخصة',
+        ];
+    }
+
+    /** اسم الحالة بالعربي */
+    public function getLicenseStatusLabelAttribute(): string
+    {
+        return self::licenseStatuses()[$this->license_status] ?? 'قيد المراجعة';
+    }
+
+    /** كلاس Bootstrap لشارة الحالة */
+    public function getLicenseStatusBadgeAttribute(): string
+    {
+        return match ($this->license_status) {
+            self::LICENSE_PRELIMINARY => 'info',
+            self::LICENSE_NEEDS_EDIT  => 'warning text-dark',
+            self::LICENSE_REJECTED    => 'danger',
+            self::LICENSE_CANCELLED   => 'secondary',
+            self::LICENSE_LICENSED    => 'success',
+            default                   => 'light text-dark border',
+        };
     }
 
     public function owner(): BelongsTo

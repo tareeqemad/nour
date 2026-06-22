@@ -129,6 +129,23 @@
                                     {{ $operator->is_approved ? 'إلغاء الاعتماد' : 'اعتماد المشغل' }}
                                 </button>
                             </form>
+
+                            {{-- حالة الطلب / الترخيص — تغيير الحالة يرسل SMS للمشغّل --}}
+                            <form action="{{ route('admin.operators.license-status', $operator) }}" method="POST"
+                                  class="d-inline-flex align-items-center gap-1 flex-wrap"
+                                  onsubmit="return confirm('سيتم تغيير حالة الطلب وإرسال رسالة SMS للمشغّل. متابعة؟');">
+                                @csrf
+                                <select name="license_status" class="form-select" style="width:auto;" title="حالة الطلب">
+                                    @foreach(\App\Models\Operator::licenseStatuses() as $val => $label)
+                                        <option value="{{ $val }}" {{ $operator->license_status === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="text" name="note" class="form-control" style="width:210px;" maxlength="500"
+                                       placeholder="سبب/ملاحظة للمشغّل (اختياري)" title="تُضاف إلى رسالة SMS للمشغّل">
+                                <button type="submit" class="btn btn-outline-primary" title="تحديث الحالة وإرسال SMS">
+                                    <i class="bi bi-send-check me-1"></i>تحديث الحالة
+                                </button>
+                            </form>
                         @endcan
                         @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
                             <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">
@@ -299,6 +316,14 @@
                                 <div class="info-item">
                                     <label class="info-label">اكتمال الملف</label>
                                     <div class="info-value">{{ $operator->isProfileComplete() ? 'مكتمل' : 'غير مكتمل' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <label class="info-label">حالة الطلب</label>
+                                    <div class="info-value">
+                                        <span class="badge bg-{{ $operator->license_status_badge }}">{{ $operator->license_status_label }}</span>
+                                    </div>
                                 </div>
                             </div>
                             @if($operator->territory_radius_km)

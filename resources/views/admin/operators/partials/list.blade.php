@@ -51,6 +51,7 @@
                             @else
                                 <span class="badge bg-warning text-dark">غير فعّال وغير معتمد</span>
                             @endif
+                            <span class="badge bg-{{ $operator->license_status_badge }}" title="حالة الطلب">{{ $operator->license_status_label }}</span>
                         </div>
                     </td>
 

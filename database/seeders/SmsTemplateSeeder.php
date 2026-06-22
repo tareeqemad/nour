@@ -48,6 +48,43 @@ class SmsTemplateSeeder extends Seeder
                 'max_length' => 160,
                 'is_active' => true,
             ],
+
+            // ===== حالات ترخيص المشغّل =====
+            [
+                'key' => 'op_status_preliminary',
+                'name' => 'حالة الطلب: موافقة مبدئية',
+                'template' => "مرحباً {name}، حصل طلب {operator_name} في {site_name} على موافقة مبدئية. {note} يرجى استكمال بياناتك الفنية لإتمام إجراءات الترخيص. الدخول: {login_url}",
+                'max_length' => 280,
+                'is_active' => true,
+            ],
+            [
+                'key' => 'op_status_needs_edit',
+                'name' => 'حالة الطلب: مُرجَع للتعديل',
+                'template' => "مرحباً {name}، طلب {operator_name} في {site_name} يحتاج إلى تعديل/استكمال البيانات. {note} يرجى الدخول وتحديثها: {login_url}",
+                'max_length' => 280,
+                'is_active' => true,
+            ],
+            [
+                'key' => 'op_status_rejected',
+                'name' => 'حالة الطلب: مرفوض',
+                'template' => "مرحباً {name}، نأسف لإبلاغك بأنه تم رفض طلب {operator_name} في {site_name}. {note} للاستفسار يرجى التواصل مع سلطة الطاقة.",
+                'max_length' => 280,
+                'is_active' => true,
+            ],
+            [
+                'key' => 'op_status_cancelled',
+                'name' => 'حالة الطلب: ملغى',
+                'template' => "مرحباً {name}، تم إلغاء طلب {operator_name} في {site_name}. {note} للاستفسار يرجى التواصل مع سلطة الطاقة.",
+                'max_length' => 280,
+                'is_active' => true,
+            ],
+            [
+                'key' => 'op_status_licensed',
+                'name' => 'حالة الطلب: حاصل على رخصة',
+                'template' => "مرحباً {name}، تهانينا! حصل {operator_name} على الرخصة في {site_name}. {note} يمكنك الدخول: {login_url}",
+                'max_length' => 280,
+                'is_active' => true,
+            ],
         ];
 
         // firstOrCreate (وليس updateOrCreate): يضيف القوالب الناقصة فقط

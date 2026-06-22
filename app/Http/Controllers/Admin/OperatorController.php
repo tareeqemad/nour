@@ -385,6 +385,97 @@ class OperatorController extends Controller
     }
 
     /**
+     * تغيير حالة الترخيص للمشغّل (موافقة مبدئية / تعديل / رفض / إلغاء / رخصة)
+     * مع إرسال رسالة SMS قابلة للتعديل خاصة بكل حالة.
+     *
+     * آمن: يحدّث license_status فقط — لا يلمس is_approved أو status أو دخول المشغّل.
+     */
+    public function updateLicenseStatus(Request $request, Operator $operator): RedirectResponse|JsonResponse
+    {
+        $this->authorize('approve', $operator);
+
+        $allowed = array_keys(Operator::licenseStatuses());
+        $validated = $request->validate([
+            'license_status' => ['required', 'string', 'in:' . implode(',', $allowed)],
+            'note'           => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $newStatus = $validated['license_status'];
+        $oldStatus = $operator->license_status;
+
+        if ($newStatus !== $oldStatus) {
+            $operator->license_status = $newStatus;
+            $operator->save();
+
+            $smsSent = $this->sendLicenseStatusSms($operator, $newStatus, $validated['note'] ?? null);
+
+            \App\Models\AuditLog::log(
+                'update',
+                $operator,
+                auth()->user(),
+                ['license_status' => $oldStatus],
+                ['license_status' => $newStatus],
+                'تغيير حالة الترخيص للمشغل: ' . ($operator->name ?? '#' . $operator->id)
+                    . ' إلى: ' . $operator->license_status_label
+                    . (!empty($validated['note']) ? ' — ملاحظة: ' . $validated['note'] : '')
+            );
+
+            $message = 'تم تحديث حالة الطلب إلى: ' . $operator->license_status_label
+                . ($smsSent ? ' وإرسال رسالة SMS للمشغّل.' : ' (تعذّر إرسال SMS — تحقّق من رقم المشغّل أو القالب).');
+        } else {
+            $message = 'الحالة لم تتغيّر.';
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'              => true,
+                'message'              => $message,
+                'license_status'       => $operator->license_status,
+                'license_status_label' => $operator->license_status_label,
+                'license_status_badge' => $operator->license_status_badge,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * إرسال رسالة حالة الترخيص للمشغّل (المالك) عبر القالب القابل للتعديل.
+     */
+    private function sendLicenseStatusSms(Operator $operator, string $status, ?string $note = null): bool
+    {
+        $owner = $operator->owner;
+        if (! $owner || ! $owner->phone) {
+            return false;
+        }
+
+        $tpl = \App\Models\SmsTemplate::getByKey('op_status_' . $status);
+        if (! $tpl) {
+            return false; // لا قالب مفعّل لهذه الحالة
+        }
+
+        $message = $tpl->render([
+            'name'          => $owner->name,
+            'operator_name' => $operator->name,
+            'site_name'     => \App\Models\Setting::get('site_name', 'نور'),
+            'login_url'     => url('/login'),
+            'note'          => $note ? trim($note) : '',
+        ]);
+
+        try {
+            $result = (new \App\Services\HotSMSService())->sendSMS($owner->phone, $message, 2);
+            return (bool) ($result['success'] ?? false);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send license-status SMS', [
+                'operator_id' => $operator->id,
+                'status'      => $status,
+                'error'       => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Display detailed information about the specified operator.
      */
     public function show(Operator $operator): View
