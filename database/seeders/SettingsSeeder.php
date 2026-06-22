@@ -144,6 +144,19 @@ class SettingsSeeder extends Seeder
         }
 
         $this->command->info('تم حفظ جميع إعدادات اسم الموقع بنجاح!');
+
+        // رابط الفيديو التعريفي (firstOrCreate حتى لا يُمحى رابط المسؤول عند إعادة التشغيل)
+        Setting::firstOrCreate(
+            ['key' => 'intro_video_url'],
+            [
+                'value'       => '',
+                'type'        => 'text',
+                'group'       => 'general',
+                'label'       => 'رابط الفيديو التعريفي',
+                'description' => 'رابط فيديو دليل التسجيل (YouTube أو ملف MP4) — يظهر في صفحة "دليل التسجيل والمصطلحات"',
+            ]
+        );
+        $this->command->info('✓ تم تجهيز حقل رابط الفيديو التعريفي');
     }
 }
 

@@ -307,6 +307,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
      * User Guide (الدليل الإرشادي)
      */
     Route::get('guide', [GuideController::class, 'index'])->name('guide.index');
+    Route::get('guide/registration', [GuideController::class, 'registration'])->name('guide.registration');
 
     /**
      * Version & About (الإصدارات وحول النظام)

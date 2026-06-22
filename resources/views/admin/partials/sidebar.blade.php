@@ -476,10 +476,17 @@
                     <span class="side-menu__label text-muted text-xs opacity-70">الدعم</span>
                 </li>
 
-                <li class="slide {{ $isActive('admin.guide.*') }}">
+                <li class="slide {{ $isActive('admin.guide.index') }}">
                     <a href="{{ route('admin.guide.index') }}" class="side-menu__item">
                         <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                         <span class="side-menu__label">الدليل الإرشادي</span>
+                    </a>
+                </li>
+
+                <li class="slide {{ $isActive('admin.guide.registration') }}">
+                    <a href="{{ route('admin.guide.registration') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                        <span class="side-menu__label">دليل التسجيل والمصطلحات</span>
                     </a>
                 </li>
 
