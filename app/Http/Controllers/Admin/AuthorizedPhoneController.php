@@ -445,11 +445,15 @@ class AuthorizedPhoneController extends Controller
         // url() helper يولد رابط كامل بناءً على APP_URL
         $joinUrl = url('/join');
         
-        $message = "مرحباً {$name}،\n\n";
-        $message .= "تم إضافة رقمك ({$phone}) إلى قائمة الأرقام المصرح بها في منصة {$siteName}.\n\n";
-        $message .= "يمكنك الآن التسجيل في المنصة من خلال الرابط التالي:\n";
-        $message .= "{$joinUrl}\n\n";
-        $message .= "شكراً لانضمامك إلى منصة {$siteName}.";
+        $tpl = \App\Models\SmsTemplate::getByKey('authorized_phone_welcome');
+        $message = $tpl
+            ? $tpl->render([
+                'name'      => $name,
+                'phone'     => $phone,
+                'site_name' => $siteName,
+                'join_url'  => $joinUrl,
+            ])
+            : "مرحباً {$name}، تم إضافة رقمك للأرقام المصرّح بها في منصة {$siteName}. سجّل الآن عبر: {$joinUrl}";
 
         \Log::info('Sending welcome SMS', [
             'phone' => $phone,

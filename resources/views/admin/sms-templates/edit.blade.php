@@ -31,8 +31,20 @@
                                 @error('template')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">
-                                    المتغيرات المتاحة: <code>{name}</code>, <code>{username}</code>, <code>{password}</code>, <code>{role}</code>, <code>{login_url}</code>
+                                @php $vars = \App\Models\SmsTemplate::placeholdersFor($smsTemplate->key); @endphp
+                                <div class="form-text mt-1">
+                                    @if(count($vars))
+                                        المتغيرات المتاحة لهذا القالب — اضغط لإدراجها:
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            @foreach($vars as $ph => $example)
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 ph-chip" data-ph="{{ '{'.$ph.'}' }}" title="مثال: {{ $example }}">
+                                                    <code>{{ '{'.$ph.'}' }}</code>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-muted">لا توجد متغيرات محددة لهذا القالب.</span>
+                                    @endif
                                 </div>
                                 <div class="mt-2">
                                     <small class="text-muted">
@@ -44,7 +56,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">الحد الأقصى لطول الرسالة <span class="text-danger">*</span></label>
                                 <input type="number" name="max_length" class="form-control @error('max_length') is-invalid @enderror" 
-                                       value="{{ old('max_length', $smsTemplate->max_length) }}" min="100" max="160" required>
+                                       value="{{ old('max_length', $smsTemplate->max_length) }}" min="100" max="480" required>
                                 @error('max_length')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -110,21 +122,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // أمثلة المتغيرات الخاصة بهذا القالب
+    const phExamples = @json($vars);
+
     function updatePreview() {
-        // استبدال المتغيرات بمثال
-        let preview = templateInput.value
-            .replace(/{name}/g, 'أحمد محمد')
-            .replace(/{username}/g, 'ahmad_mohammed')
-            .replace(/{password}/g, '********')
-            .replace(/{role}/g, 'مشغل')
-            .replace(/{login_url}/g, 'https://rased.ps/login');
-        
+        let preview = templateInput.value;
+        for (const ph in phExamples) {
+            preview = preview.split('{' + ph + '}').join(phExamples[ph]);
+        }
+        // إزالة أي متغيرات غير معروفة
+        preview = preview.replace(/\{[^}]+\}/g, '');
         templatePreview.textContent = preview;
     }
 
     templateInput.addEventListener('input', function() {
         updateCharCount();
         updatePreview();
+    });
+
+    // إدراج المتغير عند الضغط على الشيب (عند موضع المؤشر)
+    document.querySelectorAll('.ph-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+            const ph = this.getAttribute('data-ph');
+            const start = templateInput.selectionStart ?? templateInput.value.length;
+            const end = templateInput.selectionEnd ?? templateInput.value.length;
+            templateInput.value = templateInput.value.slice(0, start) + ph + templateInput.value.slice(end);
+            templateInput.focus();
+            const pos = start + ph.length;
+            templateInput.setSelectionRange(pos, pos);
+            updateCharCount();
+            updatePreview();
+        });
     });
 
     form.addEventListener('submit', function(e) {

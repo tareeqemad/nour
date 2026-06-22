@@ -598,40 +598,22 @@ class PublicHomeController extends Controller
         // Get site name from settings
         $siteName = \App\Models\Setting::get('site_name', 'نور');
         
-        // بناء رسالة مختصرة مع الرابط
-        // استخدام صيغة مختصرة لتوفير المساحة للرابط
-        $message = "{$siteName}\n";
-        $message .= "المستخدم: {$username}\n";
-        $message .= "كلمة المرور: {$password}\n";
-        $message .= "رابط: {$loginUrl}";
-
-        // Log طول الرسالة
-        \Log::info('SMS message length check', [
-            'message_length' => mb_strlen($message),
-            'max_length' => 70,
-            'login_url' => $loginUrl,
-            'url_length' => mb_strlen($loginUrl),
-        ]);
-
-        // إذا كانت الرسالة طويلة جداً (أكثر من 70 حرف للـ UTF-8)، نحاول تقصيرها
-        // لكن نضمن وجود الرابط دائماً
-        if (mb_strlen($message) > 70) {
-            // استخدام صيغة أقصر مع الحفاظ على الرابط
-            $message = "{$siteName}\n";
-            $message .= "المستخدم: {$username}\n";
-            $message .= "كلمة المرور: {$password}\n";
-            $message .= $loginUrl; // بدون كلمة "رابط:" لتوفير المساحة
-        }
-        
-        // إذا كانت لا تزال طويلة جداً، نستخدم صيغة أقصر جداً
-        if (mb_strlen($message) > 70) {
-            $message = "{$siteName}\n";
-            $message .= "المستخدم: {$username}\n";
-            $message .= "كلمة المرور: {$password}\n";
-            // استخدام فقط domain + path بدلاً من الرابط الكامل
-            $parsedUrl = parse_url($loginUrl);
-            $shortUrl = ($parsedUrl['host'] ?? '') . ($parsedUrl['path'] ?? '/login');
-            $message .= $shortUrl;
+        // بناء الرسالة من القالب القابل للتعديل (مع fallback للنص الأصلي)
+        $tpl = \App\Models\SmsTemplate::getByKey('join_credentials');
+        if ($tpl) {
+            $message = $tpl->render([
+                'site_name' => $siteName,
+                'username'  => $username,
+                'password'  => $password,
+                'login_url' => $loginUrl,
+            ]);
+        } else {
+            $message = "{$siteName}\nالمستخدم: {$username}\nكلمة المرور: {$password}\nرابط: {$loginUrl}";
+            if (mb_strlen($message) > 70) {
+                $parsedUrl = parse_url($loginUrl);
+                $shortUrl  = ($parsedUrl['host'] ?? '') . ($parsedUrl['path'] ?? '/login');
+                $message   = "{$siteName}\nالمستخدم: {$username}\nكلمة المرور: {$password}\n{$shortUrl}";
+            }
         }
 
         // Log الرسالة النهائية

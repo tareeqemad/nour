@@ -42,7 +42,7 @@ class SmsTemplateController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'template' => ['required', 'string'],
-            'max_length' => ['required', 'integer', 'min:100', 'max:160'],
+            'max_length' => ['required', 'integer', 'min:100', 'max:480'],
             'is_active' => ['boolean'],
         ]);
 

@@ -27,10 +27,33 @@ class SmsTemplateSeeder extends Seeder
                 'max_length' => 220,
                 'is_active' => true,
             ],
+            [
+                'key' => 'join_credentials',
+                'name' => 'بيانات الدخول لطلبات الانضمام',
+                'template' => "{site_name}\nاسم المستخدم: {username}\nكلمة المرور: {password}\nالدخول: {login_url}",
+                'max_length' => 160,
+                'is_active' => true,
+            ],
+            [
+                'key' => 'authorized_phone_welcome',
+                'name' => 'إشعار إضافة رقم للأرقام المصرح بها',
+                'template' => "مرحباً {name}، تم إضافة رقمك للأرقام المصرّح بها في {site_name}. يمكنك التسجيل الآن عبر: {join_url}",
+                'max_length' => 160,
+                'is_active' => true,
+            ],
+            [
+                'key' => 'task_assigned',
+                'name' => 'رسالة تكليف بمهمة',
+                'template' => "تم تكليفك بمهمة {task_type}\nالمشغل: {operator_name}\nرابط المهمة: {task_url}",
+                'max_length' => 160,
+                'is_active' => true,
+            ],
         ];
 
+        // firstOrCreate (وليس updateOrCreate): يضيف القوالب الناقصة فقط
+        // ولا يستبدل أي قالب عدّله السوبر أدمن من لوحة التحكم — تعديلاته تبقى دائمة.
         foreach ($templates as $template) {
-            SmsTemplate::updateOrCreate(
+            SmsTemplate::firstOrCreate(
                 ['key' => $template['key']],
                 $template
             );

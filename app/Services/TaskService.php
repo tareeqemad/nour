@@ -139,20 +139,30 @@ class TaskService
         $loginUrl = url('/login');
         $taskUrl = url('/admin/tasks/' . $task->id);
 
-        $message = "تم تكليفك بمهمة {$taskType}\n";
-        $message .= "المشغل: {$operatorName}\n";
-        if ($task->generationUnit) {
-            $message .= "وحدة التوليد: {$generationUnitName}\n";
-        }
-        if ($task->generator) {
-            $message .= "المولد: {$generatorName}\n";
-        }
-        $message .= "رابط المهمة: {$taskUrl}\n";
-        $message .= "رابط الدخول: {$loginUrl}";
+        $tpl = \App\Models\SmsTemplate::getByKey('task_assigned');
+        if ($tpl) {
+            $message = $tpl->render([
+                'task_type'     => $taskType,
+                'operator_name' => $operatorName,
+                'task_url'      => $taskUrl,
+                'login_url'     => $loginUrl,
+            ]);
+        } else {
+            $message = "تم تكليفك بمهمة {$taskType}\n";
+            $message .= "المشغل: {$operatorName}\n";
+            if ($task->generationUnit) {
+                $message .= "وحدة التوليد: {$generationUnitName}\n";
+            }
+            if ($task->generator) {
+                $message .= "المولد: {$generatorName}\n";
+            }
+            $message .= "رابط المهمة: {$taskUrl}\n";
+            $message .= "رابط الدخول: {$loginUrl}";
 
-        // تقصير الرسالة إذا كانت طويلة
-        if (mb_strlen($message) > 160) {
-            $message = mb_substr($message, 0, 157) . '...';
+            // تقصير الرسالة إذا كانت طويلة
+            if (mb_strlen($message) > 160) {
+                $message = mb_substr($message, 0, 157) . '...';
+            }
         }
 
         try {

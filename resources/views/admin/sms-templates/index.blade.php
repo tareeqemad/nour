@@ -46,13 +46,16 @@
 
                                             <div style="background: var(--color-bg-card-header, #F8FBFD); border: 1px solid var(--color-border-soft, #EDF1F5); border-radius: 8px; padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; max-height: 120px; overflow-y: auto; color: var(--color-text-secondary, #3B4863); line-height: 1.6; margin-bottom: 0.75rem;">{{ Str::limit($template->template, 200) }}</div>
 
+                                            @php $tvars = \App\Models\SmsTemplate::placeholdersFor($template->key); @endphp
+                                            @if(count($tvars))
                                             <div style="font-size: 0.75rem; color: var(--color-text-light, #98A2B3);">
                                                 <i class="bi bi-info-circle me-1"></i>
                                                 المتغيرات:
-                                                @foreach(['{name}', '{username}', '{password}', '{role}', '{login_url}'] as $var)
-                                                    <code style="background: var(--badge-neutral-bg, #F3F4F6); color: var(--badge-neutral-text, #3B4863); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.7rem;">{{ $var }}</code>
+                                                @foreach($tvars as $ph => $ex)
+                                                    <code style="background: var(--badge-neutral-bg, #F3F4F6); color: var(--badge-neutral-text, #3B4863); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.7rem;">{{ '{'.$ph.'}' }}</code>
                                                 @endforeach
                                             </div>
+                                            @endif
                                         </div>
                                         {{-- Footer --}}
                                         <div style="padding: 0.65rem 1rem; border-top: 1px solid var(--color-border-soft, #EDF1F5);">

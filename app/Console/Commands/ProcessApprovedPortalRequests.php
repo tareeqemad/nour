@@ -451,18 +451,21 @@ class ProcessApprovedPortalRequests extends Command
         $loginUrl = url('/login');
         $siteName = \App\Models\Setting::get('site_name', 'نور');
 
-        $message = "{$siteName}\n";
-        $message .= "المستخدم: {$username}\n";
-        $message .= "كلمة المرور: {$password}\n";
-        $message .= "رابط: {$loginUrl}";
-
-        if (mb_strlen($message) > 70) {
-            $message = "{$siteName}\n";
-            $message .= "المستخدم: {$username}\n";
-            $message .= "كلمة المرور: {$password}\n";
-            $parsedUrl = parse_url($loginUrl);
-            $shortUrl  = ($parsedUrl['host'] ?? '') . ($parsedUrl['path'] ?? '/login');
-            $message  .= $shortUrl;
+        $tpl = \App\Models\SmsTemplate::getByKey('join_credentials');
+        if ($tpl) {
+            $message = $tpl->render([
+                'site_name' => $siteName,
+                'username'  => $username,
+                'password'  => $password,
+                'login_url' => $loginUrl,
+            ]);
+        } else {
+            $message = "{$siteName}\nالمستخدم: {$username}\nكلمة المرور: {$password}\nرابط: {$loginUrl}";
+            if (mb_strlen($message) > 70) {
+                $parsedUrl = parse_url($loginUrl);
+                $shortUrl  = ($parsedUrl['host'] ?? '') . ($parsedUrl['path'] ?? '/login');
+                $message   = "{$siteName}\nالمستخدم: {$username}\nكلمة المرور: {$password}\n{$shortUrl}";
+            }
         }
 
         $smsService = new HotSMSService();

@@ -26,6 +26,48 @@ class SmsTemplate extends Model
     }
 
     /**
+     * المتغيرات المتاحة لكل قالب (مفتاح => قيمة مثال للمعاينة)
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function placeholders(): array
+    {
+        return [
+            'user_credentials' => [
+                'name' => 'أحمد محمد', 'role' => 'مشغل', 'username' => 'ahmad_op',
+                'password' => 'A1b2C3d4', 'login_url' => 'https://gazarased.com/login',
+            ],
+            'password_reset' => [
+                'name' => 'أحمد محمد', 'username' => 'ahmad_op',
+                'password' => 'A1b2C3d4', 'login_url' => 'https://gazarased.com/login',
+            ],
+            'join_credentials' => [
+                'site_name' => 'نور', 'username' => 'op_test',
+                'password' => 'A1b2C3d4', 'login_url' => 'https://gazarased.com/login',
+            ],
+            'authorized_phone_welcome' => [
+                'name' => 'أحمد', 'phone' => '0591234567',
+                'site_name' => 'نور', 'join_url' => 'https://gazarased.com/join',
+            ],
+            'task_assigned' => [
+                'task_type' => 'صيانة', 'operator_name' => 'مشغل غزة',
+                'task_url' => 'https://gazarased.com/admin/tasks/5',
+                'login_url' => 'https://gazarased.com/login',
+            ],
+        ];
+    }
+
+    /**
+     * المتغيرات المتاحة لقالب محدد (حسب المفتاح)
+     *
+     * @return array<string, string>
+     */
+    public static function placeholdersFor(string $key): array
+    {
+        return static::placeholders()[$key] ?? [];
+    }
+
+    /**
      * الحصول على قالب حسب المفتاح
      */
     public static function getByKey(string $key): ?self
