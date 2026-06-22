@@ -479,6 +479,69 @@ class OperatorController extends Controller
     }
 
     /**
+     * إرسال بيانات الدخول للمشغّل (زر يدوي): يولّد كلمة مرور جديدة لمالك المشغّل
+     * ويرسلها مع اسم المستخدم ورابط الدخول عبر SMS (كلمة المرور القديمة مشفّرة ولا يمكن استرجاعها).
+     */
+    public function sendCredentials(Request $request, Operator $operator): RedirectResponse|JsonResponse
+    {
+        $this->authorize('approve', $operator);
+
+        $owner = $operator->owner;
+        $fail = function (string $m) use ($request) {
+            return ($request->ajax() || $request->wantsJson())
+                ? response()->json(['success' => false, 'message' => $m])
+                : redirect()->back()->with('error', $m);
+        };
+
+        if (! $owner) {
+            return $fail('لا يوجد مالك مرتبط بهذا المشغّل.');
+        }
+        if (! $owner->phone) {
+            return $fail('لا يمكن الإرسال: المالك بدون رقم جوال.');
+        }
+        // تأكد من وجود القالب قبل إعادة تعيين كلمة المرور (تجنّب قفل المشغّل لو القالب مفقود)
+        if (! \App\Models\SmsTemplate::getByKey('op_login_credentials')) {
+            return $fail('تعذّر الإرسال: قالب بيانات الدخول غير مفعّل.');
+        }
+
+        // توليد كلمة مرور جديدة (8 خانات حروف/أرقام)
+        $newPassword = substr(preg_replace('/[^a-zA-Z0-9]/', '', \Illuminate\Support\Str::random(16)), 0, 8);
+        if (strlen($newPassword) < 8) {
+            $newPassword = str_pad($newPassword, 8, '1');
+        }
+
+        $owner->update([
+            'password'          => \Illuminate\Support\Facades\Hash::make($newPassword),
+            'password_reset_at' => now(),
+        ]);
+
+        $sent = $operator->sendSms('op_login_credentials', [
+            'username' => $owner->username,
+            'password' => $newPassword,
+        ]);
+
+        \App\Models\AuditLog::log(
+            'update',
+            $operator,
+            auth()->user(),
+            [],
+            [],
+            'إرسال بيانات الدخول (وإعادة تعيين كلمة المرور) للمشغل: ' . ($operator->name ?? '#' . $operator->id)
+                . ($sent ? '' : ' (تعذّر إرسال SMS)')
+        );
+
+        $msg = $sent
+            ? 'تم إنشاء كلمة مرور جديدة وإرسال بيانات الدخول للمشغّل عبر SMS.'
+            : 'تم إنشاء كلمة المرور الجديدة لكن تعذّر إرسال SMS — حاول مرة أخرى.';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => $sent, 'message' => $msg]);
+        }
+
+        return redirect()->back()->with($sent ? 'success' : 'warning', $msg);
+    }
+
+    /**
      * إرسال رسالة SMS للمشغّل (المالك) عبر قالب قابل للتعديل — يفوّض لدالة الموديل (مصدر واحد).
      */
     private function sendOperatorSms(Operator $operator, string $templateKey, array $extra = []): bool

@@ -76,6 +76,10 @@ class SmsTemplate extends Model
                 'name' => 'أحمد', 'operator_name' => 'مشغل غزة',
                 'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
             ],
+            'op_login_credentials' => [
+                'site_name' => 'نور', 'username' => 'op_ahmad', 'password' => 'A1b2C3d4',
+                'login_url' => 'https://gazarased.com/login',
+            ],
         ];
     }
 

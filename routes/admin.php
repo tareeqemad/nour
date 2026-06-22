@@ -168,6 +168,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
     Route::post('operators/{operator}/toggle-approval', [OperatorController::class, 'toggleApproval'])->name('operators.toggle-approval');
     Route::post('operators/{operator}/license-status', [OperatorController::class, 'updateLicenseStatus'])->name('operators.license-status');
     Route::post('operators/{operator}/onboarding-sms', [OperatorController::class, 'sendOnboardingMessage'])->name('operators.onboarding-sms');
+    Route::post('operators/{operator}/send-credentials', [OperatorController::class, 'sendCredentials'])->name('operators.send-credentials');
     Route::get('operators/pending-approval', [OperatorController::class, 'pendingApproval'])->name('operators.pending-approval');
     Route::resource('operators', OperatorController::class);
     

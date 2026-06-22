@@ -155,6 +155,15 @@
                                     <i class="bi bi-chat-dots me-1"></i>رسالة توجيه
                                 </button>
                             </form>
+
+                            {{-- إرسال بيانات الدخول (يولّد كلمة مرور جديدة ويرسلها عبر SMS) --}}
+                            <form action="{{ route('admin.operators.send-credentials', $operator) }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('سيتم إنشاء كلمة مرور جديدة للمشغّل وإرسال بيانات الدخول (اسم المستخدم + كلمة المرور + الرابط) عبر SMS. كلمة المرور الحالية ستصبح غير صالحة. متابعة؟');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary" title="إنشاء كلمة مرور جديدة وإرسال بيانات الدخول عبر SMS">
+                                    <i class="bi bi-key me-1"></i>إرسال بيانات الدخول
+                                </button>
+                            </form>
                         @endcan
                         @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
                             <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">

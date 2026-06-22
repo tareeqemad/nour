@@ -92,6 +92,13 @@ class SmsTemplateSeeder extends Seeder
                 'max_length' => 320,
                 'is_active' => true,
             ],
+            [
+                'key' => 'op_login_credentials',
+                'name' => 'بيانات دخول المشغّل (إرسال يدوي)',
+                'template' => "{site_name} - بيانات الدخول\nاسم المستخدم: {username}\nكلمة المرور: {password}\nالدخول لاستكمال بياناتك: {login_url}",
+                'max_length' => 220,
+                'is_active' => true,
+            ],
         ];
 
         // firstOrCreate (وليس updateOrCreate): يضيف القوالب الناقصة فقط
