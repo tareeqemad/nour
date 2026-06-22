@@ -95,6 +95,42 @@ class Operator extends Model
         };
     }
 
+    /**
+     * إرسال رسالة SMS لمالك المشغّل عبر قالب قابل للتعديل (بمفتاح محدد).
+     * يستخدمها زر التوجيه/الحالة والإرسال التلقائي. لا ترمي استثناء أبداً.
+     */
+    public function sendSms(string $templateKey, array $extra = []): bool
+    {
+        $owner = $this->owner;
+        if (! $owner || ! $owner->phone) {
+            return false;
+        }
+
+        $tpl = \App\Models\SmsTemplate::getByKey($templateKey);
+        if (! $tpl) {
+            return false; // لا قالب مفعّل
+        }
+
+        $message = $tpl->render(array_merge([
+            'name'          => $owner->name,
+            'operator_name' => $this->name,
+            'site_name'     => \App\Models\Setting::get('site_name', 'نور'),
+            'login_url'     => url('/login'),
+        ], $extra));
+
+        try {
+            $result = (new \App\Services\HotSMSService())->sendSMS($owner->phone, $message, 2);
+            return (bool) ($result['success'] ?? false);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send operator SMS', [
+                'operator_id' => $this->id,
+                'template'    => $templateKey,
+                'error'       => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -345,6 +381,9 @@ class Operator extends Model
                     "تم إنشاء مشغل جديد ({$operator->name}) يحتاج للاعتماد والتفعيل. المالك: {$operator->owner->name}",
                     route('admin.operators.show', $operator)
                 );
+
+                // إرسال رسالة توجيه تلقائية للمشغّل الجديد (نفس قالب الزر) — لا ترمي استثناء
+                $operator->sendSms('op_onboarding');
             }
         });
 

@@ -146,6 +146,15 @@
                                     <i class="bi bi-send-check me-1"></i>تحديث الحالة
                                 </button>
                             </form>
+
+                            {{-- رسالة توجيه للمشغّل الجديد (يدوي، قابلة لإعادة الإرسال) --}}
+                            <form action="{{ route('admin.operators.onboarding-sms', $operator) }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('سيتم إرسال رسالة توجيه (SMS) للمشغّل لتعبئة بياناته الفنية. متابعة؟');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-info" title="إرسال رسالة توجيه للمشغّل لتعبئة بياناته الفنية">
+                                    <i class="bi bi-chat-dots me-1"></i>رسالة توجيه
+                                </button>
+                            </form>
                         @endcan
                         @can('viewAny', [\App\Models\ElectricityTariffPrice::class, $operator])
                             <a href="{{ route('admin.operators.tariff-prices.index', $operator) }}" class="btn btn-info">

@@ -72,6 +72,10 @@ class SmsTemplate extends Model
                 'name' => 'أحمد', 'operator_name' => 'مشغل غزة', 'note' => 'رقم الرخصة: 12345',
                 'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
             ],
+            'op_onboarding' => [
+                'name' => 'أحمد', 'operator_name' => 'مشغل غزة',
+                'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
+            ],
         ];
     }
 

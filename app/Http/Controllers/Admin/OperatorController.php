@@ -444,35 +444,46 @@ class OperatorController extends Controller
      */
     private function sendLicenseStatusSms(Operator $operator, string $status, ?string $note = null): bool
     {
-        $owner = $operator->owner;
-        if (! $owner || ! $owner->phone) {
-            return false;
+        return $this->sendOperatorSms($operator, 'op_status_' . $status, ['note' => $note ? trim($note) : '']);
+    }
+
+    /**
+     * إرسال رسالة توجيه للمشغّل الجديد (زر يدوي) — لتوجيهه لتعبئة بياناته الفنية.
+     * قابلة لإعادة الإرسال كتذكير.
+     */
+    public function sendOnboardingMessage(Request $request, Operator $operator): RedirectResponse|JsonResponse
+    {
+        $this->authorize('approve', $operator);
+
+        $sent = $this->sendOperatorSms($operator, 'op_onboarding');
+
+        \App\Models\AuditLog::log(
+            'update',
+            $operator,
+            auth()->user(),
+            [],
+            [],
+            'إرسال رسالة توجيه للمشغل: ' . ($operator->name ?? '#' . $operator->id)
+                . ($sent ? '' : ' (تعذّر الإرسال)')
+        );
+
+        $msg = $sent
+            ? 'تم إرسال رسالة التوجيه للمشغّل بنجاح.'
+            : 'تعذّر إرسال الرسالة — تأكّد من وجود رقم جوال للمشغّل ومن تفعيل القالب.';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => $sent, 'message' => $msg]);
         }
 
-        $tpl = \App\Models\SmsTemplate::getByKey('op_status_' . $status);
-        if (! $tpl) {
-            return false; // لا قالب مفعّل لهذه الحالة
-        }
+        return redirect()->back()->with($sent ? 'success' : 'error', $msg);
+    }
 
-        $message = $tpl->render([
-            'name'          => $owner->name,
-            'operator_name' => $operator->name,
-            'site_name'     => \App\Models\Setting::get('site_name', 'نور'),
-            'login_url'     => url('/login'),
-            'note'          => $note ? trim($note) : '',
-        ]);
-
-        try {
-            $result = (new \App\Services\HotSMSService())->sendSMS($owner->phone, $message, 2);
-            return (bool) ($result['success'] ?? false);
-        } catch (\Throwable $e) {
-            \Log::error('Failed to send license-status SMS', [
-                'operator_id' => $operator->id,
-                'status'      => $status,
-                'error'       => $e->getMessage(),
-            ]);
-            return false;
-        }
+    /**
+     * إرسال رسالة SMS للمشغّل (المالك) عبر قالب قابل للتعديل — يفوّض لدالة الموديل (مصدر واحد).
+     */
+    private function sendOperatorSms(Operator $operator, string $templateKey, array $extra = []): bool
+    {
+        return $operator->sendSms($templateKey, $extra);
     }
 
     /**

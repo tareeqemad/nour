@@ -85,6 +85,13 @@ class SmsTemplateSeeder extends Seeder
                 'max_length' => 280,
                 'is_active' => true,
             ],
+            [
+                'key' => 'op_onboarding',
+                'name' => 'رسالة توجيه المشغّل الجديد',
+                'template' => "مرحباً {name}، تم تسجيل {operator_name} في منصة {site_name}. يرجى تعبئة كل بياناتك الفنية (وحدات التوليد والمولدات) لاستكمال إجراءات الحصول على الموافقة المبدئية. الدخول: {login_url}",
+                'max_length' => 320,
+                'is_active' => true,
+            ],
         ];
 
         // firstOrCreate (وليس updateOrCreate): يضيف القوالب الناقصة فقط
