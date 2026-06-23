@@ -105,6 +105,16 @@
         #usersPage .select2-container--default .select2-selection--single .select2-selection__arrow {
             height: 38px !important;
         }
+
+        /* ── بطاقات إحصائية ── */
+        #usersPage .user-stat{display:flex;align-items:center;gap:.85rem;background:#fff;border:1px solid var(--color-border-soft,#EDF1F5);border-radius:14px;padding:.95rem 1.1rem;height:100%;transition:transform .15s,box-shadow .15s;}
+        #usersPage .user-stat:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(31,41,55,.07);}
+        #usersPage .user-stat .us-ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;flex-shrink:0;}
+        #usersPage .user-stat .us-num{font-size:1.5rem;font-weight:800;color:var(--color-text-main,#1F2937);line-height:1;}
+        #usersPage .user-stat .us-lbl{font-size:.82rem;color:var(--color-text-muted,#5B6780);margin-top:.25rem;}
+
+        /* ── شريط الفلاتر ── */
+        #usersPage .users-toolbar{background:#F8FBFD;border:1px solid var(--color-border-soft,#EDF1F5);border-radius:12px;padding:1rem 1rem .9rem;}
     </style>
 @endpush
 
@@ -117,6 +127,34 @@
      data-is-super-admin="{{ $isSuperAdmin ? 1 : 0 }}"
      data-is-company-owner="{{ $isCompanyOwner ? 1 : 0 }}"
      data-is-energy-authority="{{ auth()->user()->isEnergyAuthority() ? 1 : 0 }}">
+
+    {{-- بطاقات إحصائية --}}
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-xl-3">
+            <div class="user-stat">
+                <div class="us-ic" style="background:rgba(36,48,143,.10);color:#24308F"><i class="bi bi-people-fill"></i></div>
+                <div><div class="us-num" id="statTotal">—</div><div class="us-lbl">إجمالي المستخدمين</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="user-stat">
+                <div class="us-ic" style="background:rgba(14,165,233,.10);color:#0EA5E9"><i class="bi bi-person-badge-fill"></i></div>
+                <div><div class="us-num" id="statOwners">—</div><div class="us-lbl">المشغّلون</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="user-stat">
+                <div class="us-ic" style="background:rgba(16,185,129,.10);color:#10B981"><i class="bi bi-people"></i></div>
+                <div><div class="us-num" id="statEmployees">—</div><div class="us-lbl">الموظفون والفنيون</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="user-stat">
+                <div class="us-ic" style="background:rgba(245,158,11,.10);color:#F59E0B"><i class="bi bi-tags-fill"></i></div>
+                <div><div class="us-num" id="statCustomRoles">—</div><div class="us-lbl">الأدوار المخصصة</div></div>
+            </div>
+        </div>
+    </div>
 
     <div class="row g-3">
         <div class="col-12">
@@ -135,7 +173,8 @@
 
                 <div class="card-body pt-3 pb-4">
 
-                    {{-- فلاتر البحث --}}
+                    {{-- شريط الفلاتر --}}
+                    <div class="users-toolbar mb-3">
                     <div class="row g-2 align-items-end">
                         <div class="col-md-4 col-lg-3">
                             <label class="form-label small fw-semibold mb-1">الاسم</label>
@@ -195,6 +234,7 @@
                             تفريغ
                         </button>
                     </div>
+                    </div>{{-- /users-toolbar --}}
 
                     <div class="position-relative" id="usersTableContainer">
                         {{-- Loading overlay --}}
