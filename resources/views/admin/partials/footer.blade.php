@@ -15,6 +15,11 @@
                 </span>
             </span>
             <span class="text-muted">|</span>
+            <span class="d-inline-flex align-items-center gap-1">
+                <i class="bi bi-patch-check-fill text-success"></i>
+                المنصة معتمدة ومرخصة من سلطة الطاقة
+            </span>
+            <span class="text-muted">|</span>
             <a href="{{ route('admin.about') }}" class="badge bg-primary text-decoration-none" title="حول النظام">
                 <i class="bi bi-box-seam me-1"></i>
                 v{{ $appVersion }}
