@@ -617,11 +617,11 @@ class OperatorController extends Controller
     {
         $this->authorize('update', $operator);
 
+        // ملاحظة: جدول operators لا يملك أعمدة phone/email/address — رقم الجوال يُخزَّن على
+        // المستخدم المالك (Operator::getPhoneAttribute يقرأ owner->phone)، وهو ما يُستخدم
+        // لإرسال بيانات الدخول وإعادة تعيين كلمة المرور عبر SMS. لذلك نحفظه أدناه على المالك.
         $operator->update([
             'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'phone' => $request->validated('phone'),
-            'address' => $request->validated('address'),
         ]);
 
         // تحديث بيانات المستخدم المالك
@@ -632,6 +632,11 @@ class OperatorController extends Controller
             // SuperAdmin فقط يغير username
             if ($auth->isSuperAdmin() && $request->filled('username')) {
                 $userData['username'] = $request->validated('username');
+            }
+
+            // رقم الجوال (الحقل phone في النموذج) يُخزَّن على المالك — هو رقم الـ SMS
+            if ($request->filled('phone')) {
+                $userData['phone'] = $request->validated('phone');
             }
 
             if ($request->filled('user_email')) {
