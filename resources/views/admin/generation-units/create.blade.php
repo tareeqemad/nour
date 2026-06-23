@@ -1885,16 +1885,22 @@
                 territoryAlert.textContent = '✓ ' + (data.message || 'الموقع متاح') + ` (سيتم حجز ${operatorRadiusKm} كم)`;
                 territoryAlert.classList.remove('d-none');
             } else {
-                territoryAlert.className = 'alert alert-danger mb-2';
                 let errorMessage = data.message || 'الموقع غير متاح';
-                
+
                 // If conflict is with another generation unit, show more details
                 if (data.conflict_type === 'generation_unit' && data.conflict_data) {
                     const conflict = data.conflict_data;
-                    errorMessage = `⚠ يوجد وحدة توليد أخرى للمشغل "${conflict.operator_name}" (اسم الوحدة: "${conflict.generation_unit_name}") في نفس الموقع أو قريبة جداً (المسافة: ${conflict.distance.toFixed(3)} كم). الحد الأدنى للمسافة بين وحدات التوليد: 0.1 كم.`;
+                    errorMessage = `يوجد وحدة توليد أخرى للمشغل "${conflict.operator_name}" (اسم الوحدة: "${conflict.generation_unit_name}") في نفس الموقع أو قريبة جداً (المسافة: ${conflict.distance.toFixed(3)} كم). الحد الأدنى للمسافة بين وحدات التوليد: 0.1 كم.`;
                 }
-                
-                territoryAlert.innerHTML = '<strong>⚠ تحذير:</strong> ' + errorMessage;
+
+                // منع التداخل مُجمّد: نعرض التداخل كتنبيه معلوماتي (تحديد على الخريطة) لا كمنع
+                if (@json(\App\Models\OperatorTerritory::overlapEnforced())) {
+                    territoryAlert.className = 'alert alert-danger mb-2';
+                    territoryAlert.innerHTML = '<strong>⚠ تحذير:</strong> ' + errorMessage;
+                } else {
+                    territoryAlert.className = 'alert alert-info mb-2';
+                    territoryAlert.innerHTML = '<strong>ℹ تنبيه (تداخل):</strong> ' + errorMessage + ' <span style="opacity:.8">— مسموح حالياً؛ منع التداخل مُجمّد لحين تفعيل التلزيم.</span>';
+                }
                 territoryAlert.classList.remove('d-none');
             }
         } catch (error) {

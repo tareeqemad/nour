@@ -406,9 +406,13 @@ class GenerationUnitController extends Controller
             $longitude = (float) $data['longitude'];
             $operatorId = (int) $data['operator_id'];
 
+            // تجميد منع التداخل: لا يُفرض المنع إلا عند تفعيل آلية التلزيم ومناطق النفوذ
+            // (يبقى كشف التداخل وعرضه على الخريطة فعّالاً، وتُنشأ منطقة المشغّل دائماً)
+            $enforceOverlap = OperatorTerritory::overlapEnforced();
+
             // التحقق من وجود وحدة توليد أخرى في نفس الإحداثيات أو قريبة جداً (في نطاق 100 متر)
             $minDistanceKm = 0.1; // 100 متر = 0.1 كم
-            $existingUnit = GenerationUnit::where('id', '!=', 0) // Exclude current unit (doesn't exist yet in create)
+            $existingUnit = !$enforceOverlap ? null : GenerationUnit::where('id', '!=', 0) // Exclude current unit (doesn't exist yet in create)
                 ->where('operator_id', '!=', $operatorId) // Different operator
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
@@ -452,8 +456,8 @@ class GenerationUnitController extends Controller
                     ->with('error', $errorMessage);
             }
 
-            // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة
-            $existingTerritory = OperatorTerritory::findTerritoryContainingPoint(
+            // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة (مُجمّد: null عند عدم الفرض)
+            $existingTerritory = !$enforceOverlap ? null : OperatorTerritory::findTerritoryContainingPoint(
                 $latitude,
                 $longitude,
                 $operatorId
@@ -792,9 +796,12 @@ class GenerationUnitController extends Controller
                 abs($longitude - (float) $generationUnit->longitude) > 0.0001;
 
             if ($coordinatesChanged) {
+                // تجميد منع التداخل: لا يُفرض المنع إلا عند تفعيل آلية التلزيم ومناطق النفوذ
+                $enforceOverlap = OperatorTerritory::overlapEnforced();
+
                 // التحقق من وجود وحدة توليد أخرى في نفس الإحداثيات أو قريبة جداً (في نطاق 100 متر)
                 $minDistanceKm = 0.1; // 100 متر = 0.1 كم
-                $existingUnit = GenerationUnit::where('id', '!=', $generationUnit->id) // Exclude current unit
+                $existingUnit = !$enforceOverlap ? null : GenerationUnit::where('id', '!=', $generationUnit->id) // Exclude current unit
                     ->where('operator_id', '!=', $operatorId) // Different operator
                     ->whereNotNull('latitude')
                     ->whereNotNull('longitude')
@@ -838,8 +845,8 @@ class GenerationUnitController extends Controller
                         ->with('error', $errorMessage);
                 }
 
-                // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة
-                $existingTerritory = OperatorTerritory::findTerritoryContainingPoint(
+                // البحث عن منطقة لمشغل آخر تحتوي على هذه النقطة (مُجمّد: null عند عدم الفرض)
+                $existingTerritory = !$enforceOverlap ? null : OperatorTerritory::findTerritoryContainingPoint(
                     $latitude,
                     $longitude,
                     $operatorId

@@ -141,4 +141,19 @@ class OperatorTerritory extends Model
             'created_by' => auth()->id(),
         ]);
     }
+
+    /**
+     * هل يُفرَض منع التداخل الجغرافي عند تسجيل البيانات؟
+     *
+     * مُجمّد افتراضياً (false) — يبقى كشف التداخل وعرضه على الخريطة فعّالاً،
+     * لكن لا يُمنع الحفظ. يُفعّل لاحقاً (بضبط الإعداد على '1') عند تفعيل
+     * آلية التلزيم ومناطق النفوذ.
+     */
+    public static function overlapEnforced(): bool
+    {
+        return filter_var(
+            \App\Models\Setting::get('enforce_territory_overlap', '0'),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
 }
