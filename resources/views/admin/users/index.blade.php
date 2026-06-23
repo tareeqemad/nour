@@ -406,6 +406,17 @@
             const $meta = $('#usersMeta');
             const $pagination = $('#usersPagination');
 
+            // إصلاح قصّ قائمة الإجراءات: البطاقة (.general-card) والجدول (.table-responsive) لهما
+            // overflow يقصّ القائمة المنسدلة. نزيل القصّ مؤقتاً أثناء فتح القائمة فقط لتظهر كاملة.
+            $container.on('show.bs.dropdown', function (e) {
+                $(e.target).closest('.general-card').css('overflow', 'visible');
+                $(e.target).closest('.table-responsive').css('overflow', 'visible');
+            });
+            $container.on('hide.bs.dropdown', function (e) {
+                $(e.target).closest('.general-card').css('overflow', '');
+                $(e.target).closest('.table-responsive').css('overflow', '');
+            });
+
             const $statTotal = $('#statTotal');
             const $statOwners = $('#statOwners');
             const $statEmployees = $('#statEmployees');
@@ -641,15 +652,16 @@
                     
                     // بناء Dropdown Menu مع زر بسيط وواضح
                     const actionsMenu = `
-                        <div class="btn-group" role="group">
-                            <button type="button" 
-                                    class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" 
-                                    data-bs-toggle="dropdown" 
-                                    aria-expanded="false" 
+                        <div class="btn-group">
+                            <button type="button"
+                                    class="btn btn-sm btn-light border"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
                                     title="إجراءات">
+                                <i class="bi bi-three-dots-vertical"></i>
                                 <span class="visually-hidden">إجراءات</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                 ${menuHtml}
                             </ul>
                         </div>
