@@ -39,5 +39,17 @@
             <textarea name="settings[site_address]" class="form-control" rows="2"
                       placeholder="عنوان الموقع الكامل">{{ \App\Models\Setting::get('site_address', '') }}</textarea>
         </div>
+
+        <div class="col-12">
+            <label class="form-label fw-semibold">
+                <i class="bi bi-play-circle me-1"></i>رابط الفيديو التعريفي (دليل التسجيل)
+            </label>
+            <input type="text" name="settings[intro_video_url]" class="form-control"
+                   value="{{ \App\Models\Setting::get('intro_video_url', '') }}"
+                   placeholder="رابط YouTube مثل https://youtu.be/XXXX أو رابط ملف MP4">
+            <small class="text-muted">
+                يظهر هذا الفيديو في صفحة «دليل التسجيل والمصطلحات». اتركه فارغاً لإخفاء الفيديو.
+            </small>
+        </div>
     </div>
 </div>
