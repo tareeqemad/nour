@@ -42,6 +42,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/chart-data', [DashboardController::class, 'chartData'])->name('dashboard.chart-data');
+    Route::get('/dashboard/billing', [DashboardController::class, 'billingData'])->name('dashboard.billing');
     Route::get('/dashboard/pie-chart-data', [DashboardController::class, 'pieChartData'])->name('dashboard.pie-chart-data');
     Route::get('/dashboard/operators-comparison', [DashboardController::class, 'operatorsComparison'])->name('dashboard.operators-comparison');
     Route::get('/dashboard/generation-units-comparison', [DashboardController::class, 'generationUnitsComparison'])->name('dashboard.generation-units-comparison');

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GenerationUnit;
+use App\Models\Operator;
 use App\Services\DashboardService;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -12,7 +14,7 @@ class DashboardController extends Controller
         private DashboardService $service
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -85,19 +87,15 @@ class DashboardController extends Controller
         $operatorsComparison = null;
         $generationUnitsComparison = null;
 
-        // ===== لوحة الفوترة والتحصيل (مفعّلة — مقسّمة حسب الدور) =====
-        // الـ scoping محصّن داخل DashboardService::getBillingDashboard():
-        //   - SuperAdmin/Admin/EnergyAuthority/GeneralAccountant → كل المشغلين
-        //   - CompanyOwner/Employee (بصلاحية فوترة) → مشغله(م) فقط
-        //   - تقني/دفاع مدني أو بلا صلاحية فوترة → لا يرى القسم
-        $billingDashboard = null;
-        $canSeeBilling = $user->hasGlobalAccountingAccess()
-            || $user->isCompanyOwner()
-            || $user->hasPermission('invoice_reports.view')
-            || $user->hasPermission('subscriber_accounts.view');
-        if ($canSeeBilling) {
-            $billingDashboard = $this->service->getBillingDashboard($operatorIds);
-        }
+        // ===== لوحة الفوترة والتحصيل (مفعّلة — حسب الدور، مع اختيار المشغّل والفترة) =====
+        $billing                 = $this->resolveBillingContext($user, $request);
+        $billingDashboard        = $billing['billingDashboard'];
+        $billingIsGlobal         = $billing['isGlobal'];
+        $billingOperators        = $billing['operators'];
+        $billingSelectedOperator = $billing['selectedOperator'];
+        $billingRange            = $billing['range'];
+        $billingFrom             = $billing['from'];
+        $billingTo               = $billing['to'];
 
         return view('admin.dashboard', compact(
             'stats',
@@ -114,8 +112,96 @@ class DashboardController extends Controller
             'operatorsComparison',
             'generationUnitsComparison',
             'showEmptyDataHint',
-            'billingDashboard'
+            'billingDashboard',
+            'billingIsGlobal',
+            'billingOperators',
+            'billingSelectedOperator',
+            'billingRange',
+            'billingFrom',
+            'billingTo'
         ));
+    }
+
+    /**
+     * يحلّ سياق لوحة الفوترة: البوابة حسب الدور + اختيار المشغّل (للأدوار العامة) + الفترة.
+     * النطاق محصّن داخل DashboardService (مالك/موظف لا يرى إلا مشغّله مهما أرسل).
+     */
+    private function resolveBillingContext($user, Request $request): array
+    {
+        $isGlobal = $user->hasGlobalAccountingAccess();
+
+        $canSeeBilling = $isGlobal
+            || $user->isCompanyOwner()
+            || $user->hasPermission('invoice_reports.view')
+            || $user->hasPermission('subscriber_accounts.view');
+
+        // الفترة الزمنية (presets + مخصّص)
+        $range = $request->input('bill_range', 'month');
+        [$from, $to] = match ($range) {
+            'quarter' => [now()->subMonths(2)->startOfMonth()->toDateString(), now()->toDateString()],
+            'half'    => [now()->subMonths(5)->startOfMonth()->toDateString(), now()->toDateString()],
+            'year'    => [now()->startOfYear()->toDateString(), now()->toDateString()],
+            'all'     => [null, null],
+            'custom'  => [$request->input('bill_from') ?: null, $request->input('bill_to') ?: null],
+            default   => [now()->startOfMonth()->toDateString(), now()->toDateString()],
+        };
+        if (! in_array($range, ['month', 'quarter', 'half', 'year', 'all', 'custom'], true)) {
+            $range = 'month';
+        }
+
+        // اختيار مشغّل محدّد — للأدوار العامة فقط؛ غيرهم محصور بنطاقه
+        $selectedOperator = null;
+        if ($isGlobal && $request->filled('bill_operator')) {
+            $opId = (int) $request->input('bill_operator');
+            if ($opId > 0 && Operator::whereKey($opId)->exists()) {
+                $selectedOperator = $opId;
+            }
+        }
+
+        $scopeOperatorIds = $selectedOperator
+            ? [$selectedOperator]
+            : $this->service->getOperatorIds($user);
+
+        $billingDashboard = $canSeeBilling
+            ? $this->service->getBillingDashboard($scopeOperatorIds, $from, $to)
+            : null;
+
+        $operators = $isGlobal
+            ? Operator::orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        return [
+            'billingDashboard' => $billingDashboard,
+            'isGlobal'         => $isGlobal,
+            'operators'        => $operators,
+            'selectedOperator' => $selectedOperator,
+            'range'            => $range,
+            'from'             => $from,
+            'to'               => $to,
+        ];
+    }
+
+    /**
+     * AJAX: إعادة تحميل قسم الفوترة فقط (عند تغيير المشغّل أو الفترة).
+     */
+    public function billingData(Request $request)
+    {
+        $user = auth()->user();
+        $billing = $this->resolveBillingContext($user, $request);
+
+        if (! $billing['billingDashboard']) {
+            return response()->json(['html' => '']);
+        }
+
+        $html = view('admin.dashboard.partials.billing-content', [
+            'billingDashboard'        => $billing['billingDashboard'],
+            'billingSelectedOperator' => $billing['selectedOperator'],
+            'billingRange'            => $billing['range'],
+            'billingFrom'             => $billing['from'],
+            'billingTo'               => $billing['to'],
+        ])->render();
+
+        return response()->json(['html' => $html]);
     }
 
     /**

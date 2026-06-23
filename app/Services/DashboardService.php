@@ -965,23 +965,25 @@ class DashboardService
      * Top-level entry point: build the entire billing widget payload.
      * Returns null when the user has no scope (so the view can hide the section).
      */
-    public function getBillingDashboard(?array $operatorIds): ?array
+    public function getBillingDashboard(?array $operatorIds, ?string $from = null, ?string $to = null): ?array
     {
         // Restricted user with no operator link → no data to show
         if (is_array($operatorIds) && empty($operatorIds)) {
             return null;
         }
 
-        $hash = md5(json_encode($operatorIds));
-        return Cache::remember("dashboard_billing_{$hash}", self::CHARTS_TTL, function () use ($operatorIds) {
+        $hash = md5(json_encode([$operatorIds, $from, $to]));
+        return Cache::remember("dashboard_billing_{$hash}", self::CHARTS_TTL, function () use ($operatorIds, $from, $to) {
             $paidByInvoice = $this->billingComputeFifoPaid($operatorIds);
 
             return [
-                'current_month'   => $this->billingCurrentMonth($operatorIds, $paidByInvoice),
+                // المؤشرات تتبع الفترة المختارة (from/to)؛ المتأخرات/التقادم لحظية (حتى الآن)
+                'period'          => $this->billingPeriod($operatorIds, $paidByInvoice, $from, $to),
                 'trend'           => $this->billingTrend($operatorIds, $paidByInvoice, 6),
                 'aging'           => $this->billingAging($operatorIds, $paidByInvoice),
                 'top_debtors'     => $this->billingTopDebtors($operatorIds, $paidByInvoice, 5),
-                'by_operator'     => $this->billingByOperator($operatorIds, $paidByInvoice),
+                'by_operator'     => $this->billingByOperator($operatorIds, $paidByInvoice, $from, $to),
+                'range'           => ['from' => $from, 'to' => $to],
             ];
         });
     }
@@ -1049,21 +1051,21 @@ class DashboardService
     }
 
     /**
-     * KPIs for the current month (1st of month through today).
+     * KPIs for the selected period (from/to inclusive). When both are null the
+     * caller decides the default; here null simply means "no bound on that side".
      */
-    private function billingCurrentMonth(?array $operatorIds, array $paidByInvoice): array
+    private function billingPeriod(?array $operatorIds, array $paidByInvoice, ?string $from = null, ?string $to = null): array
     {
-        $from = Carbon::now()->startOfMonth();
-        $to   = Carbon::now();
+        $q = \App\Models\Invoice::whereIn('invoice_status', [
+            \App\Models\Invoice::STATUS_ISSUED,
+            \App\Models\Invoice::STATUS_PARTIAL,
+            \App\Models\Invoice::STATUS_PAID,
+        ]);
+        if ($from) { $q->whereDate('invoice_date', '>=', $from); }
+        if ($to)   { $q->whereDate('invoice_date', '<=', $to); }
 
-        $invoices = $this->billingScopeInvoices(
-            \App\Models\Invoice::whereIn('invoice_status', [
-                \App\Models\Invoice::STATUS_ISSUED,
-                \App\Models\Invoice::STATUS_PARTIAL,
-                \App\Models\Invoice::STATUS_PAID,
-            ])->whereBetween('invoice_date', [$from, $to]),
-            $operatorIds
-        )->get(['id', 'invoice_amount', 'subscriber_id']);
+        $invoices = $this->billingScopeInvoices($q, $operatorIds)
+            ->get(['id', 'invoice_amount', 'subscriber_id']);
 
         $billed     = (float) $invoices->sum('invoice_amount');
         $collected  = (float) $invoices->sum(fn($i) => $paidByInvoice[$i->id] ?? 0);
@@ -1223,7 +1225,7 @@ class DashboardService
      * Per-operator billing summary — for SuperAdmin/EnergyAuthority/GeneralAccountant.
      * Returns rows sorted by lowest collection rate first (worst performers up top).
      */
-    private function billingByOperator(?array $operatorIds, array $paidByInvoice): array
+    private function billingByOperator(?array $operatorIds, array $paidByInvoice, ?string $from = null, ?string $to = null): array
     {
         // Limit the operator list to those in scope (or all for global access)
         $opQuery = Operator::query()->select('id', 'name')->where('status', 'active');
@@ -1235,14 +1237,16 @@ class DashboardService
             return [];
         }
 
-        // Fetch all non-draft non-cancelled invoices for these operators (just what we need)
-        $invoices = \App\Models\Invoice::whereNotIn('invoice_status', [
+        // Fetch non-draft non-cancelled invoices for these operators within the period
+        $invQuery = \App\Models\Invoice::whereNotIn('invoice_status', [
                 \App\Models\Invoice::STATUS_DRAFT,
                 \App\Models\Invoice::STATUS_CANCELLED,
             ])
             ->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $operators->pluck('id')))
-            ->with(['subscriber.generationUnits:id,operator_id'])
-            ->get(['id', 'subscriber_id', 'invoice_amount']);
+            ->with(['subscriber.generationUnits:id,operator_id']);
+        if ($from) { $invQuery->whereDate('invoice_date', '>=', $from); }
+        if ($to)   { $invQuery->whereDate('invoice_date', '<=', $to); }
+        $invoices = $invQuery->get(['id', 'subscriber_id', 'invoice_amount']);
 
         // Build per-operator totals
         $totals = [];
