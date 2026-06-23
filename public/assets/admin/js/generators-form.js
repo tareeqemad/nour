@@ -48,6 +48,19 @@
             updateNavigationButtons();
         };
 
+        // الانتقال إلى التبويب الذي يحتوي حقلاً معيّناً (لإظهار الحقل الخاطئ بدل بقائه مخفياً)
+        function activateTabForElement(el) {
+            if (!el || !el.closest) return;
+            var pane = el.closest('.tab-pane');
+            if (!pane || !pane.id) return;
+            var tabButton = document.getElementById(pane.id + '-tab');
+            if (tabButton && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                new bootstrap.Tab(tabButton).show();
+                var idx = tabs.indexOf(pane.id);
+                if (idx !== -1) { currentTab = idx; updateNavigationButtons(); }
+            }
+        }
+
         document.querySelectorAll('#generatorTabs button[data-bs-toggle="tab"]').forEach(function (tabButton, index) {
             tabButton.addEventListener('shown.bs.tab', function () {
                 currentTab = index;
@@ -181,41 +194,10 @@
             e.preventDefault();
             formModified = false;
 
-            // Remove HTML5 validation from hidden tabs to avoid "not focusable" issue
-            var hiddenTabs = document.querySelectorAll('.tab-pane:not(.show)');
-            var hiddenInputs = [];
-
-            hiddenTabs.forEach(function (tab) {
-                tab.querySelectorAll('input[type="number"], input[type="text"], input[type="date"]').forEach(function (input) {
-                    var constraints = {
-                        min: input.getAttribute('min'),
-                        max: input.getAttribute('max'),
-                        required: input.hasAttribute('required')
-                    };
-                    if (constraints.min || constraints.max || constraints.required) {
-                        hiddenInputs.push({ input: input, constraints: constraints });
-                        if (constraints.min) input.removeAttribute('min');
-                        if (constraints.max) input.removeAttribute('max');
-                        if (constraints.required) input.removeAttribute('required');
-                    }
-                });
-            });
-
-            if (!$form[0].checkValidity()) {
-                hiddenInputs.forEach(function (item) {
-                    if (item.constraints.min) item.input.setAttribute('min', item.constraints.min);
-                    if (item.constraints.max) item.input.setAttribute('max', item.constraints.max);
-                    if (item.constraints.required) item.input.setAttribute('required', 'required');
-                });
-                $form[0].reportValidity();
-                return false;
-            }
-
-            hiddenInputs.forEach(function (item) {
-                if (item.constraints.min) item.input.setAttribute('min', item.constraints.min);
-                if (item.constraints.max) item.input.setAttribute('max', item.constraints.max);
-                if (item.constraints.required) item.input.setAttribute('required', 'required');
-            });
+            // لا نستخدم تحقق المتصفّح (HTML5) هنا: مع التبويبات المخفية وحقول Select2 كان
+            // المتصفّح يُلغي الإرسال بصمت على "control is not focusable" → تعليق النموذج عند خطأ
+            // الإدخال. النموذج يحمل novalidate، والتحقق يتم على الخادم (422) ويُعرض أدناه مع
+            // الانتقال تلقائياً إلى تبويب الحقل الخاطئ.
 
             $submitBtn.prop('disabled', true);
             var originalText = $submitBtn.html();
@@ -284,7 +266,11 @@
 
                         var $firstError = $form.find('.is-invalid').first();
                         if ($firstError.length) {
-                            $('html, body').animate({ scrollTop: $firstError.offset().top - 100 }, 500);
+                            // الانتقال إلى تبويب الحقل الخاطئ أولاً، وإلا يبقى الخطأ مخفياً (سبب التعليق)
+                            activateTabForElement($firstError[0]);
+                            setTimeout(function () {
+                                $('html, body').animate({ scrollTop: $firstError.offset().top - 120 }, 400);
+                            }, 80);
                         }
 
                         var errorMessage = '\u064A\u0631\u062C\u0649 \u062A\u0635\u062D\u064A\u062D \u0627\u0644\u0623\u062E\u0637\u0627\u0621 \u0627\u0644\u062A\u0627\u0644\u064A\u0629:\n\n' + errorMessages.join('\n');

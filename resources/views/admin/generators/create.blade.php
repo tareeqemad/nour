@@ -20,7 +20,7 @@
                     <x-admin.card-header-form title="إضافة مولد جديد" icon="bi-lightning-charge" :backRoute="route('admin.generators.index')" />
 
                     <div class="card-body">
-                        <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data" id="generatorForm">
+                        <form action="{{ route('admin.generators.store') }}" method="POST" enctype="multipart/form-data" id="generatorForm" novalidate>
                             @csrf
                             @include('admin.generators.partials.form')
                         </form>

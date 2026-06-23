@@ -20,7 +20,7 @@
                     <x-admin.card-header-form title="تعديل: {{ $generator->name }}" icon="bi-lightning-charge" :backRoute="route('admin.generators.index')" />
 
                     <div class="card-body">
-                        <form action="{{ route('admin.generators.update', $generator) }}" method="POST" enctype="multipart/form-data" id="generatorForm">
+                        <form action="{{ route('admin.generators.update', $generator) }}" method="POST" enctype="multipart/form-data" id="generatorForm" novalidate>
                             @csrf
                             @method('PUT')
                             @include('admin.generators.partials.form')
