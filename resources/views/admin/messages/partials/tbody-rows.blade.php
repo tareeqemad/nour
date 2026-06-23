@@ -1,100 +1,66 @@
 @if($messages->count() > 0)
     <div class="msg-list">
         @foreach($messages as $message)
-            <div class="msg-row {{ !$message->is_read && $message->receiver_id === auth()->id() ? 'msg-unread' : '' }}" data-message-id="{{ $message->id }}">
-                <div class="msg-row-main">
-                    <div class="msg-row-content">
-                        <div class="msg-row-header">
-                            <div class="msg-row-title">
-                                <i class="bi bi-envelope me-2 text-primary"></i>
-                                <span class="fw-bold">{{ $message->subject }}</span>
-                                @if($message->hasAttachment())
-                                    <i class="bi bi-image text-success ms-2" title="يوجد صورة مرفقة"></i>
-                                @endif
-                                @if(!$message->is_read && $message->receiver_id === auth()->id())
-                                    <span class="badge bg-primary ms-2 pulse">جديد</span>
-                                @endif
-                            </div>
-                            <div class="msg-row-meta">
-                                @php
-                                    $typeLabels = [
-                                        'operator_to_operator' => ['label' => 'مشغل لمشغل', 'badge' => 'bg-primary'],
-                                        'operator_to_staff' => ['label' => 'مشغل لموظفين', 'badge' => 'bg-success'],
-                                        'admin_to_operator' => ['label' => 'أدمن لمشغل', 'badge' => 'bg-warning'],
-                                        'admin_to_all' => ['label' => 'أدمن للجميع', 'badge' => 'bg-danger'],
-                                    ];
-                                    $typeInfo = $typeLabels[$message->type] ?? ['label' => $message->type, 'badge' => 'bg-secondary'];
-                                @endphp
-                                <span class="badge {{ $typeInfo['badge'] }}">{{ $typeInfo['label'] }}</span>
-                            </div>
-                        </div>
+            @php
+                $isUnread = !$message->is_read && $message->receiver_id === auth()->id();
+                $typeMap = [
+                    'operator_to_operator' => ['label' => 'مشغل لمشغل',  'cls' => 't-blue'],
+                    'operator_to_staff'    => ['label' => 'مشغل لموظفين', 'cls' => 't-green'],
+                    'admin_to_operator'    => ['label' => 'أدمن لمشغل',   'cls' => 't-amber'],
+                    'admin_to_all'         => ['label' => 'أدمن للجميع',  'cls' => 't-red'],
+                ];
+                $ti = $typeMap[$message->type] ?? ['label' => $message->type, 'cls' => 't-blue'];
 
-                        <div class="msg-row-details">
-                            <div class="row g-2">
-                                <div class="col-md-4 col-sm-6">
-                                    <div class="msg-detail-item">
-                                        <i class="bi bi-person me-2 text-muted"></i>
-                                        <span class="text-muted">المرسل:</span>
-                                        <strong>{{ $message->sender_display_name }}</strong>
-                                        @if(!$message->isSystemMessage() && $message->sender)
-                                            <small class="text-muted">({{ $message->sender->role_name }})</small>
-                                        @endif
-                                    </div>
-                                </div>
+                $u = auth()->user();
+                $isReceiver = $message->receiver_id === $u->id;
+                $isBroadcastReceiver = false;
+                if ($message->type === 'operator_to_staff' && $message->operator_id) {
+                    if ($u->isCompanyOwner()) {
+                        $isBroadcastReceiver = $u->ownedOperators()->where('id', $message->operator_id)->exists();
+                    } elseif ($u->hasOperatorLinkedCustomRole()) {
+                        $isBroadcastReceiver = optional($u->roleModel)->operator_id === $message->operator_id;
+                    }
+                }
+                $showStatus = $isReceiver || $isBroadcastReceiver;
+            @endphp
+            <div class="msg-card {{ $isUnread ? 'is-unread' : '' }}" data-message-id="{{ $message->id }}">
+                <span class="msg-ic"><i class="bi bi-envelope{{ $isUnread ? '-fill' : '' }}"></i></span>
 
-                                <div class="col-md-4 col-sm-6">
-                                    <div class="msg-detail-item">
-                                        <i class="bi bi-calendar3 me-2 text-muted"></i>
-                                        <span class="text-muted">التاريخ:</span>
-                                        <strong>{{ $message->created_at->format('Y-m-d') }}</strong>
-                                        <small class="text-muted">({{ $message->created_at->format('H:i') }})</small>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4 col-sm-6">
-                                    <div class="msg-detail-item">
-                                        <i class="bi bi-eye me-2 text-muted"></i>
-                                        <span class="text-muted">الحالة:</span>
-                                        @php
-                                            $user = auth()->user();
-                                            $isReceiver = $message->receiver_id === $user->id;
-                                            $isBroadcastReceiver = false;
-                                            if ($message->type === 'operator_to_staff' && $message->operator_id) {
-                                                if ($user->isCompanyOwner()) {
-                                                    $isBroadcastReceiver = $user->ownedOperators()->where('id', $message->operator_id)->exists();
-                                                } elseif ($user->hasOperatorLinkedCustomRole()) {
-                                                    $isBroadcastReceiver = $user->roleModel->operator_id === $message->operator_id;
-                                                }
-                                            }
-                                        @endphp
-                                        @if($isReceiver || $isBroadcastReceiver)
-                                            @if($message->is_read)
-                                                <span class="badge bg-success">مقروء</span>
-                                            @else
-                                                <span class="badge bg-warning">غير مقروء</span>
-                                            @endif
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="msg-preview">
-                                <p class="text-muted mb-0">
-                                    <i class="bi bi-chat-left-text"></i>
-                                    <span>{{ Str::limit(strip_tags($message->body), 120) }}</span>
-                                </p>
-                            </div>
-                        </div>
+                <div class="msg-main">
+                    <div class="msg-top">
+                        <a href="{{ route('admin.messages.show', $message) }}" class="msg-subject">{{ $message->subject }}</a>
+                        @if($message->hasAttachment())
+                            <i class="bi bi-paperclip msg-clip" title="يوجد مرفق"></i>
+                        @endif
+                        <span class="msg-type {{ $ti['cls'] }}">{{ $ti['label'] }}</span>
+                        @if($isUnread)
+                            <span class="msg-new">جديد</span>
+                        @endif
                     </div>
 
-                    <div class="msg-row-actions">
-                        <a href="{{ route('admin.messages.show', $message) }}" class="btn btn-sm btn-outline-info" title="عرض">
+                    <div class="msg-sub">
+                        <span><i class="bi bi-person"></i> {{ $message->sender_display_name }}@if(!$message->isSystemMessage() && $message->sender) <span class="text-muted">({{ $message->sender->role_name }})</span>@endif</span>
+                        <span class="sep">·</span>
+                        <span><i class="bi bi-clock"></i> {{ $message->created_at->format('Y-m-d') }} {{ $message->created_at->format('H:i') }}</span>
+                    </div>
+
+                    <div class="msg-snippet">{{ Str::limit(strip_tags($message->body), 140) }}</div>
+                </div>
+
+                <div class="msg-end">
+                    @if($showStatus)
+                        @if($message->is_read)
+                            <span class="msg-status read"><i class="bi bi-check2-all"></i> مقروء</span>
+                        @else
+                            <span class="msg-status unread"><i class="bi bi-dot"></i> غير مقروء</span>
+                        @endif
+                    @endif
+                    <div class="msg-acts">
+                        <a href="{{ route('admin.messages.show', $message) }}" class="btn btn-sm btn-light border" title="عرض">
                             <i class="bi bi-eye"></i>
                         </a>
                         @can('delete', $message)
-                            <button type="button" class="btn btn-sm btn-outline-warning btn-delete-message" 
+                            <button type="button" class="btn btn-sm btn-light border btn-delete-message"
                                     data-id="{{ $message->id }}"
                                     data-url="{{ route('admin.messages.destroy', $message) }}"
                                     title="أرشفة">

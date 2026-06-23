@@ -12,6 +12,34 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/admin/css/data-table-loading.css') }}">
+<style>
+    #messagesPage .msg-list{display:flex;flex-direction:column;gap:.7rem;}
+    #messagesPage .msg-card{display:flex;align-items:flex-start;gap:.9rem;background:#fff;border:1px solid var(--color-border-soft,#EDF1F5);border-radius:12px;padding:.95rem 1.05rem;transition:box-shadow .15s,border-color .15s;}
+    #messagesPage .msg-card:hover{box-shadow:0 6px 18px rgba(31,41,55,.08);border-color:#D9E0EA;}
+    #messagesPage .msg-card.is-unread{background:#F5F7FF;border-color:#C7D2FE;border-right:3px solid var(--color-primary,#24308F);}
+    #messagesPage .msg-ic{flex-shrink:0;width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;background:var(--color-primary-soft,#EEF2FF);color:var(--color-primary,#24308F);}
+    #messagesPage .msg-card.is-unread .msg-ic{background:var(--color-primary,#24308F);color:#fff;}
+    #messagesPage .msg-main{flex:1;min-width:0;}
+    #messagesPage .msg-top{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;}
+    #messagesPage .msg-subject{font-weight:700;color:var(--color-text-main,#1F2937);font-size:.98rem;text-decoration:none;}
+    #messagesPage .msg-subject:hover{color:var(--color-primary,#24308F);text-decoration:underline;}
+    #messagesPage .msg-card.is-unread .msg-subject{color:#11186B;}
+    #messagesPage .msg-clip{color:var(--color-success,#10B981);}
+    #messagesPage .msg-type{font-size:.72rem;font-weight:700;padding:.18rem .6rem;border-radius:30px;}
+    #messagesPage .msg-new{font-size:.7rem;font-weight:700;background:var(--color-primary,#24308F);color:#fff;padding:.14rem .55rem;border-radius:30px;}
+    #messagesPage .msg-sub{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;color:var(--color-text-muted,#5B6780);font-size:.8rem;margin-top:.25rem;}
+    #messagesPage .msg-sub .sep{opacity:.45;}
+    #messagesPage .msg-snippet{color:var(--color-text-muted,#5B6780);font-size:.84rem;margin-top:.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    #messagesPage .msg-end{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:.55rem;}
+    #messagesPage .msg-status{font-size:.74rem;font-weight:700;white-space:nowrap;}
+    #messagesPage .msg-status.read{color:var(--color-success,#10B981);}
+    #messagesPage .msg-status.unread{color:var(--color-warning,#F59E0B);}
+    #messagesPage .msg-acts{display:flex;gap:.35rem;}
+    #messagesPage .t-blue{background:#E6F1FB;color:#185FA5;}
+    #messagesPage .t-green{background:#EAF7EE;color:#1f8f4d;}
+    #messagesPage .t-amber{background:#FAEEDA;color:#854F0B;}
+    #messagesPage .t-red{background:#FCEBEB;color:#A32D2D;}
+</style>
 @endpush
 
 @section('content')
