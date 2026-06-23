@@ -50,14 +50,14 @@
         border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .about-logo img { max-width: 60px; max-height: 60px; object-fit: contain; }
-    .about-hero h2 { font-weight: 800; margin: 0 0 .35rem; font-size: 1.6rem; }
-    .about-hero .tagline { color: rgba(255,255,255,0.82); margin: 0; font-size: .95rem; }
+    .about-hero h2 { font-weight: 800; margin: 0 0 .35rem; font-size: 1.6rem; text-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+    .about-hero .tagline { color: rgba(255,255,255,0.95); margin: 0; font-size: .95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.12); }
     .about-pill {
         display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .9rem; border-radius: 40px;
-        background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: #fff;
+        background: rgba(255,255,255,0.20); border: 1px solid rgba(255,255,255,0.40); color: #fff;
         font-size: .85rem; font-weight: 700;
     }
-    .about-pill.version { background: #fff; color: var(--color-primary, #24308F); border-color: #fff; }
+    .about-pill.version { background: #fff; color: #24308F; border-color: #fff; }
     .about-pill .bi.text-green { color: #34d399; }
 
     .about-stat {
