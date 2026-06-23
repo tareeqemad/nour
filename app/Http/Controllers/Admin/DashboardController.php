@@ -85,17 +85,19 @@ class DashboardController extends Controller
         $operatorsComparison = null;
         $generationUnitsComparison = null;
 
-        // ===== لوحة الفوترة والتحصيل =====
-        // DISABLED (per request). Re-enable by uncommenting the if-block below
-        // AND the matching @include in resources/views/admin/dashboard.blade.php.
+        // ===== لوحة الفوترة والتحصيل (مفعّلة — مقسّمة حسب الدور) =====
         // الـ scoping محصّن داخل DashboardService::getBillingDashboard():
         //   - SuperAdmin/Admin/EnergyAuthority/GeneralAccountant → كل المشغلين
-        //   - CompanyOwner/Employee → مشغله(م) فقط
-        //   - تقني/دفاع مدني → لا يرى القسم أصلاً
+        //   - CompanyOwner/Employee (بصلاحية فوترة) → مشغله(م) فقط
+        //   - تقني/دفاع مدني أو بلا صلاحية فوترة → لا يرى القسم
         $billingDashboard = null;
-        // if ($user->hasPermission('invoice_reports.view') || $user->isSuperAdmin()) {
-        //     $billingDashboard = $this->service->getBillingDashboard($operatorIds);
-        // }
+        $canSeeBilling = $user->hasGlobalAccountingAccess()
+            || $user->isCompanyOwner()
+            || $user->hasPermission('invoice_reports.view')
+            || $user->hasPermission('subscriber_accounts.view');
+        if ($canSeeBilling) {
+            $billingDashboard = $this->service->getBillingDashboard($operatorIds);
+        }
 
         return view('admin.dashboard', compact(
             'stats',
