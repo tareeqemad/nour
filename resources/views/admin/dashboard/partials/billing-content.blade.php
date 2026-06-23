@@ -123,9 +123,13 @@
     @if($isGlobal && ! $singleOp)
         <div class="col-12">
             <div class="border rounded p-3" style="background:#FAFCFF;">
+                @php
+                    $activeOps = collect($byOperator)->filter(fn($o) => ($o['invoice_count'] ?? 0) > 0)->values();
+                    $idleOps   = collect($byOperator)->filter(fn($o) => ($o['invoice_count'] ?? 0) === 0)->values();
+                @endphp
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <strong>أداء المشغلين</strong>
-                    <span class="small text-muted">مرتب حسب الأقل أداءً</span>
+                    <span class="small text-muted">{{ $activeOps->count() }} مشغّل لديه فوترة في الفترة · الأقل أداءً أولاً</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0">
@@ -140,39 +144,46 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($byOperator as $op)
-                                @php
-                                    $opColor = $op['collection_rate'] >= 80 ? 'success' : ($op['collection_rate'] >= 50 ? 'warning' : 'danger');
-                                    $noBilling = $op['invoice_count'] === 0;
-                                @endphp
+                            @forelse($activeOps as $op)
+                                @php $opColor = $op['collection_rate'] >= 80 ? 'success' : ($op['collection_rate'] >= 50 ? 'warning' : 'danger'); @endphp
                                 <tr>
-                                    <td>
-                                        <span class="fw-semibold">{{ $op['name'] }}</span>
-                                        @if($noBilling)<span class="badge bg-secondary ms-2">لا فواتير في الفترة</span>@endif
-                                    </td>
+                                    <td><span class="fw-semibold">{{ $op['name'] }}</span></td>
                                     <td class="text-center">{{ number_format($op['invoice_count']) }}</td>
                                     <td class="text-end">{{ number_format($op['billed'], 0) }} ₪</td>
                                     <td class="text-end text-success">{{ number_format($op['collected'], 0) }} ₪</td>
                                     <td class="text-end {{ $op['remaining'] > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format($op['remaining'], 0) }} ₪</td>
                                     <td>
-                                        @if($noBilling)
-                                            <span class="text-muted small">—</span>
-                                        @else
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="progress flex-grow-1" style="height:6px;">
-                                                    <div class="progress-bar bg-{{ $opColor }}" style="width:{{ min($op['collection_rate'], 100) }}%;"></div>
-                                                </div>
-                                                <span class="badge bg-{{ $opColor }}" style="min-width:54px;">{{ $op['collection_rate'] }}%</span>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height:6px;">
+                                                <div class="progress-bar bg-{{ $opColor }}" style="width:{{ min($op['collection_rate'], 100) }}%;"></div>
                                             </div>
-                                        @endif
+                                            <span class="badge bg-{{ $opColor }}" style="min-width:54px;">{{ $op['collection_rate'] }}%</span>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="text-center text-muted py-3">لا توجد بيانات</td></tr>
+                                <tr><td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-receipt-cutoff d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>
+                                    لا يوجد مشغّل أصدر فواتير في هذه الفترة
+                                </td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+                @if($idleOps->count())
+                    <div class="mt-3 pt-2 border-top">
+                        <button class="btn btn-sm btn-link text-muted text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#idleOpsList">
+                            <i class="bi bi-chevron-expand me-1"></i> {{ $idleOps->count() }} مشغّل بلا فواتير في هذه الفترة
+                        </button>
+                        <div class="collapse mt-2" id="idleOpsList">
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach($idleOps as $o)
+                                    <span class="badge bg-white text-muted border fw-normal">{{ $o['name'] }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     @else
