@@ -472,9 +472,7 @@ class GeneratorController extends Controller
             if (!empty($data['operator_id'])) {
                 $operator = \App\Models\Operator::find($data['operator_id']);
                 if (!$operator) {
-                    return redirect()->back()
-                        ->withInput()
-                        ->with('error', 'المشغل المحدد غير موجود.');
+                    return $this->generatorFormError($request, 'المشغل المحدد غير موجود.');
                 }
             } else {
                 // إذا لم يتم تحديد مشغل، استخدام المشغل الحالي للمولد
@@ -483,15 +481,11 @@ class GeneratorController extends Controller
         } elseif ($authUser->isCompanyOwner()) {
             $operator = $authUser->ownedOperators()->first();
             if (!$operator) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'لا يوجد مشغل مرتبط بحسابك.');
+                return $this->generatorFormError($request, 'لا يوجد مشغل مرتبط بحسابك.');
             }
             // التحقق من أن المولد ينتمي للمشغل
             if ($generator->operator_id !== $operator->id) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'ليس لديك صلاحية لتعديل هذا المولد.');
+                return $this->generatorFormError($request, 'ليس لديك صلاحية لتعديل هذا المولد.');
             }
         } elseif ($authUser->hasPermission('generators.update') || $authUser->isTechnician()) {
             // المستخدم التابع لمشغل (Employee أو Technician)
@@ -500,20 +494,14 @@ class GeneratorController extends Controller
             } elseif ($authUser->ownedOperators()->exists()) {
                 $operator = $authUser->ownedOperators()->first();
             } else {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'لا يوجد مشغل مرتبط بحسابك.');
+                return $this->generatorFormError($request, 'لا يوجد مشغل مرتبط بحسابك.');
             }
             // التحقق من أن المولد ينتمي للمشغل
             if ($generator->operator_id !== $operator->id) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'ليس لديك صلاحية لتعديل هذا المولد.');
+                return $this->generatorFormError($request, 'ليس لديك صلاحية لتعديل هذا المولد.');
             }
         } else {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'ليس لديك صلاحية لتعديل المولدات.');
+            return $this->generatorFormError($request, 'ليس لديك صلاحية لتعديل المولدات.');
         }
 
         // تعيين operator_id من المستخدم (للسلامة)
@@ -523,15 +511,11 @@ class GeneratorController extends Controller
         if (isset($data['generation_unit_id']) && $data['generation_unit_id'] != $generator->generation_unit_id) {
             $newGenerationUnit = \App\Models\GenerationUnit::find($data['generation_unit_id']);
             if (!$newGenerationUnit) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'وحدة التوليد المحددة غير موجودة.');
+                return $this->generatorFormError($request, 'وحدة التوليد المحددة غير موجودة.');
             }
             // التحقق من أن وحدة التوليد الجديدة تنتمي للمشغل الصحيح
             if ($newGenerationUnit->operator_id !== $operator->id) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'وحدة التوليد المحددة لا تنتمي للمشغل الخاص بك.');
+                return $this->generatorFormError($request, 'وحدة التوليد المحددة لا تنتمي للمشغل الخاص بك.');
             }
         }
 
@@ -570,9 +554,7 @@ class GeneratorController extends Controller
                 $remaining = (int)($generationUnit->total_capacity - $currentTotalCapacity);
                 $newTotalCapacityInt = (int)$newTotalCapacity;
                 $totalCapacityInt = (int)$generationUnit->total_capacity;
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', "مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
+                return $this->generatorFormError($request, "مجموع قدرات المولدات ({$newTotalCapacityInt} KVA) يتجاوز إجمالي القدرة لوحدة التوليد ({$totalCapacityInt} KVA). القدرة المتبقية المتاحة: {$remaining} KVA.");
             }
         }
 

@@ -244,8 +244,9 @@
                     $submitBtn.prop('disabled', false);
                     $submitBtn.html(originalText);
 
-                    if (xhr.status === 422) {
-                        var errors = (xhr.responseJSON && xhr.responseJSON.errors) || {};
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors && Object.keys(xhr.responseJSON.errors).length > 0) {
+                        // أخطاء تحقّق حقلية: تمييز كل حقل والانتقال إلى تبويبه
+                        var errors = xhr.responseJSON.errors;
                         var errorMessages = [];
 
                         $form.find('.is-invalid').removeClass('is-invalid');
@@ -281,8 +282,10 @@
                         } else {
                             console.error('Validation errors:', errorMessages);
                         }
-                    } else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message && !xhr.responseJSON.errors) {
-                        var businessErrorMsg = xhr.responseJSON.message;
+                    } else if (xhr.status === 422) {
+                        // خطأ منطقي (وحدة ممتلئة، تجاوز القدرة، صلاحية، رقم مولد...) يصل كـ 422 برسالة فقط بدون errors.
+                        // سابقاً كان يُبتلع في فرع أخطاء الحقول فيظهر تنبيهاً فارغاً "يرجى تصحيح الأخطاء" بلا تفاصيل = إحساس بالتعليق.
+                        var businessErrorMsg = (xhr.responseJSON && xhr.responseJSON.message) || 'حدث خطأ أثناء حفظ البيانات';
                         if (typeof window.showToast === 'function') {
                             window.showToast(businessErrorMsg, 'error', '\u062A\u062D\u0642\u0642 \u0645\u0646 \u0627\u0644\u0623\u062E\u0637\u0627\u0621');
                         } else if (window.adminNotifications && typeof window.adminNotifications.error === 'function') {
