@@ -60,6 +60,12 @@
     .about-pill.version { background: #fff; color: #24308F; border-color: #fff; }
     .about-pill .bi.text-green { color: #34d399; }
 
+    /* أزرار الهيرو — تباين صريح على الخلفية الزرقاء */
+    .about-hero .btn-hero-light { background: #fff; color: #24308F; border: 1px solid #fff; font-weight: 700; }
+    .about-hero .btn-hero-light:hover { background: #EEF2FF; color: #24308F; }
+    .about-hero .btn-hero-outline { background: rgba(255,255,255,0.16); color: #fff; border: 1px solid rgba(255,255,255,0.70); font-weight: 600; }
+    .about-hero .btn-hero-outline:hover { background: rgba(255,255,255,0.30); color: #fff; }
+
     .about-stat {
         background: #fff; border: 1px solid var(--color-border-soft, #EDF1F5); border-radius: 14px;
         padding: 1.1rem 1rem; text-align: center; height: 100%; transition: transform .15s, box-shadow .15s;
@@ -108,11 +114,11 @@
                         </div>
                     </div>
                     <div class="d-flex flex-column gap-2">
-                        <a href="{{ route('admin.changelog') }}" class="btn btn-light btn-sm fw-semibold">
+                        <a href="{{ route('admin.changelog') }}" class="btn btn-sm btn-hero-light">
                             <i class="bi bi-journal-text me-1"></i> سجل التغييرات
                         </a>
                         @if(auth()->user()->isSuperAdmin())
-                            <a href="{{ route('admin.versions.index') }}" class="btn btn-outline-light btn-sm">
+                            <a href="{{ route('admin.versions.index') }}" class="btn btn-sm btn-hero-outline">
                                 <i class="bi bi-gear me-1"></i> إدارة الإصدارات
                             </a>
                         @endif
