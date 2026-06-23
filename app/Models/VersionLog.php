@@ -95,8 +95,11 @@ class VersionLog extends Model
      */
     public function getCategorizedChanges(): array
     {
-        $changes = $this->changes ?? [];
-        
+        // ملاحظة: نستخدم getAttribute بدل $this->changes لأن اسم العمود "changes"
+        // يتعارض مع خاصية Eloquent الداخلية المحمية $changes (تتبّع التعديلات)،
+        // فالوصول عبر $this->changes داخل الموديل يرجّع الخاصية المحمية لا قيمة العمود.
+        $changes = $this->getAttribute('changes') ?? [];
+
         return [
             'features' => $changes['features'] ?? [],
             'fixes' => $changes['fixes'] ?? [],
