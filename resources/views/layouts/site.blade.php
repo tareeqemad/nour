@@ -77,7 +77,10 @@
     <!-- Footer -->
     <footer class="public-footer">
         <div class="footer-container">
-            <p class="footer-copyright">جميع الحقوق محفوظة © 2026 {{ $siteName ?? 'نور' }}.</p>
+            <p class="footer-copyright">
+                جميع الحقوق محفوظة © 2026 {{ $siteName ?? 'نور' }}.
+                <i class="bi bi-patch-check-fill"></i> المنصة معتمدة ومرخصة من سلطة الطاقة
+            </p>
         </div>
     </footer>
 

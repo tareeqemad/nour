@@ -150,6 +150,11 @@ body {
     padding: 0 2rem;
 }
 
+.footer-copyright .bi {
+    color: #34d399;
+    margin-inline-start: 0.35rem;
+}
+
 .footer-copyright {
     font-size: 0.85rem;
     font-weight: 500;

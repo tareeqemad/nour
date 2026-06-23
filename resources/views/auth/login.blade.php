@@ -402,43 +402,6 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Licensed badge — form half (visible on all devices) */
-        .licensed-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
-            padding: 0.65rem 1rem;
-            background: var(--primary-soft);
-            border: 1px solid #C7D2FE;
-            border-radius: var(--radius);
-            color: var(--primary);
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        .licensed-badge i { font-size: 1.15rem; color: var(--success); flex-shrink: 0; }
-
-        /* Licensed badge — brand half (light on dark) */
-        .brand-licensed {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0 auto 2rem;
-            padding: 0.6rem 1.4rem;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.22);
-            border-radius: 2rem;
-            color: #fff;
-            font-size: 0.98rem;
-            font-weight: 600;
-            backdrop-filter: blur(6px);
-        }
-
-        .brand-licensed i { color: #FBBF24; font-size: 1.15rem; }
 
         /* Footer */
         .form-footer {
@@ -446,7 +409,10 @@
             margin-top: 2rem;
             color: var(--text-label);
             font-size: 0.82rem;
+            line-height: 1.6;
         }
+
+        .form-footer .bi { color: var(--success); margin-inline-start: 0.3rem; }
 
         /* ===================== MODAL ===================== */
         .modal-overlay {
@@ -564,11 +530,6 @@
                 <h1 class="brand-title">{{ $siteName }}</h1>
                 <p class="brand-subtitle">منصة رقمية متكاملة لإدارة ومراقبة سوق الطاقة</p>
 
-                <div class="brand-licensed">
-                    <i class="bi bi-patch-check-fill"></i>
-                    هذه المنصة معتمدة ومرخصة من سلطة الطاقة
-                </div>
-
                 <div class="features">
                     <span class="feat"><i class="bi bi-lightning-charge"></i> طاقة كهربائية</span>
                     <span class="feat"><i class="bi bi-gear"></i> مولدات</span>
@@ -642,13 +603,9 @@
                     </button>
                 </form>
 
-                <div class="licensed-badge">
-                    <i class="bi bi-patch-check-fill"></i>
-                    هذه المنصة معتمدة ومرخصة من سلطة الطاقة
-                </div>
-
                 <div class="form-footer">
                     &copy; {{ date('Y') }} {{ $siteName }} — جميع الحقوق محفوظة
+                    <i class="bi bi-patch-check-fill"></i> المنصة معتمدة ومرخصة من سلطة الطاقة
                 </div>
             </div>
         </div>
