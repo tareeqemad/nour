@@ -97,6 +97,9 @@
                                                     <a href="{{ route('admin.versions.show', $version) }}" class="btn btn-sm btn-outline-info" title="عرض">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
+                                                    <a href="{{ route('admin.versions.print', $version) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="طباعة رسمية">
+                                                        <i class="bi bi-printer"></i>
+                                                    </a>
                                                     <a href="{{ route('admin.versions.edit', $version) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>

@@ -320,6 +320,7 @@ Route::middleware(['auth', 'admin', 'operator.approved'])->group(function () {
         Route::get('/', [VersionController::class, 'index'])->name('index');
         Route::get('/create', [VersionController::class, 'create'])->name('create');
         Route::post('/', [VersionController::class, 'store'])->name('store');
+        Route::get('/{version}/print', [VersionController::class, 'print'])->name('print');
         Route::get('/{version}', [VersionController::class, 'show'])->name('show');
         Route::get('/{version}/edit', [VersionController::class, 'edit'])->name('edit');
         Route::put('/{version}', [VersionController::class, 'update'])->name('update');

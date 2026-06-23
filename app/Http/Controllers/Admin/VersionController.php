@@ -30,8 +30,27 @@ class VersionController extends Controller
             'timezone' => config('app.timezone'),
             'locale' => config('app.locale'),
         ];
-        
-        return view('admin.version.about', compact('currentVersion', 'systemInfo'));
+
+        // إحصائيات عامة عن المنصة (للسوبر أدمن فقط — تجنّباً لكشف بيانات عبر المشغّلين)
+        $stats = [];
+        if (auth()->user()->isSuperAdmin()) {
+            try {
+                $stats = [
+                    'operators'        => \App\Models\Operator::count(),
+                    'generation_units' => \App\Models\GenerationUnit::count(),
+                    'generators'       => \App\Models\Generator::count(),
+                    'subscribers'      => \App\Models\Subscriber::count(),
+                    'invoices'         => \App\Models\Invoice::count(),
+                    'users'            => \App\Models\User::count(),
+                ];
+            } catch (\Throwable $e) {
+                $stats = [];
+            }
+        }
+
+        $versionsCount = VersionLog::count();
+
+        return view('admin.version.about', compact('currentVersion', 'systemInfo', 'stats', 'versionsCount'));
     }
 
     /**
@@ -108,6 +127,16 @@ class VersionController extends Controller
     public function show(VersionLog $version): View
     {
         return view('admin.version.show', compact('version'));
+    }
+
+    /**
+     * طباعة رسمية لإصدار (تقرير صادر من المنصة لتقديمه للإدارة)
+     */
+    public function print(VersionLog $version): View
+    {
+        $changes = $version->getCategorizedChanges();
+
+        return view('admin.version.print', compact('version', 'changes'));
     }
 
     /**

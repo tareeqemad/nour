@@ -19,6 +19,10 @@
                                 تعديل
                             </a>
                         @endif
+                        <a href="{{ route('admin.versions.print', $version) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-printer me-1"></i>
+                            طباعة رسمية
+                        </a>
                         <a href="{{ route('admin.changelog') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-arrow-right me-1"></i>
                             العودة للسجل
