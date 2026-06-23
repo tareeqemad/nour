@@ -19,7 +19,7 @@
                     <x-admin.card>
                         <x-admin.card-header title="إدارة المشغلين" icon="bi-building">
                             <x-slot:actions>
-                                <a href="{{ route('admin.operators.export', request()->only(['name', 'status'])) }}" class="btn btn-success" id="btnOperatorsExport">
+                                <a href="{{ route('admin.operators.export', request()->only(['name', 'status', 'license_status'])) }}" class="btn btn-success" id="btnOperatorsExport">
                                     <i class="bi bi-file-earmark-excel me-1"></i>
                                     تصدير Excel
                                 </a>
@@ -48,6 +48,19 @@
                                             <option value="">كل الحالات</option>
                                             <option value="active" {{ (request('status') ?? '') === 'active' ? 'selected' : '' }}>فعّال</option>
                                             <option value="inactive" {{ (request('status') ?? '') === 'inactive' ? 'selected' : '' }}>غير فعّال</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <label class="form-label fw-semibold">
+                                            <i class="bi bi-patch-check me-1"></i>
+                                            حالة الطلب
+                                        </label>
+                                        <select id="opLicenseStatus" class="form-select">
+                                            <option value="">كل حالات الطلب</option>
+                                            @foreach(\App\Models\Operator::licenseStatuses() as $value => $label)
+                                                <option value="{{ $value }}" {{ (request('license_status') ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -294,6 +307,7 @@
         return Object.assign({
             name: $('#opNameFilter').val() || '',
             status: $('#opStatus').val() || '',
+            license_status: $('#opLicenseStatus').val() || '',
         }, extra);
     }
 
@@ -600,7 +614,8 @@
     // Reset filters
     $('#btnOpResetFilters').on('click', function () {
         $('#opNameFilter').val('');
-        $('#opStatus').val('').trigger('change');
+        $('#opStatus').val('');
+        $('#opLicenseStatus').val('').trigger('change');
         loadList({ page: 1 });
     });
     
@@ -614,15 +629,17 @@
 
     // Toggle clear button visibility
     function toggleClearBtn() {
-        const hasValue = $('#opNameFilter').val().trim() !== '' || 
-                        $('#opStatus').val() !== '';
+        const hasValue = $('#opNameFilter').val().trim() !== '' ||
+                        $('#opStatus').val() !== '' ||
+                        $('#opLicenseStatus').val() !== '';
         $('#btnOpResetFilters').toggleClass('d-none', !hasValue);
     }
 
     // Update clear button visibility on input change
     $('#opNameFilter').on('input', toggleClearBtn);
     $('#opStatus').on('change', toggleClearBtn);
-    $('#opNameFilter, #opStatus').on('input change', syncExportLink);
+    $('#opLicenseStatus').on('change', toggleClearBtn);
+    $('#opNameFilter, #opStatus, #opLicenseStatus').on('input change', syncExportLink);
 
     // initial
     wireListEvents();

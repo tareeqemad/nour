@@ -59,6 +59,10 @@ class OperatorController extends Controller
             $operatorsQuery->where('status', $request->get('status'));
         }
 
+        if ($request->filled('license_status') && array_key_exists($request->get('license_status'), Operator::licenseStatuses())) {
+            $operatorsQuery->where('license_status', $request->get('license_status'));
+        }
+
         return $operatorsQuery;
     }
 
@@ -160,6 +164,7 @@ class OperatorController extends Controller
         return view('admin.operators.index', [
             'operators' => $operators,
             'status' => $request->get('status', ''),
+            'licenseStatus' => $request->get('license_status', ''),
             'myOperator' => $myOperator,
         ]);
     }
