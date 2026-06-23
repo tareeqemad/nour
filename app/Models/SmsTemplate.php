@@ -35,11 +35,11 @@ class SmsTemplate extends Model
         return [
             'user_credentials' => [
                 'name' => 'أحمد محمد', 'role' => 'مشغل', 'username' => 'ahmad_op',
-                'password' => 'A1b2C3d4', 'login_url' => 'https://gazarased.com/login',
+                'password' => 'A1b2C3d4', 'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
             ],
             'password_reset' => [
                 'name' => 'أحمد محمد', 'username' => 'ahmad_op',
-                'password' => 'A1b2C3d4', 'login_url' => 'https://gazarased.com/login',
+                'password' => 'A1b2C3d4', 'site_name' => 'نور', 'login_url' => 'https://gazarased.com/login',
             ],
             'join_credentials' => [
                 'site_name' => 'نور', 'username' => 'op_test',

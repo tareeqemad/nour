@@ -1090,6 +1090,7 @@ class UserController extends Controller
                 'username' => $username,
                 'password' => $password,
                 'role' => $roleName,
+                'site_name' => \App\Models\Setting::get('site_name', 'نور'),
                 'login_url' => $loginUrl,
             ]);
         } else {

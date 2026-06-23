@@ -211,6 +211,7 @@ class ForgotPasswordController extends Controller
                     'username' => $user->username,
                     'password' => $newPassword,
                     'role' => $roleName,
+                    'site_name' => \App\Models\Setting::get('site_name', 'نور'),
                     'login_url' => $loginUrl,
                 ]);
             } else {
