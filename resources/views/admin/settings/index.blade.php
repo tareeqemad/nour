@@ -32,6 +32,7 @@
                             @include('admin.settings.partials.section-branding')
                             @include('admin.settings.partials.section-design')
                             @include('admin.settings.partials.section-general')
+                            @include('admin.settings.partials.section-territory')
                             @include('admin.settings.partials.section-social')
                             @include('admin.settings.partials.section-custom')
 
