@@ -130,6 +130,9 @@ class DashboardController extends Controller
     {
         $isGlobal = $user->hasGlobalAccountingAccess();
 
+        // بوابة الإظهار (الصلاحية). ملاحظة: حتى لو مُنح المستخدم رؤية الفوترة بالصلاحية،
+        // فالنطاق هو الحاكم: مستخدم نطاقه [] (دور عام/غير مرتبط) يُرجع getBillingDashboard([])
+        // قيمة null فيختفي القسم — فلا يمكن أن تظهر بيانات لمستخدم بلا مشغّل مهما كانت صلاحيته.
         $canSeeBilling = $isGlobal
             || $user->isCompanyOwner()
             || $user->hasPermission('invoice_reports.view')

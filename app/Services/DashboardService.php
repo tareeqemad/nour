@@ -972,7 +972,10 @@ class DashboardService
             return null;
         }
 
-        $hash = md5(json_encode([$operatorIds, $from, $to]));
+        // ترتيب معرّفات المشغّلين لضمان مفتاح cache ثابت لنفس النطاق مهما اختلف الترتيب
+        $scopeKey = $operatorIds;
+        if (is_array($scopeKey)) { sort($scopeKey); }
+        $hash = md5(json_encode([$scopeKey, $from, $to]));
         return Cache::remember("dashboard_billing_{$hash}", self::CHARTS_TTL, function () use ($operatorIds, $from, $to) {
             $paidByInvoice = $this->billingComputeFifoPaid($operatorIds);
 
