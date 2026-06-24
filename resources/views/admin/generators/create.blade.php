@@ -66,5 +66,5 @@
         generateNumberUrl: '{{ url("/admin/generators/generate-number") }}'
     };
 </script>
-<script src="{{ asset('assets/admin/js/generators-form.js') }}"></script>
+<script src="{{ asset('assets/admin/js/generators-form.js') }}?v={{ filemtime(public_path('assets/admin/js/generators-form.js')) }}"></script>
 @endpush
