@@ -222,7 +222,13 @@
         <!-- /app-header -->
 
         <!-- Start::app-sidebar -->
-        @include('admin.partials.sidebar')
+        {{-- خطّاف المنصات: أي منصة (مثل مضمون) تقدر تستبدل السايدبار عبر @section('sidebar')
+             بدون لمس هذا الملف. صفحات الأدمن العادية تستخدم سايدبار الأدمن كالمعتاد. --}}
+        @hasSection('sidebar')
+            @yield('sidebar')
+        @else
+            @include('admin.partials.sidebar')
+        @endif
         <!-- End::app-sidebar -->
 
         <!-- main-content -->
