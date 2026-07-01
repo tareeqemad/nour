@@ -658,29 +658,50 @@ class InvoiceController extends Controller
     public function export(Request $request)
     {
         $this->authorize('viewAny', Invoice::class);
+        @set_time_limit(300);
 
         // Use same query building as index
-        $user = auth()->user();
-        $query = Invoice::with(['subscriber', 'meterReading', 'creator']);
+        $user  = auth()->user();
+        $query = Invoice::with(['subscriber', 'meterReading', 'creator'])
+            ->withSum('payments', 'amount_paid')
+            ->withMax('payments', 'payment_date');
 
-        // Apply same role-based filtering as index
-        if ($user->isCompanyOwner()) {
-            $opIds = $user->ownedOperators()->pluck('id')->toArray();
-            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
-        } elseif ($user->isAffiliatedWithOperator()) {
-            // يشمل: Employee, Technician, وأي دور مخصص (custom role) مرتبط بمشغل
-            $opIds = $user->getScopedOperatorIds();
-            $query->whereHas('subscriber.generationUnits', fn($q) => $q->whereIn('operator_id', $opIds));
+        $canSelectOperator = $user->hasGlobalAccountingAccess();
+
+        if (! $canSelectOperator) {
+            $ids = $user->getScopedOperatorIds();
+            if (! empty($ids)) {
+                $query->whereHas('subscriber.generationUnits', fn($q) =>
+                    $q->whereIn('operator_id', $ids));
+            } else {
+                $query->whereRaw('0 = 1');
+            }
         }
 
         // Apply filters
+        if ($canSelectOperator && ($oid = (int) $request->input('operator_id', 0)) > 0) {
+            $query->whereHas('subscriber.generationUnits', fn($q) =>
+                $q->where('operator_id', $oid));
+        }
+
+        if ($sid = (int) $request->input('subscriber_id', 0)) {
+            $query->where('subscriber_id', $sid);
+        }
+
         if ($request->filled('invoice_status')) {
             $st = $request->input('invoice_status');
-            if ($st == '5') {
+            if ($st === '5') {
                 // Overdue
-                $query->where('invoice_status', Invoice::STATUS_ISSUED)->where('due_date', '<', now());
-            } else {
-                $query->where('invoice_status', $st);
+                $query->where('invoice_status', Invoice::STATUS_ISSUED)
+                    ->whereNotNull('due_date')
+                    ->where('due_date', '<', now());
+            } elseif (in_array($st, ['0','1','2','3','4'])) {
+                if ($st == '1') {
+                    $query->where('invoice_status', Invoice::STATUS_ISSUED)
+                        ->where(fn($q) => $q->whereNull('due_date')->orWhere('due_date', '>=', now()));
+                } else {
+                    $query->where('invoice_status', $st);
+                }
             }
         }
         if ($request->filled('date_from')) {
@@ -705,9 +726,9 @@ class InvoiceController extends Controller
         $sheet->setTitle('الفواتير');
         $sheet->setRightToLeft(true);
 
-        $headers = ['#', 'رقم الفاتورة', 'رقم الاشتراك', 'اسم المشترك', 'رقم الجوال', 'التاريخ', 'الاستهلاك (Kwh)', 'الرصيد السابق', 'مبلغ الفاتورة', 'المبلغ الإجمالي', 'المسدد', 'المتبقي', 'الحالة', 'تاريخ الاستحقاق'];
+        $headers = ['#', 'رقم الفاتورة', 'رقم الاشتراك', 'اسم المشترك', 'رقم الجوال', 'التاريخ', 'القراءة السابقة', 'القراءة الحالية', 'الاستهلاك (Kwh)', 'الرصيد السابق', 'مبلغ الفاتورة', 'المبلغ الإجمالي', 'المسدد', 'تاريخ التسديد', 'المتبقي', 'الحالة', 'تاريخ الاستحقاق'];
 
-        $columns = range('A', 'N');
+        $columns = range('A', 'Q');
         foreach ($headers as $i => $header) {
             $cell = $columns[$i] . '1';
             $sheet->setCellValue($cell, $header);
@@ -719,20 +740,29 @@ class InvoiceController extends Controller
 
         $row = 2;
         foreach ($invoices as $idx => $inv) {
+            $reading = $inv->meterReading;
+            $paidAmount = (float) ($inv->payments_sum_amount_paid ?? 0);
+            $lastPaymentDate = $inv->payments_max_payment_date
+                ? \Carbon\Carbon::parse($inv->payments_max_payment_date)->format('Y-m-d')
+                : null;
+
             $sheet->setCellValue("A{$row}", $idx + 1);
             $sheet->setCellValue("B{$row}", $inv->invoice_number ?? 'مسودة');
             $sheet->setCellValue("C{$row}", $inv->subscriber->subscription_number ?? '');
             $sheet->setCellValue("D{$row}", $inv->subscriber->subscriber_name ?? '');
             $sheet->setCellValueExplicit("E{$row}", (string) ($inv->subscriber->phone ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue("F{$row}", $inv->invoice_date?->format('Y-m-d'));
-            $sheet->setCellValue("G{$row}", $inv->consumption_kwh);
-            $sheet->setCellValue("H{$row}", $inv->previous_balance);
-            $sheet->setCellValue("I{$row}", $inv->invoice_amount);
-            $sheet->setCellValue("J{$row}", $inv->total_amount);
-            $sheet->setCellValue("K{$row}", $inv->paidAmount());
-            $sheet->setCellValue("L{$row}", $inv->remainingAmount());
-            $sheet->setCellValue("M{$row}", $inv->status_name);
-            $sheet->setCellValue("N{$row}", $inv->due_date?->format('Y-m-d'));
+            $sheet->setCellValue("G{$row}", $reading?->previous_reading);
+            $sheet->setCellValue("H{$row}", $reading?->current_reading);
+            $sheet->setCellValue("I{$row}", $inv->consumption_kwh);
+            $sheet->setCellValue("J{$row}", $inv->previous_balance);
+            $sheet->setCellValue("K{$row}", $inv->invoice_amount);
+            $sheet->setCellValue("L{$row}", $inv->total_amount);
+            $sheet->setCellValue("M{$row}", $paidAmount);
+            $sheet->setCellValue("N{$row}", $lastPaymentDate);
+            $sheet->setCellValue("O{$row}", max((float) $inv->total_amount - $paidAmount, 0));
+            $sheet->setCellValue("P{$row}", $inv->status_name);
+            $sheet->setCellValue("Q{$row}", $inv->due_date?->format('Y-m-d'));
             $row++;
         }
 
