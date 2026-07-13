@@ -113,10 +113,10 @@ class CheckMaintenanceNeeded extends Command
      * إرسال الإشعارات
      *
      * @param \Illuminate\Database\Eloquent\Collection $generatorsNeedingMaintenance
-     * @param array $upcomingMaintenance
+     * @param iterable $upcomingMaintenance
      * @return void
      */
-    private function sendNotifications($generatorsNeedingMaintenance, array $upcomingMaintenance): void
+    private function sendNotifications($generatorsNeedingMaintenance, iterable $upcomingMaintenance): void
     {
         // 1. إشعارات للمولدات التي تحتاج صيانة فورية
         foreach ($generatorsNeedingMaintenance as $generator) {
@@ -147,7 +147,7 @@ class CheckMaintenanceNeeded extends Command
                     'maintenance_warning',
                     'تذكير: مولد يحتاج صيانة قريباً',
                     "المولد {$generator->name} يحتاج إلى صيانة قريباً. آخر صيانة: " . 
-                    $generator->last_major_maintenance_date->format('Y-m-d'),
+                    ($generator->last_major_maintenance_date?->format('Y-m-d') ?? 'غير محدد'),
                     route('admin.maintenance-records.create', ['generator_id' => $generator->id])
                 );
             }
